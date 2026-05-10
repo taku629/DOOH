@@ -1,3 +1,5 @@
+import { publishParticipationEvent } from "../src/participation-bridge.js";
+
 const cards = [...document.querySelectorAll("[data-step]")];
 const progressItems = [...document.querySelectorAll(".progress-item")];
 const counter = document.querySelector("[data-counter]");
@@ -33,6 +35,7 @@ function setStep(stepIndex) {
         hasCountedParticipation = true;
         participantCount += 1;
         counter.textContent = String(participantCount);
+        publishParticipationEvent({ name: getDisplayName() });
     }
 
     if (currentStep >= 3) {
