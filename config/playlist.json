@@ -1,0 +1,18 @@
+{
+    "fallback":"video/default.mp4",
+    "rules":[
+        {
+            "name":"male",
+            "start":"00:00",
+            "end":"10:59",
+            "video":"video/male.mp4"
+        },
+    
+        {
+             "name":"female",
+            "start":"00:00",
+            "end":"10:59",
+            "video":"video/female.mp4"
+        }
+    ]
+}
