@@ -4,6 +4,7 @@ import { subscribeToParticipationEvents } from "./participation-bridge.js";
 import { getCurrentVideo } from "./scheduler.js";
 
 const player = document.querySelector("#player");
+const displayShell = document.querySelector(".display-shell");
 const fallbackView = document.querySelector("#videoFallback");
 const participationSignal = document.querySelector("#participationSignal");
 const participantCount = document.querySelector("#displayParticipantCount");
@@ -32,9 +33,10 @@ function updateParticipationStatus(event) {
     }
 
     if (participantStatus) {
-        participantStatus.textContent = `${event.name} さんが参加しました`;
+        participantStatus.textContent = `${event.name} さんの希望で新宿が灯りました`;
     }
 
+    displayShell?.classList.add("is-reborn");
     participationSignal?.classList.add("is-active");
 }
 
@@ -65,9 +67,10 @@ function scheduleReturnToNormal() {
         }
 
         participationSignal?.classList.remove("is-active");
+        displayShell?.classList.remove("is-reborn");
 
         if (participantStatus) {
-            participantStatus.textContent = "スマホ参加を待機中";
+            participantStatus.textContent = "新宿に灯りが戻るのを待っています";
         }
     }, returnDelay);
 }
