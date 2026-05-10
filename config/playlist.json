@@ -1,5 +1,7 @@
 {
     "fallback":"video/default.mp4",
+    "participationVideo":"video/participation.mp4",
+    "participationReturnSeconds":8,
     "rules":[
         {
             "name":"male",
