@@ -61,7 +61,7 @@ function copyShareLink() {
 
     navigator.clipboard?.writeText(url.toString())
         .then(() => {
-            statusMessage.textContent = "共有リンクをコピーしました。";
+            statusMessage.textContent = "新宿再生の共有リンクをコピーしました。";
         })
         .catch(() => {
             statusMessage.textContent = "コピーのデモ: " + url.toString();
@@ -87,21 +87,21 @@ function savePassImage() {
 
     context.fillStyle = "#fffaf0";
     context.font = "700 42px sans-serif";
-    context.fillText("DOOH Live Moment", 92, 120);
+    context.fillText("Re:Shinjuku Moment", 92, 120);
 
     context.font = "900 104px sans-serif";
     context.fillText(displayName, 92, 315);
 
     context.fillStyle = "rgba(255, 250, 240, 0.72)";
     context.font = "500 34px sans-serif";
-    context.fillText("あなたの参加がビジョンに反映されました", 92, 412);
+    context.fillText("あなたの希望が、新宿の灯りになりました", 92, 412);
 
     const link = document.createElement("a");
-    link.download = "dooh-participation-pass.png";
+    link.download = "reshinjuku-participation-pass.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
 
-    statusMessage.textContent = "参加証画像を保存しました。";
+    statusMessage.textContent = "新宿参加証画像を保存しました。";
 }
 
 function completeSwipe() {
