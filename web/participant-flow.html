@@ -9,10 +9,10 @@
 <body>
     <main class="flow-shell">
         <section class="hero-panel" aria-labelledby="flow-title">
-            <p class="eyebrow">Live Participation Prototype</p>
-            <h1 id="flow-title">その場の空気に、スマホから参加する。</h1>
+            <p class="eyebrow">Shinjuku Re:Light Fund</p>
+            <h1 id="flow-title">新宿に、希望をスワイプする。</h1>
             <p class="lead">
-                QRコードを読み取った参加者が、スワイプだけでDOOH画面上の演出に加わる体験を想定したプロトタイプです。
+                少し静かになった新宿に、募金という小さな灯りを集めていく参加体験です。あなたのスワイプで、街の表情が変わります。
             </p>
 
             <ol class="progress-list" aria-label="参加ステップ">
@@ -31,61 +31,67 @@
             </div>
 
             <article class="step-card is-visible" data-step="0">
-                <p class="step-kicker">Step 1 / Welcome</p>
-                <h2>参加ページへようこそ</h2>
+                <p class="step-kicker">Step 1 / Before</p>
+                <h2>いまの新宿は、少し静かです。</h2>
+                <div class="city-vision is-quiet" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
                 <p>
-                    大型ビジョンのQRコードからアクセスした想定です。次の画面でスワイプすると参加できます。
+                    でも、まだ希望は残っています。募金に参加して、街に新しい灯りを届けてください。
                 </p>
-                <button class="primary-action" type="button" data-next>はじめる</button>
+                <button class="primary-action" type="button" data-next>希望を送る</button>
             </article>
 
             <article class="step-card" data-step="1">
-                <p class="step-kicker">Step 2 / Swipe</p>
-                <h2>右へスワイプして参加</h2>
-                <p>つまみを右端まで動かすと、参加が確定します。</p>
+                <p class="step-kicker">Step 2 / Hope Swipe</p>
+                <h2>右へスワイプして、新宿を灯す。</h2>
+                <p>あなたの募金の意思を、希望のスワイプとしてDOOH側へ送ります。</p>
                 <div class="swipe-track" data-swipe-track>
                     <button class="swipe-handle" type="button" data-swipe-handle aria-label="右へスワイプして参加">
                         →
                     </button>
-                    <span>スワイプで参加</span>
+                    <span>希望をスワイプ</span>
                 </div>
-                <button class="ghost-action" type="button" data-next>デモとして次へ進む</button>
+                <button class="ghost-action" type="button" data-next>デモとして灯す</button>
             </article>
 
             <article class="step-card" data-step="2">
-                <p class="step-kicker">Step 3 / Counter</p>
-                <h2>参加者が1人増えました</h2>
+                <p class="step-kicker">Step 3 / Relight</p>
+                <h2>新宿に、灯りがひとつ増えました。</h2>
+                <div class="city-vision is-reborn" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
                 <div class="counter-card">
-                    <span class="counter-label">現在の参加者</span>
+                    <span class="counter-label">集まった希望</span>
                     <strong><span data-counter>127</span>人</strong>
                     <span class="counter-plus">+1</span>
                 </div>
-                <p>参加アクションが完了し、DOOH側の人数表示に反映される想定です。</p>
-                <button class="primary-action" type="button" data-next>参加証を作る</button>
+                <p>DOOH側では、閑散とした街から生まれ変わった新宿の演出へ切り替わります。</p>
+                <button class="primary-action" type="button" data-next>新宿参加証を作る</button>
             </article>
 
             <article class="step-card" data-step="3">
                 <p class="step-kicker">Step 4 / Pass</p>
-                <h2>任意のニックネームを入力</h2>
+                <h2>新しい新宿に名前を残す</h2>
                 <label class="nickname-field">
                     <span>ニックネーム</span>
                     <input data-nickname type="text" maxlength="16" placeholder="例: Sora" autocomplete="nickname" />
                 </label>
                 <div class="pass-preview" data-pass-preview>
-                    <span class="pass-label">Participation Pass</span>
+                    <span class="pass-label">Re:Shinjuku Pass</span>
                     <strong data-pass-name>Guest</strong>
-                    <small>DOOH Live Moment #042</small>
+                    <small>あなたの灯りが新宿を変えました</small>
                 </div>
                 <button class="primary-action" type="button" data-next>参加証を発行</button>
             </article>
 
             <article class="step-card" data-step="4">
                 <p class="step-kicker">Step 5 / Share</p>
-                <h2>参加証ができました</h2>
+                <h2>新宿が、生まれ変わり始めました。</h2>
                 <div class="share-pass" data-share-pass>
-                    <span>DOOH Live Moment</span>
+                    <span>Re:Shinjuku Moment</span>
                     <strong data-final-name>Guest</strong>
-                    <small>あなたの参加がビジョンに反映されました</small>
+                    <small>あなたの希望が、新宿の灯りになりました</small>
                 </div>
                 <div class="button-row">
                     <button class="primary-action" type="button" data-copy-link>共有リンクをコピー</button>
