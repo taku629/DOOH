@@ -3,11 +3,11 @@
     --muted: #65766b;
     --paper: #f8f2e9;
     --card: rgba(255, 252, 244, 0.9);
-    --accent: #ffb000;
-    --accent-dark: #ba5a00;
+    --accent: #ff6b35;
+    --accent-dark: #c9411b;
     --pink: #ff4f88;
-    --cyan: #39d9c7;
-    --mint: #bff7d2;
+    --cyan: #2fd3bf;
+    --mint: #a8e6cf;
     --line: rgba(23, 33, 27, 0.14);
     --shadow: 0 28px 90px rgba(29, 46, 36, 0.24);
 }
@@ -22,10 +22,10 @@ body {
     color: var(--ink);
     font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
     background:
-        radial-gradient(circle at 16% 12%, rgba(255, 176, 0, 0.28), transparent 24rem),
-        radial-gradient(circle at 82% 18%, rgba(57, 217, 199, 0.3), transparent 23rem),
+        radial-gradient(circle at 16% 12%, rgba(255, 107, 53, 0.26), transparent 24rem),
+        radial-gradient(circle at 82% 18%, rgba(47, 211, 191, 0.28), transparent 23rem),
         radial-gradient(circle at 64% 86%, rgba(255, 79, 136, 0.16), transparent 22rem),
-        linear-gradient(135deg, #efe8d8 0%, #f8f2e9 48%, #dbeee7 100%);
+        linear-gradient(135deg, #efe3c9 0%, #f8f2e9 48%, #dfeee3 100%);
 }
 
 body::before {
@@ -148,7 +148,7 @@ h2 {
     width: 210px;
     height: 210px;
     border-radius: 42px;
-    background: linear-gradient(135deg, rgba(255, 176, 0, 0.3), rgba(255, 79, 136, 0.18));
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.28), rgba(255, 79, 136, 0.18));
     content: "";
     transform: rotate(18deg);
 }
@@ -207,54 +207,6 @@ h2 {
     transition: opacity 220ms ease, transform 220ms ease;
 }
 
-.city-vision {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    height: 132px;
-    margin: 18px 0 22px;
-    padding: 18px 18px 0;
-    overflow: hidden;
-    border: 1px solid rgba(23, 33, 27, 0.12);
-    border-radius: 24px;
-    background:
-        linear-gradient(180deg, rgba(255, 250, 240, 0.7), rgba(23, 33, 27, 0.08)),
-        linear-gradient(90deg, rgba(23, 33, 27, 0.08), transparent);
-}
-
-.city-vision span {
-    flex: 1;
-    min-width: 22px;
-    border-radius: 8px 8px 0 0;
-    background:
-        repeating-linear-gradient(180deg, rgba(255, 250, 240, 0.18) 0 6px, transparent 6px 16px),
-        linear-gradient(180deg, rgba(23, 33, 27, 0.22), rgba(23, 33, 27, 0.72));
-}
-
-.city-vision span:nth-child(1) { height: 38%; }
-.city-vision span:nth-child(2) { height: 72%; }
-.city-vision span:nth-child(3) { height: 52%; }
-.city-vision span:nth-child(4) { height: 88%; }
-.city-vision span:nth-child(5) { height: 62%; }
-
-.city-vision.is-quiet {
-    filter: grayscale(0.65);
-}
-
-.city-vision.is-reborn {
-    background:
-        radial-gradient(circle at 70% 22%, rgba(255, 176, 0, 0.45), transparent 8rem),
-        radial-gradient(circle at 22% 78%, rgba(57, 217, 199, 0.32), transparent 9rem),
-        linear-gradient(180deg, rgba(255, 250, 240, 0.84), rgba(255, 176, 0, 0.12));
-}
-
-.city-vision.is-reborn span {
-    background:
-        repeating-linear-gradient(180deg, rgba(255, 243, 154, 0.92) 0 6px, transparent 6px 16px),
-        linear-gradient(180deg, rgba(255, 79, 136, 0.42), rgba(57, 217, 199, 0.4));
-    box-shadow: 0 0 28px rgba(255, 176, 0, 0.34);
-}
-
 .step-card.is-visible {
     opacity: 1;
     pointer-events: auto;
@@ -289,7 +241,7 @@ h2 {
 .primary-action {
     margin-top: 18px;
     color: #fffaf0;
-    background: linear-gradient(135deg, #17211b, #4d3515);
+    background: linear-gradient(135deg, var(--ink), #334336);
     box-shadow: 0 16px 34px rgba(23, 33, 27, 0.25);
 }
 
@@ -386,7 +338,7 @@ h2 {
     position: absolute;
     top: 18px;
     right: 20px;
-    color: #fff39a;
+    color: var(--mint);
     font-size: 1.9rem;
     font-weight: 900;
 }
@@ -432,7 +384,7 @@ h2 {
 
 .share-pass {
     background:
-        radial-gradient(circle at 80% 22%, rgba(255, 176, 0, 0.88), transparent 6rem),
+        radial-gradient(circle at 80% 22%, rgba(255, 107, 53, 0.8), transparent 6rem),
         radial-gradient(circle at 18% 86%, rgba(47, 211, 191, 0.45), transparent 7rem),
         linear-gradient(135deg, #17211b, #334336);
 }
