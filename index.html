@@ -33,9 +33,18 @@
             height: 100vh;
             isolation: isolate;
             background:
-                radial-gradient(circle at 75% 18%, rgba(255, 79, 136, 0.34), transparent 24rem),
-                radial-gradient(circle at 12% 78%, rgba(88, 242, 212, 0.22), transparent 30rem),
-                linear-gradient(125deg, #050505 0%, #111812 48%, #25120c 100%);
+                radial-gradient(circle at 72% 18%, rgba(45, 61, 75, 0.44), transparent 25rem),
+                radial-gradient(circle at 12% 78%, rgba(88, 242, 212, 0.1), transparent 30rem),
+                linear-gradient(125deg, #050505 0%, #0d1214 48%, #1a130f 100%);
+            transition: background 600ms ease;
+        }
+
+        .display-shell.is-reborn {
+            background:
+                radial-gradient(circle at 75% 18%, rgba(255, 79, 136, 0.38), transparent 24rem),
+                radial-gradient(circle at 12% 78%, rgba(88, 242, 212, 0.32), transparent 30rem),
+                radial-gradient(circle at 52% 52%, rgba(255, 210, 84, 0.18), transparent 26rem),
+                linear-gradient(125deg, #050505 0%, #10201f 48%, #3a170f 100%);
         }
 
         .display-shell::before {
@@ -139,6 +148,45 @@
             text-transform: uppercase;
             transform: rotate(90deg) translateX(40%);
             transform-origin: center;
+        }
+
+        .city-silhouette {
+            position: absolute;
+            right: 6vw;
+            bottom: 18vh;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            width: min(520px, 44vw);
+            height: 34vh;
+            opacity: 0.72;
+        }
+
+        .city-silhouette span {
+            flex: 1;
+            min-width: 24px;
+            border: 1px solid rgba(255, 250, 240, 0.08);
+            border-radius: 10px 10px 0 0;
+            background:
+                repeating-linear-gradient(180deg, rgba(255, 250, 240, 0.08) 0 8px, transparent 8px 20px),
+                linear-gradient(180deg, rgba(255, 250, 240, 0.08), rgba(0, 0, 0, 0.8));
+            box-shadow: 0 18px 80px rgba(0, 0, 0, 0.4);
+            transition: background 600ms ease, box-shadow 600ms ease, border-color 600ms ease;
+        }
+
+        .city-silhouette span:nth-child(1) { height: 38%; }
+        .city-silhouette span:nth-child(2) { height: 68%; }
+        .city-silhouette span:nth-child(3) { height: 48%; }
+        .city-silhouette span:nth-child(4) { height: 88%; }
+        .city-silhouette span:nth-child(5) { height: 58%; }
+        .city-silhouette span:nth-child(6) { height: 74%; }
+
+        .display-shell.is-reborn .city-silhouette span {
+            border-color: rgba(255, 250, 240, 0.22);
+            background:
+                repeating-linear-gradient(180deg, rgba(255, 230, 132, 0.9) 0 8px, transparent 8px 20px),
+                linear-gradient(180deg, rgba(255, 79, 136, 0.44), rgba(88, 242, 212, 0.18));
+            box-shadow: 0 0 42px rgba(255, 107, 53, 0.28), 0 0 80px rgba(88, 242, 212, 0.16);
         }
 
         .qr-panel {
@@ -271,7 +319,8 @@
             }
 
             .brand-strip,
-            .live-ribbon {
+            .live-ribbon,
+            .city-silhouette {
                 display: none;
             }
         }
@@ -282,16 +331,25 @@
         <video id="player" autoplay muted playsinline></video>
 
         <div class="brand-strip" aria-hidden="true">
-            <span>DOOH Live Network</span>
-            <b>Audience Reactive Ad</b>
+            <span>Shinjuku Re:Light Fund</span>
+            <b>Swipe to relight the city</b>
         </div>
 
-        <div class="live-ribbon" aria-hidden="true">Participate</div>
+        <div class="live-ribbon" aria-hidden="true">Re:Shinjuku</div>
+
+        <div class="city-silhouette" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
 
         <section class="video-fallback" id="videoFallback" aria-live="polite">
             <div>
-                <h1>広告が、参加で変わる。</h1>
-                <p>スマホからの参加を受け取り、DOOH側の映像・カウント・演出が切り替わるプロトタイプ表示です。</p>
+                <h1>新宿に、もう一度灯りを。</h1>
+                <p>あなたの募金とスワイプが、少し静かになった街に希望を送り、新しい新宿の景色を立ち上げます。</p>
             </div>
         </section>
 
@@ -299,15 +357,15 @@
             <div class="qr-placeholder" aria-hidden="true">QR</div>
             <div class="qr-copy">
                 <strong>Join from phone</strong>
-                <p>スマホでQRを読み取って参加</p>
-                <small>参加ページ: /web/participant-flow.html</small>
+                <p>QRから募金に参加して、新宿を灯す</p>
+                <small>スワイプで希望を送る</small>
             </div>
         </aside>
 
         <section class="participation-signal" id="participationSignal" aria-live="polite">
             <strong>Live participation</strong>
-            <p><span id="displayParticipantCount">0</span> joined</p>
-            <small id="displayParticipantStatus">スマホ参加を待機中</small>
+            <p><span id="displayParticipantCount">0</span> lights</p>
+            <small id="displayParticipantStatus">新宿に灯りが戻るのを待っています</small>
         </section>
     </main>
 
