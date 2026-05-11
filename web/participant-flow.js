@@ -1,158 +1,124 @@
 import { publishParticipationEvent } from "../src/participation-bridge.js";
 
-const cards = [...document.querySelectorAll("[data-step]")];
-const progressItems = [...document.querySelectorAll(".progress-item")];
-const counter = document.querySelector("[data-counter]");
-const nicknameInput = document.querySelector("[data-nickname]");
-const passName = document.querySelector("[data-pass-name]");
-const finalName = document.querySelector("[data-final-name]");
-const statusMessage = document.querySelector("[data-status-message]");
-const swipeTrack = document.querySelector("[data-swipe-track]");
-const swipeHandle = document.querySelector("[data-swipe-handle]");
+const steps = [...document.querySelectorAll(".step")];
+const progressText = document.getElementById("progressText");
+const progressBar = document.getElementById("progressBar");
+const progressElement = document.querySelector(".bar");
+const counterValue = document.getElementById("counterValue");
+const nickname = document.getElementById("nickname");
+const previewName = document.getElementById("previewName");
+const finalCard = document.getElementById("finalCard");
+const shareStatus = document.getElementById("shareStatus");
+const swipeSlider = document.getElementById("swipeSlider");
+const swipeCompleteButton = document.getElementById("swipeComplete");
 
+const totalSteps = steps.length;
 let currentStep = 0;
-let participantCount = 127;
+let participantCount = 12842;
 let hasCountedParticipation = false;
 
 function getDisplayName() {
-    const value = nicknameInput?.value.trim();
-    return value || "Guest";
+  return nickname.value.trim() || "匿名サポーター";
 }
 
-function setStep(stepIndex) {
-    currentStep = Math.max(0, Math.min(stepIndex, cards.length - 1));
+function updateProgress(index) {
+  const current = index + 1;
+  const label = steps[index]?.dataset.label || `ステップ${current}`;
 
-    cards.forEach((card, index) => {
-        card.classList.toggle("is-visible", index === currentStep);
-    });
+  progressText.textContent = `${current}/${totalSteps} ${label}`;
+  progressBar.style.width = `${(current / totalSteps) * 100}%`;
+  progressElement.setAttribute("aria-valuemax", String(totalSteps));
+  progressElement.setAttribute("aria-valuenow", String(current));
+}
 
-    progressItems.forEach((item, index) => {
-        item.classList.toggle("is-active", index === currentStep);
-        item.classList.toggle("is-complete", index < currentStep);
-    });
+function showStep(index) {
+  currentStep = index;
+  steps.forEach((step, stepIndex) => {
+    const isActive = stepIndex === index;
+    step.classList.toggle("is-active", isActive);
+    step.setAttribute("aria-hidden", String(!isActive));
+  });
 
-    if (currentStep === 2 && !hasCountedParticipation) {
-        hasCountedParticipation = true;
-        participantCount += 1;
-        counter.textContent = String(participantCount);
-        publishParticipationEvent({ name: getDisplayName() });
+  updateProgress(index);
+}
+
+function nextStep() {
+  if (currentStep < totalSteps - 1) {
+    showStep(currentStep + 1);
+  }
+}
+
+function buildFinalCard() {
+  finalCard.replaceChildren();
+
+  const label = document.createElement("p");
+  label.textContent = "SHINJUKU COLOR SUPPORTER";
+
+  const name = document.createElement("h3");
+  name.textContent = getDisplayName();
+
+  const description = document.createElement("p");
+  description.textContent = "あなたの参加で街に色が広がっています。";
+
+  finalCard.append(label, name, description);
+}
+
+function finalizeCard() {
+  buildFinalCard();
+  nextStep();
+}
+
+function markParticipationComplete() {
+  if (!hasCountedParticipation) {
+    participantCount += 1;
+    hasCountedParticipation = true;
+    counterValue.textContent = participantCount.toLocaleString("ja-JP");
+    publishParticipationEvent({ name: getDisplayName() });
+  }
+
+  nextStep();
+}
+
+async function copyShareLink() {
+  const url = location.href;
+
+  try {
+    if (!navigator.clipboard?.writeText) {
+      throw new Error("Clipboard API is unavailable.");
     }
 
-    if (currentStep >= 3) {
-        updatePassName();
-    }
-}
-
-function updatePassName() {
-    const displayName = getDisplayName();
-
-    if (passName) {
-        passName.textContent = displayName;
-    }
-
-    if (finalName) {
-        finalName.textContent = displayName;
-    }
-}
-
-function copyShareLink() {
-    const url = new URL(window.location.href);
-    url.searchParams.set("participant", getDisplayName());
-
-    navigator.clipboard?.writeText(url.toString())
-        .then(() => {
-            statusMessage.textContent = "共有リンクをコピーしました。";
-        })
-        .catch(() => {
-            statusMessage.textContent = "コピーのデモ: " + url.toString();
-        });
-}
-
-function savePassImage() {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    const displayName = getDisplayName();
-
-    canvas.width = 1200;
-    canvas.height = 630;
-
-    context.fillStyle = "#17211b";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    const gradient = context.createRadialGradient(930, 150, 40, 930, 150, 360);
-    gradient.addColorStop(0, "#ff6b35");
-    gradient.addColorStop(1, "rgba(255, 107, 53, 0)");
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    context.fillStyle = "#fffaf0";
-    context.font = "700 42px sans-serif";
-    context.fillText("DOOH Live Moment", 92, 120);
-
-    context.font = "900 104px sans-serif";
-    context.fillText(displayName, 92, 315);
-
-    context.fillStyle = "rgba(255, 250, 240, 0.72)";
-    context.font = "500 34px sans-serif";
-    context.fillText("あなたの参加がビジョンに反映されました", 92, 412);
-
-    const link = document.createElement("a");
-    link.download = "dooh-participation-pass.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-
-    statusMessage.textContent = "参加証画像を保存しました。";
-}
-
-function completeSwipe() {
-    swipeTrack.classList.add("is-complete");
-    setTimeout(() => setStep(2), 280);
+    await navigator.clipboard.writeText(url);
+    shareStatus.textContent = "リンクをコピーしました。";
+  } catch {
+    shareStatus.textContent = `コピーできませんでした。URL: ${url}`;
+  }
 }
 
 document.querySelectorAll("[data-next]").forEach((button) => {
-    button.addEventListener("click", () => setStep(currentStep + 1));
+  button.addEventListener("click", nextStep);
 });
 
-document.querySelector("[data-reset]")?.addEventListener("click", () => {
-    hasCountedParticipation = false;
-    participantCount = 127;
-    counter.textContent = String(participantCount);
-    swipeTrack.classList.remove("is-complete");
-    statusMessage.textContent = "この画面はデモです。";
-    setStep(0);
+swipeSlider.addEventListener("input", (event) => {
+  const value = Number(event.target.value);
+  const isComplete = value >= 100;
+
+  swipeCompleteButton.disabled = !isComplete;
+  swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
 });
 
-document.querySelector("[data-copy-link]")?.addEventListener("click", copyShareLink);
-document.querySelector("[data-save-image]")?.addEventListener("click", savePassImage);
-nicknameInput?.addEventListener("input", updatePassName);
+swipeCompleteButton.addEventListener("click", markParticipationComplete);
 
-swipeHandle?.addEventListener("pointerdown", (event) => {
-    const bounds = swipeTrack.getBoundingClientRect();
-    const startX = event.clientX;
-    const maxOffset = bounds.width - swipeHandle.offsetWidth - 16;
-
-    swipeHandle.setPointerCapture(event.pointerId);
-
-    function onMove(moveEvent) {
-        const offset = Math.max(0, Math.min(moveEvent.clientX - startX, maxOffset));
-        swipeHandle.style.left = `${8 + offset}px`;
-
-        if (offset > maxOffset * 0.82) {
-            swipeHandle.style.left = "";
-            swipeHandle.removeEventListener("pointermove", onMove);
-            swipeHandle.removeEventListener("pointerup", onUp);
-            completeSwipe();
-        }
-    }
-
-    function onUp() {
-        swipeHandle.style.left = "";
-        swipeHandle.removeEventListener("pointermove", onMove);
-        swipeHandle.removeEventListener("pointerup", onUp);
-    }
-
-    swipeHandle.addEventListener("pointermove", onMove);
-    swipeHandle.addEventListener("pointerup", onUp);
+nickname.addEventListener("input", () => {
+  previewName.textContent = getDisplayName();
 });
 
-setStep(0);
+document.getElementById("createCard").addEventListener("click", finalizeCard);
+document.getElementById("skipName").addEventListener("click", finalizeCard);
+
+document.getElementById("downloadBtn").addEventListener("click", () => {
+  shareStatus.textContent = "デモ版: 参加証画像の保存は次タスクで実装します。";
+});
+
+document.getElementById("shareBtn").addEventListener("click", copyShareLink);
+
+showStep(0);
