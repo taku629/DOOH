@@ -1,102 +1,69 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QR参加フロー プロトタイプ</title>
-    <link rel="stylesheet" href="./participant-flow.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shinjuku Color Project | 参加フロー</title>
+  <link rel="stylesheet" href="./participant-flow.css" />
 </head>
 <body>
-    <main class="flow-shell">
-        <section class="hero-panel" aria-labelledby="flow-title">
-            <p class="eyebrow">Live Participation Prototype</p>
-            <h1 id="flow-title">その場の空気に、スマホから参加する。</h1>
-            <p class="lead">
-                QRコードを読み取った参加者が、スワイプだけでDOOH画面上の演出に加わる体験を想定したプロトタイプです。
-            </p>
+  <main class="app" id="app">
+    <header class="progress" aria-label="進行状況">
+      <span id="progressText" aria-live="polite">1/5 はじめに</span>
+      <div class="bar" role="progressbar" aria-valuemin="1" aria-valuenow="1" aria-describedby="progressText">
+        <div id="progressBar"></div>
+      </div>
+    </header>
 
-            <ol class="progress-list" aria-label="参加ステップ">
-                <li class="progress-item is-active" data-step-label="Welcome">Welcome</li>
-                <li class="progress-item" data-step-label="Swipe">Swipe</li>
-                <li class="progress-item" data-step-label="+1">+1</li>
-                <li class="progress-item" data-step-label="Pass">Pass</li>
-                <li class="progress-item" data-step-label="Share">Share</li>
-            </ol>
-        </section>
+    <section class="step is-active" data-step="0" data-label="はじめに" aria-labelledby="welcomeTitle">
+      <h1 id="welcomeTitle">あなたの1スワイプで、新宿に色が戻る。</h1>
+      <p>所要10秒・無料で参加できます。</p>
+      <button class="primary" type="button" data-next>参加する（無料）</button>
+      <small>個人情報の登録は不要。表示名は任意です。</small>
+    </section>
 
-        <section class="participant-panel" aria-live="polite">
-            <div class="participant-topbar">
-                <span>スマホ参加ページ</span>
-                <span class="connection-dot">QR access</span>
-            </div>
+    <section class="step" data-step="1" data-label="スワイプ" aria-labelledby="swipeTitle">
+      <h2 id="swipeTitle">スワイプして灯りをともす</h2>
+      <p>下のスライダーを右に動かし、完了ボタンで参加を確定してください。</p>
+      <div class="slider-wrap">
+        <input id="swipeSlider" type="range" min="0" max="100" step="5" value="0" aria-label="参加スワイプ" aria-describedby="swipeHint" />
+      </div>
+      <p class="hint" id="swipeHint">100%まで到達すると完了ボタンを押せます。</p>
+      <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">完了して次へ</button>
+    </section>
 
-            <article class="step-card is-visible" data-step="0">
-                <p class="step-kicker">Step 1 / Welcome</p>
-                <h2>参加ページへようこそ</h2>
-                <p>
-                    大型ビジョンのQRコードからアクセスした想定です。次の画面でスワイプすると参加できます。
-                </p>
-                <button class="primary-action" type="button" data-next>はじめる</button>
-            </article>
+    <section class="step" data-step="2" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
+      <h2 id="thanksTitle">参加ありがとうございます！</h2>
+      <p>あなたの参加で <strong>+1</strong></p>
+      <p>現在の参加者数: <strong id="counterValue">12,842</strong> 人</p>
+      <button class="primary" type="button" data-next>参加証を受け取る</button>
+    </section>
 
-            <article class="step-card" data-step="1">
-                <p class="step-kicker">Step 2 / Swipe</p>
-                <h2>右へスワイプして参加</h2>
-                <p>つまみを右端まで動かすと、参加が確定します。</p>
-                <div class="swipe-track" data-swipe-track>
-                    <button class="swipe-handle" type="button" data-swipe-handle aria-label="右へスワイプして参加">
-                        →
-                    </button>
-                    <span>スワイプで参加</span>
-                </div>
-                <button class="ghost-action" type="button" data-next>デモとして次へ進む</button>
-            </article>
+    <section class="step" data-step="3" data-label="参加証作成" aria-labelledby="certificateTitle">
+      <h2 id="certificateTitle">あなたの参加証を作成</h2>
+      <label for="nickname">表示名（任意）</label>
+      <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
+      <article class="card" id="certificatePreview" aria-live="polite">
+        <p>SHINJUKU COLOR SUPPORTER</p>
+        <h3 id="previewName">匿名サポーター</h3>
+      </article>
+      <div class="actions">
+        <button class="primary" type="button" id="createCard">この名前で作成する</button>
+        <button class="ghost" type="button" id="skipName">入力しないで作成</button>
+      </div>
+    </section>
 
-            <article class="step-card" data-step="2">
-                <p class="step-kicker">Step 3 / Counter</p>
-                <h2>参加者が1人増えました</h2>
-                <div class="counter-card">
-                    <span class="counter-label">現在の参加者</span>
-                    <strong><span data-counter>127</span>人</strong>
-                    <span class="counter-plus">+1</span>
-                </div>
-                <p>参加アクションが完了し、DOOH側の人数表示に反映される想定です。</p>
-                <button class="primary-action" type="button" data-next>参加証を作る</button>
-            </article>
+    <section class="step" data-step="4" data-label="シェア" aria-labelledby="shareTitle">
+      <h2 id="shareTitle">参加証ができました！</h2>
+      <article class="card done" id="finalCard" aria-live="polite"></article>
+      <div class="actions stacked">
+        <button class="primary" type="button" id="downloadBtn">画像を保存</button>
+        <button class="ghost" type="button" id="shareBtn">リンクをコピー</button>
+      </div>
+      <p id="shareStatus" aria-live="polite"></p>
+    </section>
+  </main>
 
-            <article class="step-card" data-step="3">
-                <p class="step-kicker">Step 4 / Pass</p>
-                <h2>任意のニックネームを入力</h2>
-                <label class="nickname-field">
-                    <span>ニックネーム</span>
-                    <input data-nickname type="text" maxlength="16" placeholder="例: Sora" autocomplete="nickname" />
-                </label>
-                <div class="pass-preview" data-pass-preview>
-                    <span class="pass-label">Participation Pass</span>
-                    <strong data-pass-name>Guest</strong>
-                    <small>DOOH Live Moment #042</small>
-                </div>
-                <button class="primary-action" type="button" data-next>参加証を発行</button>
-            </article>
-
-            <article class="step-card" data-step="4">
-                <p class="step-kicker">Step 5 / Share</p>
-                <h2>参加証ができました</h2>
-                <div class="share-pass" data-share-pass>
-                    <span>DOOH Live Moment</span>
-                    <strong data-final-name>Guest</strong>
-                    <small>あなたの参加がビジョンに反映されました</small>
-                </div>
-                <div class="button-row">
-                    <button class="primary-action" type="button" data-copy-link>共有リンクをコピー</button>
-                    <button class="secondary-action" type="button" data-save-image>画像を保存</button>
-                </div>
-                <p class="status-message" data-status-message>この画面はデモです。</p>
-                <button class="ghost-action" type="button" data-reset>最初から試す</button>
-            </article>
-        </section>
-    </main>
-
-    <script type="module" src="./participant-flow.js"></script>
+  <script type="module" src="./participant-flow.js"></script>
 </body>
 </html>
