@@ -8,6 +8,15 @@
 </head>
 <body>
   <main class="app" id="app">
+    <section class="app-hero" aria-labelledby="campaignTitle">
+      <p class="eyebrow">Shinjuku Color Project</p>
+      <h1 id="campaignTitle">新宿を<br>新しく</h1>
+      <p class="lead">QRを読み取ったあなたの1スワイプが、モノクロの新宿に色を戻す参加体験です。</p>
+      <figure class="hero-visual">
+        <img src="../assets/shinjuku-relight.svg" alt="モノクロの新宿が参加によって明るく色づくビジュアル" />
+      </figure>
+    </section>
+
     <header class="progress" aria-label="進行状況">
       <span id="progressText" aria-live="polite">1/5 はじめに</span>
       <div class="bar" role="progressbar" aria-valuemin="1" aria-valuenow="1" aria-describedby="progressText">
@@ -16,13 +25,20 @@
     </header>
 
     <section class="step is-active" data-step="0" data-label="はじめに" aria-labelledby="welcomeTitle">
-      <h1 id="welcomeTitle">新宿を<br>新しく</h1>
-      <p>所要10秒・無料で参加できます。</p>
+      <span class="step-count">01</span>
+      <h2 id="welcomeTitle">待ち時間に、街を明るくする。</h2>
+      <p>所要10秒・無料で参加できます。あなたの参加がDOOH側の演出に反映されます。</p>
+      <div class="impact-strip" aria-hidden="true">
+        <span>Monochrome</span>
+        <b></b>
+        <span>Color</span>
+      </div>
       <button class="primary" type="button" data-next>参加する（無料）</button>
       <small>個人情報の登録は不要。表示名は任意です。</small>
     </section>
 
     <section class="step" data-step="1" data-label="スワイプ" aria-labelledby="swipeTitle">
+      <span class="step-count">02</span>
       <h2 id="swipeTitle">スワイプして灯りをともす</h2>
       <p>下のスライダーを右に動かし、完了ボタンで参加を確定してください。</p>
       <div class="slider-wrap">
@@ -33,14 +49,19 @@
     </section>
 
     <section class="step" data-step="2" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
-      <h2 id="thanksTitle">参加ありがとうございます！</h2>
-      <p>あなたの参加で <strong>+1</strong></p>
-      <p>現在の参加者数: <strong id="counterValue">12,842</strong> 人</p>
+      <span class="step-count">03</span>
+      <h2 id="thanksTitle">新宿に、灯りがひとつ増えました。</h2>
+      <div class="counter-box">
+        <span>集まった希望</span>
+        <strong><span id="counterValue">12,842</span>人</strong>
+        <em>+1</em>
+      </div>
       <button class="primary" type="button" data-next>参加証を受け取る</button>
     </section>
 
     <section class="step" data-step="3" data-label="参加証作成" aria-labelledby="certificateTitle">
-      <h2 id="certificateTitle">あなたの参加証を作成</h2>
+      <span class="step-count">04</span>
+      <h2 id="certificateTitle">新しい新宿に名前を残す</h2>
       <label for="nickname">表示名（任意）</label>
       <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
       <article class="card" id="certificatePreview" aria-live="polite">
@@ -54,7 +75,8 @@
     </section>
 
     <section class="step" data-step="4" data-label="シェア" aria-labelledby="shareTitle">
-      <h2 id="shareTitle">参加証ができました！</h2>
+      <span class="step-count">05</span>
+      <h2 id="shareTitle">参加証が届きました。</h2>
       <article class="card done" id="finalCard" aria-live="polite"></article>
       <div class="actions stacked">
         <button class="primary" type="button" id="downloadBtn">画像を保存</button>
