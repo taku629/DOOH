@@ -11,11 +11,14 @@ const finalCard = document.getElementById("finalCard");
 const shareStatus = document.getElementById("shareStatus");
 const swipeSlider = document.getElementById("swipeSlider");
 const swipeCompleteButton = document.getElementById("swipeComplete");
+const app = document.getElementById("app");
+const celebration = document.getElementById("celebration");
 
 const totalSteps = steps.length;
 let currentStep = 0;
 let participantCount = 12842;
 let hasCountedParticipation = false;
+let hasShownSwipeReadyEffect = false;
 
 function getDisplayName() {
   return nickname.value.trim() || "匿名サポーター";
@@ -40,6 +43,7 @@ function showStep(index) {
   });
 
   updateProgress(index);
+  app.classList.toggle("is-post-participation", index >= 2);
 }
 
 function nextStep() {
@@ -79,6 +83,20 @@ function markParticipationComplete() {
   nextStep();
 }
 
+function playCelebration() {
+  if (!celebration) {
+    return;
+  }
+
+  [...celebration.children].forEach((item, index) => {
+    item.style.setProperty("--angle", `${index * 60}deg`);
+  });
+  celebration.classList.remove("is-active");
+  void celebration.offsetWidth;
+  celebration.classList.add("is-active");
+  window.setTimeout(() => celebration.classList.remove("is-active"), 950);
+}
+
 async function copyShareLink() {
   const url = location.href;
 
@@ -101,9 +119,22 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 swipeSlider.addEventListener("input", (event) => {
   const value = Number(event.target.value);
   const isComplete = value >= 100;
+  const swipeStep = steps[1];
 
   swipeCompleteButton.disabled = !isComplete;
   swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
+
+  if (isComplete && !hasShownSwipeReadyEffect) {
+    hasShownSwipeReadyEffect = true;
+    swipeStep.classList.add("is-swipe-ready");
+    playCelebration();
+    window.setTimeout(() => swipeStep.classList.remove("is-swipe-ready"), 950);
+  }
+
+  if (!isComplete) {
+    hasShownSwipeReadyEffect = false;
+    swipeStep.classList.remove("is-swipe-ready");
+  }
 });
 
 swipeCompleteButton.addEventListener("click", markParticipationComplete);

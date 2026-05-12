@@ -36,6 +36,7 @@ input {
 }
 
 .app {
+  position: relative;
   width: min(100% - 28px, 520px);
   margin: 0 auto;
   padding: 22px 0 28px;
@@ -88,6 +89,14 @@ input {
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
+}
+
+.app.is-post-participation .app-hero {
+  display: none;
+}
+
+.app.is-post-participation {
+  padding-top: 14px;
 }
 
 .progress {
@@ -250,11 +259,135 @@ input[type="text"]:focus {
   border: 2px solid var(--line);
   border-radius: 22px;
   background: #fff;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
 }
 
 input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
+}
+
+.swipe-stage {
+  position: relative;
+  height: 92px;
+  margin: 16px 0 10px;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 24px;
+  background:
+    linear-gradient(90deg, #353535 0%, #6f6f6f 44%, #f6a340 68%, #ee6b6e 100%);
+}
+
+.light-beam {
+  position: absolute;
+  inset: 0 auto 0 -42%;
+  width: 42%;
+  background: linear-gradient(90deg, transparent, rgba(255, 250, 240, 0.82), transparent);
+  transform: skewX(-18deg);
+}
+
+.spark {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #fff5b8;
+  box-shadow: 0 0 20px #f6a340;
+  opacity: 0;
+}
+
+.spark-a {
+  right: 24%;
+  top: 22px;
+}
+
+.spark-b {
+  right: 14%;
+  top: 52px;
+}
+
+.spark-c {
+  right: 34%;
+  bottom: 18px;
+}
+
+.step.is-swipe-ready {
+  animation: readyPulse 0.9s ease both;
+}
+
+.step.is-swipe-ready .slider-wrap {
+  border-color: rgba(192, 0, 0, 0.38);
+  box-shadow: 0 0 0 6px rgba(238, 107, 110, 0.14), 0 18px 40px rgba(246, 163, 64, 0.22);
+  transform: translateY(-2px);
+}
+
+.step.is-swipe-ready .light-beam {
+  animation: sweepLight 0.82s ease-out both;
+}
+
+.step.is-swipe-ready .spark {
+  animation: popSpark 0.78s ease-out both;
+}
+
+.step.is-swipe-ready .spark-b {
+  animation-delay: 0.08s;
+}
+
+.step.is-swipe-ready .spark-c {
+  animation-delay: 0.16s;
+}
+
+.celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.celebration.is-active {
+  opacity: 1;
+}
+
+.celebration span {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  width: 12px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+}
+
+.celebration.is-active span {
+  animation: burst 0.9s ease-out forwards;
+}
+
+.celebration span:nth-child(2) {
+  background: var(--gold);
+  animation-delay: 0.04s;
+}
+
+.celebration span:nth-child(3) {
+  background: #fff4a3;
+  animation-delay: 0.08s;
+}
+
+.celebration span:nth-child(4) {
+  background: var(--blue);
+  animation-delay: 0.12s;
+}
+
+.celebration span:nth-child(5) {
+  background: #ff8d75;
+  animation-delay: 0.16s;
+}
+
+.celebration span:nth-child(6) {
+  background: #141414;
+  animation-delay: 0.2s;
 }
 
 .counter-box {
@@ -336,10 +469,63 @@ input[type="range"] {
   }
 
   .step {
-    min-height: 420px;
+    min-height: min(420px, calc(100vh - 118px));
   }
 
   .actions {
     flex-direction: column;
+  }
+}
+
+@keyframes sweepLight {
+  from {
+    transform: translateX(0) skewX(-18deg);
+  }
+
+  to {
+    transform: translateX(340%) skewX(-18deg);
+  }
+}
+
+@keyframes popSpark {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+
+  42% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.7);
+  }
+}
+
+@keyframes readyPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.015);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(0) scale(0.6);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(-48vh) scale(1.1);
   }
 }
