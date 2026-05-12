@@ -177,6 +177,10 @@ h2 {
     text-transform: uppercase;
 }
 
+.mobile-theme {
+    display: none;
+}
+
 .connection-dot::before {
     display: inline-block;
     width: 8px;
@@ -417,5 +421,35 @@ h2 {
     .participant-panel {
         min-height: calc(100vh - 56px);
         border-radius: 26px;
+    }
+
+    .mobile-theme {
+        position: relative;
+        z-index: 2;
+        display: block;
+        margin: 4px 0 20px;
+    }
+
+    .mobile-theme span {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--accent-dark);
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+    .mobile-theme strong {
+        display: block;
+        color: var(--ink);
+        font-size: clamp(3rem, 16vw, 5.8rem);
+        line-height: 0.92;
+        letter-spacing: -0.08em;
+    }
+
+    .step-card {
+        inset: 210px 18px 22px;
+        padding: 20px;
     }
 }
