@@ -41,6 +41,12 @@
       <span class="step-count">02</span>
       <h2 id="swipeTitle">スワイプして灯りをともす</h2>
       <p>下のスライダーを右に動かし、完了ボタンで参加を確定してください。</p>
+      <div class="swipe-stage" aria-hidden="true">
+        <span class="spark spark-a"></span>
+        <span class="spark spark-b"></span>
+        <span class="spark spark-c"></span>
+        <span class="light-beam"></span>
+      </div>
       <div class="slider-wrap">
         <input id="swipeSlider" type="range" min="0" max="100" step="5" value="0" aria-label="参加スワイプ" aria-describedby="swipeHint" />
       </div>
@@ -84,6 +90,9 @@
       </div>
       <p id="shareStatus" aria-live="polite"></p>
     </section>
+    <div class="celebration" id="celebration" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
   </main>
 
   <script type="module" src="./participant-flow.js"></script>
