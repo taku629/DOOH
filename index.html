@@ -6,13 +6,16 @@
     <title>DOOH Display Player</title>
     <style>
         :root {
-            --overlay: rgba(5, 8, 10, 0.72);
-            --text: #fffaf0;
-            --muted: rgba(255, 250, 240, 0.72);
-            --accent: #ff6b35;
-            --cyan: #58f2d4;
-            --pink: #ff4f88;
-            --line: rgba(255, 250, 240, 0.18);
+            --paper: #fffaf0;
+            --panel: rgba(255, 255, 255, 0.88);
+            --ink: #141414;
+            --muted: rgba(20, 20, 20, 0.62);
+            --accent: #ee6b6e;
+            --accent-strong: #c00000;
+            --gold: #f6a340;
+            --blue: #156082;
+            --line: rgba(20, 20, 20, 0.13);
+            --shadow: 0 28px 90px rgba(35, 31, 28, 0.18);
         }
 
         * {
@@ -21,8 +24,8 @@
 
         body {
             margin: 0;
-            background: #050505;
-            color: var(--text);
+            background: var(--paper);
+            color: var(--ink);
             font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
             overflow: hidden;
         }
@@ -33,28 +36,38 @@
             height: 100vh;
             isolation: isolate;
             background:
-                radial-gradient(circle at 75% 18%, rgba(255, 79, 136, 0.34), transparent 24rem),
-                radial-gradient(circle at 12% 78%, rgba(88, 242, 212, 0.22), transparent 30rem),
-                linear-gradient(125deg, #050505 0%, #111812 48%, #25120c 100%);
+                linear-gradient(rgba(20, 20, 20, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 20, 20, 0.035) 1px, transparent 1px),
+                radial-gradient(circle at 82% 18%, rgba(238, 107, 110, 0.22), transparent 24rem),
+                radial-gradient(circle at 16% 82%, rgba(246, 163, 64, 0.16), transparent 28rem),
+                linear-gradient(135deg, #fffaf0 0%, #f7eee3 48%, #efe4d4 100%);
+            background-size: 56px 56px, 56px 56px, auto, auto, auto;
         }
 
         .display-shell::before {
             position: absolute;
-            inset: 0;
+            inset: 5vw 52vw 5vw 5vw;
             z-index: -1;
             background:
-                linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-            background-size: 48px 48px;
-            mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+                linear-gradient(90deg, rgba(20, 20, 20, 0.86), rgba(20, 20, 20, 0.18)),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='540' height='360' viewBox='0 0 540 360'%3E%3Crect width='540' height='360' fill='%23d9d9d9'/%3E%3Cg fill='%23777777'%3E%3Crect x='56' y='98' width='72' height='190'/%3E%3Crect x='158' y='54' width='86' height='234'/%3E%3Crect x='276' y='124' width='70' height='164'/%3E%3Crect x='382' y='72' width='96' height='216'/%3E%3C/g%3E%3Cg fill='%23333333'%3E%3Crect x='70' y='118' width='12' height='18'/%3E%3Crect x='100' y='118' width='12' height='18'/%3E%3Crect x='176' y='82' width='12' height='18'/%3E%3Crect x='208' y='82' width='12' height='18'/%3E%3Crect x='398' y='102' width='12' height='18'/%3E%3Crect x='430' y='102' width='12' height='18'/%3E%3C/g%3E%3C/svg%3E");
+            border: 2px solid rgba(20, 20, 20, 0.88);
+            border-radius: 34px;
+            background-size: cover;
+            background-position: center;
+            box-shadow: var(--shadow);
             content: "";
         }
 
         .display-shell::after {
             position: absolute;
-            inset: 0;
+            inset: 5vw 52vw 5vw 5vw;
             z-index: -1;
-            background: linear-gradient(90deg, rgba(0, 0, 0, 0.78), transparent 48%, rgba(0, 0, 0, 0.5));
+            border-radius: 34px;
+            background:
+                radial-gradient(circle at 72% 48%, rgba(246, 163, 64, 0.55), transparent 16rem),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.18));
+            mix-blend-mode: multiply;
             content: "";
         }
 
@@ -62,36 +75,34 @@
             width: 100vw;
             height: 100vh;
             object-fit: cover;
-            background: #050505;
+            background: #141414;
         }
 
         .video-fallback {
             position: absolute;
-            inset: 0;
+            inset: 5vw 52vw 5vw 5vw;
             display: flex;
-            align-items: center;
-            padding: 7vw;
+            align-items: flex-end;
+            padding: clamp(28px, 4vw, 64px);
             text-align: left;
-            background:
-                radial-gradient(circle at 75% 34%, rgba(255, 79, 136, 0.28), transparent 18rem),
-                linear-gradient(135deg, rgba(255, 107, 53, 0.28), transparent 42%),
-                transparent;
+            border-radius: 34px;
+            color: #fffaf0;
         }
 
         .video-fallback h1 {
-            max-width: 1080px;
+            max-width: 900px;
             margin: 0;
-            text-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-            font-size: clamp(4rem, 11vw, 11rem);
-            line-height: 0.86;
-            letter-spacing: -0.1em;
+            text-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+            font-size: clamp(4rem, 8.4vw, 9.8rem);
+            line-height: 0.88;
+            letter-spacing: -0.12em;
         }
 
         .video-fallback p {
-            max-width: 760px;
-            margin: 28px 0 0;
-            color: var(--muted);
-            font-size: clamp(1rem, 2vw, 1.6rem);
+            max-width: 720px;
+            margin: 24px 0 0;
+            color: rgba(255, 250, 240, 0.86);
+            font-size: clamp(1rem, 1.6vw, 1.4rem);
             line-height: 1.7;
         }
 
@@ -104,7 +115,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 24px;
-            color: rgba(255, 250, 240, 0.86);
+            color: rgba(20, 20, 20, 0.72);
             font-size: 0.82rem;
             font-weight: 900;
             letter-spacing: 0.16em;
@@ -121,8 +132,8 @@
             width: 10px;
             height: 10px;
             border-radius: 999px;
-            background: var(--cyan);
-            box-shadow: 0 0 24px var(--cyan);
+            background: var(--accent);
+            box-shadow: 0 0 0 5px rgba(238, 107, 110, 0.16);
             content: "";
         }
 
@@ -131,9 +142,9 @@
             top: 50%;
             right: -10vw;
             padding: 14px 10vw;
-            border-block: 1px solid rgba(255, 250, 240, 0.16);
-            color: rgba(255, 250, 240, 0.36);
-            font-size: clamp(2.6rem, 7vw, 7rem);
+            border-block: 1px solid rgba(20, 20, 20, 0.12);
+            color: rgba(20, 20, 20, 0.16);
+            font-size: clamp(2.6rem, 6vw, 6rem);
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
@@ -146,32 +157,33 @@
             right: 3vw;
             bottom: 3vw;
             display: grid;
-            grid-template-columns: 112px minmax(0, 1fr);
-            gap: 18px;
-            width: min(460px, calc(100vw - 48px));
-            padding: 18px;
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            background: var(--overlay);
+            grid-template-columns: 118px minmax(0, 1fr);
+            gap: 20px;
+            width: min(500px, calc(100vw - 48px));
+            padding: 20px;
+            border: 2px solid var(--ink);
+            border-radius: 28px;
+            background: var(--panel);
             backdrop-filter: blur(18px);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+            box-shadow: var(--shadow);
         }
 
         .qr-placeholder {
             display: grid;
             place-items: center;
-            width: 112px;
-            height: 112px;
+            width: 118px;
+            height: 118px;
+            border: 2px solid var(--ink);
             border-radius: 18px;
-            color: #111812;
+            color: var(--ink);
             background:
-                linear-gradient(90deg, #111812 12px, transparent 1%) center / 28px 28px,
-                linear-gradient(#111812 12px, transparent 1%) center / 28px 28px,
-                #fffaf0;
+                linear-gradient(90deg, var(--ink) 12px, transparent 1%) center / 28px 28px,
+                linear-gradient(var(--ink) 12px, transparent 1%) center / 28px 28px,
+                #fff;
             font-size: 0.78rem;
             font-weight: 900;
             letter-spacing: 0.08em;
-            box-shadow: 0 0 0 8px rgba(255, 250, 240, 0.08);
+            box-shadow: 0 0 0 8px rgba(238, 107, 110, 0.1);
         }
 
         .qr-copy {
@@ -181,7 +193,7 @@
         .qr-copy strong {
             display: block;
             margin-bottom: 8px;
-            color: var(--accent);
+            color: var(--accent-strong);
             font-size: 0.86rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
@@ -189,7 +201,8 @@
 
         .qr-copy p {
             margin: 0;
-            font-size: 1.28rem;
+            color: var(--ink);
+            font-size: 1.36rem;
             font-weight: 800;
             line-height: 1.35;
         }
@@ -205,12 +218,12 @@
             left: 3vw;
             bottom: 3vw;
             width: min(420px, calc(100vw - 48px));
-            padding: 22px 24px;
-            border: 1px solid var(--line);
-            border-radius: 24px;
-            background: var(--overlay);
+            padding: 24px 26px;
+            border: 2px solid var(--ink);
+            border-radius: 28px;
+            background: var(--panel);
             backdrop-filter: blur(18px);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+            box-shadow: var(--shadow);
             transform: translateY(10px);
             opacity: 0.82;
             transition: opacity 180ms ease, transform 180ms ease;
@@ -224,7 +237,7 @@
         .participation-signal strong {
             display: block;
             margin-bottom: 10px;
-            color: var(--accent);
+            color: var(--accent-strong);
             font-size: 0.86rem;
             letter-spacing: 0.12em;
             text-transform: uppercase;
@@ -232,7 +245,8 @@
 
         .participation-signal p {
             margin: 0;
-            font-size: clamp(1.6rem, 4vw, 3.2rem);
+            color: var(--ink);
+            font-size: clamp(1.6rem, 3.6vw, 3rem);
             font-weight: 900;
             line-height: 1;
             letter-spacing: -0.05em;
@@ -274,6 +288,12 @@
             .live-ribbon {
                 display: none;
             }
+
+            .display-shell::before,
+            .display-shell::after,
+            .video-fallback {
+                inset: 18px 18px 46vh;
+            }
         }
     </style>
 </head>
@@ -290,24 +310,24 @@
 
         <section class="video-fallback" id="videoFallback" aria-live="polite">
             <div>
-                <h1>広告が、参加で変わる。</h1>
-                <p>スマホからの参加を受け取り、DOOH側の映像・カウント・演出が切り替わるプロトタイプ表示です。</p>
+                <h1>新宿を<br>新しく</h1>
+                <p>モノクロの新宿に、スマホからの1スワイプで色が戻っていく。待ち時間を、街を明るくする参加体験へ変えます。</p>
             </div>
         </section>
 
         <aside class="qr-panel" aria-label="スマホ参加QR案内">
             <div class="qr-placeholder" aria-hidden="true">QR</div>
             <div class="qr-copy">
-                <strong>Join from phone</strong>
-                <p>スマホでQRを読み取って参加</p>
+                <strong>1 Swipe Donate</strong>
+                <p>スマホでQRを読み取り、新宿に灯りを戻す</p>
                 <small>参加ページ: /web/participant-flow.html</small>
             </div>
         </aside>
 
         <section class="participation-signal" id="participationSignal" aria-live="polite">
-            <strong>Live participation</strong>
-            <p><span id="displayParticipantCount">0</span> joined</p>
-            <small id="displayParticipantStatus">スマホ参加を待機中</small>
+            <strong>Live Relight</strong>
+            <p><span id="displayParticipantCount">0</span> lights</p>
+            <small id="displayParticipantStatus">スマホからの参加を待機中</small>
         </section>
     </main>
 
