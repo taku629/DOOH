@@ -74,6 +74,22 @@ input {
   line-height: 1.75;
 }
 
+.hero-visual {
+  margin: 18px 0 0;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  background: #ddd;
+  box-shadow: 0 16px 38px rgba(45, 36, 30, 0.12);
+}
+
+.hero-visual img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
 .progress {
   margin-bottom: 14px;
   color: var(--muted);
