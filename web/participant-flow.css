@@ -65,6 +65,8 @@ input {
   font-size: clamp(4.1rem, 18vw, 6.8rem);
   line-height: 0.9;
   letter-spacing: -0.11em;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .lead {
@@ -531,9 +533,15 @@ input[type="range"] {
 }
 
 .no-break {
-  display: inline-block;
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
   white-space: nowrap;
   margin-left: -0.55em;
+  font-size: clamp(3.55rem, 15.6vw, 6.25rem);
+  line-height: 0.9;
+  vertical-align: baseline;
+  word-break: keep-all;
 }
 
 .quote-mark {
