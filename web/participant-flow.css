@@ -65,6 +65,8 @@ input {
   font-size: clamp(4.1rem, 18vw, 6.8rem);
   line-height: 0.9;
   letter-spacing: -0.11em;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .lead {
@@ -528,4 +530,31 @@ input[type="range"] {
     opacity: 0;
     transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(-48vh) scale(1.1);
   }
+}
+
+.no-break {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  margin-left: -0.55em;
+  font-size: clamp(3.55rem, 15.6vw, 6.25rem);
+  line-height: 0.9;
+  vertical-align: baseline;
+  word-break: keep-all;
+}
+
+.quote-mark {
+  display: inline-block;
+  width: 0.56em;
+  overflow: visible;
+  text-align: left;
+}
+
+.quote-mark-open {
+  margin-right: 0.40em;
+}
+
+.quote-mark-close {
+  margin-left: 0.12em;
 }
