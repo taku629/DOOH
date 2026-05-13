@@ -4,10 +4,13 @@ import { subscribeToParticipationEvents } from "./participation-bridge.js";
 import { getCurrentVideo } from "./scheduler.js";
 
 const player = document.querySelector("#player");
+const displayShell = document.querySelector("#displayShell");
 const fallbackView = document.querySelector("#videoFallback");
+const participationTakeover = document.querySelector("#participationTakeover");
 const participationSignal = document.querySelector("#participationSignal");
 const participantCount = document.querySelector("#displayParticipantCount");
 const participantStatus = document.querySelector("#displayParticipantStatus");
+const takeoverParticipantName = document.querySelector("#takeoverParticipantName");
 const playlistPath = "./config/playlist.json";
 
 let playlist;
@@ -38,6 +41,18 @@ function updateParticipationStatus(event) {
     participationSignal?.classList.add("is-active");
 }
 
+function showParticipationTakeover(visible, event) {
+    displayShell?.classList.toggle("is-participation-playing", visible);
+
+    if (participationTakeover) {
+        participationTakeover.hidden = !visible;
+    }
+
+    if (visible && takeoverParticipantName) {
+        takeoverParticipantName.textContent = event?.name || "匿名サポーター";
+    }
+}
+
 async function loadPlaylist() {
     const response = await fetch(playlistPath);
 
@@ -60,6 +75,8 @@ function scheduleReturnToNormal() {
 
     const returnDelay = (playlist.participationReturnSeconds || 8) * 1000;
     participationTimer = setTimeout(() => {
+        showParticipationTakeover(false);
+
         if (normalVideoPath) {
             playVideo(normalVideoPath).catch(logError);
         }
@@ -74,6 +91,7 @@ function scheduleReturnToNormal() {
 
 function handleParticipation(event) {
     updateParticipationStatus(event);
+    showParticipationTakeover(true, event);
 
     if (playlist.participationVideo) {
         playVideo(playlist.participationVideo)
