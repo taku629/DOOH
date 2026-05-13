@@ -529,3 +529,24 @@ input[type="range"] {
     transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(-48vh) scale(1.1);
   }
 }
+
+.no-break {
+  display: inline-block;
+  white-space: nowrap;
+  margin-left: -0.55em;
+}
+
+.quote-mark {
+  display: inline-block;
+  width: 0.56em;
+  overflow: visible;
+  text-align: left;
+}
+
+.quote-mark-open {
+  margin-right: 0.40em;
+}
+
+.quote-mark-close {
+  margin-left: 0.12em;
+}
