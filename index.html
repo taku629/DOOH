@@ -160,6 +160,7 @@
             position: absolute;
             right: 3vw;
             bottom: 3vw;
+            z-index: 3;
             display: grid;
             grid-template-columns: 118px minmax(0, 1fr);
             gap: 20px;
@@ -221,6 +222,7 @@
             position: absolute;
             right: 3vw;
             bottom: calc(3vw + 178px);
+            z-index: 4;
             width: min(420px, calc(100vw - 48px));
             padding: 24px 26px;
             border: 2px solid var(--ink);
@@ -263,6 +265,93 @@
             font-size: 1rem;
         }
 
+        .participation-takeover {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 6vw;
+            color: #fffaf0;
+            background:
+                radial-gradient(circle at 24% 18%, rgba(255, 244, 163, 0.8), transparent 16rem),
+                radial-gradient(circle at 78% 30%, rgba(238, 107, 110, 0.64), transparent 22rem),
+                linear-gradient(135deg, #101010 0%, #6b1f20 46%, #e97132 100%);
+        }
+
+        .participation-takeover::before,
+        .participation-takeover::after {
+            position: absolute;
+            inset: auto 0 0;
+            height: 46vh;
+            content: "";
+        }
+
+        .participation-takeover::before {
+            background:
+                linear-gradient(90deg, transparent 0 6%, #191919 6% 13%, transparent 13% 17%, #2b2b2b 17% 25%, transparent 25% 30%, #111 30% 39%, transparent 39% 44%, #363636 44% 51%, transparent 51% 58%, #202020 58% 66%, transparent 66% 72%, #151515 72% 82%, transparent 82% 100%);
+            opacity: 0.74;
+        }
+
+        .participation-takeover::after {
+            height: 100%;
+            background:
+                linear-gradient(100deg, transparent 0 36%, rgba(255, 250, 240, 0.82) 48%, transparent 60%),
+                linear-gradient(180deg, transparent 0 58%, rgba(0, 0, 0, 0.38) 100%);
+            transform: translateX(-72%);
+        }
+
+        .takeover-copy {
+            position: relative;
+            z-index: 1;
+            max-width: 980px;
+            text-align: center;
+        }
+
+        .takeover-copy strong {
+            display: block;
+            margin-bottom: 18px;
+            color: #fff4a3;
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .takeover-copy h2 {
+            margin: 0;
+            text-shadow: 0 24px 90px rgba(0, 0, 0, 0.44);
+            font-size: clamp(4rem, 10vw, 11rem);
+            line-height: 0.9;
+            letter-spacing: -0.09em;
+        }
+
+        .takeover-copy p {
+            margin: 24px auto 0;
+            max-width: 720px;
+            color: rgba(255, 250, 240, 0.86);
+            font-size: clamp(1rem, 1.6vw, 1.45rem);
+            font-weight: 800;
+            line-height: 1.65;
+        }
+
+        .display-shell.is-participation-playing .participation-takeover {
+            display: flex;
+        }
+
+        .display-shell.is-participation-playing .participation-takeover::after {
+            animation: relightSweep 1.8s ease-in-out infinite;
+        }
+
+        .display-shell.is-participation-playing .video-fallback,
+        .display-shell.is-participation-playing .qr-panel,
+        .display-shell.is-participation-playing .brand-strip,
+        .display-shell.is-participation-playing .live-ribbon {
+            opacity: 0;
+            pointer-events: none;
+        }
+
         @media (max-width: 900px) {
             .qr-panel {
                 left: 16px;
@@ -299,10 +388,24 @@
                 inset: 18px 18px 46vh;
             }
         }
+
+        @keyframes relightSweep {
+            0% {
+                transform: translateX(-72%);
+            }
+
+            55% {
+                transform: translateX(68%);
+            }
+
+            100% {
+                transform: translateX(68%);
+            }
+        }
     </style>
 </head>
 <body>
-    <main class="display-shell">
+    <main class="display-shell" id="displayShell">
         <video id="player" autoplay muted playsinline></video>
 
         <div class="brand-strip" aria-hidden="true">
@@ -316,6 +419,14 @@
             <div>
                 <h1>新宿を<br>新しく</h1>
                 <p>モノクロの新宿に、スマホからの1スワイプで色が戻っていく。待ち時間を、街を明るくする参加体験へ変えます。</p>
+            </div>
+        </section>
+
+        <section class="participation-takeover" id="participationTakeover" aria-live="polite" hidden>
+            <div class="takeover-copy">
+                <strong>Relight sequence</strong>
+                <h2>参加で<br>映像が切り替わる</h2>
+                <p><span id="takeoverParticipantName">匿名サポーター</span> さんのスワイプを受け取り、DOOH側の演出を再生しています。</p>
             </div>
         </section>
 
