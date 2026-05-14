@@ -366,9 +366,3 @@ window.addEventListener("resize", () => {
 setSwipeFill(0);
 showStep(0);
 
-const params = new URLSearchParams(location.search);
-publishSessionStart({
-  screenId: params.get("screen"),
-}).catch((error) => {
-  console.warn("Session start publish failed:", error);
-});
