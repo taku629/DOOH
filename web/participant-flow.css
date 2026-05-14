@@ -643,12 +643,14 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .counter-box strong {
-  display: block;
-  margin-top: 4px;
-  font-size: clamp(2.4rem, 11vw, 3.6rem);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.04em;
+  display: flex;
+  align-items: baseline;
+  gap: 0.08em;
+  margin-top: 6px;
+  font-size: clamp(3.6rem, 18vw, 5.6rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
   transition: transform 0.18s var(--ease-out);
 }
@@ -659,12 +661,21 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 #counterValue {
   display: inline-block;
-  min-width: 4ch;
+  min-width: 3ch;
   text-align: right;
   background: linear-gradient(180deg, #1d1d1f 0%, #2c2c2e 60%, #1d1d1f 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+.counter-box .unit {
+  font-size: 0.42em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink-secondary);
+  align-self: flex-end;
+  padding-bottom: 0.55em;
 }
 
 .counter-box em {
