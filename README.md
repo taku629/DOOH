@@ -199,21 +199,28 @@ python3 -m http.server 8000
 
 ### 参加ページの見た目を変更する
 
-`web/participant-flow.css` を編集します。  
-色、余白、カード、スライダー、アニメーションは CSS 変数とクラスで管理されています。
+参加ページのデザイントークン (色・タイポグラフィ・角丸・影・モーション) は `web/theme.css` に集約されています。コンポーネント側の CSS (`web/participant-flow.css`) はトークンを `var(--*)` 経由で参照するだけなので、**`theme.css` の `:root` を差し替えれば全体のテーマを切り替えられます**。
 
-主な CSS 変数:
+主なトークン:
 
-```css
-:root {
-  --paper: #fffaf0;
-  --ink: #151515;
-  --accent: #ee6b6e;
-  --accent-strong: #c00000;
-  --gold: #f6a340;
-  --blue: #156082;
-}
-```
+| カテゴリ | 変数 |
+| --- | --- |
+| Surface / Ink | `--bg`, `--bg-soft`, `--surface`, `--ink`, `--ink-secondary`, `--ink-tertiary`, `--separator`, `--hairline` |
+| Brand | `--accent`, `--accent-strong`, `--gold`, `--blue` |
+| Shadow | `--shadow-sm`, `--shadow-md`, `--shadow-lg` |
+| Radius | `--radius-xs`, `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl` |
+| Motion | `--ease-out`, `--ease-in-out` |
+| Typography | `--font-sans`, `--font-mono` |
+
+#### テーマを差し替える
+
+1. `web/theme.css` を開く
+2. `:root` ブロック内の値を新しいテーマの値に置き換える(変数名は変えない)
+3. 保存して push → デプロイ後、参加ページ全体が新しいテーマで描画される
+
+`theme.css` の末尾には **claude.ai 風のペーパーテーマ**のサンプル `:root` がコメントアウトで置いてあります。コメントアウトを切り替えれば 1 ファイル編集だけでテーマを差し替えられます。
+
+複数テーマを併用したい場合は、テーマごとに `theme-apple.css` / `theme-claude.css` のようにファイルを分け、`participant-flow.html` の `<link>` でロード対象を切り替える運用も可能です。
 
 ### DOOH 側の表示文言を変更する
 
