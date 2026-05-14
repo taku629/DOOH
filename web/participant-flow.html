@@ -9,16 +9,16 @@
 <body>
   <main class="app" id="app">
     <section class="app-hero" aria-labelledby="campaignTitle">
-      <p class="eyebrow">Shinjuku DOOH project</p>
+      <p class="eyebrow">Shinjuku DOOH Project</p>
       <h1 id="campaignTitle">新宿を<br><span class="no-break"><span class="quote-mark quote-mark-open">「</span>新<span class="quote-mark quote-mark-close">」</span>しく</span></h1>
-      <p class="lead">QRを読み取ったあなたの1スワイプが、<br>モノクロの新宿に色を戻す参加体験です。</p>
+      <p class="lead">QRを読み取ったあなたの1スワイプが、モノクロの新宿に色を戻す参加体験です。</p>
       <figure class="hero-visual">
         <img src="../assets/shinjuku-relight.svg" alt="モノクロの新宿が参加によって明るく色づくビジュアル" />
       </figure>
     </section>
 
     <header class="progress" aria-label="進行状況">
-      <span id="progressText" aria-live="polite">1/5 はじめに</span>
+      <span id="progressText" aria-live="polite">1 / 5 ・ はじめに</span>
       <div class="bar" role="progressbar" aria-valuemin="1" aria-valuenow="1" aria-describedby="progressText">
         <div id="progressBar"></div>
       </div>
@@ -26,9 +26,8 @@
 
     <section class="step is-active" data-step="0" data-label="はじめに" aria-labelledby="welcomeTitle">
       <span class="step-count">01</span>
-      <h2 id="welcomeTitle">待ち時間に、<br>
-          街を明るくする。</h2>
-      <p>所要10秒・無料で参加できます。<br>あなたの参加が目の前のモニターの演出に反映されます。</p>
+      <h2 id="welcomeTitle">待ち時間に、街を明るくする。</h2>
+      <p>所要10秒・無料で参加できます。あなたの参加が、目の前のモニターの演出に反映されます。</p>
       <div class="impact-strip" aria-hidden="true">
         <span>Monochrome</span>
         <b></b>
@@ -40,8 +39,8 @@
 
     <section class="step" data-step="1" data-label="スワイプ" aria-labelledby="swipeTitle">
       <span class="step-count">02</span>
-      <h2 id="swipeTitle">スワイプして<br>灯りをともす</h2>
-      <p>下のスライダーを右に動かし、<br>完了ボタンで参加を確定してください。</p>
+      <h2 id="swipeTitle">スワイプして灯りをともす</h2>
+      <p>下のスライダーを右に動かし、完了ボタンで参加を確定してください。</p>
       <div class="swipe-stage" aria-hidden="true">
         <span class="spark spark-a"></span>
         <span class="spark spark-b"></span>
@@ -57,7 +56,7 @@
 
     <section class="step" data-step="2" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
       <span class="step-count">03</span>
-      <h2 id="thanksTitle">新宿に、<br>灯りがひとつ増えました。</h2>
+      <h2 id="thanksTitle">新宿に、灯りがひとつ増えました。</h2>
       <div class="counter-box">
         <span>集まった希望</span>
         <strong><span id="counterValue">12,842</span>人</strong>
@@ -68,7 +67,7 @@
 
     <section class="step" data-step="3" data-label="参加証作成" aria-labelledby="certificateTitle">
       <span class="step-count">04</span>
-      <h2 id="certificateTitle">新しい新宿に<br>名前を残す</h2>
+      <h2 id="certificateTitle">新しい新宿に名前を残す</h2>
       <label for="nickname">表示名（任意）</label>
       <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
       <article class="card" id="certificatePreview" aria-live="polite">
@@ -83,7 +82,7 @@
 
     <section class="step" data-step="4" data-label="シェア" aria-labelledby="shareTitle">
       <span class="step-count">05</span>
-      <h2 id="shareTitle">参加証が<br>届きました。</h2>
+      <h2 id="shareTitle">参加証が届きました。</h2>
       <article class="card done" id="finalCard" aria-live="polite"></article>
       <div class="actions stacked">
         <button class="primary" type="button" id="downloadBtn">画像を保存</button>
