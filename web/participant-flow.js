@@ -143,11 +143,7 @@ function registerParticipation() {
   }
   participantCount += 1;
   hasCountedParticipation = true;
-  publishSwipeComplete({ name: getDisplayName() }).then((ref) => {
-    console.log("[DOOH] swipe published to Firebase:", ref?.key);
-  }).catch((err) => {
-    console.error("[DOOH] swipe publish failed:", err);
-  });
+  publishSwipeComplete({ name: getDisplayName() });
 }
 
 function markParticipationComplete() {
