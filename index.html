@@ -93,6 +93,21 @@
             box-shadow: var(--shadow);
         }
 
+        .pending-badge {
+            position: absolute;
+            top: clamp(20px, 3vw, 48px);
+            left: clamp(20px, 3vw, 48px);
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(255, 250, 240, 0.12);
+            border: 1.5px solid rgba(255, 250, 240, 0.35);
+            color: rgba(255, 250, 240, 0.75);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            backdrop-filter: blur(8px);
+        }
+
         .video-fallback h1 {
             max-width: 900px;
             margin: 0;
@@ -422,6 +437,7 @@
         <div class="live-ribbon" aria-hidden="true">Participate</div>
 
         <section class="video-fallback" id="videoFallback" aria-live="polite">
+            <div class="pending-badge" aria-label="映像保留中">● 映像 保留中</div>
             <div>
                 <h1>新宿を<br>新しく</h1>
                 <p>モノクロの新宿に、スマホからの1スワイプで色が戻っていく。待ち時間を、街を明るくする参加体験へ変えます。</p>
