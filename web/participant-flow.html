@@ -24,72 +24,79 @@
       </div>
     </header>
 
-    <section class="step is-active" data-step="0" data-label="はじめに" aria-labelledby="welcomeTitle">
-      <span class="step-count">01</span>
-      <h2 id="welcomeTitle">待ち時間に、街を明るくする。</h2>
-      <p>所要10秒・無料で参加できます。あなたの参加が、目の前のモニターの演出に反映されます。</p>
-      <div class="impact-strip" aria-hidden="true">
-        <span>Monochrome</span>
-        <b></b>
-        <span>Color</span>
-      </div>
-      <button class="primary" type="button" data-next>参加する（無料）</button>
-      <small>個人情報の登録は不要。表示名は任意です。</small>
-    </section>
+    <div class="viewport" id="viewport">
+      <div class="track" id="track">
+        <section class="step is-current" data-step="0" data-label="はじめに" aria-labelledby="welcomeTitle">
+          <span class="step-count">01</span>
+          <h2 id="welcomeTitle">待ち時間に、街を明るくする。</h2>
+          <p>所要10秒・無料で参加できます。あなたの参加が、目の前のモニターの演出に反映されます。</p>
+          <div class="impact-strip" aria-hidden="true">
+            <span>Monochrome</span>
+            <b></b>
+            <span>Color</span>
+          </div>
+          <button class="primary" type="button" data-next>参加する（無料）</button>
+          <small>個人情報の登録は不要。表示名は任意です。</small>
+        </section>
 
-    <section class="step" data-step="1" data-label="スワイプ" aria-labelledby="swipeTitle">
-      <span class="step-count">02</span>
-      <h2 id="swipeTitle">スワイプして灯りをともす</h2>
-      <p>下のスライダーを右に動かし、完了ボタンで参加を確定してください。</p>
-      <div class="swipe-stage" aria-hidden="true">
-        <span class="spark spark-a"></span>
-        <span class="spark spark-b"></span>
-        <span class="spark spark-c"></span>
-        <span class="light-beam"></span>
-      </div>
-      <div class="slider-wrap">
-        <input id="swipeSlider" type="range" min="0" max="100" step="5" value="0" aria-label="参加スワイプ" aria-describedby="swipeHint" />
-      </div>
-      <p class="hint" id="swipeHint">100%まで到達すると完了ボタンを押せます。</p>
-      <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">完了して次へ</button>
-    </section>
+        <section class="step" data-step="1" data-label="スワイプ" aria-labelledby="swipeTitle">
+          <span class="step-count">02</span>
+          <h2 id="swipeTitle">スワイプして灯りをともす</h2>
+          <p>下のスライダーを右に動かし、完了ボタンで参加を確定してください。</p>
+          <div class="swipe-stage" aria-hidden="true">
+            <span class="spark spark-a"></span>
+            <span class="spark spark-b"></span>
+            <span class="spark spark-c"></span>
+            <span class="light-beam"></span>
+          </div>
+          <div class="slider-wrap">
+            <input id="swipeSlider" type="range" min="0" max="100" step="5" value="0" aria-label="参加スワイプ" aria-describedby="swipeHint" />
+          </div>
+          <p class="hint" id="swipeHint">100%まで到達すると完了ボタンを押せます。</p>
+          <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">完了して次へ</button>
+        </section>
 
-    <section class="step" data-step="2" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
-      <span class="step-count">03</span>
-      <h2 id="thanksTitle">新宿に、灯りがひとつ増えました。</h2>
-      <div class="counter-box">
-        <span>集まった希望</span>
-        <strong><span id="counterValue">12,842</span>人</strong>
-        <em>+1</em>
-      </div>
-      <button class="primary" type="button" data-next>参加証を受け取る</button>
-    </section>
+        <section class="step" data-step="2" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
+          <span class="step-count">03</span>
+          <h2 id="thanksTitle">新宿に、灯りがひとつ増えました。</h2>
+          <div class="counter-box" id="counterBox">
+            <span>集まった希望</span>
+            <strong><span id="counterValue">1</span>人</strong>
+            <em>+1</em>
+          </div>
+          <button class="primary" type="button" data-next>参加証を受け取る</button>
+        </section>
 
-    <section class="step" data-step="3" data-label="参加証作成" aria-labelledby="certificateTitle">
-      <span class="step-count">04</span>
-      <h2 id="certificateTitle">新しい新宿に名前を残す</h2>
-      <label for="nickname">表示名（任意）</label>
-      <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
-      <article class="card" id="certificatePreview" aria-live="polite">
-        <p>SHINJUKU COLOR SUPPORTER</p>
-        <h3 id="previewName">匿名サポーター</h3>
-      </article>
-      <div class="actions">
-        <button class="primary" type="button" id="createCard">この名前で作成する</button>
-        <button class="ghost" type="button" id="skipName">入力しないで作成</button>
-      </div>
-    </section>
+        <section class="step" data-step="3" data-label="参加証作成" aria-labelledby="certificateTitle">
+          <span class="step-count">04</span>
+          <h2 id="certificateTitle">新しい新宿に名前を残す</h2>
+          <label for="nickname">表示名（任意）</label>
+          <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
+          <article class="card" id="certificatePreview" aria-live="polite">
+            <p>SHINJUKU COLOR SUPPORTER</p>
+            <h3 id="previewName">匿名サポーター</h3>
+          </article>
+          <div class="actions">
+            <button class="primary" type="button" id="createCard">この名前で作成する</button>
+            <button class="ghost" type="button" id="skipName">入力しないで作成</button>
+          </div>
+        </section>
 
-    <section class="step" data-step="4" data-label="シェア" aria-labelledby="shareTitle">
-      <span class="step-count">05</span>
-      <h2 id="shareTitle">参加証が届きました。</h2>
-      <article class="card done" id="finalCard" aria-live="polite"></article>
-      <div class="actions stacked">
-        <button class="primary" type="button" id="downloadBtn">画像を保存</button>
-        <button class="ghost" type="button" id="shareBtn">リンクをコピー</button>
+        <section class="step" data-step="4" data-label="シェア" aria-labelledby="shareTitle">
+          <span class="step-count">05</span>
+          <h2 id="shareTitle">参加証が届きました。</h2>
+          <article class="card done" id="finalCard" aria-live="polite"></article>
+          <div class="actions stacked">
+            <button class="primary" type="button" id="downloadBtn">画像を保存</button>
+            <button class="ghost" type="button" id="shareBtn">リンクをコピー</button>
+          </div>
+          <p id="shareStatus" aria-live="polite"></p>
+        </section>
       </div>
-      <p id="shareStatus" aria-live="polite"></p>
-    </section>
+    </div>
+
+    <p class="swipe-hint" id="swipeHintNav" aria-hidden="true">左右にスワイプ</p>
+
     <div class="celebration" id="celebration" aria-hidden="true">
       <span></span><span></span><span></span><span></span><span></span><span></span>
     </div>

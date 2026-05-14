@@ -25,6 +25,9 @@
   --radius-lg: 24px;
   --radius-xl: 28px;
 
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
   --font-sans:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
     "Helvetica Neue", "Hiragino Sans", "Yu Gothic", "Noto Sans JP",
@@ -180,25 +183,58 @@ button {
   height: 100%;
   border-radius: inherit;
   background: var(--ink);
-  transition: width 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: width 0.6s var(--ease-out);
+}
+
+/* Slide viewport ------------------------------------------------------ */
+
+.viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.viewport::before {
+  position: absolute;
+  inset: auto -10% -60% -10%;
+  height: 220px;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(238, 107, 110, 0.08),
+    transparent 70%
+  );
+  content: "";
+}
+
+.track {
+  display: flex;
+  width: 100%;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.7s var(--ease-out);
+  will-change: transform;
+}
+
+.track.is-dragging {
+  transition: none;
 }
 
 /* Step card ----------------------------------------------------------- */
 
 .step {
   position: relative;
-  display: none;
-  flex-direction: column;
-  min-height: 440px;
-  padding: 28px 26px 26px;
-  border-radius: var(--radius-xl);
-  background: var(--surface);
-  box-shadow: var(--shadow-md);
-}
-
-.step.is-active {
+  flex: 0 0 100%;
   display: flex;
-  animation: stepIn 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  flex-direction: column;
+  min-height: 460px;
+  padding: 28px 26px 26px;
+  z-index: 1;
 }
 
 .step-count {
@@ -226,7 +262,7 @@ h2 {
   margin: 0 0 14px;
   font-size: clamp(1.7rem, 7.6vw, 2.4rem);
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -0.035em;
   color: var(--ink);
 }
@@ -273,6 +309,53 @@ label {
   border-radius: 999px;
   background: linear-gradient(90deg, #c7c7cc, var(--gold) 60%, var(--accent));
 }
+
+/* Entry animations: staggered reveal once the step becomes current ---- */
+
+.step > .step-count,
+.step > h2,
+.step > p,
+.step > label,
+.step > input[type="text"],
+.step > .impact-strip,
+.step > .swipe-stage,
+.step > .slider-wrap,
+.step > .hint,
+.step > .counter-box,
+.step > .card,
+.step > .actions,
+.step > .primary,
+.step > .ghost,
+.step > small,
+.step > #shareStatus {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.55s var(--ease-out),
+    transform 0.55s var(--ease-out);
+}
+
+.step.is-current > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.step.is-current > .step-count        { transition-delay: 0.02s; }
+.step.is-current > h2                  { transition-delay: 0.08s; }
+.step.is-current > p                   { transition-delay: 0.14s; }
+.step.is-current > label               { transition-delay: 0.16s; }
+.step.is-current > input[type="text"]  { transition-delay: 0.20s; }
+.step.is-current > .impact-strip       { transition-delay: 0.22s; }
+.step.is-current > .swipe-stage        { transition-delay: 0.20s; }
+.step.is-current > .slider-wrap        { transition-delay: 0.28s; }
+.step.is-current > .hint               { transition-delay: 0.32s; }
+.step.is-current > .counter-box        { transition-delay: 0.22s; }
+.step.is-current > .card               { transition-delay: 0.26s; }
+.step.is-current > .actions            { transition-delay: 0.34s; }
+.step.is-current > .primary            { transition-delay: 0.34s; }
+.step.is-current > .ghost              { transition-delay: 0.38s; }
+.step.is-current > small               { transition-delay: 0.4s; }
+.step.is-current > #shareStatus        { transition-delay: 0.42s; }
 
 /* Buttons ------------------------------------------------------------- */
 
@@ -529,6 +612,26 @@ input[type="range"]:active::-webkit-slider-thumb {
   border-radius: var(--radius-lg);
   background: var(--bg-soft);
   box-shadow: inset 0 0 0 1px var(--hairline);
+  overflow: hidden;
+}
+
+.counter-box::after {
+  position: absolute;
+  inset: -50% -10% auto auto;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(238, 107, 110, 0.16), transparent 60%);
+  content: "";
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.6s var(--ease-out), transform 0.8s var(--ease-out);
+}
+
+.counter-box.is-counting::after {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .counter-box span {
@@ -547,6 +650,21 @@ input[type="range"]:active::-webkit-slider-thumb {
   line-height: 1;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
+  transition: transform 0.18s var(--ease-out);
+}
+
+.counter-box.is-counting strong {
+  transform: scale(1.04);
+}
+
+#counterValue {
+  display: inline-block;
+  min-width: 4ch;
+  text-align: right;
+  background: linear-gradient(180deg, #1d1d1f 0%, #2c2c2e 60%, #1d1d1f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .counter-box em {
@@ -561,6 +679,15 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-style: normal;
   font-weight: 600;
   letter-spacing: 0.04em;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.9);
+  transition: opacity 0.3s var(--ease-out), transform 0.3s var(--ease-out);
+}
+
+.counter-box.is-counted em {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: counterBadgePulse 0.6s var(--ease-out) 0.05s 1;
 }
 
 /* Certificate card ---------------------------------------------------- */
@@ -629,6 +756,45 @@ input[type="range"]:active::-webkit-slider-thumb {
   color: var(--ink-secondary);
   font-size: 0.86rem;
   font-weight: 500;
+}
+
+/* Swipe hint (bottom of viewport) ------------------------------------ */
+
+.swipe-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 0;
+  color: var(--ink-tertiary);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+  transition: opacity 0.3s var(--ease-out);
+}
+
+.swipe-hint::before,
+.swipe-hint::after {
+  width: 22px;
+  height: 1px;
+  background: var(--ink-tertiary);
+  content: "";
+  animation: hintArrow 1.6s var(--ease-in-out) infinite;
+}
+
+.swipe-hint::before {
+  transform-origin: right center;
+}
+
+.swipe-hint::after {
+  transform-origin: left center;
+  animation-delay: 0.2s;
+}
+
+.app.is-share-ready .swipe-hint {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Celebration burst --------------------------------------------------- */
@@ -724,12 +890,12 @@ input[type="range"]:active::-webkit-slider-thumb {
   }
 
   .app-hero,
-  .step {
+  .viewport {
     border-radius: var(--radius-lg);
   }
 
   .step {
-    min-height: min(440px, calc(100vh - 130px));
+    min-height: min(460px, calc(100vh - 168px));
     padding: 24px 22px 22px;
   }
 
@@ -739,17 +905,6 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 /* Animations ---------------------------------------------------------- */
-
-@keyframes stepIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 @keyframes sweepLight {
   from {
@@ -788,12 +943,42 @@ input[type="range"]:active::-webkit-slider-thumb {
   }
 }
 
+@keyframes hintArrow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleX(0.5);
+    opacity: 1;
+  }
+}
+
+@keyframes counterBadgePulse {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(0) scale(1.12);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .step.is-active,
+  .track,
+  .step > *,
   #progressBar,
   .primary,
-  .ghost {
-    animation: none;
-    transition: none;
+  .ghost,
+  .counter-box::after,
+  .counter-box strong,
+  .counter-box em,
+  .swipe-hint::before,
+  .swipe-hint::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
