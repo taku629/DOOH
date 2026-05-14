@@ -138,11 +138,12 @@ async function startPlayer() {
 
         await playVideo(normalVideoPath);
         subscribeToParticipationEvents(handleParticipation);
-        subscribeToSwipeCompletes((event) => handleParticipation({ name: event?.name || "参加者" })).catch(logError);
     } catch (error) {
         showFallbackView(true);
         logError(error);
     }
+
+    subscribeToSwipeCompletes((event) => handleParticipation({ name: event?.name || "参加者" })).catch(logError);
 }
 
 startPlayer();
