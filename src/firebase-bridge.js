@@ -12,6 +12,7 @@ import {
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
 const SESSIONS_PATH = "sessions";
+const SWIPES_PATH = "swipes";
 
 let configPromise;
 let databasePromise;
@@ -74,6 +75,57 @@ export async function publishSessionStart(payload = {}) {
         name: payload.name ?? null,
         userAgent:
             typeof navigator !== "undefined" ? navigator.userAgent : null,
+    });
+}
+
+export async function publishSwipeComplete(payload = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return null;
+    }
+
+    const swipesRef = ref(database, SWIPES_PATH);
+    return push(swipesRef, {
+        type: "swipe-completed",
+        createdAt: serverTimestamp(),
+        name: payload.name ?? null,
+        userAgent:
+            typeof navigator !== "undefined" ? navigator.userAgent : null,
+    });
+}
+
+export async function subscribeToSwipeCompletes(callback) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return () => {};
+    }
+
+    const swipesRef = ref(database, SWIPES_PATH);
+    const knownIds = new Set();
+
+    try {
+        const snapshot = await get(swipesRef);
+        if (snapshot.exists()) {
+            snapshot.forEach((child) => {
+                knownIds.add(child.key);
+            });
+        }
+    } catch (error) {
+        console.warn("[firebase] initial swipes fetch failed:", error);
+    }
+
+    return onChildAdded(swipesRef, (snap) => {
+        if (knownIds.has(snap.key)) {
+            return;
+        }
+        knownIds.add(snap.key);
+
+        const data = snap.val();
+        if (!data || data.type !== "swipe-completed") {
+            return;
+        }
+
+        callback({ id: snap.key, ...data });
     });
 }
 

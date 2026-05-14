@@ -1,5 +1,4 @@
-import { publishSessionStart } from "../src/firebase-bridge.js";
-import { publishParticipationEvent } from "../src/participation-bridge.js";
+import { publishSwipeComplete } from "../src/firebase-bridge.js";
 
 const steps = [...document.querySelectorAll(".step")];
 const progressText = document.getElementById("progressText");
@@ -144,7 +143,7 @@ function registerParticipation() {
   }
   participantCount += 1;
   hasCountedParticipation = true;
-  publishParticipationEvent({ name: getDisplayName() });
+  publishSwipeComplete({ name: getDisplayName() });
 }
 
 function markParticipationComplete() {

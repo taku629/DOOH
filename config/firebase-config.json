@@ -1,9 +1,10 @@
 {
-    "apiKey": "REPLACE_ME_WITH_YOUR_FIREBASE_API_KEY",
-    "authDomain": "REPLACE_ME.firebaseapp.com",
-    "databaseURL": "https://REPLACE_ME-default-rtdb.firebaseio.com",
-    "projectId": "REPLACE_ME",
-    "storageBucket": "REPLACE_ME.appspot.com",
-    "messagingSenderId": "REPLACE_ME",
-    "appId": "REPLACE_ME"
+  "apiKey": "AIzaSyC-XoBfqV8kgrgLeiCYjQNjP9oBQ_Exlwc",
+  "authDomain": "dooh-ca9c2.firebaseapp.com",
+  "databaseURL": "https://dooh-ca9c2-default-rtdb.asia-southeast1.firebasedatabase.app",
+  "projectId": "dooh-ca9c2",
+  "storageBucket": "dooh-ca9c2.firebasestorage.app",
+  "messagingSenderId": "574981916409",
+  "appId": "1:574981916409:web:4bcc056dabee785b6dc428",
+  "measurementId": "G-E777KZVWPY"
 }
