@@ -634,7 +634,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   transform: scale(1);
 }
 
-.counter-box span {
+.counter-box > span {
   display: block;
   color: var(--ink-tertiary);
   font-size: 0.78rem;
