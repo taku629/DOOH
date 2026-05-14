@@ -255,12 +255,74 @@ DOOH 表示プレイヤーの中心となるモジュールです。
 - リンクコピー
 - 参加イベントの送信
 
+## Firebase 連携(クロス端末同期)
+
+DOOH 画面とスマホ参加ページを **別端末で動かす**ためには Firebase Realtime Database を経由します。同一ブラウザ・同一オリジンでの同期は `participation-bridge.js` (localStorage + BroadcastChannel) でこれまで通り動きます。
+
+### セットアップ手順
+
+1. https://console.firebase.google.com/ で新規プロジェクトを作成
+2. **Build → Realtime Database → データベースを作成** で「テストモードで開始」を選択(30日間は誰でも読み書き可能)
+3. **プロジェクト設定 → 全般 → マイアプリ → Web** で「ウェブアプリの追加」
+4. 表示される `firebaseConfig` の値を `config/firebase-config.json` に上書きで保存:
+
+   ```json
+   {
+     "apiKey": "AIzaSy...",
+     "authDomain": "your-project.firebaseapp.com",
+     "databaseURL": "https://your-project-default-rtdb.firebaseio.com",
+     "projectId": "your-project",
+     "storageBucket": "your-project.appspot.com",
+     "messagingSenderId": "...",
+     "appId": "..."
+   }
+   ```
+
+5. **プロジェクト設定 → 全般 → 承認済みドメイン** に、デプロイ先(`taku629.github.io`)とローカル開発用(`localhost`)を追加
+6. main にコミット & push (GitHub Actions が `gh-pages` に同期しデプロイ)
+
+### 動作
+
+- DOOH 画面 (`index.html`) を開くと、参加ページの URL を埋め込んだ QR コードが自動生成されます
+- スマホでQRを読み取ると参加ページ (`web/participant-flow.html`) が開き、**読み込んだ瞬間** に `sessions` パスへ `session-started` イベントを書き込みます
+- DOOH 画面は新しいイベントを Firebase の `onChildAdded` で受信し、「参加演出のテイクオーバー画面 + 参加動画」に切り替えます
+- `config/playlist.json` の `participationReturnSeconds` 秒後に通常映像に戻ります
+- 同じテイクオーバーが既に再生中ならイベントは無視されます (高速なリスキャンによる点滅防止)
+
+### イベント例
+
+```json
+{
+  "type": "session-started",
+  "createdAt": 1715662800123,
+  "screenId": null,
+  "name": null,
+  "userAgent": "Mozilla/5.0 (iPhone; ...)"
+}
+```
+
+### 注意
+
+- `config/firebase-config.json` の値はクライアント側で公開されます。これは Firebase の設計通りで秘密ではありませんが、**Security Rules** (`Database → ルール`) で書き込みを必ず制限してください:
+
+  ```json
+  {
+    "rules": {
+      "sessions": {
+        ".read": true,
+        ".write": "newData.child('type').val() === 'session-started' && !data.exists()"
+      }
+    }
+  }
+  ```
+
+- 設定値が未入力(`REPLACE_ME` のまま)の場合、Firebase 連携は自動で無効になり、localStorage/BroadcastChannel ベースの同一オリジン連携だけが動きます
+
 ## 現在の制限事項
 
-- QR コードは実画像ではなくプレースホルダー表示です。
 - `downloadBtn` の「画像を保存」はデモ表示のみで、実際の画像生成は未実装です。
 - 参加数はブラウザ上のデモ値であり、サーバー永続化はありません。
-- 参加イベントは同一オリジンのブラウザタブ間連携です。別端末間でリアルタイム同期するには、WebSocket、SSE、Firebase、Supabase などのバックエンド連携が必要です。
+- 参加完了(スワイプ100%)時の `+1` カウンター更新は、現状 `participation-bridge.js` 経由の同一オリジン連携のみで、Firebase 経由のクロス端末同期は QR スキャン時(`session-started`) のみ対応しています。
 - `playlist.json` はルート直下にもありますが、現在プレイヤーが読み込むのは `config/playlist.json` です。
 - `src/condition-manager.js` と `src/fallback-manager.js` は現在空ファイルです。
 
