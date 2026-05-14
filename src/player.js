@@ -1,5 +1,5 @@
 import { playFallback } from "./fallback-handler.js";
-import { subscribeToSessionStarts } from "./firebase-bridge.js";
+import { subscribeToSwipeCompletes } from "./firebase-bridge.js";
 import { logError, logPlayback } from "./logger.js";
 import { subscribeToParticipationEvents } from "./participation-bridge.js";
 import { getCurrentVideo } from "./scheduler.js";
@@ -138,7 +138,7 @@ async function startPlayer() {
 
         await playVideo(normalVideoPath);
         subscribeToParticipationEvents(handleParticipation);
-        subscribeToSessionStarts(handleRemoteSessionStart).catch(logError);
+        subscribeToSwipeCompletes((event) => handleParticipation({ name: event?.name || "参加者" })).catch(logError);
     } catch (error) {
         showFallbackView(true);
         logError(error);
