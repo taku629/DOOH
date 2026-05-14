@@ -1,3 +1,4 @@
+import { publishSessionStart } from "../src/firebase-bridge.js";
 import { publishParticipationEvent } from "../src/participation-bridge.js";
 
 const steps = [...document.querySelectorAll(".step")];
@@ -365,3 +366,10 @@ window.addEventListener("resize", () => {
 
 setSwipeFill(0);
 showStep(0);
+
+const params = new URLSearchParams(location.search);
+publishSessionStart({
+  screenId: params.get("screen"),
+}).catch((error) => {
+  console.warn("Session start publish failed:", error);
+});

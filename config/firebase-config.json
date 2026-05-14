@@ -1,0 +1,9 @@
+{
+    "apiKey": "REPLACE_ME_WITH_YOUR_FIREBASE_API_KEY",
+    "authDomain": "REPLACE_ME.firebaseapp.com",
+    "databaseURL": "https://REPLACE_ME-default-rtdb.firebaseio.com",
+    "projectId": "REPLACE_ME",
+    "storageBucket": "REPLACE_ME.appspot.com",
+    "messagingSenderId": "REPLACE_ME",
+    "appId": "REPLACE_ME"
+}
