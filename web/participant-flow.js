@@ -28,7 +28,7 @@ function updateProgress(index) {
   const current = index + 1;
   const label = steps[index]?.dataset.label || `ステップ${current}`;
 
-  progressText.textContent = `${current}/${totalSteps} ${label}`;
+  progressText.textContent = `${current} / ${totalSteps} ・ ${label}`;
   progressBar.style.width = `${(current / totalSteps) * 100}%`;
   progressElement.setAttribute("aria-valuemax", String(totalSteps));
   progressElement.setAttribute("aria-valuenow", String(current));
@@ -116,11 +116,18 @@ document.querySelectorAll("[data-next]").forEach((button) => {
   button.addEventListener("click", nextStep);
 });
 
+function setSwipeFill(value) {
+  swipeSlider.style.setProperty("--swipe-fill", `${value}%`);
+}
+
+setSwipeFill(0);
+
 swipeSlider.addEventListener("input", (event) => {
   const value = Number(event.target.value);
   const isComplete = value >= 100;
   const swipeStep = steps[1];
 
+  setSwipeFill(value);
   swipeCompleteButton.disabled = !isComplete;
   swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
 
