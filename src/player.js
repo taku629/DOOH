@@ -143,7 +143,12 @@ async function startPlayer() {
         logError(error);
     }
 
-    subscribeToSwipeCompletes((event) => handleParticipation({ name: event?.name || "参加者" })).catch(logError);
+    subscribeToSwipeCompletes((event) => {
+        console.log("[DOOH] swipe received from Firebase:", event);
+        handleParticipation({ name: event?.name || "参加者" });
+    }).then(() => {
+        console.log("[DOOH] Firebase swipe subscription ready");
+    }).catch(logError);
 }
 
 startPlayer();
