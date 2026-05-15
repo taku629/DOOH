@@ -108,12 +108,6 @@ function handleParticipation(event) {
     scheduleReturnToNormal();
 }
 
-function handleRemoteSessionStart(event) {
-    handleParticipation({
-        name: event?.name || "リモート参加者",
-    });
-}
-
 async function startPlayer() {
     if (!player) {
         throw new Error("Video player element was not found.");
