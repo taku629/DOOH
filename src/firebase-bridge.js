@@ -11,7 +11,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
-const SESSIONS_PATH = "sessions";
 const SWIPES_PATH = "swipes";
 
 let configPromise;
@@ -61,23 +60,6 @@ async function ensureDatabase() {
     return databasePromise;
 }
 
-export async function publishSessionStart(payload = {}) {
-    const database = await ensureDatabase();
-    if (!database) {
-        return null;
-    }
-
-    const sessionsRef = ref(database, SESSIONS_PATH);
-    return push(sessionsRef, {
-        type: "session-started",
-        createdAt: serverTimestamp(),
-        screenId: payload.screenId ?? null,
-        name: payload.name ?? null,
-        userAgent:
-            typeof navigator !== "undefined" ? navigator.userAgent : null,
-    });
-}
-
 export async function publishSwipeComplete(payload = {}) {
     const database = await ensureDatabase();
     if (!database) {
@@ -122,41 +104,6 @@ export async function subscribeToSwipeCompletes(callback) {
 
         const data = snap.val();
         if (!data || data.type !== "swipe-completed") {
-            return;
-        }
-
-        callback({ id: snap.key, ...data });
-    });
-}
-
-export async function subscribeToSessionStarts(callback) {
-    const database = await ensureDatabase();
-    if (!database) {
-        return () => {};
-    }
-
-    const sessionsRef = ref(database, SESSIONS_PATH);
-    const knownIds = new Set();
-
-    try {
-        const snapshot = await get(sessionsRef);
-        if (snapshot.exists()) {
-            snapshot.forEach((child) => {
-                knownIds.add(child.key);
-            });
-        }
-    } catch (error) {
-        console.warn("[firebase] initial sessions fetch failed:", error);
-    }
-
-    return onChildAdded(sessionsRef, (snap) => {
-        if (knownIds.has(snap.key)) {
-            return;
-        }
-        knownIds.add(snap.key);
-
-        const data = snap.val();
-        if (!data || data.type !== "session-started") {
             return;
         }
 
