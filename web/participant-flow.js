@@ -6,12 +6,15 @@ const progressBar = document.getElementById("progressBar");
 const progressElement = document.querySelector(".bar");
 const counterValue = document.getElementById("counterValue");
 const counterBox = document.getElementById("counterBox");
+const counterBadge = counterBox?.querySelector("em");
 const nickname = document.getElementById("nickname");
 const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
 const shareStatus = document.getElementById("shareStatus");
 const swipeSlider = document.getElementById("swipeSlider");
 const swipeCompleteButton = document.getElementById("swipeComplete");
+const swipeHint = document.getElementById("swipeHint");
+const thanksTitle = document.getElementById("thanksTitle");
 const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
 const app = document.getElementById("app");
@@ -19,6 +22,7 @@ const celebration = document.getElementById("celebration");
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
+const PARTICIPATION_STORAGE_KEY = "dooh:participant-flow:participated";
 
 let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
@@ -26,6 +30,7 @@ let hasCountedParticipation = false;
 let hasShownSwipeReadyEffect = false;
 let hasAnimatedCounter = false;
 let isFinalCardBuilt = false;
+let isRegisteringParticipation = false;
 
 const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
@@ -33,6 +38,46 @@ const prefersReducedMotion = window.matchMedia(
 
 function getDisplayName() {
   return nickname.value.trim() || "匿名サポーター";
+}
+
+function hasStoredParticipation() {
+  try {
+    return localStorage.getItem(PARTICIPATION_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function storeParticipation() {
+  try {
+    localStorage.setItem(PARTICIPATION_STORAGE_KEY, "true");
+  } catch {
+    /* Storage can be unavailable in private browsing; Firebase remains source of truth. */
+  }
+}
+
+function applyStoredParticipationState() {
+  if (!hasStoredParticipation()) {
+    return;
+  }
+
+  hasCountedParticipation = true;
+  swipeSlider.value = "100";
+  swipeSlider.disabled = true;
+  setSwipeFill(100);
+  swipeCompleteButton.disabled = false;
+  swipeCompleteButton.setAttribute("aria-disabled", "false");
+  swipeCompleteButton.textContent = "参加済み。次へ";
+
+  if (swipeHint) {
+    swipeHint.textContent = "この端末では参加済みです。カウントは追加されません。";
+  }
+  if (thanksTitle) {
+    thanksTitle.textContent = "参加済みです。新宿に灯りが増えています。";
+  }
+  if (counterBadge) {
+    counterBadge.textContent = "済";
+  }
 }
 
 function updateProgress(index) {
@@ -138,10 +183,17 @@ function finalizeCard() {
 }
 
 async function registerParticipation() {
-  if (hasCountedParticipation) {
-    return;
+  if (hasStoredParticipation()) {
+    hasCountedParticipation = true;
+    applyStoredParticipationState();
+    return true;
   }
-  hasCountedParticipation = true;
+  if (hasCountedParticipation || isRegisteringParticipation) {
+    return hasCountedParticipation;
+  }
+  isRegisteringParticipation = true;
+  swipeCompleteButton.disabled = true;
+  swipeCompleteButton.setAttribute("aria-disabled", "true");
 
   try {
     const result = await publishSwipeComplete({ name: getDisplayName() });
@@ -149,15 +201,28 @@ async function registerParticipation() {
     participantCount = Number.isFinite(committedCount)
       ? committedCount
       : participantCount + 1;
+    hasCountedParticipation = true;
+    storeParticipation();
+    return true;
   } catch (error) {
     console.warn("[firebase] participation count update failed:", error);
-    participantCount += 1;
+    if (swipeHint) {
+      swipeHint.textContent = "通信に失敗しました。接続を確認してもう一度お試しください。";
+    }
+    return false;
+  } finally {
+    isRegisteringParticipation = false;
+    const canComplete = Number(swipeSlider.value) >= 100;
+    swipeCompleteButton.disabled = !canComplete;
+    swipeCompleteButton.setAttribute("aria-disabled", String(!canComplete));
   }
 }
 
 async function markParticipationComplete() {
-  await registerParticipation();
-  nextStep();
+  const didComplete = await registerParticipation();
+  if (didComplete) {
+    nextStep();
+  }
 }
 
 function playCelebration() {
@@ -195,6 +260,9 @@ function setSwipeFill(value) {
 
 function canAdvanceFrom(index) {
   if (index === 1) {
+    if (hasStoredParticipation()) {
+      return true;
+    }
     return Number(swipeSlider.value) >= 100;
   }
   return true;
@@ -202,10 +270,11 @@ function canAdvanceFrom(index) {
 
 async function handleForwardAdvance(fromIndex) {
   if (fromIndex === 1) {
-    await registerParticipation();
+    return registerParticipation();
   } else if (fromIndex === 3) {
     buildFinalCard();
   }
+  return true;
 }
 
 /* Pointer-driven horizontal swipe between steps ------------------------ */
@@ -304,8 +373,10 @@ async function endPointer(event) {
   let target = currentStep;
   if (dragOffset < -threshold && currentStep < totalSteps - 1) {
     if (canAdvanceFrom(currentStep)) {
-      await handleForwardAdvance(currentStep);
-      target = currentStep + 1;
+      const didAdvance = await handleForwardAdvance(currentStep);
+      if (didAdvance) {
+        target = currentStep + 1;
+      }
     }
   } else if (dragOffset > threshold && currentStep > 0) {
     target = currentStep - 1;
@@ -373,6 +444,7 @@ window.addEventListener("resize", () => {
 });
 
 setSwipeFill(0);
+applyStoredParticipationState();
 showStep(0);
 
 getParticipantCount()
