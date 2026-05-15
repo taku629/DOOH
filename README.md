@@ -288,6 +288,13 @@ DOOH 画面とスマホ参加ページを **別端末で動かす**ためには 
 5. **プロジェクト設定 → 全般 → 承認済みドメイン** に、デプロイ先(`taku629.github.io`)とローカル開発用(`localhost`)を追加
 6. main にコミット & push (GitHub Actions が `gh-pages` に同期しデプロイ)
 
+### 参加数を0から開始する
+
+Firebase Realtime Database の `stats/participantCount` が未作成なら、最初の参加で `1` になります。既にテスト値が入っている場合は、公開前に Firebase Console で次のどちらかを実行してください。
+
+- `stats/participantCount` を `0` にする
+- `stats` ノードを削除する
+
 ### 動作
 
 - DOOH 画面 (`index.html`) を開くと、参加ページの URL を埋め込んだ QR コードが自動生成されます
@@ -304,7 +311,7 @@ DOOH 画面とスマホ参加ページを **別端末で動かす**ためには 
 {
   "type": "swipe-completed",
   "createdAt": 1715662800123,
-  "count": 12844,
+  "count": 1,
   "name": "匿名サポーター",
   "userAgent": "Mozilla/5.0 (iPhone; ...)"
 }
