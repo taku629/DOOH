@@ -5,13 +5,16 @@ import {
     get,
     getDatabase,
     onChildAdded,
+    onValue,
     push,
     ref,
+    runTransaction,
     serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
 const SWIPES_PATH = "swipes";
+const PARTICIPANT_COUNT_PATH = "stats/participantCount";
 
 let configPromise;
 let databasePromise;
@@ -66,13 +69,50 @@ export async function publishSwipeComplete(payload = {}) {
         return null;
     }
 
+    const countRef = ref(database, PARTICIPANT_COUNT_PATH);
+    const countResult = await runTransaction(countRef, (currentValue) => {
+        const currentCount = Number(currentValue) || 0;
+        return currentCount + 1;
+    });
+    if (!countResult.committed) {
+        throw new Error("Participant count transaction was not committed.");
+    }
+    const participantCount = Number(countResult.snapshot.val()) || 0;
+
     const swipesRef = ref(database, SWIPES_PATH);
-    return push(swipesRef, {
+    const eventRef = await push(swipesRef, {
         type: "swipe-completed",
         createdAt: serverTimestamp(),
+        count: participantCount,
         name: payload.name ?? null,
         userAgent:
             typeof navigator !== "undefined" ? navigator.userAgent : null,
+    });
+
+    return {
+        count: participantCount,
+        eventRef,
+    };
+}
+
+export async function getParticipantCount() {
+    const database = await ensureDatabase();
+    if (!database) {
+        return null;
+    }
+
+    const snapshot = await get(ref(database, PARTICIPANT_COUNT_PATH));
+    return Number(snapshot.val()) || 0;
+}
+
+export async function subscribeToParticipantCount(callback) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return () => {};
+    }
+
+    return onValue(ref(database, PARTICIPANT_COUNT_PATH), (snapshot) => {
+        callback(Number(snapshot.val()) || 0);
     });
 }
 
