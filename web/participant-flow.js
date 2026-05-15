@@ -1,4 +1,4 @@
-import { publishSwipeComplete } from "../src/firebase-bridge.js";
+import { getParticipantCount, publishSwipeComplete } from "../src/firebase-bridge.js";
 
 const steps = [...document.querySelectorAll(".step")];
 const progressText = document.getElementById("progressText");
@@ -18,10 +18,10 @@ const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
 
 const totalSteps = steps.length;
-const COUNTER_TARGET = 12843;
+const FALLBACK_COUNTER_TARGET = 0;
 
 let currentStep = 0;
-let participantCount = COUNTER_TARGET - 1;
+let participantCount = FALLBACK_COUNTER_TARGET;
 let hasCountedParticipation = false;
 let hasShownSwipeReadyEffect = false;
 let hasAnimatedCounter = false;
@@ -137,17 +137,26 @@ function finalizeCard() {
   nextStep();
 }
 
-function registerParticipation() {
+async function registerParticipation() {
   if (hasCountedParticipation) {
     return;
   }
-  participantCount += 1;
   hasCountedParticipation = true;
-  publishSwipeComplete({ name: getDisplayName() });
+
+  try {
+    const result = await publishSwipeComplete({ name: getDisplayName() });
+    const committedCount = Number(result?.count);
+    participantCount = Number.isFinite(committedCount)
+      ? committedCount
+      : participantCount + 1;
+  } catch (error) {
+    console.warn("[firebase] participation count update failed:", error);
+    participantCount += 1;
+  }
 }
 
-function markParticipationComplete() {
-  registerParticipation();
+async function markParticipationComplete() {
+  await registerParticipation();
   nextStep();
 }
 
@@ -191,9 +200,9 @@ function canAdvanceFrom(index) {
   return true;
 }
 
-function handleForwardAdvance(fromIndex) {
+async function handleForwardAdvance(fromIndex) {
   if (fromIndex === 1) {
-    registerParticipation();
+    await registerParticipation();
   } else if (fromIndex === 3) {
     buildFinalCard();
   }
@@ -276,7 +285,7 @@ function movePointer(event) {
   setTrackPosition(currentStep, (normalized / width) * 100);
 }
 
-function endPointer(event) {
+async function endPointer(event) {
   if (event.pointerId !== activePointerId) {
     return;
   }
@@ -295,7 +304,7 @@ function endPointer(event) {
   let target = currentStep;
   if (dragOffset < -threshold && currentStep < totalSteps - 1) {
     if (canAdvanceFrom(currentStep)) {
-      handleForwardAdvance(currentStep);
+      await handleForwardAdvance(currentStep);
       target = currentStep + 1;
     }
   } else if (dragOffset > threshold && currentStep > 0) {
@@ -366,3 +375,12 @@ window.addEventListener("resize", () => {
 setSwipeFill(0);
 showStep(0);
 
+getParticipantCount()
+  .then((count) => {
+    if (Number.isFinite(count) && count > 0 && !hasCountedParticipation) {
+      participantCount = count;
+    }
+  })
+  .catch((error) => {
+    console.warn("[firebase] participant count fetch failed:", error);
+  });

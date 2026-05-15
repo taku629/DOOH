@@ -292,8 +292,9 @@ DOOH 画面とスマホ参加ページを **別端末で動かす**ためには 
 
 - DOOH 画面 (`index.html`) を開くと、参加ページの URL を埋め込んだ QR コードが自動生成されます
 - スマホでQRを読み取ると参加ページ (`web/participant-flow.html`) が開きます
-- 参加フローでスワイプを 100% まで進め、「完了して次へ」を押すと `swipes` パスへ `swipe-completed` イベントを書き込みます
+- 参加フローでスワイプを 100% まで進め、「完了して次へ」を押すと `stats/participantCount` を +1 し、`swipes` パスへ `swipe-completed` イベントを書き込みます
 - DOOH 画面は新しい `swipe-completed` イベントを Firebase の `onChildAdded` で受信し、「参加演出のテイクオーバー画面 + 参加動画」に切り替えます
+- 参加数は `stats/participantCount` に保存されるため、ページを閉じてもリロードしても維持されます
 - `config/playlist.json` の `participationReturnSeconds` 秒後に通常映像に戻ります
 - 同じテイクオーバーが既に再生中ならイベントは無視されます (連続タップによる点滅防止)
 
@@ -303,6 +304,7 @@ DOOH 画面とスマホ参加ページを **別端末で動かす**ためには 
 {
   "type": "swipe-completed",
   "createdAt": 1715662800123,
+  "count": 12844,
   "name": "匿名サポーター",
   "userAgent": "Mozilla/5.0 (iPhone; ...)"
 }
@@ -315,9 +317,15 @@ DOOH 画面とスマホ参加ページを **別端末で動かす**ためには 
   ```json
   {
     "rules": {
+      "stats": {
+        "participantCount": {
+          ".read": true,
+          ".write": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
+        }
+      },
       "swipes": {
         ".read": true,
-        ".write": "newData.child('type').val() === 'swipe-completed'"
+        ".write": "newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber()"
       }
     }
   }
@@ -329,8 +337,7 @@ DOOH 画面とスマホ参加ページを **別端末で動かす**ためには 
 ## 現在の制限事項
 
 - `downloadBtn` の「画像を保存」はデモ表示のみで、実際の画像生成は未実装です。
-- 参加数はブラウザ上のデモ値であり、サーバー永続化はありません。
-- 参加完了(スワイプ100%)時の `+1` カウンター更新は、Firebase 経由でクロス端末同期します。ただし参加数自体は永続カウントとして集計していません。
+- 参加完了(スワイプ100%)時の `+1` カウンター更新は、Firebase Realtime Database の `stats/participantCount` に永続化します。
 - `playlist.json` はルート直下にもありますが、現在プレイヤーが読み込むのは `config/playlist.json` です。
 - `src/condition-manager.js` と `src/fallback-manager.js` は現在空ファイルです。
 
