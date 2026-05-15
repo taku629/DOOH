@@ -1,5 +1,5 @@
 import { playFallback } from "./fallback-handler.js";
-import { subscribeToSwipeCompletes } from "./firebase-bridge.js";
+import { subscribeToParticipantCount, subscribeToSwipeCompletes } from "./firebase-bridge.js";
 import { logError, logPlayback } from "./logger.js";
 import { subscribeToParticipationEvents } from "./participation-bridge.js";
 import { getCurrentVideo } from "./scheduler.js";
@@ -29,7 +29,8 @@ function showFallbackView(visible) {
 }
 
 function updateParticipationStatus(event) {
-    displayCount += 1;
+    const eventCount = Number(event?.count);
+    displayCount = Number.isFinite(eventCount) ? eventCount : displayCount + 1;
 
     if (participantCount) {
         participantCount.textContent = String(displayCount);
@@ -137,7 +138,16 @@ async function startPlayer() {
         logError(error);
     }
 
-    subscribeToSwipeCompletes((event) => handleParticipation({ name: event?.name || "参加者" })).catch(logError);
+    subscribeToParticipantCount((count) => {
+        displayCount = count;
+        if (participantCount) {
+            participantCount.textContent = String(displayCount);
+        }
+    }).catch(logError);
+    subscribeToSwipeCompletes((event) => handleParticipation({
+        count: event?.count,
+        name: event?.name || "参加者",
+    })).catch(logError);
 }
 
 startPlayer();
