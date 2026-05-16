@@ -137,6 +137,7 @@ Example:
 ## Security Rules
 
 公開クライアントから直接 Realtime Database に書くため、Firebase config は秘密情報として扱わない。制御は Security Rules で行う。
+Rules の実ファイルは `database.rules.json` に置く。
 
 ### v1 Rules
 
@@ -147,19 +148,22 @@ Example:
       ".read": true,
       ".write": "newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1)",
       "participantCount": {
-        ".validate": "newData.isNumber()"
+        ".validate": "newData.isNumber() && newData.val() >= 0"
       },
       "swipes": {
         "$eventId": {
-          ".validate": "newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() > 0"
+          ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
         }
+      },
+      "$other": {
+        ".validate": false
       }
     }
   }
 }
 ```
 
-この Rules は `participantCount` が1ずつ増える更新だけを許可する。`swipes/{eventId}` の `count` と `participantCount` の一致まで厳密に検証したい場合は、Cloud Functions でサーバー側に書き込みを集約する。
+この Rules は `participantCount` が1ずつ増える更新だけを許可し、新規 `swipes/{eventId}` の `count` が更新後の `participantCount` と一致することを検証する。より強い不正対策が必要になったら、Cloud Functions でサーバー側に書き込みを集約する。
 
 ### Hardening Options
 

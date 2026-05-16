@@ -11,6 +11,7 @@ import {
     runTransaction,
     serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { buildParticipationTransactionValue } from "./participation-transaction.mjs";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
 const PARTICIPATION_PATH = "participation";
@@ -74,40 +75,16 @@ export async function publishSwipeComplete(payload = {}) {
     if (!eventRef.key) {
         throw new Error("Swipe event key could not be generated.");
     }
-    const userAgent =
-        typeof navigator !== "undefined" ? navigator.userAgent : null;
+    const event = {
+        key: eventRef.key,
+        createdAt: serverTimestamp(),
+        name: payload.name ?? null,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+    };
 
     const participationRef = ref(database, PARTICIPATION_PATH);
     const result = await runTransaction(participationRef, (currentValue) => {
-        const currentData =
-            currentValue && typeof currentValue === "object" ? currentValue : {};
-        const swipes =
-            currentData.swipes && typeof currentData.swipes === "object"
-                ? currentData.swipes
-                : {};
-
-        if (swipes[eventRef.key]) {
-            return currentData;
-        }
-
-        const currentCount = Number(currentData.participantCount);
-        const baseCount = Number.isFinite(currentCount) ? currentCount : 0;
-        const participantCount = baseCount + 1;
-
-        return {
-            ...currentData,
-            participantCount,
-            swipes: {
-                ...swipes,
-                [eventRef.key]: {
-                    type: "swipe-completed",
-                    createdAt: serverTimestamp(),
-                    count: participantCount,
-                    name: payload.name ?? null,
-                    userAgent,
-                },
-            },
-        };
+        return buildParticipationTransactionValue(currentValue, event);
     });
     if (!result.committed) {
         throw new Error("Participation transaction was not committed.");

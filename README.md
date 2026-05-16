@@ -267,6 +267,8 @@ DOOH 表示プレイヤーの中心となるモジュールです。
 DOOH 画面とスマホ参加ページを **別端末で動かす**ためには Firebase Realtime Database を経由します。同一ブラウザ・同一オリジンでの同期は `participation-bridge.js` (localStorage + BroadcastChannel) でこれまで通り動きます。
 
 DB のデータ構造、Security Rules、運用リセット手順、将来のセッション分離案は `docs/database-design.md` にまとめています。
+Realtime Database Rules は `database.rules.json` に定義しています。
+Firebase CLI で反映する場合は、Firebase にログインしたうえで `firebase deploy --only database` を実行します。
 
 ### セットアップ手順
 
@@ -324,24 +326,7 @@ Firebase Realtime Database の `participation/participantCount` が未作成な�
 
 - `config/firebase-config.json` の値はクライアント側で公開されます。これは Firebase の設計通りで秘密ではありませんが、**Security Rules** (`Database → ルール`) で書き込みを必ず制限してください:
 
-  ```json
-  {
-    "rules": {
-      "participation": {
-        ".read": true,
-        ".write": "newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1)",
-        "participantCount": {
-          ".validate": "newData.isNumber()"
-        },
-        "swipes": {
-          "$eventId": {
-            ".validate": "newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber()"
-          }
-        }
-      }
-    }
-  }
-  ```
+  `database.rules.json` の内容を Firebase Console の Realtime Database Rules に反映してください。
 
 - 設定値が未入力(`REPLACE_ME` のまま)の場合、Firebase 連携は自動で無効になり、localStorage/BroadcastChannel ベースの同一オリジン連携だけが動きます
 - 参加完了イベントはスマホ側の `publishSwipeComplete()` から送信され、DOOH 画面側の `subscribeToSwipeCompletes()` で受信します
