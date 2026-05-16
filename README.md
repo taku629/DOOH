@@ -292,19 +292,19 @@ DB のデータ構造、Security Rules、運用リセット手順、将来のセ
 
 ### 参加数を0から開始する
 
-Firebase Realtime Database の `stats/participantCount` が未作成なら、最初の参加で `1` になります。既にテスト値が入っている場合は、公開前に Firebase Console で次のどちらかを実行してください。
+Firebase Realtime Database の `participation/participantCount` が未作成なら、最初の参加で `1` になります。既にテスト値が入っている場合は、公開前に Firebase Console で次のどちらかを実行してください。
 
-- `stats/participantCount` を `0` にする
-- `stats` ノードを削除する
+- `participation/participantCount` を `0` にする
+- `participation` ノードを削除する
 
 ### 動作
 
 - DOOH 画面 (`index.html`) を開くと、参加ページの URL を埋め込んだ QR コードが自動生成されます
 - スマホでQRを読み取ると参加ページ (`web/participant-flow.html`) が開きます
-- 参加フローでスワイプを 100% まで進め、「完了して次へ」を押すと `stats/participantCount` を +1 し、`swipes` パスへ `swipe-completed` イベントを書き込みます
+- 参加フローでスワイプを 100% まで進め、「完了して次へ」を押すと `participation` 配下の transaction で `participantCount` の +1 と `swipes/{eventId}` のイベント作成をまとめて実行します
 - 参加済みの端末では `localStorage` の `dooh:participant-flow:participated` を見て、同じブラウザからの再カウントを防ぎます
 - DOOH 画面は新しい `swipe-completed` イベントを Firebase の `onChildAdded` で受信し、「参加演出のテイクオーバー画面 + 参加動画」に切り替えます
-- 参加数は `stats/participantCount` に保存されるため、ページを閉じてもリロードしても維持されます
+- 参加数は `participation/participantCount` に保存されるため、ページを閉じてもリロードしても維持されます
 - `config/playlist.json` の `participationReturnSeconds` 秒後に通常映像に戻ります
 - 同じテイクオーバーが既に再生中ならイベントは無視されます (連続タップによる点滅防止)
 
@@ -327,15 +327,17 @@ Firebase Realtime Database の `stats/participantCount` が未作成なら、最
   ```json
   {
     "rules": {
-      "stats": {
-        "participantCount": {
-          ".read": true,
-          ".write": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
-        }
-      },
-      "swipes": {
+      "participation": {
         ".read": true,
-        ".write": "newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber()"
+        ".write": "newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1)",
+        "participantCount": {
+          ".validate": "newData.isNumber()"
+        },
+        "swipes": {
+          "$eventId": {
+            ".validate": "newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber()"
+          }
+        }
       }
     }
   }
@@ -348,7 +350,7 @@ Firebase Realtime Database の `stats/participantCount` が未作成なら、最
 ## 現在の制限事項
 
 - `downloadBtn` の「画像を保存」はデモ表示のみで、実際の画像生成は未実装です。
-- 参加完了(スワイプ100%)時の `+1` カウンター更新は、Firebase Realtime Database の `stats/participantCount` に永続化します。
+- 参加完了(スワイプ100%)時の `+1` カウンター更新は、Firebase Realtime Database の `participation/participantCount` に永続化します。
 - `playlist.json` はルート直下にもありますが、現在プレイヤーが読み込むのは `config/playlist.json` です。
 - `src/condition-manager.js` と `src/fallback-manager.js` は現在空ファイルです。
 

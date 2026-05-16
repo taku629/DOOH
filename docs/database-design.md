@@ -24,14 +24,15 @@ DOOH 画面とスマートフォン参加画面を別端末で同期するため
 ```text
 Smartphone participant page
   └─ publishSwipeComplete()
-      ├─ transaction: stats/participantCount += 1
-      └─ push: swipes/{eventId}
+      └─ transaction: participation
+          ├─ participantCount += 1
+          └─ swipes/{eventId} = swipe-completed
 
 DOOH display page
   ├─ subscribeToParticipantCount()
-  │   └─ onValue(stats/participantCount)
+  │   └─ onValue(participation/participantCount)
   └─ subscribeToSwipeCompletes()
-      └─ onChildAdded(swipes)
+      └─ onChildAdded(participation/swipes)
 ```
 
 現行コードでは Firebase Realtime Database を CDN 経由で読み込み、`config/firebase-config.json` が有効な場合だけクロス端末同期を有効にする。Firebase が無効な場合は、同一オリジン内の `localStorage` / `BroadcastChannel` 連携にフォールバックする。
@@ -42,33 +43,34 @@ DOOH display page
 
 ```text
 /
-├── stats
-│   └── participantCount: number
-└── swipes
-    └── {eventId}
-        ├── type: "swipe-completed"
-        ├── createdAt: number
-        ├── count: number
-        ├── name: string | null
-        └── userAgent: string | null
+└── participation
+    ├── participantCount: number
+    └── swipes
+        └── {eventId}
+            ├── type: "swipe-completed"
+            ├── createdAt: number
+            ├── count: number
+            ├── name: string | null
+            └── userAgent: string | null
 ```
 
-### `stats`
+### `participation`
 
-集計値を保持する。
+参加集計と参加完了イベントを同じ transaction 境界に置く。これにより、複数人が同時に参加しても `participantCount` が競合で上書きされず、カウント加算とイベント作成も同じコミットとして扱える。
 
 | Path | Type | Required | Description |
 | --- | --- | --- | --- |
-| `stats/participantCount` | number | yes | 累計参加数。参加完了ごとに `+1` する |
+| `participation/participantCount` | number | yes | 累計参加数。参加完了ごとに `+1` する |
+| `participation/swipes/{eventId}` | object | yes | 参加完了イベント |
 
 Rules:
 
-- `runTransaction()` でのみ増加させる
+- `participation` を `runTransaction()` で更新する
 - 未作成時は `0` とみなし、最初の参加で `1` にする
-- 手動リセット時は Firebase Console で `0` を入れるか `stats` を削除する
-- クライアントから任意の値へ上書きできないよう Security Rules で `+1` のみ許可する
+- 手動リセット時は Firebase Console で `0` を入れるか `participation` を削除する
+- 旧スキーマの `stats/participantCount` は参照しない。移行時は `participation/participantCount` に値を手動で入れる
 
-### `swipes`
+### `participation/swipes`
 
 参加完了イベントを append-only に近い形で保存する。DOOH 画面は新規イベントを購読し、受信時に参加演出へ切り替える。
 
@@ -96,25 +98,28 @@ Example:
 
 1. 参加者がスマートフォン画面でスワイプを 100% まで進める
 2. 「完了して次へ」を押す
-3. `stats/participantCount` を transaction で `+1` する
-4. transaction 後の値を `count` として取得する
-5. `swipes/{eventId}` に参加完了イベントを書き込む
-6. スマートフォン側の `localStorage` に参加済みフラグを保存する
+3. `participation/swipes/{eventId}` 用の push ID を先に生成する
+4. `participation` を transaction で読む
+5. `participantCount` を `+1` し、同じ戻り値の中で `swipes/{eventId}` を追加する
+6. transaction 後の `participantCount` を画面表示に反映する
+7. スマートフォン側の `localStorage` に参加済みフラグを保存する
 
-`stats/participantCount` と `swipes/{eventId}` は完全な単一トランザクションではない。現行の優先度は「カウントの正確性」で、イベント書き込みに失敗した場合はカウントだけ進む可能性がある。発表デモ用途では許容し、より厳密にする場合は Cloud Functions か `v2` の `events` 中心設計に移行する。
+この方式では同時参加が来ても Firebase が transaction を再試行するため、最終的な `participantCount` は `1, 2, 3...` と加算される。カウントとイベントは同じ `participation` transaction に含まれるため、「人数だけ増えてイベントがない」状態も起きにくい。
+
+注意点として、`participation` 配下のイベント履歴も transaction 対象になる。大量イベントを長期間保存する用途では効率が落ちるため、本番運用で参加数が大きくなる場合は Cloud Functions でサーバー側集計に移す。
 
 ## Read Flow
 
 ### Smartphone
 
-- 初期表示時に `stats/participantCount` を読む
+- 初期表示時に `participation/participantCount` を読む
 - 参加済み端末では再加算せず、参加済み状態として表示する
 - Firebase が無効な場合はローカルのフォールバック値で表示する
 
 ### DOOH Display
 
-- `stats/participantCount` を `onValue()` で購読する
-- `swipes` を `onChildAdded()` で購読する
+- `participation/participantCount` を `onValue()` で購読する
+- `participation/swipes` を `onChildAdded()` で購読する
 - 初回購読時に既存イベント ID を記録し、過去イベントで演出を発火しない
 - 新規 `swipe-completed` だけを参加演出のトリガーにする
 
@@ -122,12 +127,12 @@ Example:
 
 | Concern | v1 Policy |
 | --- | --- |
-| 同時参加 | `stats/participantCount` の transaction で加算競合を防ぐ |
+| 同時参加 | `participation` transaction で加算競合を防ぐ |
 | イベント順序 | Firebase push ID と `createdAt` を併用する |
 | 重複カウント | 同一ブラウザでは `localStorage` で抑止する |
 | 別端末重複 | v1 では許容する |
 | 過去イベント再生 | DOOH 側で購読開始時の既存 ID を無視する |
-| カウント成功後のイベント失敗 | v1 では許容する。必要なら Cloud Functions 化する |
+| カウントとイベントのズレ | 同じ `participation` transaction に入れて抑止する |
 
 ## Security Rules
 
@@ -138,24 +143,23 @@ Example:
 ```json
 {
   "rules": {
-    "stats": {
-      "participantCount": {
-        ".read": true,
-        ".write": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
-      }
-    },
-    "swipes": {
+    "participation": {
       ".read": true,
-      "$eventId": {
-        ".write": "!data.exists() && newData.hasChildren(['type', 'createdAt', 'count'])",
-        ".validate": "newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() > 0"
+      ".write": "newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1)",
+      "participantCount": {
+        ".validate": "newData.isNumber()"
+      },
+      "swipes": {
+        "$eventId": {
+          ".validate": "newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() > 0"
+        }
       }
     }
   }
 }
 ```
 
-この Rules は「最低限の形」を縛るもの。`createdAt` が `serverTimestamp()` かどうかや、`count` が直前の `participantCount` と一致するかまでは Realtime Database Rules だけでは厳密に保証しにくい。
+この Rules は `participantCount` が1ずつ増える更新だけを許可する。`swipes/{eventId}` の `count` と `participantCount` の一致まで厳密に検証したい場合は、Cloud Functions でサーバー側に書き込みを集約する。
 
 ### Hardening Options
 
@@ -170,28 +174,28 @@ Example:
 
 公開前に Firebase Console で以下のどちらかを実行する。
 
-- `stats/participantCount` を `0` にする
-- `stats` と `swipes` を削除する
+- `participation/participantCount` を `0` にする
+- `participation` を削除する
 
 ### リセット
 
 発表リハーサル後に本番値へ戻す場合:
 
-1. `stats/participantCount` を `0` にする
-2. `swipes` を削除する
+1. `participation/participantCount` を `0` にする
+2. `participation/swipes` を削除する
 3. DOOH 表示画面をリロードする
 
 ### 監視
 
 最低限、Firebase Console で以下を見る。
 
-- `stats/participantCount` が増えているか
-- `swipes` に新規イベントが追加されているか
+- `participation/participantCount` が増えているか
+- `participation/swipes` に新規イベントが追加されているか
 - 不自然に短時間で大量のイベントが増えていないか
 
 ### データ保持
 
-デモ用途では、イベント終了後に `swipes` を削除してよい。集計として残す必要がある場合も、個人識別につながりうる `userAgent` は削除対象にする。
+デモ用途では、イベント終了後に `participation/swipes` を削除してよい。集計として残す必要がある場合も、個人識別につながりうる `userAgent` は削除対象にする。
 
 ## v2 Schema
 
@@ -238,20 +242,20 @@ Example:
 
 1. `sessions/{sessionId}` と `activeSessionId` を作る
 2. 参加ページが起動時に `activeSessionId` を読む
-3. `stats/participantCount` の代わりに `sessions/{sessionId}/participantCount` を transaction で加算する
-4. `swipes` の代わりに `events/{sessionId}` へ書き込む
+3. `participation/participantCount` の代わりに `sessions/{sessionId}/participantCount` を transaction で加算する
+4. `participation/swipes` の代わりに `events/{sessionId}` へ書き込む
 5. DOOH 画面の購読先を `events/{sessionId}` に変更する
-6. 問題なければ `stats` と `swipes` を読み取り専用または削除対象にする
+6. 問題なければ `participation` を読み取り専用または削除対象にする
 
 ## Implementation Mapping
 
 | Code | Current DB Path | Responsibility |
 | --- | --- | --- |
-| `src/firebase-bridge.js` | `stats/participantCount`, `swipes` | Firebase 初期化、参加数更新、イベント購読 |
-| `publishSwipeComplete()` | `stats/participantCount`, `swipes/{eventId}` | 参加完了の書き込み |
-| `getParticipantCount()` | `stats/participantCount` | 参加ページ初期表示の人数取得 |
-| `subscribeToParticipantCount()` | `stats/participantCount` | DOOH 側の人数表示更新 |
-| `subscribeToSwipeCompletes()` | `swipes` | DOOH 側の参加演出トリガー |
+| `src/firebase-bridge.js` | `participation/participantCount`, `participation/swipes` | Firebase 初期化、参加数更新、イベント購読 |
+| `publishSwipeComplete()` | `participation` | 参加完了の transaction 書き込み |
+| `getParticipantCount()` | `participation/participantCount` | 参加ページ初期表示の人数取得 |
+| `subscribeToParticipantCount()` | `participation/participantCount` | DOOH 側の人数表示更新 |
+| `subscribeToSwipeCompletes()` | `participation/swipes` | DOOH 側の参加演出トリガー |
 | `web/participant-flow.js` | localStorage + Firebase | 参加済み判定、完了操作、表示更新 |
 | `src/player.js` | Firebase subscriptions | 参加数表示、参加演出動画への切り替え |
 
@@ -259,6 +263,6 @@ Example:
 
 1. 発表デモまでは `v1` のまま運用する
 2. Firebase Console に `v1 Rules` を設定する
-3. 本番直前に `stats` と `swipes` をリセットする
+3. 本番直前に `participation` をリセットする
 4. 実施回を分ける必要が出たら `v2` の session 分離へ移行する
 5. 不正書き込みを問題にする段階で App Check または Cloud Functions を導入する
