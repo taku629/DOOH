@@ -300,6 +300,7 @@ Firebase Realtime Database の `stats/participantCount` が未作成なら、最
 - DOOH 画面 (`index.html`) を開くと、参加ページの URL を埋め込んだ QR コードが自動生成されます
 - スマホでQRを読み取ると参加ページ (`web/participant-flow.html`) が開きます
 - 参加フローでスワイプを 100% まで進め、「完了して次へ」を押すと `stats/participantCount` を +1 し、`swipes` パスへ `swipe-completed` イベントを書き込みます
+- 参加済みの端末では `localStorage` の `dooh:participant-flow:participated` を見て、同じブラウザからの再カウントを防ぎます
 - DOOH 画面は新しい `swipe-completed` イベントを Firebase の `onChildAdded` で受信し、「参加演出のテイクオーバー画面 + 参加動画」に切り替えます
 - 参加数は `stats/participantCount` に保存されるため、ページを閉じてもリロードしても維持されます
 - `config/playlist.json` の `participationReturnSeconds` 秒後に通常映像に戻ります
@@ -340,6 +341,7 @@ Firebase Realtime Database の `stats/participantCount` が未作成なら、最
 
 - 設定値が未入力(`REPLACE_ME` のまま)の場合、Firebase 連携は自動で無効になり、localStorage/BroadcastChannel ベースの同一オリジン連携だけが動きます
 - 参加完了イベントはスマホ側の `publishSwipeComplete()` から送信され、DOOH 画面側の `subscribeToSwipeCompletes()` で受信します
+- 一人一回制限は簡易版です。同じ端末・同じブラウザでは再カウントされませんが、別端末、別ブラウザ、プライベートブラウズ、ブラウザデータ削除までは防げません
 
 ## 現在の制限事項
 
