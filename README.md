@@ -266,6 +266,8 @@ DOOH 表示プレイヤーの中心となるモジュールです。
 
 DOOH 画面とスマホ参加ページを **別端末で動かす**ためには Firebase Realtime Database を経由します。同一ブラウザ・同一オリジンでの同期は `participation-bridge.js` (localStorage + BroadcastChannel) でこれまで通り動きます。
 
+DB のデータ構造、Security Rules、運用リセット手順、将来のセッション分離案は `docs/database-design.md` にまとめています。
+
 ### セットアップ手順
 
 1. https://console.firebase.google.com/ で新規プロジェクトを作成
