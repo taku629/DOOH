@@ -9,6 +9,7 @@ const displayShell = document.querySelector("#displayShell");
 const fallbackView = document.querySelector("#videoFallback");
 const participationTakeover = document.querySelector("#participationTakeover");
 const participationSignal = document.querySelector("#participationSignal");
+const donationTotal = document.querySelector("#displayDonationTotal");
 const participantCount = document.querySelector("#displayParticipantCount");
 const participantStatus = document.querySelector("#displayParticipantStatus");
 const takeoverParticipantName = document.querySelector("#takeoverParticipantName");
@@ -25,6 +26,16 @@ function formatDonationTotal(count) {
     return `¥${(count * DEMO_DONATION_YEN).toLocaleString("ja-JP")}`;
 }
 
+function updateLiveTotals(count) {
+    if (donationTotal) {
+        donationTotal.textContent = formatDonationTotal(count);
+    }
+
+    if (participantCount) {
+        participantCount.textContent = count.toLocaleString("ja-JP");
+    }
+}
+
 function showFallbackView(visible) {
     if (!fallbackView) {
         return;
@@ -37,9 +48,7 @@ function updateParticipationStatus(event) {
     const eventCount = Number(event?.count);
     displayCount = Number.isFinite(eventCount) ? eventCount : displayCount + 1;
 
-    if (participantCount) {
-        participantCount.textContent = formatDonationTotal(displayCount);
-    }
+    updateLiveTotals(displayCount);
 
     if (participantStatus) {
         const donationAmount = Number(event?.donationAmountYen) || DEMO_DONATION_YEN;
@@ -146,9 +155,7 @@ async function startPlayer() {
 
     subscribeToParticipantCount((count) => {
         displayCount = count;
-        if (participantCount) {
-            participantCount.textContent = formatDonationTotal(displayCount);
-        }
+        updateLiveTotals(displayCount);
     }).catch(logError);
     subscribeToSwipeCompletes((event) => handleParticipation({
         count: event?.count,

@@ -649,6 +649,15 @@ input[type="range"]:active::-webkit-slider-thumb {
   transition: transform 0.18s var(--ease-out);
 }
 
+.counter-box small {
+  display: block;
+  margin-top: 12px;
+  color: var(--ink-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
 .counter-box.is-counting strong {
   transform: scale(1.04);
 }

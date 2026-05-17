@@ -7,6 +7,7 @@ const progressElement = document.querySelector(".bar");
 const counterValue = document.getElementById("counterValue");
 const counterBox = document.getElementById("counterBox");
 const counterBadge = counterBox?.querySelector("em");
+const counterParticipants = document.getElementById("counterParticipants");
 const nickname = document.getElementById("nickname");
 const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
@@ -83,6 +84,9 @@ function applyStoredParticipationState() {
   if (counterBadge) {
     counterBadge.textContent = "済";
   }
+  if (counterParticipants) {
+    counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
+  }
 }
 
 function updateProgress(index) {
@@ -115,6 +119,9 @@ function showStep(index) {
   if (index === 2 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
+    if (counterParticipants) {
+      counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
+    }
     window.setTimeout(() => animateCounter(getDemoDonationTotal()), delay);
   }
 }
@@ -209,6 +216,9 @@ async function registerParticipation() {
     participantCount = Number.isFinite(committedCount)
       ? committedCount
       : participantCount + 1;
+    if (counterParticipants) {
+      counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
+    }
     hasCountedParticipation = true;
     storeParticipation();
     return true;
@@ -459,6 +469,12 @@ getParticipantCount()
   .then((count) => {
     if (Number.isFinite(count) && count > 0 && !hasCountedParticipation) {
       participantCount = count;
+    }
+    if (Number.isFinite(count) && count > 0 && hasCountedParticipation) {
+      participantCount = count;
+      if (counterParticipants) {
+        counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
+      }
     }
   })
   .catch((error) => {
