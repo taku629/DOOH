@@ -27,6 +27,7 @@ export function buildParticipationTransactionValue(currentValue, event) {
                 createdAt: event.createdAt,
                 count: participantCount,
                 name: event.name ?? null,
+                donationAmountYen: event.donationAmountYen ?? null,
                 userAgent: event.userAgent ?? null,
             },
         },
