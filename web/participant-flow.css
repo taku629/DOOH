@@ -278,6 +278,34 @@ label {
   background: linear-gradient(90deg, #c7c7cc, var(--gold) 60%, var(--accent));
 }
 
+.donation-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 4px 0 22px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.donation-preview span {
+  color: var(--ink-tertiary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.donation-preview strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
 /* Entry animations: staggered reveal once the step becomes current ---- */
 
 .step > .step-count,
@@ -286,6 +314,7 @@ label {
 .step > label,
 .step > input[type="text"],
 .step > .impact-strip,
+.step > .donation-preview,
 .step > .swipe-stage,
 .step > .slider-wrap,
 .step > .hint,
@@ -314,6 +343,7 @@ label {
 .step.is-current > label               { transition-delay: 0.16s; }
 .step.is-current > input[type="text"]  { transition-delay: 0.20s; }
 .step.is-current > .impact-strip       { transition-delay: 0.22s; }
+.step.is-current > .donation-preview   { transition-delay: 0.24s; }
 .step.is-current > .swipe-stage        { transition-delay: 0.20s; }
 .step.is-current > .slider-wrap        { transition-delay: 0.28s; }
 .step.is-current > .hint               { transition-delay: 0.32s; }

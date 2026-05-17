@@ -5,7 +5,7 @@
 
 ## 概要
 
-このプロジェクトは、待ち時間中の生活者がスマートフォンから「1 スワイプ」で参加し、その参加が DOOH 画面上の演出に反映される体験を想定しています。
+このプロジェクトは、待ち時間中の生活者がスマートフォンから「1 スワイプ」でデモ募金し、その参加が DOOH 画面上の演出に反映される体験を想定しています。現時点の募金は疑似募金で、実際の決済処理は発生しません。
 
 - DOOH 表示画面: `index.html`
 - スマートフォン参加画面: `web/participant-flow.html`
@@ -44,7 +44,7 @@
 4. 参加証作成
 5. シェア
 
-スライダーを 100% まで動かして完了すると、参加数が加算され、DOOH 表示画面へ参加イベントが送られます。
+スライダーを 100% まで動かして完了すると、1回あたり100円のデモ募金として参加数が加算され、DOOH 表示画面へ参加イベントが送られます。
 
 ### 3. 参加イベント連携
 
@@ -145,7 +145,7 @@ python3 -m http.server 8000
 2. ブラウザで `http://localhost:8000/` を開きます。
 3. 別タブ、または別ウィンドウで `http://localhost:8000/web/participant-flow.html` を開きます。
 4. 参加フローで「参加する」を押します。
-5. スライダーを 100% まで動かし、「完了して次へ」を押します。
+5. スライダーを 100% まで動かし、「¥100をデモ募金する」を押します。
 6. DOOH 表示画面の参加数とステータスが更新されることを確認します。
 7. `participationVideo` が設定され、動画ファイルが存在する場合は参加演出動画に切り替わります。
 8. `participationReturnSeconds` 秒後に通常動画へ戻ります。
@@ -257,7 +257,7 @@ DOOH 表示プレイヤーの中心となるモジュールです。
 - 現在ステップの表示切り替え
 - 進行バーの更新
 - スワイプ完了判定
-- 参加数の加算
+- デモ募金の加算(1スワイプ = 100円相当)
 - 参加証プレビューの作成
 - リンクコピー
 - 参加イベントの送信
@@ -303,9 +303,9 @@ Firebase Realtime Database の `participation/participantCount` が未作成な�
 
 - DOOH 画面 (`index.html`) を開くと、参加ページの URL を埋め込んだ QR コードが自動生成されます
 - スマホでQRを読み取ると参加ページ (`web/participant-flow.html`) が開きます
-- 参加フローでスワイプを 100% まで進め、「完了して次へ」を押すと `participation` 配下の transaction で `participantCount` の +1 と `swipes/{eventId}` のイベント作成をまとめて実行します
+- 参加フローでスワイプを 100% まで進め、「¥100をデモ募金する」を押すと `participation` 配下の transaction で `participantCount` の +1 と `swipes/{eventId}` のイベント作成をまとめて実行します
 - 参加済みの端末では `localStorage` の `dooh:participant-flow:participated` を見て、同じブラウザからの再カウントを防ぎます
-- DOOH 画面は新しい `swipe-completed` イベントを Firebase の `onChildAdded` で受信し、「参加演出のテイクオーバー画面 + 参加動画」に切り替えます
+- DOOH 画面は新しい `swipe-completed` イベントを Firebase の `onChildAdded` で受信し、累計デモ募金額を表示して「参加演出のテイクオーバー画面 + 参加動画」に切り替えます
 - 参加数は `participation/participantCount` に保存されるため、ページを閉じてもリロードしても維持されます
 - `config/playlist.json` の `participationReturnSeconds` 秒後に通常映像に戻ります
 - 同じテイクオーバーが既に再生中ならイベントは無視されます (連続タップによる点滅防止)
@@ -318,6 +318,7 @@ Firebase Realtime Database の `participation/participantCount` が未作成な�
   "createdAt": 1715662800123,
   "count": 1,
   "name": "匿名サポーター",
+  "donationAmountYen": 100,
   "userAgent": "Mozilla/5.0 (iPhone; ...)"
 }
 ```
@@ -335,7 +336,8 @@ Firebase Realtime Database の `participation/participantCount` が未作成な�
 ## 現在の制限事項
 
 - `downloadBtn` の「画像を保存」はデモ表示のみで、実際の画像生成は未実装です。
-- 参加完了(スワイプ100%)時の `+1` カウンター更新は、Firebase Realtime Database の `participation/participantCount` に永続化します。
+- 参加完了(スワイプ100%)時の `+1` カウンター更新は、Firebase Realtime Database の `participation/participantCount` に永続化します。デモ募金総額は `participantCount * 100円` として表示します。
+- 疑似募金はデモ用の演出で、クレジットカード・電子決済・領収書発行などの実決済機能は未実装です。
 - `playlist.json` はルート直下にもありますが、現在プレイヤーが読み込むのは `config/playlist.json` です。
 - `src/condition-manager.js` と `src/fallback-manager.js` は現在空ファイルです。
 

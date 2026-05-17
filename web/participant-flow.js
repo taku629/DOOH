@@ -23,6 +23,7 @@ const celebration = document.getElementById("celebration");
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
 const PARTICIPATION_STORAGE_KEY = "dooh:participant-flow:participated";
+const DEMO_DONATION_YEN = 100;
 
 let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
@@ -38,6 +39,10 @@ const prefersReducedMotion = window.matchMedia(
 
 function getDisplayName() {
   return nickname.value.trim() || "匿名サポーター";
+}
+
+function getDemoDonationTotal(count = participantCount) {
+  return count * DEMO_DONATION_YEN;
 }
 
 function hasStoredParticipation() {
@@ -67,13 +72,13 @@ function applyStoredParticipationState() {
   setSwipeFill(100);
   swipeCompleteButton.disabled = false;
   swipeCompleteButton.setAttribute("aria-disabled", "false");
-  swipeCompleteButton.textContent = "参加済み。次へ";
+  swipeCompleteButton.textContent = "デモ募金済み。次へ";
 
   if (swipeHint) {
-    swipeHint.textContent = "この端末では参加済みです。カウントは追加されません。";
+    swipeHint.textContent = "この端末ではデモ募金済みです。カウントは追加されません。";
   }
   if (thanksTitle) {
-    thanksTitle.textContent = "参加済みです。新宿に灯りが増えています。";
+    thanksTitle.textContent = "デモ募金済みです。新宿に灯りが増えています。";
   }
   if (counterBadge) {
     counterBadge.textContent = "済";
@@ -110,7 +115,7 @@ function showStep(index) {
   if (index === 2 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
-    window.setTimeout(() => animateCounter(participantCount), delay);
+    window.setTimeout(() => animateCounter(getDemoDonationTotal()), delay);
   }
 }
 
@@ -127,7 +132,7 @@ function animateCounter(target) {
 
   counterBox.classList.add("is-counting");
 
-  const startValue = 1;
+  const startValue = 0;
   const duration = 1900;
   const startTime = performance.now();
 
@@ -171,7 +176,7 @@ function buildFinalCard() {
   name.textContent = getDisplayName();
 
   const description = document.createElement("p");
-  description.textContent = "あなたの参加で街に色が広がっています。";
+  description.textContent = `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
 
   finalCard.append(label, name, description);
 }
@@ -196,7 +201,10 @@ async function registerParticipation() {
   swipeCompleteButton.setAttribute("aria-disabled", "true");
 
   try {
-    const result = await publishSwipeComplete({ name: getDisplayName() });
+    const result = await publishSwipeComplete({
+      name: getDisplayName(),
+      donationAmountYen: DEMO_DONATION_YEN,
+    });
     const committedCount = Number(result?.count);
     participantCount = Number.isFinite(committedCount)
       ? committedCount
