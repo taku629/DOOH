@@ -11,10 +11,12 @@ import {
     runTransaction,
     serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { buildParticipationTransactionValue } from "./participation-transaction.mjs";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
-const SWIPES_PATH = "swipes";
-const PARTICIPANT_COUNT_PATH = "stats/participantCount";
+const PARTICIPATION_PATH = "participation";
+const SWIPES_PATH = `${PARTICIPATION_PATH}/swipes`;
+const PARTICIPANT_COUNT_PATH = `${PARTICIPATION_PATH}/participantCount`;
 
 let configPromise;
 let databasePromise;
@@ -69,25 +71,26 @@ export async function publishSwipeComplete(payload = {}) {
         return null;
     }
 
-    const countRef = ref(database, PARTICIPANT_COUNT_PATH);
-    const countResult = await runTransaction(countRef, (currentValue) => {
-        const currentCount = Number(currentValue) || 0;
-        return currentCount + 1;
-    });
-    if (!countResult.committed) {
-        throw new Error("Participant count transaction was not committed.");
+    const eventRef = push(ref(database, SWIPES_PATH));
+    if (!eventRef.key) {
+        throw new Error("Swipe event key could not be generated.");
     }
-    const participantCount = Number(countResult.snapshot.val()) || 0;
-
-    const swipesRef = ref(database, SWIPES_PATH);
-    const eventRef = await push(swipesRef, {
-        type: "swipe-completed",
+    const event = {
+        key: eventRef.key,
         createdAt: serverTimestamp(),
-        count: participantCount,
         name: payload.name ?? null,
-        userAgent:
-            typeof navigator !== "undefined" ? navigator.userAgent : null,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+    };
+
+    const participationRef = ref(database, PARTICIPATION_PATH);
+    const result = await runTransaction(participationRef, (currentValue) => {
+        return buildParticipationTransactionValue(currentValue, event);
     });
+    if (!result.committed) {
+        throw new Error("Participation transaction was not committed.");
+    }
+    const committedData = result.snapshot.val() || {};
+    const participantCount = Number(committedData.participantCount) || 0;
 
     return {
         count: participantCount,
