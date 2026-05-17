@@ -13,12 +13,17 @@ const participantCount = document.querySelector("#displayParticipantCount");
 const participantStatus = document.querySelector("#displayParticipantStatus");
 const takeoverParticipantName = document.querySelector("#takeoverParticipantName");
 const playlistPath = "./config/playlist.json";
+const DEMO_DONATION_YEN = 100;
 
 let playlist;
 let normalVideoPath;
 let participationTimer;
 let displayCount = 0;
 let usingFallbackVideo = false;
+
+function formatDonationTotal(count) {
+    return `¥${(count * DEMO_DONATION_YEN).toLocaleString("ja-JP")}`;
+}
 
 function showFallbackView(visible) {
     if (!fallbackView) {
@@ -33,11 +38,12 @@ function updateParticipationStatus(event) {
     displayCount = Number.isFinite(eventCount) ? eventCount : displayCount + 1;
 
     if (participantCount) {
-        participantCount.textContent = String(displayCount);
+        participantCount.textContent = formatDonationTotal(displayCount);
     }
 
     if (participantStatus) {
-        participantStatus.textContent = `${event.name} さんが参加しました`;
+        const donationAmount = Number(event?.donationAmountYen) || DEMO_DONATION_YEN;
+        participantStatus.textContent = `${event.name} さんが¥${donationAmount.toLocaleString("ja-JP")}デモ募金しました`;
     }
 
     participationSignal?.classList.add("is-active");
@@ -86,7 +92,7 @@ function scheduleReturnToNormal() {
         participationSignal?.classList.remove("is-active");
 
         if (participantStatus) {
-            participantStatus.textContent = "スマホ参加を待機中";
+            participantStatus.textContent = "スマホからのデモ募金を待機中";
         }
     }, returnDelay);
 }
@@ -141,12 +147,13 @@ async function startPlayer() {
     subscribeToParticipantCount((count) => {
         displayCount = count;
         if (participantCount) {
-            participantCount.textContent = String(displayCount);
+            participantCount.textContent = formatDonationTotal(displayCount);
         }
     }).catch(logError);
     subscribeToSwipeCompletes((event) => handleParticipation({
         count: event?.count,
         name: event?.name || "参加者",
+        donationAmountYen: event?.donationAmountYen,
     })).catch(logError);
 }
 

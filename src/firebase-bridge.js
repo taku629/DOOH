@@ -79,6 +79,7 @@ export async function publishSwipeComplete(payload = {}) {
         key: eventRef.key,
         createdAt: serverTimestamp(),
         name: payload.name ?? null,
+        donationAmountYen: Number(payload.donationAmountYen) || null,
         userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     };
 
