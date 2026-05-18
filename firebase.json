@@ -1,5 +1,19 @@
 {
   "database": {
     "rules": "database.rules.json"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "README.md",
+      "docs/**",
+      "scripts/**",
+      "database.rules.json",
+      "playlist.json",
+      "*.pptx"
+    ]
   }
 }

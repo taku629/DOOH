@@ -1,14 +1,26 @@
-export function getCurrentVideo(playlist) {
-    const now = new Date();
-    const currentTime = now.toTimeString().slice(0, 5);
-
-    const matchedRules = playlist.rules.find((rule) => {
-        return currentTime >= rule.start && currentTime <= rule.end;
-    });
-
-    if (matchedRules) {
-        return matchedRules.video;
+function isTimeInRange(currentTime, start, end) {
+    if (!start || !end) {
+        return false;
     }
 
-    return playlist.fallback;
+    if (start <= end) {
+        return currentTime >= start && currentTime <= end;
+    }
+
+    return currentTime >= start || currentTime <= end;
+}
+
+export function getCurrentVideo(playlist, now = new Date()) {
+    const currentTime = now.toTimeString().slice(0, 5);
+    const rules = Array.isArray(playlist?.rules) ? playlist.rules : [];
+
+    const matchedRule = rules.find((rule) => {
+        return isTimeInRange(currentTime, rule.start, rule.end);
+    });
+
+    if (matchedRule?.video) {
+        return matchedRule.video;
+    }
+
+    return playlist?.fallback;
 }

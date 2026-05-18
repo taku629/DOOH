@@ -73,15 +73,23 @@
 
 ```json
 {
-  "fallback": "video/default.mp4",
-  "participationVideo": "video/participation.mp4",
+  "fallback": "videos/default.mp4",
+  "participationVideo": "videos/participation.mp4",
   "participationReturnSeconds": 8,
   "rules": [
     {
-      "name": "male",
+      "name": "male-morning",
+      "audience": "male",
       "start": "00:00",
       "end": "10:59",
-      "video": "video/male.mp4"
+      "video": "videos/male.mp4"
+    },
+    {
+      "name": "female-day",
+      "audience": "female",
+      "start": "11:00",
+      "end": "23:59",
+      "video": "videos/female.mp4"
     }
   ]
 }
@@ -95,11 +103,14 @@
 | `participationVideo` | スマートフォン参加を受け取ったときに一時再生する演出動画 |
 | `participationReturnSeconds` | 参加演出動画から通常動画へ戻るまでの秒数 |
 | `rules[].name` | ルール名。管理用のラベル |
+| `rules[].audience` | 想定する素材区分。例: `male` / `female`。現在の再生条件には使わず、管理用ラベルとして扱います |
 | `rules[].start` | 再生開始時刻。`HH:MM` 形式 |
 | `rules[].end` | 再生終了時刻。`HH:MM` 形式 |
 | `rules[].video` | 対象時間帯に再生する動画パス |
 
-`src/scheduler.js` は現在時刻を `HH:MM` に変換し、最初に一致した `rules` の `video` を返します。一致するルールが無い場合は `fallback` を返します。
+`src/scheduler.js` は現在時刻を `HH:MM` に変換し、最初に一致した `rules` の `video` を返します。一致するルールが無い場合は `fallback` を返します。男女別に素材を分ける場合も、現在の実装ではカメラや属性推定ではなく、時間帯ルールでどちらの素材を流すかを決めます。
+
+`rules` は上から順に評価されます。意図しない動画が選ばれないように、通常は時間帯が重複しないように設定してください。深夜帯のように日付をまたぐ場合は、`start` を `22:00`、`end` を `05:59` のように指定できます。
 
 ## ディレクトリ構成
 
@@ -154,14 +165,12 @@ python3 -m http.server 8000
 
 `config/playlist.json` では、現在以下の動画パスが指定されています。
 
-- `video/default.mp4`
-- `video/participation.mp4`
-- `video/male.mp4`
-- `video/female.mp4`
+- `videos/default.mp4`
+- `videos/participation.mp4`
+- `videos/male.mp4`
+- `videos/female.mp4`
 
 実際に動画を再生するには、設定されたパスに動画ファイルを配置してください。動画が無い場合、ブラウザの動画再生は失敗し、`index.html` 内のビジュアルフォールバックが表示されます。
-
-リポジトリには `videos/` ディレクトリがあります。動画を `videos/` に置く場合は、`config/playlist.json` のパスも `videos/default.mp4` のように合わせて変更してください。
 
 ## カスタマイズ方法
 
@@ -173,10 +182,11 @@ python3 -m http.server 8000
 
 ```json
 {
-  "name": "morning",
+  "name": "male-morning",
+  "audience": "male",
   "start": "07:00",
   "end": "10:59",
-  "video": "videos/morning.mp4"
+  "video": "videos/male.mp4"
 }
 ```
 
