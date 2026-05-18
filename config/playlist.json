@@ -1,20 +1,21 @@
 {
-    "fallback":"video/default.mp4",
-    "participationVideo":"video/participation.mp4",
-    "participationReturnSeconds":8,
-    "rules":[
-        {
-            "name":"male",
-            "start":"00:00",
-            "end":"10:59",
-            "video":"video/male.mp4"
-        },
-    
-        {
-             "name":"female",
-            "start":"00:00",
-            "end":"10:59",
-            "video":"video/female.mp4"
-        }
-    ]
+  "fallback": "videos/default.mp4",
+  "participationVideo": "videos/participation.mp4",
+  "participationReturnSeconds": 8,
+  "rules": [
+    {
+      "name": "male-morning",
+      "audience": "male",
+      "start": "00:00",
+      "end": "10:59",
+      "video": "videos/male.mp4"
+    },
+    {
+      "name": "female-day",
+      "audience": "female",
+      "start": "11:00",
+      "end": "23:59",
+      "video": "videos/female.mp4"
+    }
+  ]
 }
