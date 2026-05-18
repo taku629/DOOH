@@ -46,19 +46,34 @@
 
         <section class="step" data-step="1" data-label="スワイプ" aria-labelledby="swipeTitle">
           <span class="step-count">02</span>
-          <h2 id="swipeTitle">スワイプして100円を届ける</h2>
-          <p>下のスライダーを右に動かし、完了ボタンでデモ募金を確定してください。</p>
-          <div class="swipe-stage" aria-hidden="true">
+          <h2 id="swipeTitle">ネオンを満たして100円を届ける</h2>
+          <p>ノブを右端まで押し出すと、新宿のライトがチャージされます。完了後に発光を確定してください。</p>
+          <div class="swipe-stage" id="swipeStage" aria-hidden="true">
+            <span class="city-window window-a"></span>
+            <span class="city-window window-b"></span>
+            <span class="city-window window-c"></span>
+            <span class="city-window window-d"></span>
+            <span class="charge-wave"></span>
             <span class="spark spark-a"></span>
             <span class="spark spark-b"></span>
             <span class="spark spark-c"></span>
             <span class="light-beam"></span>
+            <span class="action-pulse"></span>
+          </div>
+          <div class="action-status" aria-live="polite">
+            <span id="swipeActionLabel">画面下のノブを右へ押し出す</span>
+            <strong id="swipePercent">0%</strong>
           </div>
           <div class="slider-wrap">
             <input id="swipeSlider" type="range" min="0" max="100" step="5" value="0" aria-label="参加スワイプ" aria-describedby="swipeHint" />
+            <div class="charge-markers" aria-hidden="true">
+              <span>Start</span>
+              <span>Relight</span>
+              <span>Ready</span>
+            </div>
           </div>
-          <p class="hint" id="swipeHint">100%まで到達すると完了ボタンを押せます。</p>
-          <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">¥100をデモ募金する</button>
+          <p class="hint" id="swipeHint">100%までチャージすると確定ボタンが有効になります。</p>
+          <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">ネオンを100%にして確定</button>
         </section>
 
         <section class="step" data-step="2" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">

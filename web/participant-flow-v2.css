@@ -394,6 +394,7 @@ label {
 .step > .impact-strip,
 .step > .donation-preview,
 .step > .swipe-stage,
+.step > .action-status,
 .step > .slider-wrap,
 .step > .hint,
 .step > .counter-box,
@@ -423,7 +424,8 @@ label {
 .step.is-current > .impact-strip       { transition-delay: 0.22s; }
 .step.is-current > .donation-preview   { transition-delay: 0.24s; }
 .step.is-current > .swipe-stage        { transition-delay: 0.20s; }
-.step.is-current > .slider-wrap        { transition-delay: 0.28s; }
+.step.is-current > .action-status      { transition-delay: 0.26s; }
+.step.is-current > .slider-wrap        { transition-delay: 0.3s; }
 .step.is-current > .hint               { transition-delay: 0.32s; }
 .step.is-current > .counter-box        { transition-delay: 0.22s; }
 .step.is-current > .card               { transition-delay: 0.26s; }
@@ -530,8 +532,8 @@ input[type="text"]:focus {
 /* Swipe slider -------------------------------------------------------- */
 
 .slider-wrap {
-  margin: 22px 0 12px;
-  padding: 22px 18px;
+  margin: 16px 0 12px;
+  padding: 20px 18px 14px;
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--hairline);
@@ -604,20 +606,158 @@ input[type="range"]:active::-webkit-slider-thumb {
   transform: scale(1.08);
 }
 
+.charge-markers {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--ink-tertiary);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
 .swipe-stage {
   position: relative;
-  height: 64px;
+  height: 118px;
   margin: 4px 0 12px;
   overflow: hidden;
   border-radius: var(--radius-md);
-  background: linear-gradient(
-    90deg,
-    #171717 0%,
-    #30323a 38%,
-    var(--accent) 72%,
-    var(--blue) 100%
-  );
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 209, 255, 0.22) 0%,
+      rgba(182, 48, 255, 0.24) var(--swipe-fill, 0%),
+      rgba(255, 255, 255, 0.04) var(--swipe-fill, 0%)
+    ),
+    linear-gradient(180deg, #111113 0%, #181821 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 -28px 48px rgba(0, 0, 0, 0.28);
+}
+
+.swipe-stage::before,
+.swipe-stage::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 50%;
+  pointer-events: none;
+  content: "";
+}
+
+.swipe-stage::before {
+  background:
+    linear-gradient(90deg, transparent 0 8%, rgba(255, 255, 255, 0.08) 8% 13%, transparent 13% 19%, rgba(255, 255, 255, 0.08) 19% 25%, transparent 25% 34%, rgba(255, 255, 255, 0.08) 34% 43%, transparent 43% 52%, rgba(255, 255, 255, 0.08) 52% 61%, transparent 61% 72%, rgba(255, 255, 255, 0.08) 72% 80%, transparent 80%);
+  opacity: 0.7;
+}
+
+.swipe-stage::after {
+  height: 100%;
+  background:
+    linear-gradient(90deg, rgba(0, 209, 255, 0.36), rgba(182, 48, 255, 0.28), transparent) 0 0 / var(--swipe-fill, 0%) 100% no-repeat;
+  filter: blur(18px);
+  opacity: 0.85;
+  transition: background-size 140ms ease;
+}
+
+.city-window {
+  position: absolute;
+  bottom: 22px;
+  width: 12px;
+  height: 34px;
+  border-radius: 999px 999px 4px 4px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 rgba(0, 209, 255, 0);
+  transition:
+    background 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.window-a {
+  left: 12%;
+  height: 42px;
+}
+
+.window-b {
+  left: 29%;
+  height: 54px;
+}
+
+.window-c {
+  left: 54%;
+  height: 46px;
+}
+
+.window-d {
+  left: 76%;
+  height: 62px;
+}
+
+.step.is-swipe-active .window-a,
+.step.is-swipe-mid .window-b,
+.step.is-swipe-high .window-c,
+.step.is-swipe-charged .city-window {
+  background: var(--success);
+  box-shadow:
+    0 0 18px rgba(0, 255, 163, 0.72),
+    0 0 34px rgba(0, 209, 255, 0.24);
+  transform: translateY(-2px);
+}
+
+.charge-wave {
+  position: absolute;
+  left: 0;
+  bottom: 12px;
+  width: var(--swipe-fill, 0%);
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--success), var(--blue));
+  box-shadow: 0 0 20px rgba(0, 209, 255, 0.72);
+  transition: width 140ms ease;
+}
+
+.action-pulse {
+  position: absolute;
+  left: var(--swipe-fill, 0%);
+  bottom: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 8px rgba(0, 209, 255, 0.12),
+    0 0 28px rgba(0, 209, 255, 0.76);
+  transform: translateX(-50%);
+  transition: left 140ms ease;
+}
+
+.action-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.action-status span {
+  color: var(--ink-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.action-status strong {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .light-beam {
@@ -664,6 +804,22 @@ input[type="range"]:active::-webkit-slider-thumb {
     inset 0 0 0 1px rgba(0, 209, 255, 0.34),
     0 0 0 6px rgba(0, 209, 255, 0.08);
   transform: translateY(-1px);
+}
+
+.step.is-swipe-charged .swipe-stage {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 255, 163, 0.3),
+    0 0 0 6px rgba(0, 255, 163, 0.06),
+    0 24px 54px rgba(0, 209, 255, 0.18);
+}
+
+.step.is-swipe-charged .action-status {
+  border-color: rgba(0, 255, 163, 0.3);
+  background: rgba(0, 255, 163, 0.08);
+}
+
+.step.is-swipe-charged .action-status strong {
+  color: var(--success);
 }
 
 .step.is-swipe-ready .light-beam {

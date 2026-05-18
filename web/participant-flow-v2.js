@@ -15,11 +15,14 @@ const shareStatus = document.getElementById("shareStatus");
 const swipeSlider = document.getElementById("swipeSlider");
 const swipeCompleteButton = document.getElementById("swipeComplete");
 const swipeHint = document.getElementById("swipeHint");
+const swipeActionLabel = document.getElementById("swipeActionLabel");
+const swipePercent = document.getElementById("swipePercent");
 const thanksTitle = document.getElementById("thanksTitle");
 const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
 const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
+const swipeStep = steps[1];
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
@@ -62,6 +65,37 @@ function storeParticipation() {
   }
 }
 
+function updateSwipeAction(value) {
+  const normalized = Math.max(0, Math.min(100, Number(value) || 0));
+  const isComplete = normalized >= 100;
+
+  setSwipeFill(normalized);
+  swipeStep.classList.toggle("is-swipe-active", normalized > 0);
+  swipeStep.classList.toggle("is-swipe-mid", normalized >= 40);
+  swipeStep.classList.toggle("is-swipe-high", normalized >= 72);
+  swipeStep.classList.toggle("is-swipe-charged", isComplete);
+
+  if (swipePercent) {
+    swipePercent.textContent = `${normalized}%`;
+  }
+
+  if (!swipeActionLabel) {
+    return;
+  }
+
+  if (isComplete) {
+    swipeActionLabel.textContent = "チャージ完了。発光を確定できます。";
+  } else if (normalized >= 72) {
+    swipeActionLabel.textContent = "あと少し。街の色が戻り始めています。";
+  } else if (normalized >= 40) {
+    swipeActionLabel.textContent = "ネオンが広がっています。そのまま右へ。";
+  } else if (normalized > 0) {
+    swipeActionLabel.textContent = "チャージ開始。光を右端まで運んでください。";
+  } else {
+    swipeActionLabel.textContent = "画面下のノブを右へ押し出す";
+  }
+}
+
 function applyStoredParticipationState() {
   if (!hasStoredParticipation()) {
     return;
@@ -70,7 +104,7 @@ function applyStoredParticipationState() {
   hasCountedParticipation = true;
   swipeSlider.value = "100";
   swipeSlider.disabled = true;
-  setSwipeFill(100);
+  updateSwipeAction(100);
   swipeCompleteButton.disabled = false;
   swipeCompleteButton.setAttribute("aria-disabled", "false");
   swipeCompleteButton.textContent = "デモ募金済み。次へ";
@@ -423,11 +457,13 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 swipeSlider.addEventListener("input", (event) => {
   const value = Number(event.target.value);
   const isComplete = value >= 100;
-  const swipeStep = steps[1];
 
-  setSwipeFill(value);
+  updateSwipeAction(value);
   swipeCompleteButton.disabled = !isComplete;
   swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
+  swipeCompleteButton.textContent = isComplete
+    ? "発光を確定する"
+    : "ネオンを100%にして確定";
 
   if (isComplete && !hasShownSwipeReadyEffect) {
     hasShownSwipeReadyEffect = true;
@@ -461,7 +497,7 @@ window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
 });
 
-setSwipeFill(0);
+updateSwipeAction(0);
 applyStoredParticipationState();
 showStep(0);
 
