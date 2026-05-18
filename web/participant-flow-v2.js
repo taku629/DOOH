@@ -65,6 +65,22 @@ function storeParticipation() {
   }
 }
 
+function resetStoredParticipationFromQuery() {
+  const url = new URL(location.href);
+  if (!url.searchParams.has("reset")) {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(PARTICIPATION_STORAGE_KEY);
+  } catch {
+    /* Ignore storage errors; the reset helper is only for local preview. */
+  }
+
+  url.searchParams.delete("reset");
+  history.replaceState(null, "", url);
+}
+
 function updateSwipeAction(value) {
   const normalized = Math.max(0, Math.min(100, Number(value) || 0));
   const isComplete = normalized >= 100;
@@ -503,6 +519,7 @@ window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
 });
 
+resetStoredParticipationFromQuery();
 updateSwipeAction(0);
 applyStoredParticipationState();
 showStep(0);
