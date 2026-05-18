@@ -109,6 +109,12 @@ function applyStoredParticipationState() {
   swipeCompleteButton.setAttribute("aria-disabled", "false");
   swipeCompleteButton.textContent = "デモ募金済み。次へ";
 
+  if (swipeActionLabel) {
+    swipeActionLabel.textContent = "この端末ではデモ募金済みです。次へ進めます。";
+  }
+  if (swipePercent) {
+    swipePercent.textContent = "済";
+  }
   if (swipeHint) {
     swipeHint.textContent = "この端末ではデモ募金済みです。カウントは追加されません。";
   }
