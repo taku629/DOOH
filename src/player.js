@@ -22,12 +22,17 @@ let normalVideoPath;
 let participationTimer;
 let displayCount = 0;
 let usingFallbackVideo = false;
+let displayedCount = 0;
+let totalAnimationFrame = null;
+let hasInitializedLiveTotals = false;
 
 function formatDonationTotal(count) {
     return `¥${(count * DEMO_DONATION_YEN).toLocaleString("ja-JP")}`;
 }
 
-function updateLiveTotals(count) {
+function setLiveTotals(count) {
+    displayedCount = count;
+
     if (donationTotal) {
         donationTotal.textContent = formatDonationTotal(count);
     }
@@ -35,6 +40,47 @@ function updateLiveTotals(count) {
     if (participantCount) {
         participantCount.textContent = count.toLocaleString("ja-JP");
     }
+}
+
+function updateLiveTotals(count, options = {}) {
+    const target = Math.max(0, Number(count) || 0);
+    const shouldAnimate = options.animate && target !== displayedCount;
+
+    if (!shouldAnimate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (totalAnimationFrame) {
+            cancelAnimationFrame(totalAnimationFrame);
+            totalAnimationFrame = null;
+        }
+        setLiveTotals(target);
+        return;
+    }
+
+    if (totalAnimationFrame) {
+        cancelAnimationFrame(totalAnimationFrame);
+    }
+
+    const start = displayedCount;
+    const duration = 1200;
+    const startTime = performance.now();
+
+    function tick(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 4);
+        const value = Math.round(start + (target - start) * eased);
+
+        setLiveTotals(value);
+
+        if (progress < 1) {
+            totalAnimationFrame = requestAnimationFrame(tick);
+            return;
+        }
+
+        totalAnimationFrame = null;
+        setLiveTotals(target);
+    }
+
+    totalAnimationFrame = requestAnimationFrame(tick);
 }
 
 function showFallbackView(visible) {
@@ -49,7 +95,7 @@ function updateParticipationStatus(event) {
     const eventCount = Number(event?.count);
     displayCount = Number.isFinite(eventCount) ? eventCount : displayCount + 1;
 
-    updateLiveTotals(displayCount);
+    updateLiveTotals(displayCount, { animate: true });
 
     if (participantStatus) {
         const donationAmount = Number(event?.donationAmountYen) || DEMO_DONATION_YEN;
@@ -155,8 +201,10 @@ async function startPlayer() {
     }
 
     subscribeToParticipantCount((count) => {
+        const shouldAnimate = hasInitializedLiveTotals && count > displayedCount;
+        hasInitializedLiveTotals = true;
         displayCount = count;
-        updateLiveTotals(displayCount);
+        updateLiveTotals(displayCount, { animate: shouldAnimate });
     }, { channel: participationChannel }).catch(logError);
     subscribeToSwipeCompletes((event) => handleParticipation({
         count: event?.count,
