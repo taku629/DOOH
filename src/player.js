@@ -13,6 +13,7 @@ const donationTotal = document.querySelector("#displayDonationTotal");
 const participantCount = document.querySelector("#displayParticipantCount");
 const participantStatus = document.querySelector("#displayParticipantStatus");
 const takeoverParticipantName = document.querySelector("#takeoverParticipantName");
+const participationChannel = displayShell?.dataset.participationChannel || "default";
 const playlistPath = "./config/playlist.json";
 const DEMO_DONATION_YEN = 100;
 
@@ -156,12 +157,12 @@ async function startPlayer() {
     subscribeToParticipantCount((count) => {
         displayCount = count;
         updateLiveTotals(displayCount);
-    }).catch(logError);
+    }, { channel: participationChannel }).catch(logError);
     subscribeToSwipeCompletes((event) => handleParticipation({
         count: event?.count,
         name: event?.name || "参加者",
         donationAmountYen: event?.donationAmountYen,
-    })).catch(logError);
+    }), { channel: participationChannel }).catch(logError);
 }
 
 startPlayer();

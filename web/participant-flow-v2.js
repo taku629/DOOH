@@ -6,7 +6,6 @@ const progressBar = document.getElementById("progressBar");
 const progressElement = document.querySelector(".bar");
 const counterValue = document.getElementById("counterValue");
 const counterBox = document.getElementById("counterBox");
-const counterBadge = counterBox?.querySelector("em");
 const counterParticipants = document.getElementById("counterParticipants");
 const nickname = document.getElementById("nickname");
 const previewName = document.getElementById("previewName");
@@ -26,7 +25,7 @@ const swipeStep = steps[1];
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
-const PARTICIPATION_STORAGE_KEY = "dooh:participant-flow-v2:participated";
+const PARTICIPATION_CHANNEL = "v2";
 const DEMO_DONATION_YEN = 100;
 
 let currentStep = 0;
@@ -47,38 +46,6 @@ function getDisplayName() {
 
 function getDemoDonationTotal(count = participantCount) {
   return count * DEMO_DONATION_YEN;
-}
-
-function hasStoredParticipation() {
-  try {
-    return localStorage.getItem(PARTICIPATION_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function storeParticipation() {
-  try {
-    localStorage.setItem(PARTICIPATION_STORAGE_KEY, "true");
-  } catch {
-    /* Storage can be unavailable in private browsing; Firebase remains source of truth. */
-  }
-}
-
-function resetStoredParticipationFromQuery() {
-  const url = new URL(location.href);
-  if (!url.searchParams.has("reset")) {
-    return;
-  }
-
-  try {
-    localStorage.removeItem(PARTICIPATION_STORAGE_KEY);
-  } catch {
-    /* Ignore storage errors; the reset helper is only for local preview. */
-  }
-
-  url.searchParams.delete("reset");
-  history.replaceState(null, "", url);
 }
 
 function updateSwipeAction(value) {
@@ -109,39 +76,6 @@ function updateSwipeAction(value) {
     swipeActionLabel.textContent = "チャージ開始。光を右端まで運んでください。";
   } else {
     swipeActionLabel.textContent = "画面下のノブを右へ押し出す";
-  }
-}
-
-function applyStoredParticipationState() {
-  if (!hasStoredParticipation()) {
-    return;
-  }
-
-  hasCountedParticipation = true;
-  swipeSlider.value = "100";
-  swipeSlider.disabled = true;
-  updateSwipeAction(100);
-  swipeCompleteButton.disabled = false;
-  swipeCompleteButton.setAttribute("aria-disabled", "false");
-  swipeCompleteButton.textContent = "デモ募金済み。次へ";
-
-  if (swipeActionLabel) {
-    swipeActionLabel.textContent = "この端末ではデモ募金済みです。次へ進めます。";
-  }
-  if (swipePercent) {
-    swipePercent.textContent = "済";
-  }
-  if (swipeHint) {
-    swipeHint.textContent = "この端末ではデモ募金済みです。カウントは追加されません。";
-  }
-  if (thanksTitle) {
-    thanksTitle.textContent = "デモ募金済みです。新宿に灯りが増えています。";
-  }
-  if (counterBadge) {
-    counterBadge.textContent = "済";
-  }
-  if (counterParticipants) {
-    counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
   }
 }
 
@@ -251,11 +185,6 @@ function finalizeCard() {
 }
 
 async function registerParticipation() {
-  if (hasStoredParticipation()) {
-    hasCountedParticipation = true;
-    applyStoredParticipationState();
-    return true;
-  }
   if (hasCountedParticipation || isRegisteringParticipation) {
     return hasCountedParticipation;
   }
@@ -265,6 +194,8 @@ async function registerParticipation() {
 
   try {
     const result = await publishSwipeComplete({
+      channel: PARTICIPATION_CHANNEL,
+      source: "participant-flow-v2",
       name: getDisplayName(),
       donationAmountYen: DEMO_DONATION_YEN,
     });
@@ -276,7 +207,6 @@ async function registerParticipation() {
       counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
     }
     hasCountedParticipation = true;
-    storeParticipation();
     return true;
   } catch (error) {
     console.warn("[firebase] participation count update failed:", error);
@@ -334,9 +264,6 @@ function setSwipeFill(value) {
 
 function canAdvanceFrom(index) {
   if (index === 1) {
-    if (hasStoredParticipation()) {
-      return true;
-    }
     return Number(swipeSlider.value) >= 100;
   }
   return true;
@@ -519,12 +446,10 @@ window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
 });
 
-resetStoredParticipationFromQuery();
 updateSwipeAction(0);
-applyStoredParticipationState();
 showStep(0);
 
-getParticipantCount()
+getParticipantCount({ channel: PARTICIPATION_CHANNEL })
   .then((count) => {
     if (Number.isFinite(count) && count > 0 && !hasCountedParticipation) {
       participantCount = count;

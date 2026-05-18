@@ -15,11 +15,22 @@ import { buildParticipationTransactionValue } from "./participation-transaction.
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
 const PARTICIPATION_PATH = "participation";
-const SWIPES_PATH = `${PARTICIPATION_PATH}/swipes`;
-const PARTICIPANT_COUNT_PATH = `${PARTICIPATION_PATH}/participantCount`;
+const PARTICIPATION_V2_PATH = "participationV2";
 
 let configPromise;
 let databasePromise;
+
+function getParticipationPath(channel = "default") {
+    return channel === "v2" ? PARTICIPATION_V2_PATH : PARTICIPATION_PATH;
+}
+
+function getParticipantCountPath(channel) {
+    return `${getParticipationPath(channel)}/participantCount`;
+}
+
+function getSwipesPath(channel) {
+    return `${getParticipationPath(channel)}/swipes`;
+}
 
 async function loadConfig() {
     if (configPromise) {
@@ -71,19 +82,21 @@ export async function publishSwipeComplete(payload = {}) {
         return null;
     }
 
-    const eventRef = push(ref(database, SWIPES_PATH));
+    const channel = payload.channel === "v2" ? "v2" : "default";
+    const eventRef = push(ref(database, getSwipesPath(channel)));
     if (!eventRef.key) {
         throw new Error("Swipe event key could not be generated.");
     }
     const event = {
         key: eventRef.key,
         createdAt: serverTimestamp(),
+        source: payload.source ?? channel,
         name: payload.name ?? null,
         donationAmountYen: Number(payload.donationAmountYen) || null,
         userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     };
 
-    const participationRef = ref(database, PARTICIPATION_PATH);
+    const participationRef = ref(database, getParticipationPath(channel));
     const result = await runTransaction(participationRef, (currentValue) => {
         return buildParticipationTransactionValue(currentValue, event);
     });
@@ -99,34 +112,37 @@ export async function publishSwipeComplete(payload = {}) {
     };
 }
 
-export async function getParticipantCount() {
+export async function getParticipantCount(options = {}) {
     const database = await ensureDatabase();
     if (!database) {
         return null;
     }
 
-    const snapshot = await get(ref(database, PARTICIPANT_COUNT_PATH));
+    const channel = options.channel === "v2" ? "v2" : "default";
+    const snapshot = await get(ref(database, getParticipantCountPath(channel)));
     return Number(snapshot.val()) || 0;
 }
 
-export async function subscribeToParticipantCount(callback) {
+export async function subscribeToParticipantCount(callback, options = {}) {
     const database = await ensureDatabase();
     if (!database) {
         return () => {};
     }
 
-    return onValue(ref(database, PARTICIPANT_COUNT_PATH), (snapshot) => {
+    const channel = options.channel === "v2" ? "v2" : "default";
+    return onValue(ref(database, getParticipantCountPath(channel)), (snapshot) => {
         callback(Number(snapshot.val()) || 0);
     });
 }
 
-export async function subscribeToSwipeCompletes(callback) {
+export async function subscribeToSwipeCompletes(callback, options = {}) {
     const database = await ensureDatabase();
     if (!database) {
         return () => {};
     }
 
-    const swipesRef = ref(database, SWIPES_PATH);
+    const channel = options.channel === "v2" ? "v2" : "default";
+    const swipesRef = ref(database, getSwipesPath(channel));
     const knownIds = new Set();
 
     try {
