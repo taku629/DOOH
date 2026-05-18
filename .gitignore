@@ -1,0 +1,4 @@
+.agents/
+.codex/
+*.pptx
+node_modules/
