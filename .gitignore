@@ -1,4 +1,5 @@
 .agents/
 .codex/
+.firebase/
 *.pptx
 node_modules/

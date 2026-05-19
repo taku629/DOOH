@@ -100,7 +100,7 @@ function updateProgress(index) {
 }
 
 function setTrackPosition(index, dragPercent = 0) {
-  track.style.transform = `translate3d(0, calc(${-index * 100}% + ${dragPercent}%), 0)`;
+  track.style.transform = `translate3d(calc(${-index * 100}% + ${dragPercent}%), 0, 0)`;
 }
 
 function showStep(index) {
@@ -295,7 +295,7 @@ async function handleForwardAdvance(fromIndex) {
   return true;
 }
 
-/* Pointer-driven vertical swipe between steps -------------------------- */
+/* Pointer-driven horizontal swipe between steps ------------------------ */
 
 const DRAG_AXIS_THRESHOLD = 8;
 const SNAP_THRESHOLD_RATIO = 0.18;
@@ -338,27 +338,27 @@ function movePointer(event) {
   const dy = event.clientY - pointerStartY;
 
   if (dragAxisLocked === null) {
-    if (Math.abs(dy) > DRAG_AXIS_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
-      dragAxisLocked = "y";
+    if (Math.abs(dx) > DRAG_AXIS_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+      dragAxisLocked = "x";
       track.classList.add("is-dragging");
       try {
         viewport.setPointerCapture(event.pointerId);
       } catch {
         /* noop */
       }
-    } else if (Math.abs(dx) > DRAG_AXIS_THRESHOLD) {
-      dragAxisLocked = "x";
+    } else if (Math.abs(dy) > DRAG_AXIS_THRESHOLD) {
+      dragAxisLocked = "y";
     }
   }
 
-  if (dragAxisLocked !== "y") {
+  if (dragAxisLocked !== "x") {
     return;
   }
 
   event.preventDefault();
-  dragOffset = dy;
+  dragOffset = dx;
 
-  const height = viewport.clientHeight || 1;
+  const width = viewport.clientWidth || 1;
   let normalized = dragOffset;
 
   const atStart = currentStep === 0 && dragOffset > 0;
@@ -369,7 +369,7 @@ function movePointer(event) {
     normalized = dragOffset * 0.35;
   }
 
-  setTrackPosition(currentStep, (normalized / height) * 100);
+  setTrackPosition(currentStep, (normalized / width) * 100);
 }
 
 async function endPointer(event) {
@@ -377,16 +377,16 @@ async function endPointer(event) {
     return;
   }
 
-  const wasVertical = dragAxisLocked === "y";
+  const wasHorizontal = dragAxisLocked === "x";
   track.classList.remove("is-dragging");
 
-  if (!wasVertical) {
+  if (!wasHorizontal) {
     activePointerId = null;
     return;
   }
 
-  const height = viewport.clientHeight || 1;
-  const threshold = height * SNAP_THRESHOLD_RATIO;
+  const width = viewport.clientWidth || 1;
+  const threshold = width * SNAP_THRESHOLD_RATIO;
 
   let target = currentStep;
   if (dragOffset < -threshold && currentStep < totalSteps - 1) {

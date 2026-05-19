@@ -6,7 +6,6 @@ const progressBar = document.getElementById("progressBar");
 const progressElement = document.querySelector(".bar");
 const counterValue = document.getElementById("counterValue");
 const counterBox = document.getElementById("counterBox");
-const counterBadge = counterBox?.querySelector("em");
 const counterParticipants = document.getElementById("counterParticipants");
 const nickname = document.getElementById("nickname");
 const previewName = document.getElementById("previewName");
@@ -15,15 +14,18 @@ const shareStatus = document.getElementById("shareStatus");
 const swipeSlider = document.getElementById("swipeSlider");
 const swipeCompleteButton = document.getElementById("swipeComplete");
 const swipeHint = document.getElementById("swipeHint");
+const swipeActionLabel = document.getElementById("swipeActionLabel");
+const swipePercent = document.getElementById("swipePercent");
 const thanksTitle = document.getElementById("thanksTitle");
 const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
 const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
+const swipeStep = steps[0];
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
-const PARTICIPATION_STORAGE_KEY = "dooh:participant-flow:participated";
+const PARTICIPATION_CHANNEL = "v2";
 const DEMO_DONATION_YEN = 100;
 
 let currentStep = 0;
@@ -46,46 +48,34 @@ function getDemoDonationTotal(count = participantCount) {
   return count * DEMO_DONATION_YEN;
 }
 
-function hasStoredParticipation() {
-  try {
-    return localStorage.getItem(PARTICIPATION_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
+function updateSwipeAction(value) {
+  const normalized = Math.max(0, Math.min(100, Number(value) || 0));
+  const isComplete = normalized >= 100;
 
-function storeParticipation() {
-  try {
-    localStorage.setItem(PARTICIPATION_STORAGE_KEY, "true");
-  } catch {
-    /* Storage can be unavailable in private browsing; Firebase remains source of truth. */
-  }
-}
+  setSwipeFill(normalized);
+  swipeStep.classList.toggle("is-swipe-active", normalized > 0);
+  swipeStep.classList.toggle("is-swipe-mid", normalized >= 40);
+  swipeStep.classList.toggle("is-swipe-high", normalized >= 72);
+  swipeStep.classList.toggle("is-swipe-charged", isComplete);
 
-function applyStoredParticipationState() {
-  if (!hasStoredParticipation()) {
+  if (swipePercent) {
+    swipePercent.textContent = `${normalized}%`;
+  }
+
+  if (!swipeActionLabel) {
     return;
   }
 
-  hasCountedParticipation = true;
-  swipeSlider.value = "100";
-  swipeSlider.disabled = true;
-  setSwipeFill(100);
-  swipeCompleteButton.disabled = false;
-  swipeCompleteButton.setAttribute("aria-disabled", "false");
-  swipeCompleteButton.textContent = "デモ募金済み。次へ";
-
-  if (swipeHint) {
-    swipeHint.textContent = "この端末ではデモ募金済みです。カウントは追加されません。";
-  }
-  if (thanksTitle) {
-    thanksTitle.textContent = "デモ募金済みです。新宿に灯りが増えています。";
-  }
-  if (counterBadge) {
-    counterBadge.textContent = "済";
-  }
-  if (counterParticipants) {
-    counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
+  if (isComplete) {
+    swipeActionLabel.textContent = "チャージ完了。発光を確定できます。";
+  } else if (normalized >= 72) {
+    swipeActionLabel.textContent = "あと少し。街の色が戻り始めています。";
+  } else if (normalized >= 40) {
+    swipeActionLabel.textContent = "ネオンが広がっています。そのまま上へ。";
+  } else if (normalized > 0) {
+    swipeActionLabel.textContent = "チャージ開始。光を上端まで運んでください。";
+  } else {
+    swipeActionLabel.textContent = "画面下のノブを上へ押し上げる";
   }
 }
 
@@ -195,11 +185,6 @@ function finalizeCard() {
 }
 
 async function registerParticipation() {
-  if (hasStoredParticipation()) {
-    hasCountedParticipation = true;
-    applyStoredParticipationState();
-    return true;
-  }
   if (hasCountedParticipation || isRegisteringParticipation) {
     return hasCountedParticipation;
   }
@@ -209,6 +194,8 @@ async function registerParticipation() {
 
   try {
     const result = await publishSwipeComplete({
+      channel: PARTICIPATION_CHANNEL,
+      source: "participant-flow-v2",
       name: getDisplayName(),
       donationAmountYen: DEMO_DONATION_YEN,
     });
@@ -220,7 +207,6 @@ async function registerParticipation() {
       counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
     }
     hasCountedParticipation = true;
-    storeParticipation();
     return true;
   } catch (error) {
     console.warn("[firebase] participation count update failed:", error);
@@ -278,9 +264,6 @@ function setSwipeFill(value) {
 
 function canAdvanceFrom(index) {
   if (index === 0) {
-    if (hasStoredParticipation()) {
-      return true;
-    }
     return Number(swipeSlider.value) >= 100;
   }
   return true;
@@ -423,11 +406,13 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 swipeSlider.addEventListener("input", (event) => {
   const value = Number(event.target.value);
   const isComplete = value >= 100;
-  const swipeStep = steps[0];
 
-  setSwipeFill(value);
+  updateSwipeAction(value);
   swipeCompleteButton.disabled = !isComplete;
   swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
+  swipeCompleteButton.textContent = isComplete
+    ? "発光を確定する"
+    : "ネオンを100%にして確定";
 
   if (isComplete && !hasShownSwipeReadyEffect) {
     hasShownSwipeReadyEffect = true;
@@ -461,11 +446,10 @@ window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
 });
 
-setSwipeFill(0);
-applyStoredParticipationState();
+updateSwipeAction(0);
 showStep(0);
 
-getParticipantCount()
+getParticipantCount({ channel: PARTICIPATION_CHANNEL })
   .then((count) => {
     if (Number.isFinite(count) && count > 0 && !hasCountedParticipation) {
       participantCount = count;
