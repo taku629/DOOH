@@ -41,18 +41,13 @@ button {
   position: relative;
   width: min(100% - 32px, 480px);
   margin: 0 auto;
-  padding: 28px 0 40px;
+  padding: 18px 0 40px;
 }
 
 /* Hero ---------------------------------------------------------------- */
 
 .app-hero {
-  position: relative;
-  margin-bottom: 18px;
-  padding: 28px 24px 24px;
-  border-radius: var(--radius-xl);
-  background: var(--surface);
-  box-shadow: var(--shadow-md);
+  display: none;
 }
 
 .eyebrow {

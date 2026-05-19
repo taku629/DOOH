@@ -95,22 +95,13 @@ button {
   position: relative;
   width: min(100% - 40px, 480px);
   margin: 0 auto;
-  padding: 20px 0 40px;
+  padding: 18px 0 40px;
 }
 
 /* Hero ---------------------------------------------------------------- */
 
 .app-hero {
-  position: relative;
-  margin-bottom: 18px;
-  padding: 28px 24px 24px;
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  overflow: hidden;
+  display: none;
 }
 
 .app-hero::before {

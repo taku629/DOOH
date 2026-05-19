@@ -19,7 +19,7 @@
     </section>
 
     <header class="progress" aria-label="進行状況">
-      <span id="progressText" aria-live="polite">1 / 5 ・ はじめに</span>
+      <span id="progressText" aria-live="polite">1 / 4 ・ デモ募金</span>
       <div class="bar" role="progressbar" aria-valuemin="1" aria-valuenow="1" aria-describedby="progressText">
         <div id="progressBar"></div>
       </div>
@@ -27,27 +27,10 @@
 
     <div class="viewport" id="viewport">
       <div class="track" id="track">
-        <section class="step is-current" data-step="0" data-label="はじめに" aria-labelledby="welcomeTitle">
+        <section class="step is-current" data-step="0" data-label="デモ募金" aria-labelledby="swipeTitle">
           <span class="step-count">01</span>
-          <h2 id="welcomeTitle">待ち時間に、街を明るくする。</h2>
-          <p>所要10秒。実際の決済は発生しない、デモ用の疑似募金です。</p>
-          <div class="donation-preview" aria-label="デモ募金額">
-            <span>Demo donation</span>
-            <strong>¥100</strong>
-          </div>
-          <div class="impact-strip" aria-hidden="true">
-            <span>Monochrome</span>
-            <b></b>
-            <span>Color</span>
-          </div>
-          <button class="primary" type="button" data-next>デモ募金に進む</button>
-          <small>個人情報・カード情報の入力は不要。表示名は任意です。</small>
-        </section>
-
-        <section class="step" data-step="1" data-label="スワイプ" aria-labelledby="swipeTitle">
-          <span class="step-count">02</span>
           <h2 id="swipeTitle">スワイプして100円を届ける</h2>
-          <p>下のスライダーを右に動かし、完了ボタンでデモ募金を確定してください。</p>
+          <p>下のスライダーを右に動かし、完了ボタンでデモ募金を確定してください。表示名はあとで任意入力できます。</p>
           <div class="swipe-stage" aria-hidden="true">
             <span class="spark spark-a"></span>
             <span class="spark spark-b"></span>
@@ -61,8 +44,8 @@
           <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">¥100をデモ募金する</button>
         </section>
 
-        <section class="step" data-step="2" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
-          <span class="step-count">03</span>
+        <section class="step" data-step="1" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
+          <span class="step-count">02</span>
           <h2 id="thanksTitle">デモ募金で、灯りがひとつ増えました。</h2>
           <div class="counter-box" id="counterBox">
             <span>デモ募金総額</span>
@@ -73,8 +56,8 @@
           <button class="primary" type="button" data-next>参加証を受け取る</button>
         </section>
 
-        <section class="step" data-step="3" data-label="参加証作成" aria-labelledby="certificateTitle">
-          <span class="step-count">04</span>
+        <section class="step" data-step="2" data-label="参加証作成" aria-labelledby="certificateTitle">
+          <span class="step-count">03</span>
           <h2 id="certificateTitle">新しい新宿に名前を残す</h2>
           <label for="nickname">表示名（任意）</label>
           <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
@@ -88,8 +71,8 @@
           </div>
         </section>
 
-        <section class="step" data-step="4" data-label="シェア" aria-labelledby="shareTitle">
-          <span class="step-count">05</span>
+        <section class="step" data-step="3" data-label="シェア" aria-labelledby="shareTitle">
+          <span class="step-count">04</span>
           <h2 id="shareTitle">参加証が届きました。</h2>
           <article class="card done" id="finalCard" aria-live="polite"></article>
           <div class="actions stacked">

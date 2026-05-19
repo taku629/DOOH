@@ -21,7 +21,7 @@ const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
 const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
-const swipeStep = steps[1];
+const swipeStep = steps[0];
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
@@ -103,10 +103,10 @@ function showStep(index) {
 
   setTrackPosition(index);
   updateProgress(index);
-  app.classList.toggle("is-post-participation", index >= 2);
+  app.classList.toggle("is-post-participation", index >= 1);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
 
-  if (index === 2 && hasCountedParticipation && !hasAnimatedCounter) {
+  if (index === 1 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
     if (counterParticipants) {
@@ -263,16 +263,16 @@ function setSwipeFill(value) {
 }
 
 function canAdvanceFrom(index) {
-  if (index === 1) {
+  if (index === 0) {
     return Number(swipeSlider.value) >= 100;
   }
   return true;
 }
 
 async function handleForwardAdvance(fromIndex) {
-  if (fromIndex === 1) {
+  if (fromIndex === 0) {
     return registerParticipation();
-  } else if (fromIndex === 3) {
+  } else if (fromIndex === 2) {
     buildFinalCard();
   }
   return true;

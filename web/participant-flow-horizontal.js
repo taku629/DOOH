@@ -113,10 +113,10 @@ function showStep(index) {
 
   setTrackPosition(index);
   updateProgress(index);
-  app.classList.toggle("is-post-participation", index >= 2);
+  app.classList.toggle("is-post-participation", index >= 1);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
 
-  if (index === 2 && hasCountedParticipation && !hasAnimatedCounter) {
+  if (index === 1 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
     if (counterParticipants) {
@@ -277,7 +277,7 @@ function setSwipeFill(value) {
 }
 
 function canAdvanceFrom(index) {
-  if (index === 1) {
+  if (index === 0) {
     if (hasStoredParticipation()) {
       return true;
     }
@@ -287,9 +287,9 @@ function canAdvanceFrom(index) {
 }
 
 async function handleForwardAdvance(fromIndex) {
-  if (fromIndex === 1) {
+  if (fromIndex === 0) {
     return registerParticipation();
-  } else if (fromIndex === 3) {
+  } else if (fromIndex === 2) {
     buildFinalCard();
   }
   return true;
@@ -423,7 +423,7 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 swipeSlider.addEventListener("input", (event) => {
   const value = Number(event.target.value);
   const isComplete = value >= 100;
-  const swipeStep = steps[1];
+  const swipeStep = steps[0];
 
   setSwipeFill(value);
   swipeCompleteButton.disabled = !isComplete;
