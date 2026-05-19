@@ -154,11 +154,10 @@ button {
 .viewport {
   position: relative;
   overflow: hidden;
-  height: clamp(440px, calc(100vh - 180px), 520px);
   border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow-md);
-  touch-action: pan-x;
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -179,9 +178,7 @@ button {
 
 .track {
   display: flex;
-  flex-direction: column;
   width: 100%;
-  height: 100%;
   transform: translate3d(0, 0, 0);
   transition: transform 0.7s var(--ease-out);
   will-change: transform;
@@ -198,8 +195,7 @@ button {
   flex: 0 0 100%;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
-  overflow-y: auto;
+  min-height: 460px;
   padding: 28px 26px 26px;
   z-index: 1;
 }
@@ -449,10 +445,6 @@ input[type="text"]:focus {
 /* Swipe slider -------------------------------------------------------- */
 
 .slider-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 220px;
   margin: 22px 0 12px;
   padding: 22px 18px;
   border-radius: var(--radius-lg);
@@ -462,22 +454,19 @@ input[type="text"]:focus {
 }
 
 input[type="range"] {
-  width: 48px;
-  height: 180px;
+  width: 100%;
+  height: 28px;
   margin: 0;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
-  writing-mode: vertical-lr;
-  direction: rtl;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  width: 6px;
-  height: 100%;
+  height: 6px;
   border-radius: 999px;
   background: linear-gradient(
-    0deg,
+    90deg,
     var(--ink) 0%,
     var(--ink) var(--swipe-fill, 0%),
     rgba(29, 29, 31, 0.12) var(--swipe-fill, 0%)
@@ -485,14 +474,13 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 input[type="range"]::-moz-range-track {
-  width: 6px;
-  height: 100%;
+  height: 6px;
   border-radius: 999px;
   background: rgba(29, 29, 31, 0.12);
 }
 
 input[type="range"]::-moz-range-progress {
-  width: 6px;
+  height: 6px;
   border-radius: 999px;
   background: var(--ink);
 }
@@ -500,8 +488,7 @@ input[type="range"]::-moz-range-progress {
 input[type="range"]::-webkit-slider-thumb {
   width: 28px;
   height: 28px;
-  margin-top: 0;
-  margin-left: -11px;
+  margin-top: -11px;
   -webkit-appearance: none;
   appearance: none;
   border-radius: 999px;
@@ -788,10 +775,9 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .swipe-hint {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 10px;
   margin: 14px 0 0;
   color: var(--ink-tertiary);
   font-size: 0.74rem;
@@ -803,19 +789,19 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .swipe-hint::before,
 .swipe-hint::after {
-  width: 1px;
-  height: 18px;
+  width: 22px;
+  height: 1px;
   background: var(--ink-tertiary);
   content: "";
   animation: hintArrow 1.6s var(--ease-in-out) infinite;
 }
 
 .swipe-hint::before {
-  transform-origin: center bottom;
+  transform-origin: right center;
 }
 
 .swipe-hint::after {
-  transform-origin: center top;
+  transform-origin: left center;
   animation-delay: 0.2s;
 }
 
@@ -922,7 +908,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   }
 
   .step {
-    min-height: 100%;
+    min-height: min(460px, calc(100vh - 168px));
     padding: 24px 22px 22px;
   }
 
@@ -973,11 +959,11 @@ input[type="range"]:active::-webkit-slider-thumb {
 @keyframes hintArrow {
   0%,
   100% {
-    transform: scaleY(1);
+    transform: scaleX(1);
     opacity: 0.7;
   }
   50% {
-    transform: scaleY(0.5);
+    transform: scaleX(0.5);
     opacity: 1;
   }
 }

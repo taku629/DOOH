@@ -14,6 +14,32 @@
       "database.rules.json",
       "playlist.json",
       "*.pptx"
+    ],
+    "rewrites": [
+      {
+        "source": "/v1",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/v2",
+        "destination": "/index-v2.html"
+      },
+      {
+        "source": "/participant-v1",
+        "destination": "/web/participant-flow.html"
+      },
+      {
+        "source": "/participant-v2",
+        "destination": "/web/participant-flow-v2.html"
+      },
+      {
+        "source": "/participant-v1-horizontal",
+        "destination": "/web/participant-flow-horizontal.html"
+      },
+      {
+        "source": "/participant-v2-horizontal",
+        "destination": "/web/participant-flow-v2-horizontal.html"
+      }
     ]
   }
 }

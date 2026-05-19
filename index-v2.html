@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Midnight Shinjuku Display V2</title>
+    <style>
+        :root {
+            --paper: #0e0e0e;
+            --panel: rgba(28, 27, 27, 0.7);
+            --ink: #ffffff;
+            --muted: #a0a0a0;
+            --accent: #00d1ff;
+            --accent-strong: #00d1ff;
+            --gold: #ffb800;
+            --blue: #b630ff;
+            --success: #00ffa3;
+            --line: rgba(255, 255, 255, 0.1);
+            --panel-strong: rgba(8, 10, 16, 0.78);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --neon-cyan: 0 0 24px rgba(0, 209, 255, 0.46);
+            --neon-purple: 0 0 30px rgba(182, 48, 255, 0.34);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+            overflow: hidden;
+        }
+
+        .display-shell {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            isolation: isolate;
+            background:
+                linear-gradient(115deg, rgba(0, 209, 255, 0.18), transparent 34%),
+                linear-gradient(245deg, rgba(182, 48, 255, 0.18), transparent 38%),
+                repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 56px),
+                repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 56px),
+                var(--paper);
+            background-size: auto;
+        }
+
+        .display-shell::before {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 6px),
+                linear-gradient(90deg, rgba(0, 209, 255, 0.16), transparent 24%, transparent 72%, rgba(182, 48, 255, 0.14));
+            mix-blend-mode: screen;
+            opacity: 0.55;
+            content: "";
+        }
+
+        .display-shell::after {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(102deg, transparent 0 18%, rgba(0, 209, 255, 0.18) 26%, transparent 34%),
+                linear-gradient(72deg, transparent 0 58%, rgba(182, 48, 255, 0.18) 68%, transparent 76%),
+                linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.54));
+            mix-blend-mode: screen;
+            content: "";
+        }
+
+        video {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            background: #0e0e0e;
+            filter: saturate(1.15) contrast(1.08) brightness(0.82);
+        }
+
+        .video-fallback {
+            position: absolute;
+            inset: 5vw 52vw 5vw 5vw;
+            z-index: 2;
+            display: flex;
+            align-items: flex-end;
+            padding: clamp(28px, 4vw, 64px);
+            text-align: left;
+            border-radius: 24px;
+            background:
+                linear-gradient(90deg, rgba(0, 0, 0, 0.84), rgba(0, 209, 255, 0.18), rgba(14, 14, 14, 0.3)),
+                url("./assets/shinjuku-relight.svg") center / cover no-repeat;
+            border: 1px solid rgba(0, 209, 255, 0.22);
+            color: #ffffff;
+            box-shadow:
+                var(--shadow),
+                var(--neon-cyan),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+        }
+
+        .video-fallback::after {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            background:
+                linear-gradient(90deg, transparent, rgba(0, 209, 255, 0.28), transparent) 0 0 / 44% 100% no-repeat,
+                repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 52px);
+            mix-blend-mode: screen;
+            opacity: 0.58;
+            animation: billboardScan 4.8s ease-in-out infinite;
+            content: "";
+        }
+
+        .pending-badge {
+            position: absolute;
+            top: clamp(20px, 3vw, 48px);
+            left: clamp(20px, 3vw, 48px);
+            z-index: 2;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(0, 209, 255, 0.1);
+            border: 1px solid rgba(0, 209, 255, 0.28);
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0;
+            backdrop-filter: blur(8px);
+            box-shadow: var(--neon-cyan);
+        }
+
+        .video-fallback > div:not(.pending-badge) {
+            position: relative;
+            z-index: 1;
+        }
+
+        .video-fallback h1 {
+            max-width: 900px;
+            margin: 0;
+            text-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+            font-size: clamp(4rem, 8.4vw, 9.8rem);
+            line-height: 0.88;
+            letter-spacing: 0;
+        }
+
+        .video-fallback p {
+            max-width: 720px;
+            margin: 24px 0 0;
+            color: rgba(255, 255, 255, 0.86);
+            font-size: clamp(1rem, 1.6vw, 1.4rem);
+            line-height: 1.7;
+        }
+
+        .brand-strip {
+            position: absolute;
+            top: 3vw;
+            left: 3vw;
+            right: 3vw;
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 0.82rem;
+            font-weight: 900;
+            letter-spacing: 0;
+            text-transform: uppercase;
+            text-shadow: 0 0 16px rgba(0, 209, 255, 0.32);
+        }
+
+        .brand-strip span {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-strip span::before {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 0 0 18px rgba(0, 209, 255, 0.74);
+            content: "";
+        }
+
+        .live-ribbon {
+            position: absolute;
+            top: 50%;
+            right: -10vw;
+            z-index: 2;
+            padding: 14px 10vw;
+            border-block: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(0, 209, 255, 0.2);
+            font-size: clamp(2.6rem, 6vw, 6rem);
+            font-weight: 900;
+            letter-spacing: 0;
+            text-transform: uppercase;
+            transform: rotate(90deg) translateX(40%);
+            transform-origin: center;
+            text-shadow: var(--neon-cyan);
+        }
+
+        .qr-panel {
+            position: absolute;
+            right: 3vw;
+            bottom: 3vw;
+            z-index: 3;
+            display: grid;
+            grid-template-columns: 118px minmax(0, 1fr);
+            gap: 20px;
+            width: min(500px, calc(100vw - 48px));
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: var(--panel-strong);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow:
+                var(--shadow),
+                var(--neon-cyan),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+        }
+
+        .qr-placeholder {
+            display: grid;
+            place-items: center;
+            width: 118px;
+            height: 118px;
+            padding: 8px;
+            border: 1px solid rgba(14, 14, 14, 0.16);
+            border-radius: 18px;
+            color: #0e0e0e;
+            background: #fff;
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 0;
+            box-shadow:
+                0 0 0 8px rgba(0, 209, 255, 0.1),
+                0 0 26px rgba(0, 209, 255, 0.34);
+        }
+
+        .qr-placeholder canvas,
+        .qr-placeholder img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+
+        .qr-copy {
+            align-self: center;
+        }
+
+        .qr-copy strong {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--accent);
+            font-size: 0.86rem;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        .qr-copy p {
+            margin: 0;
+            color: var(--ink);
+            font-size: 1.36rem;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .qr-copy small {
+            display: block;
+            margin-top: 10px;
+            color: var(--muted);
+        }
+
+        .participation-signal {
+            position: absolute;
+            right: 3vw;
+            bottom: calc(3vw + 210px);
+            z-index: 4;
+            width: min(420px, calc(100vw - 48px));
+            padding: 24px 26px;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: var(--panel-strong);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow:
+                var(--shadow),
+                var(--neon-purple),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+            transform: translateY(10px);
+            opacity: 0.82;
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        .participation-signal.is-active {
+            opacity: 1;
+            transform: translateY(0);
+            box-shadow:
+                var(--shadow),
+                0 0 38px rgba(0, 255, 163, 0.22),
+                0 0 48px rgba(0, 209, 255, 0.24),
+                inset 0 0 0 1px rgba(0, 255, 163, 0.18);
+        }
+
+        .participation-signal strong {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--accent);
+            font-size: 0.86rem;
+            letter-spacing: 0;
+            text-transform: uppercase;
+            text-shadow: var(--neon-cyan);
+        }
+
+        .participation-signal p {
+            margin: 0;
+            color: var(--ink);
+            font-size: clamp(1.6rem, 3.6vw, 3rem);
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: 0;
+            text-shadow: 0 0 28px rgba(0, 209, 255, 0.32);
+        }
+
+        .participation-signal small {
+            display: block;
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        .participation-takeover {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 6vw;
+            color: #ffffff;
+            background:
+                linear-gradient(120deg, rgba(0, 209, 255, 0.42), transparent 42%),
+                linear-gradient(250deg, rgba(182, 48, 255, 0.46), transparent 44%),
+                repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 60px),
+                linear-gradient(135deg, #070707 0%, #111827 46%, #0e0e0e 100%);
+        }
+
+        .participation-takeover::before,
+        .participation-takeover::after {
+            position: absolute;
+            inset: auto 0 0;
+            height: 46vh;
+            content: "";
+        }
+
+        .participation-takeover::before {
+            background:
+                linear-gradient(90deg, transparent 0 6%, #191919 6% 13%, transparent 13% 17%, #2b2b2b 17% 25%, transparent 25% 30%, #111 30% 39%, transparent 39% 44%, #363636 44% 51%, transparent 51% 58%, #202020 58% 66%, transparent 66% 72%, #151515 72% 82%, transparent 82% 100%);
+            opacity: 0.74;
+        }
+
+        .participation-takeover::after {
+            height: 100%;
+            background:
+                linear-gradient(100deg, transparent 0 36%, rgba(0, 255, 163, 0.78) 48%, rgba(0, 209, 255, 0.4) 54%, transparent 62%),
+                linear-gradient(180deg, transparent 0 58%, rgba(0, 0, 0, 0.38) 100%);
+            transform: translateX(-72%);
+        }
+
+        .takeover-copy {
+            position: relative;
+            z-index: 1;
+            max-width: 980px;
+            text-align: center;
+        }
+
+        .takeover-copy strong {
+            display: block;
+            margin-bottom: 18px;
+            color: var(--success);
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            letter-spacing: 0;
+            text-transform: uppercase;
+            text-shadow: 0 0 24px rgba(0, 255, 163, 0.4);
+        }
+
+        .takeover-copy h2 {
+            margin: 0;
+            text-shadow: 0 24px 90px rgba(0, 0, 0, 0.44);
+            font-size: clamp(4rem, 10vw, 11rem);
+            line-height: 0.9;
+            letter-spacing: 0;
+            text-shadow:
+                0 0 24px rgba(0, 209, 255, 0.3),
+                0 24px 90px rgba(0, 0, 0, 0.44);
+        }
+
+        .takeover-copy p {
+            margin: 24px auto 0;
+            max-width: 720px;
+            color: rgba(255, 255, 255, 0.86);
+            font-size: clamp(1rem, 1.6vw, 1.45rem);
+            font-weight: 800;
+            line-height: 1.65;
+        }
+
+        .display-shell.is-participation-playing .participation-takeover {
+            display: flex;
+        }
+
+        .display-shell.is-participation-playing .participation-takeover::after {
+            animation: relightSweep 1.8s ease-in-out infinite;
+        }
+
+        .display-shell.is-participation-playing .video-fallback,
+        .display-shell.is-participation-playing .qr-panel,
+        .display-shell.is-participation-playing .brand-strip,
+        .display-shell.is-participation-playing .live-ribbon {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @media (max-width: 900px) {
+            .qr-panel {
+                left: 16px;
+                right: 16px;
+                bottom: 16px;
+                grid-template-columns: 88px 1fr;
+                width: auto;
+            }
+
+            .qr-placeholder {
+                width: 88px;
+                height: 88px;
+            }
+
+            .qr-copy p {
+                font-size: 1rem;
+            }
+
+            .participation-signal {
+                left: 16px;
+                right: 16px;
+                bottom: 144px;
+                width: auto;
+            }
+
+            .brand-strip,
+            .live-ribbon {
+                display: none;
+            }
+
+            .video-fallback {
+                inset: 18px 18px 46vh;
+            }
+        }
+
+        @keyframes billboardScan {
+            0% {
+                background-position: -60% 0, 0 0;
+            }
+
+            50% {
+                background-position: 90% 0, 0 0;
+            }
+
+            100% {
+                background-position: 150% 0, 0 0;
+            }
+        }
+
+        @keyframes relightSweep {
+            0% {
+                transform: translateX(-72%);
+            }
+
+            55% {
+                transform: translateX(68%);
+            }
+
+            100% {
+                transform: translateX(68%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="display-shell" id="displayShell" data-participation-channel="v2">
+        <video id="player" autoplay muted playsinline></video>
+
+        <div class="brand-strip" aria-hidden="true">
+            <span>Midnight Shinjuku</span>
+            <b>Audience Reactive Ad</b>
+        </div>
+
+        <div class="live-ribbon" aria-hidden="true">Participate</div>
+
+        <section class="video-fallback" id="videoFallback" aria-live="polite">
+            <div class="pending-badge" aria-label="映像保留中">● 映像 保留中</div>
+            <div>
+                <h1>新宿を<br>新しく</h1>
+                <p>モノクロの新宿に、スマホからのデモ募金で色が戻っていく。待ち時間を、街を明るくする参加体験へ変えます。</p>
+            </div>
+        </section>
+
+        <section class="participation-takeover" id="participationTakeover" aria-live="polite" hidden>
+            <div class="takeover-copy">
+                <strong>Relight sequence</strong>
+                <h2>デモ募金で<br>映像が切り替わる</h2>
+                <p><span id="takeoverParticipantName">匿名サポーター</span> さんのデモ募金を受け取り、DOOH側の演出を再生しています。</p>
+            </div>
+        </section>
+
+        <aside class="qr-panel" aria-label="スマホ参加QR案内">
+            <div class="qr-placeholder" id="qrPlaceholder" aria-hidden="true">QR</div>
+            <div class="qr-copy">
+                <strong>Demo Donate</strong>
+                <p>スマホでQRを読み取り、¥100デモ募金で新宿に灯りを戻す</p>
+                <small id="qrCaption">参加ページ: /web/participant-flow-v2.html</small>
+            </div>
+        </aside>
+
+        <section class="participation-signal" id="participationSignal" aria-live="polite">
+            <strong>Live Relight</strong>
+            <p>デモ募金額 <span id="displayDonationTotal">¥0</span></p>
+            <small>参加人数 <span id="displayParticipantCount">0</span>人</small>
+            <small id="displayParticipantStatus">スマホからのデモ募金を待機中</small>
+        </section>
+    </main>
+
+    <script type="module" src="./src/player.js"></script>
+    <script type="module">
+        import QRCode from "https://cdn.skypack.dev/qrcode@1.5.3";
+
+        const placeholder = document.getElementById("qrPlaceholder");
+        const caption = document.getElementById("qrCaption");
+        const url = new URL("./web/participant-flow-v2.html", location.href).href;
+
+        QRCode.toCanvas(url, {
+            width: 102,
+            margin: 1,
+            errorCorrectionLevel: "M",
+            color: { dark: "#0e0e0e", light: "#ffffff" },
+        })
+            .then((canvas) => {
+                placeholder.replaceChildren(canvas);
+            })
+            .catch((error) => {
+                console.warn("QR generation failed:", error);
+            });
+
+        if (caption) {
+            caption.textContent = `参加ページ: ${url}`;
+        }
+    </script>
+</body>
+</html>

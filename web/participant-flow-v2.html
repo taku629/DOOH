@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shinjuku DOOH Project | 参加フロー</title>
+  <title>Midnight Shinjuku | 参加フロー V2</title>
   <link rel="stylesheet" href="/web/theme.css" />
-  <link rel="stylesheet" href="/web/participant-flow.css" />
+  <link rel="stylesheet" href="/web/participant-flow-v2.css" />
 </head>
 <body>
   <main class="app" id="app">
     <section class="app-hero" aria-labelledby="campaignTitle">
-      <p class="eyebrow">Shinjuku DOOH Project</p>
+      <p class="eyebrow">Midnight Shinjuku</p>
       <h1 id="campaignTitle">新宿を<br><span class="no-break"><span class="quote-mark quote-mark-open">「</span>新<span class="quote-mark quote-mark-close">」</span>しく</span></h1>
       <p class="lead">QRを読み取ったあなたの1スワイプが、デモ募金としてモノクロの新宿に色を戻す参加体験です。</p>
       <figure class="hero-visual">
@@ -29,19 +29,34 @@
       <div class="track" id="track">
         <section class="step is-current" data-step="0" data-label="デモ募金" aria-labelledby="swipeTitle">
           <span class="step-count">01</span>
-          <h2 id="swipeTitle">スワイプして100円を届ける</h2>
-          <p>縦のスライダーを下から上に押し上げ、完了ボタンでデモ募金を確定してください。表示名はあとで任意入力できます。</p>
-          <div class="swipe-stage" aria-hidden="true">
+          <h2 id="swipeTitle">ネオンを満たして100円を届ける</h2>
+          <p>ノブを下から上へ押し上げると、新宿のライトがチャージされます。表示名はあとで任意入力できます。</p>
+          <div class="swipe-stage" id="swipeStage" aria-hidden="true">
+            <span class="city-window window-a"></span>
+            <span class="city-window window-b"></span>
+            <span class="city-window window-c"></span>
+            <span class="city-window window-d"></span>
+            <span class="charge-wave"></span>
             <span class="spark spark-a"></span>
             <span class="spark spark-b"></span>
             <span class="spark spark-c"></span>
             <span class="light-beam"></span>
+            <span class="action-pulse"></span>
+          </div>
+          <div class="action-status" aria-live="polite">
+            <span id="swipeActionLabel">画面下のノブを上へ押し上げる</span>
+            <strong id="swipePercent">0%</strong>
           </div>
           <div class="slider-wrap">
             <input id="swipeSlider" type="range" min="0" max="100" step="5" value="0" orient="vertical" aria-orientation="vertical" aria-label="参加スワイプ" aria-describedby="swipeHint" />
+            <div class="charge-markers" aria-hidden="true">
+              <span>Start</span>
+              <span>Relight</span>
+              <span>Ready</span>
+            </div>
           </div>
-          <p class="hint" id="swipeHint">100%まで到達すると完了ボタンを押せます。</p>
-          <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">¥100をデモ募金する</button>
+          <p class="hint" id="swipeHint">100%までチャージすると確定ボタンが有効になります。</p>
+          <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">ネオンを100%にして確定</button>
         </section>
 
         <section class="step" data-step="1" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
@@ -91,6 +106,6 @@
     </div>
   </main>
 
-  <script type="module" src="/web/participant-flow.js"></script>
+  <script type="module" src="/web/participant-flow-v2.js"></script>
 </body>
 </html>

@@ -26,6 +26,7 @@ export function buildParticipationTransactionValue(currentValue, event) {
                 type: "swipe-completed",
                 createdAt: event.createdAt,
                 count: participantCount,
+                source: event.source ?? null,
                 name: event.name ?? null,
                 donationAmountYen: event.donationAmountYen ?? null,
                 userAgent: event.userAgent ?? null,
