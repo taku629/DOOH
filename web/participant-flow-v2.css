@@ -95,22 +95,13 @@ button {
   position: relative;
   width: min(100% - 40px, 480px);
   margin: 0 auto;
-  padding: 20px 0 40px;
+  padding: 18px 0 40px;
 }
 
 /* Hero ---------------------------------------------------------------- */
 
 .app-hero {
-  position: relative;
-  margin-bottom: 18px;
-  padding: 28px 24px 24px;
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  overflow: hidden;
+  display: none;
 }
 
 .app-hero::before {
@@ -233,13 +224,14 @@ button {
 .viewport {
   position: relative;
   overflow: hidden;
+  height: clamp(460px, calc(100vh - 180px), 540px);
   border-radius: var(--radius-xl);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  touch-action: pan-y;
+  touch-action: pan-x;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -258,7 +250,9 @@ button {
 
 .track {
   display: flex;
+  flex-direction: column;
   width: 100%;
+  height: 100%;
   transform: translate3d(0, 0, 0);
   transition: transform 0.7s var(--ease-out);
   will-change: transform;
@@ -275,7 +269,8 @@ button {
   flex: 0 0 100%;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
+  min-height: 100%;
+  overflow-y: auto;
   padding: 24px;
   z-index: 1;
 }
@@ -532,8 +527,14 @@ input[type="text"]:focus {
 /* Swipe slider -------------------------------------------------------- */
 
 .slider-wrap {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 236px;
   margin: 16px 0 12px;
-  padding: 20px 18px 14px;
+  padding: 20px 18px;
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--hairline);
@@ -542,19 +543,22 @@ input[type="text"]:focus {
 }
 
 input[type="range"] {
-  width: 100%;
-  height: 28px;
+  width: 48px;
+  height: 190px;
   margin: 0;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
+  writing-mode: vertical-lr;
+  direction: rtl;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 6px;
+  width: 6px;
+  height: 100%;
   border-radius: 999px;
   background: linear-gradient(
-    90deg,
+    0deg,
     var(--accent) 0%,
     var(--blue) var(--swipe-fill, 0%),
     rgba(255, 255, 255, 0.14) var(--swipe-fill, 0%)
@@ -562,13 +566,14 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 input[type="range"]::-moz-range-track {
-  height: 6px;
+  width: 6px;
+  height: 100%;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
 }
 
 input[type="range"]::-moz-range-progress {
-  height: 6px;
+  width: 6px;
   border-radius: 999px;
   background: var(--accent);
 }
@@ -576,7 +581,8 @@ input[type="range"]::-moz-range-progress {
 input[type="range"]::-webkit-slider-thumb {
   width: 28px;
   height: 28px;
-  margin-top: -11px;
+  margin-top: 0;
+  margin-left: -11px;
   -webkit-appearance: none;
   appearance: none;
   border-radius: 999px;
@@ -608,9 +614,11 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .charge-markers {
   display: flex;
+  flex-direction: column-reverse;
+  align-self: stretch;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 0;
   color: var(--ink-tertiary);
   font-family: var(--font-mono);
   font-size: 0.68rem;
@@ -1021,9 +1029,10 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .swipe-hint {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;
   margin: 14px 0 0;
   color: var(--ink-tertiary);
   font-size: 0.74rem;
@@ -1035,19 +1044,19 @@ input[type="range"]:active::-webkit-slider-thumb {
 
 .swipe-hint::before,
 .swipe-hint::after {
-  width: 22px;
-  height: 1px;
+  width: 1px;
+  height: 18px;
   background: var(--accent);
   content: "";
   animation: hintArrow 1.6s var(--ease-in-out) infinite;
 }
 
 .swipe-hint::before {
-  transform-origin: right center;
+  transform-origin: center bottom;
 }
 
 .swipe-hint::after {
-  transform-origin: left center;
+  transform-origin: center top;
   animation-delay: 0.2s;
 }
 
@@ -1154,7 +1163,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   }
 
   .step {
-    min-height: min(460px, calc(100vh - 168px));
+    min-height: 100%;
     padding: 24px 22px 22px;
   }
 
@@ -1205,11 +1214,11 @@ input[type="range"]:active::-webkit-slider-thumb {
 @keyframes hintArrow {
   0%,
   100% {
-    transform: scaleX(1);
+    transform: scaleY(1);
     opacity: 0.7;
   }
   50% {
-    transform: scaleX(0.5);
+    transform: scaleY(0.5);
     opacity: 1;
   }
 }

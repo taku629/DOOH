@@ -6,6 +6,7 @@ const progressBar = document.getElementById("progressBar");
 const progressElement = document.querySelector(".bar");
 const counterValue = document.getElementById("counterValue");
 const counterBox = document.getElementById("counterBox");
+const counterBadge = counterBox?.querySelector("em");
 const counterParticipants = document.getElementById("counterParticipants");
 const nickname = document.getElementById("nickname");
 const previewName = document.getElementById("previewName");
@@ -14,18 +15,15 @@ const shareStatus = document.getElementById("shareStatus");
 const swipeSlider = document.getElementById("swipeSlider");
 const swipeCompleteButton = document.getElementById("swipeComplete");
 const swipeHint = document.getElementById("swipeHint");
-const swipeActionLabel = document.getElementById("swipeActionLabel");
-const swipePercent = document.getElementById("swipePercent");
 const thanksTitle = document.getElementById("thanksTitle");
 const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
 const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
-const swipeStep = steps[0];
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
-const PARTICIPATION_CHANNEL = "v2";
+const PARTICIPATION_STORAGE_KEY = "dooh:participant-flow:participated";
 const DEMO_DONATION_YEN = 100;
 
 let currentStep = 0;
@@ -48,34 +46,46 @@ function getDemoDonationTotal(count = participantCount) {
   return count * DEMO_DONATION_YEN;
 }
 
-function updateSwipeAction(value) {
-  const normalized = Math.max(0, Math.min(100, Number(value) || 0));
-  const isComplete = normalized >= 100;
-
-  setSwipeFill(normalized);
-  swipeStep.classList.toggle("is-swipe-active", normalized > 0);
-  swipeStep.classList.toggle("is-swipe-mid", normalized >= 40);
-  swipeStep.classList.toggle("is-swipe-high", normalized >= 72);
-  swipeStep.classList.toggle("is-swipe-charged", isComplete);
-
-  if (swipePercent) {
-    swipePercent.textContent = `${normalized}%`;
+function hasStoredParticipation() {
+  try {
+    return localStorage.getItem(PARTICIPATION_STORAGE_KEY) === "true";
+  } catch {
+    return false;
   }
+}
 
-  if (!swipeActionLabel) {
+function storeParticipation() {
+  try {
+    localStorage.setItem(PARTICIPATION_STORAGE_KEY, "true");
+  } catch {
+    /* Storage can be unavailable in private browsing; Firebase remains source of truth. */
+  }
+}
+
+function applyStoredParticipationState() {
+  if (!hasStoredParticipation()) {
     return;
   }
 
-  if (isComplete) {
-    swipeActionLabel.textContent = "チャージ完了。発光を確定できます。";
-  } else if (normalized >= 72) {
-    swipeActionLabel.textContent = "あと少し。街の色が戻り始めています。";
-  } else if (normalized >= 40) {
-    swipeActionLabel.textContent = "ネオンが広がっています。そのまま上へ。";
-  } else if (normalized > 0) {
-    swipeActionLabel.textContent = "チャージ開始。光を上端まで運んでください。";
-  } else {
-    swipeActionLabel.textContent = "画面下のノブを上へ押し上げる";
+  hasCountedParticipation = true;
+  swipeSlider.value = "100";
+  swipeSlider.disabled = true;
+  setSwipeFill(100);
+  swipeCompleteButton.disabled = false;
+  swipeCompleteButton.setAttribute("aria-disabled", "false");
+  swipeCompleteButton.textContent = "デモ募金済み。次へ";
+
+  if (swipeHint) {
+    swipeHint.textContent = "この端末ではデモ募金済みです。カウントは追加されません。";
+  }
+  if (thanksTitle) {
+    thanksTitle.textContent = "デモ募金済みです。新宿に灯りが増えています。";
+  }
+  if (counterBadge) {
+    counterBadge.textContent = "済";
+  }
+  if (counterParticipants) {
+    counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
   }
 }
 
@@ -90,7 +100,7 @@ function updateProgress(index) {
 }
 
 function setTrackPosition(index, dragPercent = 0) {
-  track.style.transform = `translate3d(0, calc(${-index * 100}% + ${dragPercent}%), 0)`;
+  track.style.transform = `translate3d(calc(${-index * 100}% + ${dragPercent}%), 0, 0)`;
 }
 
 function showStep(index) {
@@ -103,10 +113,10 @@ function showStep(index) {
 
   setTrackPosition(index);
   updateProgress(index);
-  app.classList.toggle("is-post-participation", index >= 1);
+  app.classList.toggle("is-post-participation", index >= 2);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
 
-  if (index === 1 && hasCountedParticipation && !hasAnimatedCounter) {
+  if (index === 2 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
     if (counterParticipants) {
@@ -185,6 +195,11 @@ function finalizeCard() {
 }
 
 async function registerParticipation() {
+  if (hasStoredParticipation()) {
+    hasCountedParticipation = true;
+    applyStoredParticipationState();
+    return true;
+  }
   if (hasCountedParticipation || isRegisteringParticipation) {
     return hasCountedParticipation;
   }
@@ -194,8 +209,6 @@ async function registerParticipation() {
 
   try {
     const result = await publishSwipeComplete({
-      channel: PARTICIPATION_CHANNEL,
-      source: "participant-flow-v2",
       name: getDisplayName(),
       donationAmountYen: DEMO_DONATION_YEN,
     });
@@ -207,6 +220,7 @@ async function registerParticipation() {
       counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
     }
     hasCountedParticipation = true;
+    storeParticipation();
     return true;
   } catch (error) {
     console.warn("[firebase] participation count update failed:", error);
@@ -263,22 +277,25 @@ function setSwipeFill(value) {
 }
 
 function canAdvanceFrom(index) {
-  if (index === 0) {
+  if (index === 1) {
+    if (hasStoredParticipation()) {
+      return true;
+    }
     return Number(swipeSlider.value) >= 100;
   }
   return true;
 }
 
 async function handleForwardAdvance(fromIndex) {
-  if (fromIndex === 0) {
+  if (fromIndex === 1) {
     return registerParticipation();
-  } else if (fromIndex === 2) {
+  } else if (fromIndex === 3) {
     buildFinalCard();
   }
   return true;
 }
 
-/* Pointer-driven vertical swipe between steps -------------------------- */
+/* Pointer-driven horizontal swipe between steps ------------------------ */
 
 const DRAG_AXIS_THRESHOLD = 8;
 const SNAP_THRESHOLD_RATIO = 0.18;
@@ -321,27 +338,27 @@ function movePointer(event) {
   const dy = event.clientY - pointerStartY;
 
   if (dragAxisLocked === null) {
-    if (Math.abs(dy) > DRAG_AXIS_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
-      dragAxisLocked = "y";
+    if (Math.abs(dx) > DRAG_AXIS_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+      dragAxisLocked = "x";
       track.classList.add("is-dragging");
       try {
         viewport.setPointerCapture(event.pointerId);
       } catch {
         /* noop */
       }
-    } else if (Math.abs(dx) > DRAG_AXIS_THRESHOLD) {
-      dragAxisLocked = "x";
+    } else if (Math.abs(dy) > DRAG_AXIS_THRESHOLD) {
+      dragAxisLocked = "y";
     }
   }
 
-  if (dragAxisLocked !== "y") {
+  if (dragAxisLocked !== "x") {
     return;
   }
 
   event.preventDefault();
-  dragOffset = dy;
+  dragOffset = dx;
 
-  const height = viewport.clientHeight || 1;
+  const width = viewport.clientWidth || 1;
   let normalized = dragOffset;
 
   const atStart = currentStep === 0 && dragOffset > 0;
@@ -352,7 +369,7 @@ function movePointer(event) {
     normalized = dragOffset * 0.35;
   }
 
-  setTrackPosition(currentStep, (normalized / height) * 100);
+  setTrackPosition(currentStep, (normalized / width) * 100);
 }
 
 async function endPointer(event) {
@@ -360,16 +377,16 @@ async function endPointer(event) {
     return;
   }
 
-  const wasVertical = dragAxisLocked === "y";
+  const wasHorizontal = dragAxisLocked === "x";
   track.classList.remove("is-dragging");
 
-  if (!wasVertical) {
+  if (!wasHorizontal) {
     activePointerId = null;
     return;
   }
 
-  const height = viewport.clientHeight || 1;
-  const threshold = height * SNAP_THRESHOLD_RATIO;
+  const width = viewport.clientWidth || 1;
+  const threshold = width * SNAP_THRESHOLD_RATIO;
 
   let target = currentStep;
   if (dragOffset < -threshold && currentStep < totalSteps - 1) {
@@ -406,13 +423,11 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 swipeSlider.addEventListener("input", (event) => {
   const value = Number(event.target.value);
   const isComplete = value >= 100;
+  const swipeStep = steps[1];
 
-  updateSwipeAction(value);
+  setSwipeFill(value);
   swipeCompleteButton.disabled = !isComplete;
   swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
-  swipeCompleteButton.textContent = isComplete
-    ? "発光を確定する"
-    : "ネオンを100%にして確定";
 
   if (isComplete && !hasShownSwipeReadyEffect) {
     hasShownSwipeReadyEffect = true;
@@ -446,10 +461,11 @@ window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
 });
 
-updateSwipeAction(0);
+setSwipeFill(0);
+applyStoredParticipationState();
 showStep(0);
 
-getParticipantCount({ channel: PARTICIPATION_CHANNEL })
+getParticipantCount()
   .then((count) => {
     if (Number.isFinite(count) && count > 0 && !hasCountedParticipation) {
       participantCount = count;

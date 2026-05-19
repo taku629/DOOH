@@ -100,7 +100,7 @@ function updateProgress(index) {
 }
 
 function setTrackPosition(index, dragPercent = 0) {
-  track.style.transform = `translate3d(calc(${-index * 100}% + ${dragPercent}%), 0, 0)`;
+  track.style.transform = `translate3d(0, calc(${-index * 100}% + ${dragPercent}%), 0)`;
 }
 
 function showStep(index) {
@@ -113,10 +113,10 @@ function showStep(index) {
 
   setTrackPosition(index);
   updateProgress(index);
-  app.classList.toggle("is-post-participation", index >= 2);
+  app.classList.toggle("is-post-participation", index >= 1);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
 
-  if (index === 2 && hasCountedParticipation && !hasAnimatedCounter) {
+  if (index === 1 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
     if (counterParticipants) {
@@ -277,7 +277,7 @@ function setSwipeFill(value) {
 }
 
 function canAdvanceFrom(index) {
-  if (index === 1) {
+  if (index === 0) {
     if (hasStoredParticipation()) {
       return true;
     }
@@ -287,15 +287,15 @@ function canAdvanceFrom(index) {
 }
 
 async function handleForwardAdvance(fromIndex) {
-  if (fromIndex === 1) {
+  if (fromIndex === 0) {
     return registerParticipation();
-  } else if (fromIndex === 3) {
+  } else if (fromIndex === 2) {
     buildFinalCard();
   }
   return true;
 }
 
-/* Pointer-driven horizontal swipe between steps ------------------------ */
+/* Pointer-driven vertical swipe between steps -------------------------- */
 
 const DRAG_AXIS_THRESHOLD = 8;
 const SNAP_THRESHOLD_RATIO = 0.18;
@@ -338,27 +338,27 @@ function movePointer(event) {
   const dy = event.clientY - pointerStartY;
 
   if (dragAxisLocked === null) {
-    if (Math.abs(dx) > DRAG_AXIS_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
-      dragAxisLocked = "x";
+    if (Math.abs(dy) > DRAG_AXIS_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
+      dragAxisLocked = "y";
       track.classList.add("is-dragging");
       try {
         viewport.setPointerCapture(event.pointerId);
       } catch {
         /* noop */
       }
-    } else if (Math.abs(dy) > DRAG_AXIS_THRESHOLD) {
-      dragAxisLocked = "y";
+    } else if (Math.abs(dx) > DRAG_AXIS_THRESHOLD) {
+      dragAxisLocked = "x";
     }
   }
 
-  if (dragAxisLocked !== "x") {
+  if (dragAxisLocked !== "y") {
     return;
   }
 
   event.preventDefault();
-  dragOffset = dx;
+  dragOffset = dy;
 
-  const width = viewport.clientWidth || 1;
+  const height = viewport.clientHeight || 1;
   let normalized = dragOffset;
 
   const atStart = currentStep === 0 && dragOffset > 0;
@@ -369,7 +369,7 @@ function movePointer(event) {
     normalized = dragOffset * 0.35;
   }
 
-  setTrackPosition(currentStep, (normalized / width) * 100);
+  setTrackPosition(currentStep, (normalized / height) * 100);
 }
 
 async function endPointer(event) {
@@ -377,16 +377,16 @@ async function endPointer(event) {
     return;
   }
 
-  const wasHorizontal = dragAxisLocked === "x";
+  const wasVertical = dragAxisLocked === "y";
   track.classList.remove("is-dragging");
 
-  if (!wasHorizontal) {
+  if (!wasVertical) {
     activePointerId = null;
     return;
   }
 
-  const width = viewport.clientWidth || 1;
-  const threshold = width * SNAP_THRESHOLD_RATIO;
+  const height = viewport.clientHeight || 1;
+  const threshold = height * SNAP_THRESHOLD_RATIO;
 
   let target = currentStep;
   if (dragOffset < -threshold && currentStep < totalSteps - 1) {
@@ -423,7 +423,7 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 swipeSlider.addEventListener("input", (event) => {
   const value = Number(event.target.value);
   const isComplete = value >= 100;
-  const swipeStep = steps[1];
+  const swipeStep = steps[0];
 
   setSwipeFill(value);
   swipeCompleteButton.disabled = !isComplete;

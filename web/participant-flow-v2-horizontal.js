@@ -21,7 +21,7 @@ const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
 const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
-const swipeStep = steps[0];
+const swipeStep = steps[1];
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
@@ -71,11 +71,11 @@ function updateSwipeAction(value) {
   } else if (normalized >= 72) {
     swipeActionLabel.textContent = "あと少し。街の色が戻り始めています。";
   } else if (normalized >= 40) {
-    swipeActionLabel.textContent = "ネオンが広がっています。そのまま上へ。";
+    swipeActionLabel.textContent = "ネオンが広がっています。そのまま右へ。";
   } else if (normalized > 0) {
-    swipeActionLabel.textContent = "チャージ開始。光を上端まで運んでください。";
+    swipeActionLabel.textContent = "チャージ開始。光を右端まで運んでください。";
   } else {
-    swipeActionLabel.textContent = "画面下のノブを上へ押し上げる";
+    swipeActionLabel.textContent = "画面下のノブを右へ押し出す";
   }
 }
 
@@ -90,7 +90,7 @@ function updateProgress(index) {
 }
 
 function setTrackPosition(index, dragPercent = 0) {
-  track.style.transform = `translate3d(0, calc(${-index * 100}% + ${dragPercent}%), 0)`;
+  track.style.transform = `translate3d(calc(${-index * 100}% + ${dragPercent}%), 0, 0)`;
 }
 
 function showStep(index) {
@@ -103,10 +103,10 @@ function showStep(index) {
 
   setTrackPosition(index);
   updateProgress(index);
-  app.classList.toggle("is-post-participation", index >= 1);
+  app.classList.toggle("is-post-participation", index >= 2);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
 
-  if (index === 1 && hasCountedParticipation && !hasAnimatedCounter) {
+  if (index === 2 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
     if (counterParticipants) {
@@ -263,22 +263,22 @@ function setSwipeFill(value) {
 }
 
 function canAdvanceFrom(index) {
-  if (index === 0) {
+  if (index === 1) {
     return Number(swipeSlider.value) >= 100;
   }
   return true;
 }
 
 async function handleForwardAdvance(fromIndex) {
-  if (fromIndex === 0) {
+  if (fromIndex === 1) {
     return registerParticipation();
-  } else if (fromIndex === 2) {
+  } else if (fromIndex === 3) {
     buildFinalCard();
   }
   return true;
 }
 
-/* Pointer-driven vertical swipe between steps -------------------------- */
+/* Pointer-driven horizontal swipe between steps ------------------------ */
 
 const DRAG_AXIS_THRESHOLD = 8;
 const SNAP_THRESHOLD_RATIO = 0.18;
@@ -321,27 +321,27 @@ function movePointer(event) {
   const dy = event.clientY - pointerStartY;
 
   if (dragAxisLocked === null) {
-    if (Math.abs(dy) > DRAG_AXIS_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
-      dragAxisLocked = "y";
+    if (Math.abs(dx) > DRAG_AXIS_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+      dragAxisLocked = "x";
       track.classList.add("is-dragging");
       try {
         viewport.setPointerCapture(event.pointerId);
       } catch {
         /* noop */
       }
-    } else if (Math.abs(dx) > DRAG_AXIS_THRESHOLD) {
-      dragAxisLocked = "x";
+    } else if (Math.abs(dy) > DRAG_AXIS_THRESHOLD) {
+      dragAxisLocked = "y";
     }
   }
 
-  if (dragAxisLocked !== "y") {
+  if (dragAxisLocked !== "x") {
     return;
   }
 
   event.preventDefault();
-  dragOffset = dy;
+  dragOffset = dx;
 
-  const height = viewport.clientHeight || 1;
+  const width = viewport.clientWidth || 1;
   let normalized = dragOffset;
 
   const atStart = currentStep === 0 && dragOffset > 0;
@@ -352,7 +352,7 @@ function movePointer(event) {
     normalized = dragOffset * 0.35;
   }
 
-  setTrackPosition(currentStep, (normalized / height) * 100);
+  setTrackPosition(currentStep, (normalized / width) * 100);
 }
 
 async function endPointer(event) {
@@ -360,16 +360,16 @@ async function endPointer(event) {
     return;
   }
 
-  const wasVertical = dragAxisLocked === "y";
+  const wasHorizontal = dragAxisLocked === "x";
   track.classList.remove("is-dragging");
 
-  if (!wasVertical) {
+  if (!wasHorizontal) {
     activePointerId = null;
     return;
   }
 
-  const height = viewport.clientHeight || 1;
-  const threshold = height * SNAP_THRESHOLD_RATIO;
+  const width = viewport.clientWidth || 1;
+  const threshold = width * SNAP_THRESHOLD_RATIO;
 
   let target = currentStep;
   if (dragOffset < -threshold && currentStep < totalSteps - 1) {
