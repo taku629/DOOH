@@ -132,7 +132,7 @@
 │   ├── participant-flow.css      # 参加ページのスタイル
 │   └── participant-flow.js       # 参加ページのロジック
 ├── assets/
-│   └── shinjuku-relight.svg      # キービジュアル
+│   └── test.png      # キービジュアル
 ├── videos/                       # 動画配置用ディレクトリ
 └── playlist.json                 # 現在は空ファイル
 ```
