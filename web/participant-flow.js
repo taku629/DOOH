@@ -25,8 +25,8 @@ const swipeStep = steps[0];
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
 const DEMO_DONATION_YEN = 100;
-const SWIPE_CHARGE_DISTANCE_RATIO = 0.42;
-const SWIPE_COMPLETE_SNAP_THRESHOLD = 92;
+const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
+const SWIPE_COMPLETE_SNAP_THRESHOLD = 96;
 
 let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
@@ -35,6 +35,7 @@ let hasShownSwipeReadyEffect = false;
 let hasAnimatedCounter = false;
 let isFinalCardBuilt = false;
 let isRegisteringParticipation = false;
+let isAutoCompletingSwipe = false;
 
 const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
@@ -59,6 +60,7 @@ function updateSwipeCharge(value) {
   swipeSlider.value = String(normalized);
   setSwipeFill(normalized);
   swipeStep.classList.toggle("is-swipe-active", normalized > 0);
+  swipeStep.classList.toggle("is-swipe-charged", isComplete);
   swipeCompleteButton.disabled = !isComplete;
   swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
 
@@ -224,6 +226,29 @@ async function markParticipationComplete() {
   if (didComplete) {
     nextStep();
   }
+  return didComplete;
+}
+
+async function completeSwipeCharge() {
+  if (isAutoCompletingSwipe || currentStep !== 0) {
+    return;
+  }
+
+  isAutoCompletingSwipe = true;
+  updateSwipeCharge(100);
+  if (swipeHint) {
+    swipeHint.textContent = "デモ募金を反映しています。";
+  }
+
+  const didComplete = await markParticipationComplete();
+  if (!didComplete) {
+    updateSwipeCharge(84);
+    if (swipeHint) {
+      swipeHint.textContent = "通信に失敗しました。もう一度上までスワイプしてください。";
+    }
+  }
+
+  isAutoCompletingSwipe = false;
 }
 
 function playCelebration() {
@@ -359,8 +384,11 @@ function movePointer(event) {
     isChargingSwipe = true;
     const chargeDistance = Math.max(180, height * SWIPE_CHARGE_DISTANCE_RATIO);
     const nextValue = swipeStartValue + (Math.abs(dragOffset) / chargeDistance) * 100;
-    updateSwipeCharge(nextValue);
+    const updatedValue = updateSwipeCharge(nextValue);
     setTrackPosition(currentStep);
+    if (updatedValue >= 100) {
+      completeSwipeCharge();
+    }
     return;
   }
 
@@ -400,7 +428,7 @@ async function endPointer(event) {
       Math.abs(dragOffset) >= height * SWIPE_CHARGE_DISTANCE_RATIO;
 
     if (shouldSnapComplete) {
-      updateSwipeCharge(100);
+      completeSwipeCharge();
     }
 
     setTrackPosition(currentStep);
