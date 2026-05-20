@@ -527,34 +527,81 @@ input[type="text"]:focus {
 /* Swipe slider -------------------------------------------------------- */
 
 .slider-wrap {
+  position: relative;
   display: grid;
   grid-template-columns: auto auto;
   align-items: center;
   justify-content: center;
   gap: 18px;
-  min-height: 236px;
+  min-height: 274px;
   margin: 16px 0 12px;
-  padding: 20px 18px;
+  padding: 28px 18px;
+  overflow: hidden;
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.05);
+  background:
+    radial-gradient(circle at 50% calc(100% - 42px), rgba(0, 209, 255, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(0, 209, 255, 0.08), rgba(182, 48, 255, 0.06)),
+    rgba(255, 255, 255, 0.05);
   border: 1px solid var(--hairline);
   box-shadow: none;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
   transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
+.slider-wrap::before,
+.slider-wrap::after {
+  position: absolute;
+  left: 50%;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+}
+
+.slider-wrap::before {
+  top: 28px;
+  bottom: 28px;
+  width: 96px;
+  border-radius: 999px;
+  background:
+    linear-gradient(0deg, rgba(0, 209, 255, 0.2), rgba(182, 48, 255, 0.14) var(--swipe-fill, 0%), transparent var(--swipe-fill, 0%)),
+    repeating-linear-gradient(0deg, transparent 0 28px, rgba(255, 255, 255, 0.1) 28px 30px);
+  filter: drop-shadow(0 0 18px rgba(0, 209, 255, 0.12));
+  transform: translateX(-50%);
+}
+
+.slider-wrap::after {
+  bottom: 34px;
+  width: 36px;
+  height: 66px;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, transparent 43%, rgba(255, 255, 255, 0.78) 44% 56%, transparent 57%) center 10px / 22px 22px no-repeat,
+    linear-gradient(45deg, transparent 43%, rgba(255, 255, 255, 0.78) 44% 56%, transparent 57%) center 10px / 22px 22px no-repeat,
+    linear-gradient(135deg, transparent 43%, rgba(0, 209, 255, 0.4) 44% 56%, transparent 57%) center 38px / 22px 22px no-repeat,
+    linear-gradient(45deg, transparent 43%, rgba(0, 209, 255, 0.4) 44% 56%, transparent 57%) center 38px / 22px 22px no-repeat;
+  filter: drop-shadow(0 0 12px rgba(0, 209, 255, 0.55));
+  transform: translateX(-50%);
+  animation: swipeLiftCue 1.25s ease-in-out infinite;
+}
+
 input[type="range"] {
-  width: 48px;
-  height: 190px;
+  position: relative;
+  z-index: 1;
+  width: 76px;
+  height: 224px;
   margin: 0;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
   writing-mode: vertical-lr;
   direction: rtl;
+  pointer-events: none;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  width: 6px;
+  width: 8px;
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(
@@ -566,23 +613,23 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 input[type="range"]::-moz-range-track {
-  width: 6px;
+  width: 8px;
   height: 100%;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.14);
 }
 
 input[type="range"]::-moz-range-progress {
-  width: 6px;
+  width: 8px;
   border-radius: 999px;
   background: var(--accent);
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   margin-top: 0;
-  margin-left: -11px;
+  margin-left: -18px;
   -webkit-appearance: none;
   appearance: none;
   border-radius: 999px;
@@ -591,13 +638,12 @@ input[type="range"]::-webkit-slider-thumb {
     0 0 0 6px rgba(0, 209, 255, 0.1),
     0 0 22px rgba(0, 209, 255, 0.58),
     inset 0 0 0 1px rgba(0, 0, 0, 0.08);
-  cursor: grab;
   transition: transform 120ms ease;
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 999px;
   background: #ffffff;
@@ -605,7 +651,6 @@ input[type="range"]::-moz-range-thumb {
     0 0 0 6px rgba(0, 209, 255, 0.1),
     0 0 22px rgba(0, 209, 255, 0.58),
     inset 0 0 0 1px rgba(0, 0, 0, 0.08);
-  cursor: grab;
 }
 
 input[type="range"]:active::-webkit-slider-thumb {
@@ -613,6 +658,8 @@ input[type="range"]:active::-webkit-slider-thumb {
 }
 
 .charge-markers {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column-reverse;
   align-self: stretch;
@@ -624,6 +671,12 @@ input[type="range"]:active::-webkit-slider-thumb {
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.step.is-swipe-active .slider-wrap::after,
+.step.is-swipe-ready .slider-wrap::after {
+  animation: none;
+  opacity: 0;
 }
 
 .swipe-stage {
@@ -1223,6 +1276,18 @@ input[type="range"]:active::-webkit-slider-thumb {
   }
 }
 
+@keyframes swipeLiftCue {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(-50%, 8px);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -10px);
+  }
+}
+
 @keyframes counterBadgePulse {
   0% {
     transform: translateY(0) scale(1);
@@ -1244,6 +1309,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   .counter-box::after,
   .counter-box strong,
   .counter-box em,
+  .slider-wrap::after,
   .swipe-hint::before,
   .swipe-hint::after {
     animation: none !important;

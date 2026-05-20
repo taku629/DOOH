@@ -12,6 +12,7 @@ const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
 const shareStatus = document.getElementById("shareStatus");
 const swipeSlider = document.getElementById("swipeSlider");
+const swipeControl = swipeSlider?.closest(".slider-wrap");
 const swipeCompleteButton = document.getElementById("swipeComplete");
 const swipeHint = document.getElementById("swipeHint");
 const thanksTitle = document.getElementById("thanksTitle");
@@ -19,10 +20,13 @@ const viewport = document.getElementById("viewport");
 const track = document.getElementById("track");
 const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
+const swipeStep = steps[0];
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
 const DEMO_DONATION_YEN = 100;
+const SWIPE_CHARGE_DISTANCE_RATIO = 0.42;
+const SWIPE_COMPLETE_SNAP_THRESHOLD = 92;
 
 let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
@@ -42,6 +46,35 @@ function getDisplayName() {
 
 function getDemoDonationTotal(count = participantCount) {
   return count * DEMO_DONATION_YEN;
+}
+
+function normalizeSwipeValue(value) {
+  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+}
+
+function updateSwipeCharge(value) {
+  const normalized = normalizeSwipeValue(value);
+  const isComplete = normalized >= 100;
+
+  swipeSlider.value = String(normalized);
+  setSwipeFill(normalized);
+  swipeStep.classList.toggle("is-swipe-active", normalized > 0);
+  swipeCompleteButton.disabled = !isComplete;
+  swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
+
+  if (isComplete && !hasShownSwipeReadyEffect) {
+    hasShownSwipeReadyEffect = true;
+    swipeStep.classList.add("is-swipe-ready");
+    playCelebration();
+    window.setTimeout(() => swipeStep.classList.remove("is-swipe-ready"), 950);
+  }
+
+  if (!isComplete) {
+    hasShownSwipeReadyEffect = false;
+    swipeStep.classList.remove("is-swipe-ready");
+  }
+
+  return normalized;
 }
 
 function updateProgress(index) {
@@ -223,7 +256,9 @@ async function copyShareLink() {
 }
 
 function setSwipeFill(value) {
-  swipeSlider.style.setProperty("--swipe-fill", `${value}%`);
+  const normalized = normalizeSwipeValue(value);
+  swipeSlider.style.setProperty("--swipe-fill", `${normalized}%`);
+  swipeControl?.style.setProperty("--swipe-fill", `${normalized}%`);
 }
 
 function canAdvanceFrom(index) {
@@ -252,6 +287,18 @@ let pointerStartX = 0;
 let pointerStartY = 0;
 let dragOffset = 0;
 let dragAxisLocked = null;
+let swipeStartValue = 0;
+let isChargingSwipe = false;
+
+function resetPointerState() {
+  activePointerId = null;
+  pointerStartX = 0;
+  pointerStartY = 0;
+  dragOffset = 0;
+  dragAxisLocked = null;
+  swipeStartValue = 0;
+  isChargingSwipe = false;
+}
 
 function isInteractiveTarget(target) {
   return Boolean(
@@ -274,6 +321,8 @@ function startPointer(event) {
   pointerStartY = event.clientY;
   dragOffset = 0;
   dragAxisLocked = null;
+  swipeStartValue = Number(swipeSlider.value) || 0;
+  isChargingSwipe = false;
 }
 
 function movePointer(event) {
@@ -306,6 +355,15 @@ function movePointer(event) {
   dragOffset = dy;
 
   const height = viewport.clientHeight || 1;
+  if (currentStep === 0 && swipeStartValue < 100 && dragOffset < 0) {
+    isChargingSwipe = true;
+    const chargeDistance = Math.max(180, height * SWIPE_CHARGE_DISTANCE_RATIO);
+    const nextValue = swipeStartValue + (Math.abs(dragOffset) / chargeDistance) * 100;
+    updateSwipeCharge(nextValue);
+    setTrackPosition(currentStep);
+    return;
+  }
+
   let normalized = dragOffset;
 
   const atStart = currentStep === 0 && dragOffset > 0;
@@ -328,12 +386,27 @@ async function endPointer(event) {
   track.classList.remove("is-dragging");
 
   if (!wasVertical) {
-    activePointerId = null;
+    resetPointerState();
     return;
   }
 
   const height = viewport.clientHeight || 1;
   const threshold = height * SNAP_THRESHOLD_RATIO;
+
+  if (isChargingSwipe) {
+    const currentValue = Number(swipeSlider.value) || 0;
+    const shouldSnapComplete =
+      currentValue >= SWIPE_COMPLETE_SNAP_THRESHOLD ||
+      Math.abs(dragOffset) >= height * SWIPE_CHARGE_DISTANCE_RATIO;
+
+    if (shouldSnapComplete) {
+      updateSwipeCharge(100);
+    }
+
+    setTrackPosition(currentStep);
+    resetPointerState();
+    return;
+  }
 
   let target = currentStep;
   if (dragOffset < -threshold && currentStep < totalSteps - 1) {
@@ -349,11 +422,7 @@ async function endPointer(event) {
 
   showStep(target);
 
-  activePointerId = null;
-  pointerStartX = 0;
-  pointerStartY = 0;
-  dragOffset = 0;
-  dragAxisLocked = null;
+  resetPointerState();
 }
 
 viewport.addEventListener("pointerdown", startPointer);
@@ -368,25 +437,7 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 });
 
 swipeSlider.addEventListener("input", (event) => {
-  const value = Number(event.target.value);
-  const isComplete = value >= 100;
-  const swipeStep = steps[0];
-
-  setSwipeFill(value);
-  swipeCompleteButton.disabled = !isComplete;
-  swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
-
-  if (isComplete && !hasShownSwipeReadyEffect) {
-    hasShownSwipeReadyEffect = true;
-    swipeStep.classList.add("is-swipe-ready");
-    playCelebration();
-    window.setTimeout(() => swipeStep.classList.remove("is-swipe-ready"), 950);
-  }
-
-  if (!isComplete) {
-    hasShownSwipeReadyEffect = false;
-    swipeStep.classList.remove("is-swipe-ready");
-  }
+  updateSwipeCharge(event.target.value);
 });
 
 swipeCompleteButton.addEventListener("click", markParticipationComplete);
@@ -408,7 +459,7 @@ window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
 });
 
-setSwipeFill(0);
+updateSwipeCharge(0);
 showStep(0);
 
 getParticipantCount()
