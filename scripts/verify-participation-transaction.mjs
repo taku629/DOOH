@@ -14,7 +14,7 @@ let state = null;
 const totalParticipants = 25;
 
 for (let index = 1; index <= totalParticipants; index += 1) {
-    state = buildParticipationTransactionValue(state, createEvent(index));
+    state = articipationTransactionValubuildPe(state, createEvent(index));
 }
 
 assert.equal(state.participantCount, totalParticipants);
