@@ -185,8 +185,8 @@ function finalizeCard() {
 }
 
 async function registerParticipation() {
-  if (hasCountedParticipation || isRegisteringParticipation) {
-    return hasCountedParticipation;
+  if (isRegisteringParticipation) {
+    return false;
   }
   isRegisteringParticipation = true;
   swipeCompleteButton.disabled = true;
@@ -207,6 +207,7 @@ async function registerParticipation() {
       counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
     }
     hasCountedParticipation = true;
+    hasAnimatedCounter = false;
     return true;
   } catch (error) {
     console.warn("[firebase] participation count update failed:", error);
