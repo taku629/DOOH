@@ -449,31 +449,76 @@ input[type="text"]:focus {
 /* Swipe slider -------------------------------------------------------- */
 
 .slider-wrap {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: 264px;
   margin: 22px 0 12px;
-  padding: 22px 18px;
+  padding: 28px 18px;
+  overflow: hidden;
   border-radius: var(--radius-lg);
-  background: var(--bg-soft);
+  background:
+    radial-gradient(circle at 50% calc(100% - 38px), rgba(238, 107, 110, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(29, 29, 31, 0.04), rgba(29, 29, 31, 0.08)),
+    var(--bg-soft);
   box-shadow: inset 0 0 0 1px var(--hairline);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
   transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
+.slider-wrap::before,
+.slider-wrap::after {
+  position: absolute;
+  left: 50%;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+}
+
+.slider-wrap::before {
+  top: 28px;
+  bottom: 28px;
+  width: 84px;
+  border-radius: 999px;
+  background:
+    linear-gradient(0deg, rgba(238, 107, 110, 0.2), rgba(246, 163, 64, 0.12) var(--swipe-fill, 0%), transparent var(--swipe-fill, 0%)),
+    repeating-linear-gradient(0deg, transparent 0 30px, rgba(29, 29, 31, 0.08) 30px 32px);
+  transform: translateX(-50%);
+}
+
+.slider-wrap::after {
+  bottom: 34px;
+  width: 34px;
+  height: 64px;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, transparent 43%, rgba(29, 29, 31, 0.56) 44% 56%, transparent 57%) center 10px / 22px 22px no-repeat,
+    linear-gradient(45deg, transparent 43%, rgba(29, 29, 31, 0.56) 44% 56%, transparent 57%) center 10px / 22px 22px no-repeat,
+    linear-gradient(135deg, transparent 43%, rgba(29, 29, 31, 0.28) 44% 56%, transparent 57%) center 38px / 22px 22px no-repeat,
+    linear-gradient(45deg, transparent 43%, rgba(29, 29, 31, 0.28) 44% 56%, transparent 57%) center 38px / 22px 22px no-repeat;
+  transform: translateX(-50%);
+  animation: swipeLiftCue 1.25s ease-in-out infinite;
+}
+
 input[type="range"] {
-  width: 48px;
-  height: 180px;
+  position: relative;
+  z-index: 1;
+  width: 76px;
+  height: 220px;
   margin: 0;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
   writing-mode: vertical-lr;
   direction: rtl;
+  pointer-events: none;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-  width: 6px;
+  width: 8px;
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(
@@ -485,23 +530,23 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 input[type="range"]::-moz-range-track {
-  width: 6px;
+  width: 8px;
   height: 100%;
   border-radius: 999px;
   background: rgba(29, 29, 31, 0.12);
 }
 
 input[type="range"]::-moz-range-progress {
-  width: 6px;
+  width: 8px;
   border-radius: 999px;
   background: var(--ink);
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   margin-top: 0;
-  margin-left: -11px;
+  margin-left: -18px;
   -webkit-appearance: none;
   appearance: none;
   border-radius: 999px;
@@ -510,13 +555,12 @@ input[type="range"]::-webkit-slider-thumb {
     0 1px 2px rgba(0, 0, 0, 0.18),
     0 4px 14px rgba(0, 0, 0, 0.12),
     inset 0 0 0 1px rgba(0, 0, 0, 0.05);
-  cursor: grab;
   transition: transform 120ms ease;
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 999px;
   background: #fff;
@@ -524,11 +568,16 @@ input[type="range"]::-moz-range-thumb {
     0 1px 2px rgba(0, 0, 0, 0.18),
     0 4px 14px rgba(0, 0, 0, 0.12),
     inset 0 0 0 1px rgba(0, 0, 0, 0.05);
-  cursor: grab;
 }
 
 input[type="range"]:active::-webkit-slider-thumb {
   transform: scale(1.08);
+}
+
+.step.is-swipe-active .slider-wrap::after,
+.step.is-swipe-ready .slider-wrap::after {
+  animation: none;
+  opacity: 0;
 }
 
 .swipe-stage {
@@ -982,6 +1031,18 @@ input[type="range"]:active::-webkit-slider-thumb {
   }
 }
 
+@keyframes swipeLiftCue {
+  0%,
+  100% {
+    opacity: 0.48;
+    transform: translate(-50%, 8px);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -10px);
+  }
+}
+
 @keyframes counterBadgePulse {
   0% {
     transform: translateY(0) scale(1);
@@ -1003,6 +1064,7 @@ input[type="range"]:active::-webkit-slider-thumb {
   .counter-box::after,
   .counter-box strong,
   .counter-box em,
+  .slider-wrap::after,
   .swipe-hint::before,
   .swipe-hint::after {
     animation: none !important;

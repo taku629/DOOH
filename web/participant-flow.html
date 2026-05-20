@@ -37,7 +37,7 @@
         <section class="step is-current" data-step="0" data-label="デモ募金" aria-labelledby="swipeTitle">
           <span class="step-count">01</span>
           <h2 id="swipeTitle">スワイプして100円を届ける</h2>
-          <p>縦のスライダーを下から上に押し上げ、完了ボタンでデモ募金を確定してください。表示名はあとで任意入力できます。</p>
+          <p>画面を下から上へスワイプしてゲージを100%まで押し上げ、完了ボタンでデモ募金を確定してください。表示名はあとで任意入力できます。</p>
           <div class="swipe-stage" aria-hidden="true">
             <span class="spark spark-a"></span>
             <span class="spark spark-b"></span>
@@ -45,9 +45,9 @@
             <span class="light-beam"></span>
           </div>
           <div class="slider-wrap">
-            <input id="swipeSlider" type="range" min="0" max="100" step="5" value="0" orient="vertical" aria-orientation="vertical" aria-label="参加スワイプ" aria-describedby="swipeHint" />
+            <input id="swipeSlider" type="range" min="0" max="100" step="1" value="0" orient="vertical" aria-orientation="vertical" aria-label="参加スワイプ" aria-describedby="swipeHint" />
           </div>
-          <p class="hint" id="swipeHint">100%まで到達すると完了ボタンを押せます。</p>
+          <p class="hint" id="swipeHint">上へスワイプするとゲージが上がります。100%で完了できます。</p>
           <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">¥100をデモ募金する</button>
         </section>
 
