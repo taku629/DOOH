@@ -54,16 +54,8 @@
             <span id="swipeActionLabel">下から上までスワイプする</span>
             <strong id="swipePercent">0%</strong>
           </div>
-          <div class="slider-wrap">
-            <input id="swipeSlider" type="range" min="0" max="100" step="1" value="0" orient="vertical" aria-orientation="vertical" aria-label="参加スワイプ" aria-describedby="swipeHint" />
-            <div class="charge-markers" aria-hidden="true">
-              <span>Start</span>
-              <span>Relight</span>
-              <span>Ready</span>
-            </div>
-          </div>
+          <div class="slider-wrap" aria-hidden="true"></div>
           <p class="hint" id="swipeHint">下から上まで一気にスワイプしてください。</p>
-          <button id="swipeComplete" class="primary" type="button" disabled aria-disabled="true">ネオンを100%にして確定</button>
         </section>
 
         <section class="step" data-step="1" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
