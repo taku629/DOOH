@@ -11,9 +11,7 @@ const nickname = document.getElementById("nickname");
 const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
 const shareStatus = document.getElementById("shareStatus");
-const swipeSlider = document.getElementById("swipeSlider");
-const swipeControl = swipeSlider?.closest(".slider-wrap");
-const swipeCompleteButton = document.getElementById("swipeComplete");
+const swipeControl = document.querySelector(".slider-wrap");
 const swipeHint = document.getElementById("swipeHint");
 const thanksTitle = document.getElementById("thanksTitle");
 const viewport = document.getElementById("viewport");
@@ -36,6 +34,7 @@ let hasAnimatedCounter = false;
 let isFinalCardBuilt = false;
 let isRegisteringParticipation = false;
 let isAutoCompletingSwipe = false;
+let swipeChargeValue = 0;
 
 const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
@@ -57,12 +56,10 @@ function updateSwipeCharge(value) {
   const normalized = normalizeSwipeValue(value);
   const isComplete = normalized >= 100;
 
-  swipeSlider.value = String(normalized);
+  swipeChargeValue = normalized;
   setSwipeFill(normalized);
   swipeStep.classList.toggle("is-swipe-active", normalized > 0);
   swipeStep.classList.toggle("is-swipe-charged", isComplete);
-  swipeCompleteButton.disabled = !isComplete;
-  swipeCompleteButton.setAttribute("aria-disabled", String(!isComplete));
 
   if (isComplete && !hasShownSwipeReadyEffect) {
     hasShownSwipeReadyEffect = true;
@@ -189,8 +186,6 @@ async function registerParticipation() {
     return false;
   }
   isRegisteringParticipation = true;
-  swipeCompleteButton.disabled = true;
-  swipeCompleteButton.setAttribute("aria-disabled", "true");
 
   try {
     const result = await publishSwipeComplete({
@@ -215,9 +210,6 @@ async function registerParticipation() {
     return false;
   } finally {
     isRegisteringParticipation = false;
-    const canComplete = Number(swipeSlider.value) >= 100;
-    swipeCompleteButton.disabled = !canComplete;
-    swipeCompleteButton.setAttribute("aria-disabled", String(!canComplete));
   }
 }
 
@@ -282,13 +274,13 @@ async function copyShareLink() {
 
 function setSwipeFill(value) {
   const normalized = normalizeSwipeValue(value);
-  swipeSlider.style.setProperty("--swipe-fill", `${normalized}%`);
+  swipeStep?.style.setProperty("--swipe-fill", `${normalized}%`);
   swipeControl?.style.setProperty("--swipe-fill", `${normalized}%`);
 }
 
 function canAdvanceFrom(index) {
   if (index === 0) {
-    return Number(swipeSlider.value) >= 100;
+    return swipeChargeValue >= 100;
   }
   return true;
 }
@@ -328,7 +320,7 @@ function resetPointerState() {
 function isInteractiveTarget(target) {
   return Boolean(
     target.closest(
-      'input[type="range"], button, input[type="text"], a, [data-no-swipe]'
+      'button, input[type="text"], a, [data-no-swipe]'
     )
   );
 }
@@ -346,7 +338,7 @@ function startPointer(event) {
   pointerStartY = event.clientY;
   dragOffset = 0;
   dragAxisLocked = null;
-  swipeStartValue = Number(swipeSlider.value) || 0;
+  swipeStartValue = swipeChargeValue;
   isChargingSwipe = false;
 }
 
@@ -422,7 +414,7 @@ async function endPointer(event) {
   const threshold = height * SNAP_THRESHOLD_RATIO;
 
   if (isChargingSwipe) {
-    const currentValue = Number(swipeSlider.value) || 0;
+    const currentValue = swipeChargeValue;
     const shouldSnapComplete =
       currentValue >= SWIPE_COMPLETE_SNAP_THRESHOLD ||
       Math.abs(dragOffset) >= height * SWIPE_CHARGE_DISTANCE_RATIO;
@@ -463,12 +455,6 @@ viewport.addEventListener("pointercancel", endPointer);
 document.querySelectorAll("[data-next]").forEach((button) => {
   button.addEventListener("click", nextStep);
 });
-
-swipeSlider.addEventListener("input", (event) => {
-  updateSwipeCharge(event.target.value);
-});
-
-swipeCompleteButton.addEventListener("click", markParticipationComplete);
 
 nickname.addEventListener("input", () => {
   previewName.textContent = getDisplayName();
