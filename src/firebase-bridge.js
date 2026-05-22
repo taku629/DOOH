@@ -1,4 +1,6 @@
 import {
+    getApp,
+    getApps,
     initializeApp,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
@@ -16,12 +18,29 @@ import { buildParticipationTransactionValue } from "./participation-transaction.
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
 const PARTICIPATION_PATH = "participation";
 const PARTICIPATION_V2_PATH = "participationV2";
+const PARTICIPATION_MORNING_PATH = "participationMorning";
+const DISPLAY_CONFIG_PATH = "displayConfig";
 
 let configPromise;
+let appPromise;
 let databasePromise;
 
+function normalizeChannel(channel = "default") {
+    return channel === "v2" || channel === "morning" ? channel : "default";
+}
+
 function getParticipationPath(channel = "default") {
-    return channel === "v2" ? PARTICIPATION_V2_PATH : PARTICIPATION_PATH;
+    const normalizedChannel = normalizeChannel(channel);
+
+    if (normalizedChannel === "v2") {
+        return PARTICIPATION_V2_PATH;
+    }
+
+    if (normalizedChannel === "morning") {
+        return PARTICIPATION_MORNING_PATH;
+    }
+
+    return PARTICIPATION_PATH;
 }
 
 function getParticipantCountPath(channel) {
@@ -30,6 +49,10 @@ function getParticipantCountPath(channel) {
 
 function getSwipesPath(channel) {
     return `${getParticipationPath(channel)}/swipes`;
+}
+
+function getDisplayConfigPath(channel) {
+    return `${DISPLAY_CONFIG_PATH}/${normalizeChannel(channel)}`;
 }
 
 async function loadConfig() {
@@ -59,17 +82,37 @@ async function loadConfig() {
     return configPromise;
 }
 
+async function ensureApp() {
+    if (appPromise) {
+        return appPromise;
+    }
+
+    appPromise = (async () => {
+        const config = await loadConfig();
+        if (!config) {
+            return null;
+        }
+
+        if (getApps().length > 0) {
+            return getApp();
+        }
+
+        return initializeApp(config);
+    })();
+
+    return appPromise;
+}
+
 async function ensureDatabase() {
     if (databasePromise) {
         return databasePromise;
     }
 
     databasePromise = (async () => {
-        const config = await loadConfig();
-        if (!config) {
+        const app = await ensureApp();
+        if (!app) {
             return null;
         }
-        const app = initializeApp(config);
         return getDatabase(app);
     })();
 
@@ -82,7 +125,7 @@ export async function publishSwipeComplete(payload = {}) {
         return null;
     }
 
-    const channel = payload.channel === "v2" ? "v2" : "default";
+    const channel = normalizeChannel(payload.channel);
     const eventRef = push(ref(database, getSwipesPath(channel)));
     if (!eventRef.key) {
         throw new Error("Swipe event key could not be generated.");
@@ -118,7 +161,7 @@ export async function getParticipantCount(options = {}) {
         return null;
     }
 
-    const channel = options.channel === "v2" ? "v2" : "default";
+    const channel = normalizeChannel(options.channel);
     const snapshot = await get(ref(database, getParticipantCountPath(channel)));
     return Number(snapshot.val()) || 0;
 }
@@ -129,7 +172,7 @@ export async function subscribeToParticipantCount(callback, options = {}) {
         return () => {};
     }
 
-    const channel = options.channel === "v2" ? "v2" : "default";
+    const channel = normalizeChannel(options.channel);
     return onValue(ref(database, getParticipantCountPath(channel)), (snapshot) => {
         callback(Number(snapshot.val()) || 0);
     });
@@ -141,7 +184,7 @@ export async function subscribeToSwipeCompletes(callback, options = {}) {
         return () => {};
     }
 
-    const channel = options.channel === "v2" ? "v2" : "default";
+    const channel = normalizeChannel(options.channel);
     const swipesRef = ref(database, getSwipesPath(channel));
     const knownIds = new Set();
 
@@ -168,5 +211,17 @@ export async function subscribeToSwipeCompletes(callback, options = {}) {
         }
 
         callback({ id: snap.key, ...data });
+    });
+}
+
+export async function subscribeToDisplayConfig(callback, options = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return () => {};
+    }
+
+    const channel = normalizeChannel(options.channel);
+    return onValue(ref(database, getDisplayConfigPath(channel)), (snapshot) => {
+        callback(snapshot.val() || null);
     });
 }

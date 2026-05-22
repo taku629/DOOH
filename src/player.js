@@ -1,8 +1,10 @@
 import { playFallback } from "./fallback-handler.js";
-import { subscribeToParticipantCount, subscribeToSwipeCompletes } from "./firebase-bridge.js";
+import { getDonationMilestoneVideo, getDonationTotalYen } from "./condition-manager.js";
+import { subscribeToDisplayConfig, subscribeToParticipantCount, subscribeToSwipeCompletes } from "./firebase-bridge.js";
 import { logError, logPlayback } from "./logger.js";
 import { subscribeToParticipationEvents } from "./participation-bridge.js";
 import { getCurrentVideo } from "./scheduler.js";
+import { getChannelForTheme, resolveTheme } from "./theme-router.js";
 
 const player = document.querySelector("#player");
 const displayShell = document.querySelector("#displayShell");
@@ -13,11 +15,23 @@ const donationTotal = document.querySelector("#displayDonationTotal");
 const participantCount = document.querySelector("#displayParticipantCount");
 const participantStatus = document.querySelector("#displayParticipantStatus");
 const takeoverParticipantName = document.querySelector("#takeoverParticipantName");
-const participationChannel = displayShell?.dataset.participationChannel || "default";
+const displayTheme = resolveTheme({
+    defaultTheme: displayShell?.dataset.displayTheme || "day",
+});
+const baseParticipationChannel = displayShell?.dataset.participationChannel || "default";
+const participationChannel = getChannelForTheme(displayTheme, baseParticipationChannel);
 const playlistPath = "./config/playlist.json";
 const DEMO_DONATION_YEN = 100;
 
+document.documentElement.dataset.theme = displayTheme;
+
+if (displayShell) {
+    displayShell.dataset.displayTheme = displayTheme;
+    displayShell.dataset.participationChannel = participationChannel;
+}
+
 let playlist;
+let staticPlaylist;
 let normalVideoPath;
 let participationTimer;
 let displayCount = 0;
@@ -27,7 +41,7 @@ let totalAnimationFrame = null;
 let hasInitializedLiveTotals = false;
 
 function formatDonationTotal(count) {
-    return `¥${(count * DEMO_DONATION_YEN).toLocaleString("ja-JP")}`;
+    return `¥${getDonationTotalYen(count, DEMO_DONATION_YEN).toLocaleString("ja-JP")}`;
 }
 
 function setLiveTotals(count) {
@@ -96,6 +110,7 @@ function updateParticipationStatus(event) {
     displayCount = Number.isFinite(eventCount) ? eventCount : displayCount + 1;
 
     updateLiveTotals(displayCount, { animate: true });
+    updateNormalVideoForCount(displayCount, { playNow: false }).catch(logError);
 
     if (participantStatus) {
         const donationAmount = Number(event?.donationAmountYen) || DEMO_DONATION_YEN;
@@ -132,6 +147,36 @@ async function playVideo(videoPath) {
     player.src = videoPath;
     await player.play();
     logPlayback(videoPath);
+}
+
+function getNormalVideoForCount(count) {
+    const donationTotalYen = getDonationTotalYen(count, DEMO_DONATION_YEN);
+    const milestoneVideo = getDonationMilestoneVideo(playlist, donationTotalYen);
+
+    return milestoneVideo || getCurrentVideo(playlist);
+}
+
+function applyPlaylist(nextPlaylist, options = {}) {
+    if (!nextPlaylist || typeof nextPlaylist !== "object") {
+        return;
+    }
+
+    playlist = nextPlaylist;
+    updateNormalVideoForCount(displayCount, { playNow: options.playNow }).catch(logError);
+}
+
+async function updateNormalVideoForCount(count, options = {}) {
+    const nextVideoPath = getNormalVideoForCount(count);
+
+    if (!nextVideoPath || nextVideoPath === normalVideoPath) {
+        return;
+    }
+
+    normalVideoPath = nextVideoPath;
+
+    if (options.playNow && !displayShell?.classList.contains("is-participation-playing")) {
+        await playVideo(normalVideoPath);
+    }
 }
 
 function scheduleReturnToNormal() {
@@ -177,8 +222,9 @@ async function startPlayer() {
     }
 
     try {
-        playlist = await loadPlaylist();
-        normalVideoPath = getCurrentVideo(playlist);
+        staticPlaylist = await loadPlaylist();
+        playlist = staticPlaylist;
+        normalVideoPath = getNormalVideoForCount(displayCount);
 
         player.addEventListener("playing", () => showFallbackView(false), { once: true });
         player.addEventListener("error", () => {
@@ -195,16 +241,24 @@ async function startPlayer() {
 
         await playVideo(normalVideoPath);
         subscribeToParticipationEvents(handleParticipation);
+        subscribeToDisplayConfig((displayConfig) => {
+            applyPlaylist(displayConfig?.playlist || staticPlaylist, { playNow: true });
+        }, { channel: participationChannel }).catch(logError);
     } catch (error) {
         showFallbackView(true);
         logError(error);
     }
 
     subscribeToParticipantCount((count) => {
-        const shouldAnimate = hasInitializedLiveTotals && count > displayedCount;
+        const wasInitialized = hasInitializedLiveTotals;
+        const previousCount = displayedCount;
+        const shouldAnimate = wasInitialized && count > previousCount;
         hasInitializedLiveTotals = true;
         displayCount = count;
         updateLiveTotals(displayCount, { animate: shouldAnimate });
+        updateNormalVideoForCount(displayCount, {
+            playNow: !wasInitialized || displayCount <= previousCount,
+        }).catch(logError);
     }, { channel: participationChannel }).catch(logError);
     subscribeToSwipeCompletes((event) => handleParticipation({
         count: event?.count,

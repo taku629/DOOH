@@ -4,7 +4,7 @@
     ".write": false,
     "participation": {
       ".read": true,
-      ".write": "newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1)",
+      ".write": "auth != null || (newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1))",
       "participantCount": {
         ".validate": "newData.isNumber() && newData.val() >= 0"
       },
@@ -19,7 +19,7 @@
     },
     "participationV2": {
       ".read": true,
-      ".write": "newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1)",
+      ".write": "auth != null || (newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1))",
       "participantCount": {
         ".validate": "newData.isNumber() && newData.val() >= 0"
       },
@@ -30,6 +30,27 @@
       },
       "$other": {
         ".validate": false
+      }
+    },
+    "participationMorning": {
+      ".read": true,
+      ".write": "auth != null || (newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1))",
+      "participantCount": {
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "swipes": {
+        "$eventId": {
+          ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "displayConfig": {
+      "$channel": {
+        ".read": true,
+        ".write": "auth != null && ($channel === 'default' || $channel === 'v2' || $channel === 'morning')"
       }
     }
   }
