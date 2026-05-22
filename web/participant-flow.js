@@ -1,4 +1,5 @@
 import { getParticipantCount, publishSwipeComplete } from "../src/firebase-bridge.js";
+import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
 const steps = [...document.querySelectorAll(".step")];
 const progressText = document.getElementById("progressText");
@@ -22,9 +23,13 @@ const swipeStep = steps[0];
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
+const activeTheme = resolveTheme({ defaultTheme: "day" });
+const PARTICIPATION_CHANNEL = getChannelForTheme(activeTheme, "default");
 const DEMO_DONATION_YEN = 100;
 const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
 const SWIPE_COMPLETE_SNAP_THRESHOLD = 96;
+
+document.documentElement.dataset.theme = activeTheme;
 
 let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
@@ -164,13 +169,17 @@ function buildFinalCard() {
   finalCard.replaceChildren();
 
   const label = document.createElement("p");
-  label.textContent = "SHINJUKU COLOR SUPPORTER";
+  label.textContent = activeTheme === "morning"
+    ? "SHINJUKU MORNING SUPPORTER"
+    : "SHINJUKU COLOR SUPPORTER";
 
   const name = document.createElement("h3");
   name.textContent = getDisplayName();
 
   const description = document.createElement("p");
-  description.textContent = `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
+  description.textContent = activeTheme === "morning"
+    ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金が、朝の新宿に小さな余白をつくりました。`
+    : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
 
   finalCard.append(label, name, description);
 }
@@ -188,10 +197,17 @@ async function registerParticipation() {
   isRegisteringParticipation = true;
 
   try {
-    const result = await publishSwipeComplete({
+    const payload = {
       name: getDisplayName(),
       donationAmountYen: DEMO_DONATION_YEN,
-    });
+    };
+
+    if (PARTICIPATION_CHANNEL !== "default") {
+      payload.channel = PARTICIPATION_CHANNEL;
+      payload.source = "participant-flow-morning";
+    }
+
+    const result = await publishSwipeComplete(payload);
     const committedCount = Number(result?.count);
     participantCount = Number.isFinite(committedCount)
       ? committedCount
@@ -474,9 +490,10 @@ window.addEventListener("resize", () => {
 });
 
 updateSwipeCharge(0);
+applyThemeCopy();
 showStep(0);
 
-getParticipantCount()
+getParticipantCount({ channel: PARTICIPATION_CHANNEL })
   .then((count) => {
     if (Number.isFinite(count) && count > 0 && !hasCountedParticipation) {
       participantCount = count;
@@ -491,3 +508,42 @@ getParticipantCount()
   .catch((error) => {
     console.warn("[firebase] participant count fetch failed:", error);
   });
+
+function applyThemeCopy() {
+  if (activeTheme !== "morning") {
+    return;
+  }
+
+  const setText = (id, text) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = text;
+    }
+  };
+  const eyebrow = document.querySelector(".eyebrow");
+  const lead = document.querySelector(".lead");
+  const title = document.querySelector("#campaignTitle");
+  const firstStepCopy = steps[0]?.querySelector("p");
+  const previewLabel = document.querySelector("#certificatePreview p");
+
+  if (eyebrow) {
+    eyebrow.textContent = "Morning Shinjuku";
+  }
+  if (lead) {
+    lead.textContent = "通勤前の3秒で参加できる、朝の新宿向けデモ募金体験です。";
+  }
+  if (title) {
+    title.innerHTML = "朝の新宿に<br><span class=\"no-break\">3秒で参加</span>";
+  }
+  if (firstStepCopy) {
+    firstStepCopy.textContent = "画面を下から上へ一気にスワイプ。名前入力なしでも、朝の参加としてすぐに反映されます。";
+  }
+  if (previewLabel) {
+    previewLabel.textContent = "SHINJUKU MORNING SUPPORTER";
+  }
+  setText("swipeTitle", "3秒で100円を届ける");
+  setText("swipeHint", "下から上へスワイプしてください。");
+  setText("thanksTitle", "参加が朝の新宿に反映されました。");
+  setText("certificateTitle", "朝の参加証を受け取る");
+  setText("shareTitle", "参加証が作成されました。");
+}

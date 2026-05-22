@@ -1,0 +1,377 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f5f7;
+  --bg-soft: #fbfbfd;
+  --surface: #ffffff;
+  --ink: #1d1d1f;
+  --ink-secondary: #6e6e73;
+  --separator: rgba(0, 0, 0, 0.06);
+  --hairline: rgba(0, 0, 0, 0.08);
+  --accent-strong: #c00000;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Helvetica Neue", "Hiragino Sans", "Yu Gothic", "Noto Sans JP",
+    system-ui, sans-serif;
+  --font-mono:
+    "SF Mono", ui-monospace, "JetBrains Mono", "Menlo", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+input {
+  height: 40px;
+  padding: 0 12px;
+}
+
+textarea {
+  resize: vertical;
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 72px;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(251, 251, 253, 0.94);
+  backdrop-filter: blur(18px);
+}
+
+.brand-lockup,
+.auth-chip,
+.workspace-toolbar,
+.toolbar-actions,
+.panel-heading,
+.operation-row {
+  display: flex;
+  align-items: center;
+}
+
+.brand-lockup {
+  gap: 12px;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.brand-lockup strong,
+.metric-card strong,
+.panel-heading h1,
+.panel-heading h2 {
+  letter-spacing: 0;
+}
+
+.brand-lockup strong {
+  display: block;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.brand-lockup span,
+.auth-chip,
+.eyebrow,
+.metric-card span,
+label span {
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.auth-chip {
+  gap: 10px;
+}
+
+.admin-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 24px auto 56px;
+}
+
+.login-panel {
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.login-panel[hidden] {
+  display: none;
+}
+
+.login-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+label {
+  display: grid;
+  gap: 7px;
+}
+
+.workspace {
+  display: grid;
+  gap: 18px;
+}
+
+.workspace-toolbar {
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.segmented-control {
+  display: inline-grid;
+  grid-template-columns: repeat(3, minmax(72px, 1fr));
+  padding: 3px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--bg-soft);
+}
+
+.segmented-control button {
+  min-height: 34px;
+  background: transparent;
+  color: var(--ink-secondary);
+}
+
+.segmented-control button.is-active {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.toolbar-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.primary-button,
+.ghost-button,
+.danger-button {
+  padding: 0 14px;
+  font-weight: 700;
+}
+
+.primary-button {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.ghost-button {
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.danger-button {
+  background: #8f1d1d;
+  color: #fff;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric-card,
+.admin-panel {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.metric-card {
+  display: grid;
+  gap: 8px;
+  min-height: 92px;
+  padding: 16px;
+}
+
+.metric-card strong {
+  overflow: hidden;
+  font-size: 22px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-card.wide {
+  grid-column: span 1;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr);
+  gap: 18px;
+}
+
+.admin-panel {
+  padding: 16px;
+}
+
+.admin-panel:nth-child(2),
+.admin-panel:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.operations-panel {
+  align-self: start;
+}
+
+.panel-heading {
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.panel-heading h1,
+.panel-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.row-list {
+  display: grid;
+  gap: 10px;
+}
+
+.config-row {
+  display: grid;
+  grid-template-columns: 1.1fr 0.7fr 1.4fr auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--separator);
+  border-radius: 8px;
+  background: var(--bg-soft);
+}
+
+.rule-row {
+  grid-template-columns: 1fr 0.72fr 0.62fr 0.62fr 1.35fr auto;
+}
+
+.remove-button {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  border: 1px solid rgba(143, 29, 29, 0.2);
+  background: #fff6f6;
+  color: #8f1d1d;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.operation-row {
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.status-message {
+  min-height: 22px;
+  margin: 12px 0 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.status-message.is-error {
+  color: #8f1d1d;
+}
+
+.status-message.is-success {
+  color: #15643b;
+}
+
+@media (max-width: 920px) {
+  .admin-topbar,
+  .workspace-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .login-form,
+  .metrics-grid,
+  .editor-grid,
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .config-row,
+  .rule-row {
+    grid-template-columns: 1fr;
+  }
+
+  .remove-button {
+    width: 100%;
+  }
+}

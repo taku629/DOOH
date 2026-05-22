@@ -4,13 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Shinjuku DOOH Project | 参加フロー</title>
-  <script>
-    const base = document.createElement("base");
-    base.href = location.hostname.endsWith("github.io") && location.pathname.startsWith("/DOOH/")
-      ? "/DOOH/"
-      : "/";
-    document.head.appendChild(base);
-  </script>
+  <base href="/" />
   <link rel="stylesheet" href="web/theme.css" />
   <link rel="stylesheet" href="web/participant-flow-horizontal.css" />
 </head>
@@ -21,7 +15,7 @@
       <h1 id="campaignTitle">新宿を<br><span class="no-break"><span class="quote-mark quote-mark-open">「</span>新<span class="quote-mark quote-mark-close">」</span>しく</span></h1>
       <p class="lead">QRを読み取ったあなたの1スワイプが、デモ募金としてモノクロの新宿に色を戻す参加体験です。</p>
       <figure class="hero-visual">
-        <img src="assets/test.png" alt="モノクロの新宿が参加によって明るく色づくビジュアル" />
+        <img src="assets/test.png?v=20260520" alt="モノクロの新宿が参加によって明るく色づくビジュアル" />
       </figure>
     </section>
 

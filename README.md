@@ -12,9 +12,20 @@
 - 動画再生ロジック: `src/player.js`
 - 時間帯別の動画選択: `src/scheduler.js`
 - 参加イベント連携: `src/participation-bridge.js`
+- 管理画面: `web/admin-src/index.html`
 - プレイリスト設定: `config/playlist.json`
 
-ブラウザだけで動作する静的なフロントエンド構成です。ビルドツールや npm パッケージは不要です。
+公開 URL は Firebase Hosting に統一しています。
+
+- v1 DOOH 表示: `https://dooh-ca9c2.web.app/v1`
+- v1 参加ページ: `https://dooh-ca9c2.web.app/participant-v1`
+- v2 DOOH 表示: `https://dooh-ca9c2.web.app/v2`
+- v2 参加ページ: `https://dooh-ca9c2.web.app/participant-v2`
+- v3 DOOH 表示: `https://dooh-ca9c2.web.app/v3` または `https://dooh-ca9c2.web.app/v1?theme=morning`
+- v3 参加ページ: `https://dooh-ca9c2.web.app/participant-v3` または `https://dooh-ca9c2.web.app/participant-v1?theme=morning`
+- 管理画面: `https://dooh-ca9c2.web.app/admin`
+
+DOOH 表示画面と参加ページはブラウザだけで動作する静的なフロントエンド構成です。管理画面は React + Vite でビルドし、生成された `web/admin-dist/` を Firebase Hosting から配信します。
 
 ## 主な機能
 
@@ -29,8 +40,11 @@
 - QR 参加案内パネル
 - スマートフォン参加数のライブ表示
 - 参加イベント受信時の参加演出動画への切り替え
+- デモ募金総額が指定金額に達した時の通常動画切り替え
+- 管理画面からの公開中プレイリスト更新
 
 起動時に `config/playlist.json` を読み込み、現在時刻に合う動画を `src/scheduler.js` で選択します。
+Firebase 上に管理画面から公開した設定がある場合は、DOOH 表示プレイヤーがその設定を購読し、静的JSONの内容を上書きして反映します。
 
 ### 2. スマートフォン参加フロー
 
@@ -76,6 +90,13 @@
   "fallback": "videos/default.mp4",
   "participationVideo": "videos/participation.mp4",
   "participationReturnSeconds": 8,
+  "donationMilestones": [
+    {
+      "name": "total-5000",
+      "thresholdYen": 5000,
+      "video": "videos/milestone-5000.mp4"
+    }
+  ],
   "rules": [
     {
       "name": "male-morning",
@@ -102,6 +123,9 @@
 | `fallback` | 通常動画が選ばれない場合、または再生に失敗した場合の代替動画 |
 | `participationVideo` | スマートフォン参加を受け取ったときに一時再生する演出動画 |
 | `participationReturnSeconds` | 参加演出動画から通常動画へ戻るまでの秒数 |
+| `donationMilestones[].name` | 金額到達ルール名。管理用のラベル |
+| `donationMilestones[].thresholdYen` | この金額以上になったら対象動画へ切り替えるしきい値 |
+| `donationMilestones[].video` | 金額到達後に通常動画として再生する動画パス |
 | `rules[].name` | ルール名。管理用のラベル |
 | `rules[].audience` | 想定する素材区分。例: `male` / `female`。現在の再生条件には使わず、管理用ラベルとして扱います |
 | `rules[].start` | 再生開始時刻。`HH:MM` 形式 |
@@ -109,6 +133,8 @@
 | `rules[].video` | 対象時間帯に再生する動画パス |
 
 `src/scheduler.js` は現在時刻を `HH:MM` に変換し、最初に一致した `rules` の `video` を返します。一致するルールが無い場合は `fallback` を返します。男女別に素材を分ける場合も、現在の実装ではカメラや属性推定ではなく、時間帯ルールでどちらの素材を流すかを決めます。
+
+`donationMilestones` は参加数から算出したデモ募金総額に対して評価されます。1参加あたり100円のため、`thresholdYen: 5000` は50人到達時に一致します。複数の金額ルールに一致する場合は、最も高い `thresholdYen` の動画を通常動画として使います。参加演出動画が再生中の場合はすぐに割り込まず、`participationReturnSeconds` 後に戻る通常動画が金額到達後の動画に変わります。
 
 `rules` は上から順に評価されます。意図しない動画が選ばれないように、通常は時間帯が重複しないように設定してください。深夜帯のように日付をまたぐ場合は、`start` を `22:00`、`end` を `05:59` のように指定できます。
 
@@ -123,11 +149,14 @@
 │   ├── player.js                 # 表示プレイヤー本体
 │   ├── scheduler.js              # 時間帯別動画選択
 │   ├── participation-bridge.js   # 参加イベント送受信
+│   ├── admin-bridge.js           # 管理画面の認証/公開操作
 │   ├── fallback-handler.js       # 動画フォールバック再生
 │   ├── logger.js                 # ログ出力
-│   ├── condition-manager.js      # 現在は未使用
+│   ├── condition-manager.js      # 金額到達時の動画切り替え判定
 │   └── fallback-manager.js       # 現在は未使用
 ├── web/
+│   ├── admin-src/                # React 管理画面のソース
+│   ├── admin-dist/               # React 管理画面のビルド結果
 │   ├── participant-flow.html     # スマートフォン参加ページ
 │   ├── participant-flow.css      # 参加ページのスタイル
 │   └── participant-flow.js       # 参加ページのロジック
@@ -160,6 +189,9 @@ python3 -m http.server 8000
 6. DOOH 表示画面の参加数とステータスが更新されることを確認します。
 7. `participationVideo` が設定され、動画ファイルが存在する場合は参加演出動画に切り替わります。
 8. `participationReturnSeconds` 秒後に通常動画へ戻ります。
+9. デモ募金総額が `donationMilestones[].thresholdYen` 以上になると、戻り先の通常動画が `donationMilestones[].video` に変わります。
+
+管理画面の開発時は `npm install` 後に `npm run dev:admin` を実行します。本番では `npm run build:admin` で生成される `web/admin-dist/index.html` が `/admin` に rewrite されます。
 
 ## 動画ファイルの配置
 
@@ -167,6 +199,7 @@ python3 -m http.server 8000
 
 - `videos/default.mp4`
 - `videos/participation.mp4`
+- `videos/milestone-5000.mp4`
 - `videos/male.mp4`
 - `videos/female.mp4`
 
@@ -202,6 +235,42 @@ python3 -m http.server 8000
 
 この場合、参加演出動画へ切り替わってから 12 秒後に通常動画へ戻ります。
 
+### デモ募金総額で動画を切り替える
+
+`config/playlist.json` の `donationMilestones` を変更します。
+
+```json
+{
+  "donationMilestones": [
+    {
+      "name": "total-5000",
+      "thresholdYen": 5000,
+      "video": "videos/milestone-5000.mp4"
+    },
+    {
+      "name": "total-10000",
+      "thresholdYen": 10000,
+      "video": "videos/milestone-10000.mp4"
+    }
+  ]
+}
+```
+
+この場合、50人到達で `videos/milestone-5000.mp4`、100人到達で `videos/milestone-10000.mp4` が通常動画になります。既存の参加演出動画への一時切り替えはそのまま動きます。
+
+### 管理画面で公開中設定を変更する
+
+`web/admin-src/index.html` は React + Vite で実装した管理画面です。v1/v2/v3ごとに以下を操作できます。
+
+- 現在の参加数とデモ募金総額の確認
+- `fallback`、`participationVideo`、`participationReturnSeconds` の編集
+- `donationMilestones` と `rules` の編集
+- Firebase 上の公開中プレイリスト更新
+- 参加数のリセット
+
+公開と参加数リセットは Firebase Auth のログインユーザーだけが実行できます。Firebase Console の **Build → Authentication** で Email/Password を有効化し、管理者ユーザーを作成してください。
+React と Firebase SDK は `npm run build:admin` で管理画面バンドルに含めます。Firebase Hosting の `predeploy` でも `npm run build:admin` を実行するため、`firebase deploy --only hosting,database --project dooh-ca9c2` の前に手動ビルドする必要はありません。
+
 ### 参加ページの文言を変更する
 
 `web/participant-flow.html` を編集します。  
@@ -231,6 +300,12 @@ python3 -m http.server 8000
 `theme.css` の末尾には **claude.ai 風のペーパーテーマ**のサンプル `:root` がコメントアウトで置いてあります。コメントアウトを切り替えれば 1 ファイル編集だけでテーマを差し替えられます。
 
 複数テーマを併用したい場合は、テーマごとに `theme-apple.css` / `theme-claude.css` のようにファイルを分け、`participant-flow.html` の `<link>` でロード対象を切り替える運用も可能です。
+
+### v3 朝・通勤新宿テーマ
+
+v3 は `?theme=morning`、または `/v3` / `/participant-v3` で表示します。背景画像は既存の `assets/test.png` を流用し、CSS だけでライトグレー、ホワイト、ブルー、ネイビーの高コントラスト表示に切り替えます。
+
+`?theme=auto` を指定した場合は、7:00〜10:59 の時間帯だけ `morning` テーマになります。既存の `/v1` と `/v2` は、明示的に `theme` を指定しない限り従来テーマのままです。
 
 ### DOOH 側の表示文言を変更する
 
@@ -283,7 +358,7 @@ Firebase CLI で反映する場合は、Firebase にログインしたうえで 
 ### セットアップ手順
 
 1. https://console.firebase.google.com/ で新規プロジェクトを作成
-2. **Build → Realtime Database → データベースを作成** で「テストモードで開始」を選択(30日間は誰でも読み書き可能)
+2. **Build → Realtime Database → データベースを作成**
 3. **プロジェクト設定 → 全般 → マイアプリ → Web** で「ウェブアプリの追加」
 4. 表示される `firebaseConfig` の値を `config/firebase-config.json` に上書きで保存:
 
@@ -299,8 +374,9 @@ Firebase CLI で反映する場合は、Firebase にログインしたうえで 
    }
    ```
 
-5. **プロジェクト設定 → 全般 → 承認済みドメイン** に、デプロイ先(`taku629.github.io`)とローカル開発用(`localhost`)を追加
-6. main にコミット & push (GitHub Actions が `gh-pages` に同期しデプロイ)
+5. **Build → Authentication → Sign-in method** で Email/Password を有効化し、管理者ユーザーを作成
+6. **プロジェクト設定 → 全般 → 承認済みドメイン** に、デプロイ先(`dooh-ca9c2.web.app`)とローカル開発用(`localhost`)を追加
+7. Firebase CLI で `firebase deploy --only hosting,database --project dooh-ca9c2` を実行
 
 ### 参加数を0から開始する
 
@@ -348,18 +424,21 @@ Firebase Realtime Database の `participation/participantCount` が未作成な�
 - `downloadBtn` の「画像を保存」はデモ表示のみで、実際の画像生成は未実装です。
 - 参加完了(スワイプ100%)時の `+1` カウンター更新は、Firebase Realtime Database の `participation/participantCount` に永続化します。デモ募金総額は `participantCount * 100円` として表示します。
 - 疑似募金はデモ用の演出で、クレジットカード・電子決済・領収書発行などの実決済機能は未実装です。
+- 管理画面の公開/リセット操作には Firebase Auth のログインが必要です。Auth を有効化していない環境では閲覧のみ可能です。
 - `playlist.json` はルート直下にもありますが、現在プレイヤーが読み込むのは `config/playlist.json` です。
-- `src/condition-manager.js` と `src/fallback-manager.js` は現在空ファイルです。
+- `src/condition-manager.js` は金額到達時の動画切り替え判定で使用します。`src/fallback-manager.js` は現在空ファイルです。
 
 ## デプロイ
 
-静的ファイルとして配信できます。GitHub Pages、Netlify、Vercel、任意の静的ホスティングで利用できます。
+本番公開は Firebase Hosting に統一しています。GitHub Pages への自動デプロイは使いません。
 
 デプロイ時は以下に注意してください。
 
-- `index.html` がルートで配信されること
+- `firebase deploy --only hosting --project dooh-ca9c2` で Firebase Hosting に反映すること。Hosting の `predeploy` で管理画面をビルドします
+- `index.html` が `/v1` と `/v3`、`index-v2.html` が `/v2` の rewrite で配信されること
 - `config/playlist.json` が `./config/playlist.json` として取得できること
-- `web/participant-flow.html` が `/web/participant-flow.html` で開けること
+- `web/participant-flow.html` が `/participant-v1` と `/participant-v3`、`web/participant-flow-v2.html` が `/participant-v2` の rewrite で開けること
+- `web/admin-dist/index.html` が `/admin` の rewrite で開けること
 - `assets/` と動画ファイルの相対パスが崩れないこと
 - DOOH 表示画面と参加フローを同じオリジンで配信すること
 
