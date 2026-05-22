@@ -1,0 +1,310 @@
+html[data-theme="morning"] {
+  color-scheme: light;
+
+  --bg: #f3f4f6;
+  --bg-soft: #ffffff;
+  --surface: #ffffff;
+  --ink: #1e3a8a;
+  --ink-secondary: #374151;
+  --ink-tertiary: #6b7280;
+  --separator: rgba(30, 58, 138, 0.1);
+  --hairline: rgba(30, 58, 138, 0.14);
+
+  --accent: #2563eb;
+  --accent-strong: #1e3a8a;
+  --gold: #93c5fd;
+  --blue: #1e3a8a;
+  --success: #2563eb;
+  --danger: #b91c1c;
+
+  --glass-bg: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(30, 58, 138, 0.14);
+  --shadow-sm: 0 1px 2px rgba(30, 58, 138, 0.05), 0 0 0 1px rgba(30, 58, 138, 0.06);
+  --shadow-md: 0 12px 30px rgba(30, 58, 138, 0.1), 0 2px 8px rgba(30, 58, 138, 0.06);
+  --shadow-lg: 0 24px 70px rgba(30, 58, 138, 0.14), 0 8px 24px rgba(30, 58, 138, 0.08);
+
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 18px;
+
+  --font-sans:
+    "Noto Sans JP", "Hiragino Sans", "Yu Gothic", -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono:
+    "UD Digi Kyokasho N-R", "DIN 2014", "SF Mono", ui-monospace,
+    monospace;
+}
+
+html[data-theme="morning"] body {
+  color: var(--ink);
+  letter-spacing: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(243, 244, 246, 0.95)),
+    var(--bg);
+}
+
+html[data-theme="morning"] button,
+html[data-theme="morning"] input {
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .app {
+  padding-top: 16px;
+}
+
+html[data-theme="morning"] .eyebrow {
+  color: var(--accent);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .eyebrow::before {
+  background: var(--accent);
+}
+
+html[data-theme="morning"] .app-hero h1,
+html[data-theme="morning"] h2 {
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .lead,
+html[data-theme="morning"] p {
+  color: var(--ink-secondary);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .hero-visual {
+  border: 1px solid var(--hairline);
+  box-shadow: none;
+}
+
+html[data-theme="morning"] .hero-visual img {
+  filter: grayscale(0.12) saturate(0.8) brightness(1.05);
+}
+
+html[data-theme="morning"] .progress {
+  color: var(--ink-tertiary);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] #progressText,
+html[data-theme="morning"] #counterValue,
+html[data-theme="morning"] #counterParticipants,
+html[data-theme="morning"] #swipePercent,
+html[data-theme="morning"] .step-count,
+html[data-theme="morning"] .donation-preview strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-theme="morning"] .bar {
+  background: rgba(30, 58, 138, 0.12);
+}
+
+html[data-theme="morning"] #progressBar {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+html[data-theme="morning"] .viewport {
+  height: clamp(430px, calc(100vh - 170px), 520px);
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-theme="morning"] .viewport::before {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.06), transparent 42%);
+}
+
+html[data-theme="morning"] .step {
+  padding: 24px;
+}
+
+html[data-theme="morning"] .step-count {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .impact-strip,
+html[data-theme="morning"] .donation-preview span {
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .impact-strip b {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+html[data-theme="morning"] .donation-preview,
+html[data-theme="morning"] .action-status,
+html[data-theme="morning"] .counter-box {
+  border: 1px solid var(--hairline);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+html[data-theme="morning"] .donation-preview strong,
+html[data-theme="morning"] .action-status strong {
+  color: var(--accent);
+}
+
+html[data-theme="morning"] .primary,
+html[data-theme="morning"] .ghost {
+  border-radius: var(--radius-md);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .primary {
+  color: #ffffff;
+  background: var(--accent);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+}
+
+html[data-theme="morning"] .primary:hover {
+  background: var(--accent-strong);
+  box-shadow: 0 10px 24px rgba(30, 58, 138, 0.18);
+}
+
+html[data-theme="morning"] .ghost {
+  color: var(--accent-strong);
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+html[data-theme="morning"] input[type="text"] {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: none;
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+html[data-theme="morning"] .slider-wrap {
+  min-height: min(42vh, 330px);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(0deg, rgba(37, 99, 235, 0.18), rgba(37, 99, 235, 0.06)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat,
+    #f9fafb;
+  box-shadow: none;
+}
+
+html[data-theme="morning"] .slider-wrap::before {
+  background:
+    linear-gradient(0deg, rgba(37, 99, 235, 0.38), rgba(191, 219, 254, 0.42), rgba(255, 255, 255, 0.08)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat;
+  filter: none;
+}
+
+html[data-theme="morning"] .slider-wrap::after {
+  background:
+    linear-gradient(135deg, transparent 43%, rgba(30, 58, 138, 0.68) 44% 56%, transparent 57%) center 10px / 22px 22px no-repeat,
+    linear-gradient(45deg, transparent 43%, rgba(30, 58, 138, 0.68) 44% 56%, transparent 57%) center 10px / 22px 22px no-repeat,
+    linear-gradient(135deg, transparent 43%, rgba(37, 99, 235, 0.34) 44% 56%, transparent 57%) center 38px / 22px 22px no-repeat,
+    linear-gradient(45deg, transparent 43%, rgba(37, 99, 235, 0.34) 44% 56%, transparent 57%) center 38px / 22px 22px no-repeat;
+  filter: none;
+}
+
+html[data-theme="morning"] .swipe-stage {
+  height: 72px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  background:
+    linear-gradient(90deg, rgba(37, 99, 235, 0.22) 0 var(--swipe-fill, 0%), rgba(229, 231, 235, 0.9) var(--swipe-fill, 0%)),
+    #f9fafb;
+  box-shadow: none;
+}
+
+html[data-theme="morning"] .swipe-stage::before,
+html[data-theme="morning"] .swipe-stage::after,
+html[data-theme="morning"] .light-beam,
+html[data-theme="morning"] .spark,
+html[data-theme="morning"] .city-window,
+html[data-theme="morning"] .charge-wave,
+html[data-theme="morning"] .action-pulse {
+  animation: none;
+  box-shadow: none;
+}
+
+html[data-theme="morning"] .step.is-swipe-ready .slider-wrap,
+html[data-theme="morning"] .step.is-swipe-charged .slider-wrap,
+html[data-theme="morning"] .step.is-swipe-charged .swipe-stage {
+  background:
+    linear-gradient(0deg, rgba(37, 99, 235, 0.28), rgba(219, 234, 254, 0.6)),
+    #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
+}
+
+html[data-theme="morning"] .counter-box::after {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.14), transparent 64%);
+}
+
+html[data-theme="morning"] #counterValue {
+  color: var(--accent-strong);
+  background: none;
+  font-size: clamp(3.8rem, 18vw, 5.8rem);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .counter-box .unit {
+  color: var(--ink-secondary);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .counter-box em {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: none;
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .card {
+  color: #1e3a8a;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(219, 234, 254, 0.92));
+  box-shadow: 0 16px 40px rgba(30, 58, 138, 0.14);
+}
+
+html[data-theme="morning"] .card::before {
+  background:
+    linear-gradient(90deg, rgba(37, 99, 235, 0.16), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent);
+}
+
+html[data-theme="morning"] .card p,
+html[data-theme="morning"] .card.done p:last-of-type {
+  color: #6b7280;
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .card h3 {
+  color: #1e3a8a;
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .celebration,
+html[data-theme="morning"] .celebration.is-active {
+  display: none;
+}
+
+html[data-theme="morning"] .swipe-hint {
+  color: var(--ink-tertiary);
+  letter-spacing: 0;
+}
+
+html[data-theme="morning"] .swipe-hint::before,
+html[data-theme="morning"] .swipe-hint::after {
+  background: var(--accent);
+}

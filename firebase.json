@@ -4,6 +4,9 @@
   },
   "hosting": {
     "public": ".",
+    "predeploy": [
+      "npm run build:admin"
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -12,7 +15,11 @@
       "docs/**",
       "scripts/**",
       "database.rules.json",
+      "package.json",
+      "package-lock.json",
       "playlist.json",
+      "vite.config.js",
+      "web/admin-src/**",
       "*.pptx"
     ],
     "rewrites": [
@@ -25,6 +32,10 @@
         "destination": "/index-v2.html"
       },
       {
+        "source": "/v3",
+        "destination": "/index.html"
+      },
+      {
         "source": "/participant-v1",
         "destination": "/web/participant-flow.html"
       },
@@ -33,12 +44,20 @@
         "destination": "/web/participant-flow-v2.html"
       },
       {
+        "source": "/participant-v3",
+        "destination": "/web/participant-flow.html"
+      },
+      {
         "source": "/participant-v1-horizontal",
         "destination": "/web/participant-flow-horizontal.html"
       },
       {
         "source": "/participant-v2-horizontal",
         "destination": "/web/participant-flow-v2-horizontal.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/web/admin-dist/index.html"
       }
     ]
   }

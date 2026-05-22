@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Midnight Shinjuku Display V2</title>
+    <script>
+        (() => {
+            const params = new URLSearchParams(location.search);
+            const requestedTheme = params.get("theme");
+            const hour = new Date().getHours();
+            const isMorningPath = /(^|\/)(v3|participant-v3)$/.test(location.pathname);
+            if (isMorningPath || requestedTheme === "morning" || (requestedTheme === "auto" && hour >= 7 && hour <= 10)) {
+                document.documentElement.dataset.theme = "morning";
+            }
+        })();
+    </script>
     <style>
         :root {
             --paper: #0e0e0e;
@@ -97,7 +108,7 @@
             border-radius: 24px;
             background:
                 linear-gradient(90deg, rgba(0, 0, 0, 0.84), rgba(0, 209, 255, 0.18), rgba(14, 14, 14, 0.3)),
-                url("./assets/test.png") center / cover no-repeat;
+                url("./assets/test.png?v=20260520") center / cover no-repeat;
             border: 1px solid rgba(0, 209, 255, 0.22);
             color: #ffffff;
             box-shadow:
@@ -496,9 +507,10 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="./web/display-theme-morning.css" />
 </head>
 <body>
-    <main class="display-shell" id="displayShell" data-participation-channel="v2">
+    <main class="display-shell" id="displayShell" data-display-theme="night" data-participation-channel="v2">
         <video id="player" autoplay muted playsinline></video>
 
         <div class="brand-strip" aria-hidden="true">
@@ -529,7 +541,7 @@
             <div class="qr-copy">
                 <strong>Demo Donate</strong>
                 <p>スマホでQRを読み取り、¥100デモ募金で新宿に灯りを戻す</p>
-                <small id="qrCaption">参加ページ: /web/participant-flow-v2.html</small>
+                <small id="qrCaption">参加ページ: https://dooh-ca9c2.web.app/participant-v2</small>
             </div>
         </aside>
 
@@ -544,16 +556,37 @@
     <script type="module" src="./src/player.js"></script>
     <script type="module">
         import QRCode from "https://cdn.skypack.dev/qrcode@1.5.3";
+        import { buildThemeUrl, resolveTheme } from "./src/theme-router.js";
 
         const placeholder = document.getElementById("qrPlaceholder");
         const caption = document.getElementById("qrCaption");
-        const url = new URL("./web/participant-flow-v2.html", location.href).href;
+        const theme = resolveTheme({ defaultTheme: "night" });
+        const url = buildThemeUrl("/participant-v2", theme);
+        const qrColor = theme === "morning"
+            ? { dark: "#1e3a8a", light: "#ffffff" }
+            : { dark: "#0e0e0e", light: "#ffffff" };
+
+        if (theme === "morning") {
+            document.querySelector(".brand-strip span").textContent = "Morning Shinjuku";
+            document.querySelector(".qr-copy strong").textContent = "3秒で参加";
+            document.querySelector(".qr-copy p").textContent = "スマホでQRを読み取り、朝の通勤前に¥100デモ募金";
+            document.querySelector("#videoFallback h1").innerHTML = "朝の新宿に<br>3秒で参加";
+            document.querySelector("#videoFallback p").textContent = "白背景と濃い青で、通勤導線でも読める参加型DOOHデモです。";
+            document.querySelector(".takeover-copy strong").textContent = "Morning check-in";
+            document.querySelector(".takeover-copy h2").innerHTML = "参加が<br>即時反映";
+            document.querySelector(".takeover-copy p").replaceChildren(
+                document.querySelector("#takeoverParticipantName"),
+                " さんの朝のデモ募金を受け取りました。",
+            );
+            document.querySelector("#participationSignal strong").textContent = "Morning Total";
+            document.querySelector("#displayParticipantStatus").textContent = "3秒参加を待機中";
+        }
 
         QRCode.toCanvas(url, {
             width: 102,
             margin: 1,
             errorCorrectionLevel: "M",
-            color: { dark: "#0e0e0e", light: "#ffffff" },
+            color: qrColor,
         })
             .then((canvas) => {
                 placeholder.replaceChildren(canvas);
