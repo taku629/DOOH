@@ -28,9 +28,31 @@ const PARTICIPATION_CHANNEL = getChannelForTheme(activeTheme, "default");
 const DEMO_DONATION_YEN = 100;
 const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
 const SWIPE_COMPLETE_SNAP_THRESHOLD = 96;
+const STORY_CARD_VISIBLE_MS = 2300;
+const STORY_CARD_REDUCED_MOTION_MS = 1000;
 
 document.documentElement.dataset.theme = activeTheme;
 const isSparkleExperience = document.documentElement.dataset.experience === "sparkle";
+const THANKS_STORIES = [
+  {
+    title: "夜の歌舞伎町を安全に",
+    description: "あなたの1スワイプが、若者や女性を守る民間警備員の夜通しのパトロール支援に繋がりました。",
+  },
+];
+const storyCardOverlay = document.getElementById("storyCardOverlay");
+const storyCard = document.getElementById("storyCard");
+const storyCardTitle = document.getElementById("storyCardTitle");
+const storyCardDescription = document.getElementById("storyCardDescription");
+const storyFilm = document.getElementById("storyFilm");
+const shouldUseStoryThanksCard = Boolean(
+  isSparkleExperience &&
+    activeTheme !== "morning" &&
+    storyCardOverlay &&
+    storyCard &&
+    storyCardTitle &&
+    storyCardDescription &&
+    storyFilm
+);
 
 let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
@@ -42,6 +64,7 @@ let isRegisteringParticipation = false;
 let isAutoCompletingSwipe = false;
 let swipeChargeValue = 0;
 let counterAnimationFrame = null;
+let storyCardDismissTimer = null;
 
 const reducedMotionQuery = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
@@ -218,6 +241,68 @@ function buildFinalCard() {
   finalCard.append(label, name, description);
 }
 
+function getRandomThanksStory() {
+  const index = Math.floor(Math.random() * THANKS_STORIES.length);
+  return THANKS_STORIES[index];
+}
+
+function hideStoryThanksCard() {
+  if (!shouldUseStoryThanksCard) {
+    return;
+  }
+
+  const wasActive = storyCardOverlay.classList.contains("is-active");
+  if (storyCardDismissTimer) {
+    window.clearTimeout(storyCardDismissTimer);
+    storyCardDismissTimer = null;
+  }
+  storyCardOverlay.classList.remove("is-active");
+  storyCardOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("is-story-card-open");
+
+  if (wasActive && currentStep === 0 && hasCountedParticipation) {
+    nextStep();
+  }
+}
+
+function scheduleStoryCardDismiss() {
+  if (storyCardDismissTimer) {
+    window.clearTimeout(storyCardDismissTimer);
+  }
+
+  const visibleMs = prefersReducedMotion
+    ? STORY_CARD_REDUCED_MOTION_MS
+    : STORY_CARD_VISIBLE_MS;
+  storyCardDismissTimer = window.setTimeout(() => {
+    storyCardDismissTimer = null;
+    hideStoryThanksCard();
+  }, visibleMs);
+}
+
+function showStoryThanksCard() {
+  if (!shouldUseStoryThanksCard) {
+    return false;
+  }
+
+  const story = getRandomThanksStory();
+  storyCardTitle.textContent = story.title;
+  storyCardDescription.textContent = story.description;
+  storyFilm.classList.remove("is-playing");
+  void storyFilm.offsetWidth;
+  storyFilm.classList.add("is-playing");
+
+  storyCardOverlay.setAttribute("aria-hidden", "false");
+  storyCardOverlay.classList.add("is-active");
+  document.body.classList.add("is-story-card-open");
+  scheduleStoryCardDismiss();
+
+  if (swipeHint) {
+    swipeHint.textContent = "ありがとうございます。支援先のストーリーを表示しています。";
+  }
+
+  return true;
+}
+
 function finalizeCard() {
   isFinalCardBuilt = false;
   buildFinalCard();
@@ -225,6 +310,9 @@ function finalizeCard() {
 }
 
 async function registerParticipation() {
+  if (hasCountedParticipation) {
+    return true;
+  }
   if (isRegisteringParticipation) {
     return false;
   }
@@ -266,7 +354,9 @@ async function registerParticipation() {
 async function markParticipationComplete() {
   const didComplete = await registerParticipation();
   if (didComplete) {
-    nextStep();
+    if (!showStoryThanksCard()) {
+      nextStep();
+    }
   }
   return didComplete;
 }
@@ -341,7 +431,11 @@ function canAdvanceFrom(index) {
 
 async function handleForwardAdvance(fromIndex) {
   if (fromIndex === 0) {
-    return registerParticipation();
+    const didRegister = await registerParticipation();
+    if (didRegister && showStoryThanksCard()) {
+      return false;
+    }
+    return didRegister;
   } else if (fromIndex === 2) {
     buildFinalCard();
   }
@@ -564,6 +658,12 @@ const shareBtn = document.getElementById("shareBtn");
 if (shareBtn) {
   shareBtn.addEventListener("click", copyShareLink);
 }
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && storyCardOverlay?.classList.contains("is-active")) {
+    hideStoryThanksCard();
+  }
+});
 
 window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
