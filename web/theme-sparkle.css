@@ -74,9 +74,12 @@ html:not([data-theme="morning"]) body {
 
 .sparkle-pattern {
   z-index: 0;
-  background-image: radial-gradient(circle, rgba(255, 209, 220, 0.52) 5px, transparent 6px);
+  background-image:
+    radial-gradient(circle, rgba(255, 209, 220, 0.66) 6px, transparent 7px),
+    radial-gradient(circle, rgba(206, 231, 240, 0.5) 4px, transparent 5px);
+  background-position: 0 0, 28px 28px;
   background-size: 56px 56px;
-  opacity: 0.5;
+  opacity: 0.62;
   mix-blend-mode: multiply;
 }
 
@@ -90,57 +93,111 @@ html:not([data-theme="morning"]) body {
 
 .sparkle-particles span {
   position: absolute;
-  bottom: -36px;
-  color: rgba(120, 85, 94, 0.36);
+  bottom: -48px;
+  color: rgba(120, 85, 94, 0.58);
+  filter: drop-shadow(0 0 12px rgba(255, 209, 220, 0.62));
   font-family: "Material Symbols Outlined";
-  font-size: 18px;
-  font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20;
-  animation: sparkleFloatSubtle 18s linear infinite;
+  font-size: 24px;
+  font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 24;
+  animation: sparkleFloatSubtle 14s linear infinite;
 }
 
 .sparkle-particles span:nth-child(1) {
-  left: 12%;
-  animation-delay: -4s;
+  left: 7%;
+  font-size: 28px;
+  animation-delay: -3s;
 }
 
 .sparkle-particles span:nth-child(2) {
-  left: 34%;
-  color: rgba(75, 98, 106, 0.3);
-  font-size: 21px;
-  animation-duration: 22s;
-  animation-delay: -12s;
+  left: 18%;
+  color: rgba(75, 98, 106, 0.48);
+  font-size: 30px;
+  animation-duration: 17s;
+  animation-delay: -10s;
 }
 
 .sparkle-particles span:nth-child(3) {
-  left: 66%;
-  color: rgba(120, 85, 94, 0.34);
-  font-size: 17px;
-  animation-duration: 20s;
-  animation-delay: -8s;
+  left: 31%;
+  color: rgba(120, 85, 94, 0.54);
+  font-size: 22px;
+  animation-duration: 16s;
+  animation-delay: -7s;
 }
 
 .sparkle-particles span:nth-child(4) {
-  left: 86%;
-  color: rgba(99, 96, 55, 0.28);
-  font-size: 20px;
-  animation-duration: 24s;
-  animation-delay: -16s;
+  left: 42%;
+  color: rgba(99, 96, 55, 0.46);
+  filter: drop-shadow(0 0 12px rgba(228, 223, 172, 0.58));
+  font-size: 26px;
+  animation-duration: 18s;
+  animation-delay: -13s;
 }
 
 .sparkle-particles span:nth-child(5) {
-  left: 50%;
-  color: rgba(120, 85, 94, 0.3);
-  font-size: 16px;
-  animation-duration: 21s;
-  animation-delay: -6s;
+  left: 54%;
+  color: rgba(120, 85, 94, 0.5);
+  font-size: 24px;
+  animation-duration: 15s;
+  animation-delay: -5s;
 }
 
 .sparkle-particles span:nth-child(6) {
-  left: 76%;
-  color: rgba(75, 98, 106, 0.26);
-  font-size: 19px;
-  animation-duration: 23s;
-  animation-delay: -18s;
+  left: 65%;
+  color: rgba(75, 98, 106, 0.44);
+  filter: drop-shadow(0 0 12px rgba(206, 231, 240, 0.62));
+  font-size: 27px;
+  animation-duration: 19s;
+  animation-delay: -16s;
+}
+
+.sparkle-particles span:nth-child(7) {
+  left: 77%;
+  color: rgba(120, 85, 94, 0.52);
+  font-size: 25px;
+  animation-duration: 16s;
+  animation-delay: -9s;
+}
+
+.sparkle-particles span:nth-child(8) {
+  left: 89%;
+  color: rgba(99, 96, 55, 0.44);
+  filter: drop-shadow(0 0 12px rgba(228, 223, 172, 0.56));
+  font-size: 23px;
+  animation-duration: 18s;
+  animation-delay: -2s;
+}
+
+.sparkle-particles span:nth-child(9) {
+  left: 24%;
+  color: rgba(120, 85, 94, 0.48);
+  font-size: 20px;
+  animation-duration: 13s;
+  animation-delay: -14s;
+}
+
+.sparkle-particles span:nth-child(10) {
+  left: 48%;
+  color: rgba(75, 98, 106, 0.42);
+  filter: drop-shadow(0 0 12px rgba(206, 231, 240, 0.56));
+  font-size: 22px;
+  animation-duration: 15s;
+  animation-delay: -11s;
+}
+
+.sparkle-particles span:nth-child(11) {
+  left: 72%;
+  color: rgba(120, 85, 94, 0.5);
+  font-size: 21px;
+  animation-duration: 14s;
+  animation-delay: -6s;
+}
+
+.sparkle-particles span:nth-child(12) {
+  left: 96%;
+  color: rgba(99, 96, 55, 0.4);
+  font-size: 24px;
+  animation-duration: 20s;
+  animation-delay: -19s;
 }
 
 .sparkle-appbar {
@@ -508,14 +565,14 @@ html[data-theme="morning"] .heart-shine {
     transform: translateY(0) translateX(0) scale(0.82) rotate(0deg);
   }
   18% {
-    opacity: 0.78;
+    opacity: 0.94;
   }
   78% {
-    opacity: 0.64;
+    opacity: 0.82;
   }
   100% {
     opacity: 0;
-    transform: translateY(-110vh) translateX(14px) scale(1) rotate(14deg);
+    transform: translateY(-112vh) translateX(26px) scale(1.08) rotate(34deg);
   }
 }
 
