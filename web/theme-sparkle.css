@@ -74,9 +74,9 @@ html:not([data-theme="morning"]) body {
 
 .sparkle-pattern {
   z-index: 0;
-  background-image: radial-gradient(circle, rgba(255, 209, 220, 0.42) 5px, transparent 6px);
+  background-image: radial-gradient(circle, rgba(255, 209, 220, 0.52) 5px, transparent 6px);
   background-size: 56px 56px;
-  opacity: 0.42;
+  opacity: 0.5;
   mix-blend-mode: multiply;
 }
 
@@ -91,11 +91,11 @@ html:not([data-theme="morning"]) body {
 .sparkle-particles span {
   position: absolute;
   bottom: -36px;
-  color: rgba(120, 85, 94, 0.22);
+  color: rgba(120, 85, 94, 0.36);
   font-family: "Material Symbols Outlined";
-  font-size: 16px;
-  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 20;
-  animation: sparkleFloatSubtle 22s linear infinite;
+  font-size: 18px;
+  font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 20;
+  animation: sparkleFloatSubtle 18s linear infinite;
 }
 
 .sparkle-particles span:nth-child(1) {
@@ -105,26 +105,42 @@ html:not([data-theme="morning"]) body {
 
 .sparkle-particles span:nth-child(2) {
   left: 34%;
-  color: rgba(75, 98, 106, 0.18);
-  font-size: 18px;
-  animation-duration: 26s;
+  color: rgba(75, 98, 106, 0.3);
+  font-size: 21px;
+  animation-duration: 22s;
   animation-delay: -12s;
 }
 
 .sparkle-particles span:nth-child(3) {
   left: 66%;
-  color: rgba(120, 85, 94, 0.2);
-  font-size: 14px;
-  animation-duration: 24s;
+  color: rgba(120, 85, 94, 0.34);
+  font-size: 17px;
+  animation-duration: 20s;
   animation-delay: -8s;
 }
 
 .sparkle-particles span:nth-child(4) {
   left: 86%;
-  color: rgba(99, 96, 55, 0.16);
-  font-size: 17px;
-  animation-duration: 28s;
+  color: rgba(99, 96, 55, 0.28);
+  font-size: 20px;
+  animation-duration: 24s;
   animation-delay: -16s;
+}
+
+.sparkle-particles span:nth-child(5) {
+  left: 50%;
+  color: rgba(120, 85, 94, 0.3);
+  font-size: 16px;
+  animation-duration: 21s;
+  animation-delay: -6s;
+}
+
+.sparkle-particles span:nth-child(6) {
+  left: 76%;
+  color: rgba(75, 98, 106, 0.26);
+  font-size: 19px;
+  animation-duration: 23s;
+  animation-delay: -18s;
 }
 
 .sparkle-appbar {
@@ -492,10 +508,10 @@ html[data-theme="morning"] .heart-shine {
     transform: translateY(0) translateX(0) scale(0.82) rotate(0deg);
   }
   18% {
-    opacity: 0.58;
+    opacity: 0.78;
   }
   78% {
-    opacity: 0.46;
+    opacity: 0.64;
   }
   100% {
     opacity: 0;
