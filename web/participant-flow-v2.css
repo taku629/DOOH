@@ -275,6 +275,11 @@ button {
   z-index: 1;
 }
 
+.step[data-step="0"] {
+  overflow: hidden;
+  padding: 20px;
+}
+
 .step-count {
   display: inline-flex;
   align-items: center;
@@ -289,6 +294,22 @@ button {
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0;
+}
+
+.step[data-step="0"] .step-count {
+  margin-bottom: 8px;
+}
+
+.step[data-step="0"] h2 {
+  margin-bottom: 8px;
+  font-size: clamp(1.42rem, 6.4vw, 1.92rem);
+  line-height: 1.14;
+}
+
+.step[data-step="0"] > p:first-of-type {
+  margin-bottom: 8px;
+  font-size: 0.84rem;
+  line-height: 1.48;
 }
 
 .step-count::before {
@@ -550,6 +571,12 @@ input[type="text"]:focus {
   transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
+.step[data-step="0"] .slider-wrap {
+  min-height: clamp(166px, 26svh, 220px);
+  margin: 8px 0 6px;
+  padding: 18px 14px;
+}
+
 .slider-wrap::before,
 .slider-wrap::after {
   position: absolute;
@@ -617,6 +644,21 @@ input[type="text"]:focus {
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 -28px 48px rgba(0, 0, 0, 0.28);
+}
+
+.step[data-step="0"] .swipe-stage {
+  height: 72px;
+  margin: 0 0 8px;
+}
+
+.step[data-step="0"] .action-status {
+  margin-bottom: 8px;
+  padding: 10px 12px;
+}
+
+.step[data-step="0"] .hint {
+  margin-top: 2px;
+  font-weight: 600;
 }
 
 .swipe-stage::before,

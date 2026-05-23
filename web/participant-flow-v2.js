@@ -562,14 +562,14 @@ function applyThemeCopy() {
     title.innerHTML = "朝の新宿に<br><span class=\"no-break\">3秒で参加</span>";
   }
   if (firstStepCopy) {
-    firstStepCopy.textContent = "画面を下から上へ一気にスワイプ。名前入力なしでも、朝の参加としてすぐに反映されます。";
+    firstStepCopy.textContent = "画面を開いたら、このカードを下から上へ一気にスワイプしてください。朝の参加としてすぐに反映されます。";
   }
   if (previewLabel) {
     previewLabel.textContent = "SHINJUKU MORNING SUPPORTER";
   }
-  setText("swipeTitle", "3秒で100円を届ける");
-  setText("swipeActionLabel", "下から上までスワイプする");
-  setText("swipeHint", "下から上へスワイプしてください。");
+  setText("swipeTitle", "上にスワイプして100円を届ける");
+  setText("swipeActionLabel", "この画面を上にスワイプする");
+  setText("swipeHint", "この画面を上にスワイプしてください。");
   setText("thanksTitle", "参加が朝の新宿に反映されました。");
   setText("certificateTitle", "朝の参加証を受け取る");
   setText("shareTitle", "参加証が作成されました。");
