@@ -47,7 +47,7 @@ const prefersReducedMotion = window.matchMedia(
 ).matches;
 
 function getDisplayName() {
-  return nickname.value.trim() || (isSparkleExperience ? "Sparkle Supporter" : "匿名サポーター");
+  return nickname.value.trim() || "匿名サポーター";
 }
 
 function getDemoDonationTotal(count = participantCount) {
@@ -173,7 +173,7 @@ function buildFinalCard() {
   label.textContent = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
     : isSparkleExperience
-      ? "RADIANT SPARKLE CERTIFICATE"
+      ? "新宿ときめき参加証"
       : "SHINJUKU COLOR SUPPORTER";
 
   const name = document.createElement("h3");
@@ -287,9 +287,13 @@ async function copyShareLink() {
     }
 
     await navigator.clipboard.writeText(url);
-    shareStatus.textContent = "リンクをコピーしました。";
+    if (shareStatus) {
+      shareStatus.textContent = "リンクをコピーしました。";
+    }
   } catch {
-    shareStatus.textContent = `コピーできませんでした。URL: ${url}`;
+    if (shareStatus) {
+      shareStatus.textContent = `コピーできませんでした。URL: ${url}`;
+    }
   }
 }
 
@@ -484,11 +488,19 @@ nickname.addEventListener("input", () => {
 document.getElementById("createCard").addEventListener("click", finalizeCard);
 document.getElementById("skipName").addEventListener("click", finalizeCard);
 
-document.getElementById("downloadBtn").addEventListener("click", () => {
-  shareStatus.textContent = "デモ版: 参加証画像の保存は次タスクで実装します。";
-});
+const downloadBtn = document.getElementById("downloadBtn");
+if (downloadBtn) {
+  downloadBtn.addEventListener("click", () => {
+    if (shareStatus) {
+      shareStatus.textContent = "デモ版: 参加証画像の保存は次タスクで実装します。";
+    }
+  });
+}
 
-document.getElementById("shareBtn").addEventListener("click", copyShareLink);
+const shareBtn = document.getElementById("shareBtn");
+if (shareBtn) {
+  shareBtn.addEventListener("click", copyShareLink);
+}
 
 window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
