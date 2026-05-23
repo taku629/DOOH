@@ -158,7 +158,7 @@ button {
   border-radius: var(--radius-xl);
   background: var(--surface);
   box-shadow: var(--shadow-md);
-  touch-action: pan-x;
+  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -1040,6 +1040,13 @@ input[type="text"]:focus {
   .counter-box strong,
   .counter-box em,
   .slider-wrap::after,
+  .swipe-stage::after,
+  .light-beam,
+  .spark,
+  .charge-wave,
+  .action-pulse,
+  .city-window,
+  .celebration span,
   .swipe-hint::before,
   .swipe-hint::after {
     animation: none !important;
