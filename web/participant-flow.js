@@ -30,6 +30,7 @@ const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
 const SWIPE_COMPLETE_SNAP_THRESHOLD = 96;
 
 document.documentElement.dataset.theme = activeTheme;
+const isSparkleExperience = document.documentElement.dataset.experience === "sparkle";
 
 let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
@@ -46,7 +47,7 @@ const prefersReducedMotion = window.matchMedia(
 ).matches;
 
 function getDisplayName() {
-  return nickname.value.trim() || (activeTheme === "morning" ? "匿名サポーター" : "Sparkle Supporter");
+  return nickname.value.trim() || (isSparkleExperience ? "Sparkle Supporter" : "匿名サポーター");
 }
 
 function getDemoDonationTotal(count = participantCount) {
@@ -171,7 +172,9 @@ function buildFinalCard() {
   const label = document.createElement("p");
   label.textContent = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
-    : "RADIANT SPARKLE CERTIFICATE";
+    : isSparkleExperience
+      ? "RADIANT SPARKLE CERTIFICATE"
+      : "SHINJUKU COLOR SUPPORTER";
 
   const name = document.createElement("h3");
   name.textContent = getDisplayName();
@@ -179,7 +182,9 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = activeTheme === "morning"
     ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金が、朝の新宿に小さな余白をつくりました。`
-    : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、今日の新宿にやさしい光を増やしました。`;
+    : isSparkleExperience
+      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、今日の新宿にやさしい光を増やしました。`
+      : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
 
   finalCard.append(label, name, description);
 }
