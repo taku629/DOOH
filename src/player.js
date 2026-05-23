@@ -240,7 +240,7 @@ async function startPlayer() {
         });
 
         await playVideo(normalVideoPath);
-        subscribeToParticipationEvents(handleParticipation);
+        subscribeToParticipationEvents(handleParticipation, { channel: participationChannel });
         subscribeToDisplayConfig((displayConfig) => {
             applyPlaylist(displayConfig?.playlist || staticPlaylist, { playNow: true });
         }, { channel: participationChannel }).catch(logError);

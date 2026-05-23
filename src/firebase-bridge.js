@@ -1,18 +1,4 @@
-import {
-    getApp,
-    getApps,
-    initializeApp,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-    get,
-    getDatabase,
-    onChildAdded,
-    onValue,
-    push,
-    ref,
-    runTransaction,
-    serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { publishParticipationEvent } from "./participation-bridge.js";
 import { buildParticipationTransactionValue } from "./participation-transaction.mjs";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
@@ -22,6 +8,7 @@ const PARTICIPATION_MORNING_PATH = "participationMorning";
 const DISPLAY_CONFIG_PATH = "displayConfig";
 
 let configPromise;
+let firebaseSdkPromise;
 let appPromise;
 let databasePromise;
 
@@ -82,6 +69,24 @@ async function loadConfig() {
     return configPromise;
 }
 
+async function loadFirebaseSdk() {
+    if (firebaseSdkPromise) {
+        return firebaseSdkPromise;
+    }
+
+    firebaseSdkPromise = Promise.all([
+        import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"),
+        import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"),
+    ])
+        .then(([appSdk, databaseSdk]) => ({ ...appSdk, ...databaseSdk }))
+        .catch((error) => {
+            console.warn("[firebase] SDK load failed; local fallback enabled:", error);
+            return null;
+        });
+
+    return firebaseSdkPromise;
+}
+
 async function ensureApp() {
     if (appPromise) {
         return appPromise;
@@ -92,12 +97,16 @@ async function ensureApp() {
         if (!config) {
             return null;
         }
-
-        if (getApps().length > 0) {
-            return getApp();
+        const sdk = await loadFirebaseSdk();
+        if (!sdk) {
+            return null;
         }
 
-        return initializeApp(config);
+        if (sdk.getApps().length > 0) {
+            return sdk.getApp();
+        }
+
+        return sdk.initializeApp(config);
     })();
 
     return appPromise;
@@ -113,46 +122,77 @@ async function ensureDatabase() {
         if (!app) {
             return null;
         }
-        return getDatabase(app);
+        const sdk = await loadFirebaseSdk();
+        if (!sdk) {
+            return null;
+        }
+        return sdk.getDatabase(app);
     })();
 
     return databasePromise;
 }
 
+function publishLocalSwipeComplete(payload = {}) {
+    const channel = normalizeChannel(payload.channel);
+    const event = publishParticipationEvent({
+        ...payload,
+        channel,
+        source: payload.source ?? channel,
+        type: "swipe-completed",
+    });
+
+    return {
+        count: null,
+        event,
+        eventRef: null,
+        fallback: true,
+    };
+}
+
 export async function publishSwipeComplete(payload = {}) {
     const database = await ensureDatabase();
     if (!database) {
-        return null;
+        return publishLocalSwipeComplete(payload);
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return publishLocalSwipeComplete(payload);
     }
 
     const channel = normalizeChannel(payload.channel);
-    const eventRef = push(ref(database, getSwipesPath(channel)));
-    if (!eventRef.key) {
-        throw new Error("Swipe event key could not be generated.");
-    }
-    const event = {
-        key: eventRef.key,
-        createdAt: serverTimestamp(),
-        source: payload.source ?? channel,
-        name: payload.name ?? null,
-        donationAmountYen: Number(payload.donationAmountYen) || null,
-        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-    };
 
-    const participationRef = ref(database, getParticipationPath(channel));
-    const result = await runTransaction(participationRef, (currentValue) => {
-        return buildParticipationTransactionValue(currentValue, event);
-    });
-    if (!result.committed) {
-        throw new Error("Participation transaction was not committed.");
-    }
-    const committedData = result.snapshot.val() || {};
-    const participantCount = Number(committedData.participantCount) || 0;
+    try {
+        const eventRef = sdk.push(sdk.ref(database, getSwipesPath(channel)));
+        if (!eventRef.key) {
+            throw new Error("Swipe event key could not be generated.");
+        }
+        const event = {
+            key: eventRef.key,
+            createdAt: sdk.serverTimestamp(),
+            source: payload.source ?? channel,
+            name: payload.name ?? null,
+            donationAmountYen: Number(payload.donationAmountYen) || null,
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        };
 
-    return {
-        count: participantCount,
-        eventRef,
-    };
+        const participationRef = sdk.ref(database, getParticipationPath(channel));
+        const result = await sdk.runTransaction(participationRef, (currentValue) => {
+            return buildParticipationTransactionValue(currentValue, event);
+        });
+        if (!result.committed) {
+            throw new Error("Participation transaction was not committed.");
+        }
+        const committedData = result.snapshot.val() || {};
+        const participantCount = Number(committedData.participantCount) || 0;
+
+        return {
+            count: participantCount,
+            eventRef,
+        };
+    } catch (error) {
+        console.warn("[firebase] swipe publish failed; local fallback enabled:", error);
+        return publishLocalSwipeComplete(payload);
+    }
 }
 
 export async function getParticipantCount(options = {}) {
@@ -160,9 +200,13 @@ export async function getParticipantCount(options = {}) {
     if (!database) {
         return null;
     }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return null;
+    }
 
     const channel = normalizeChannel(options.channel);
-    const snapshot = await get(ref(database, getParticipantCountPath(channel)));
+    const snapshot = await sdk.get(sdk.ref(database, getParticipantCountPath(channel)));
     return Number(snapshot.val()) || 0;
 }
 
@@ -171,9 +215,13 @@ export async function subscribeToParticipantCount(callback, options = {}) {
     if (!database) {
         return () => {};
     }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return () => {};
+    }
 
     const channel = normalizeChannel(options.channel);
-    return onValue(ref(database, getParticipantCountPath(channel)), (snapshot) => {
+    return sdk.onValue(sdk.ref(database, getParticipantCountPath(channel)), (snapshot) => {
         callback(Number(snapshot.val()) || 0);
     });
 }
@@ -183,13 +231,17 @@ export async function subscribeToSwipeCompletes(callback, options = {}) {
     if (!database) {
         return () => {};
     }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return () => {};
+    }
 
     const channel = normalizeChannel(options.channel);
-    const swipesRef = ref(database, getSwipesPath(channel));
+    const swipesRef = sdk.ref(database, getSwipesPath(channel));
     const knownIds = new Set();
 
     try {
-        const snapshot = await get(swipesRef);
+        const snapshot = await sdk.get(swipesRef);
         if (snapshot.exists()) {
             snapshot.forEach((child) => {
                 knownIds.add(child.key);
@@ -199,7 +251,7 @@ export async function subscribeToSwipeCompletes(callback, options = {}) {
         console.warn("[firebase] initial swipes fetch failed:", error);
     }
 
-    return onChildAdded(swipesRef, (snap) => {
+    return sdk.onChildAdded(swipesRef, (snap) => {
         if (knownIds.has(snap.key)) {
             return;
         }
@@ -219,9 +271,13 @@ export async function subscribeToDisplayConfig(callback, options = {}) {
     if (!database) {
         return () => {};
     }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return () => {};
+    }
 
     const channel = normalizeChannel(options.channel);
-    return onValue(ref(database, getDisplayConfigPath(channel)), (snapshot) => {
+    return sdk.onValue(sdk.ref(database, getDisplayConfigPath(channel)), (snapshot) => {
         callback(snapshot.val() || null);
     });
 }

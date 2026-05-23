@@ -555,7 +555,6 @@
 
     <script type="module" src="./src/player.js"></script>
     <script type="module">
-        import QRCode from "https://cdn.skypack.dev/qrcode@1.5.3";
         import { buildThemeUrl, resolveTheme } from "./src/theme-router.js";
 
         const placeholder = document.getElementById("qrPlaceholder");
@@ -582,22 +581,26 @@
             document.querySelector("#displayParticipantStatus").textContent = "3秒参加を待機中";
         }
 
-        QRCode.toCanvas(url, {
-            width: 102,
-            margin: 1,
-            errorCorrectionLevel: "M",
-            color: qrColor,
-        })
-            .then((canvas) => {
-                placeholder.replaceChildren(canvas);
-            })
-            .catch((error) => {
-                console.warn("QR generation failed:", error);
-            });
-
         if (caption) {
             caption.textContent = `参加ページ: ${url}`;
         }
+
+        async function renderQr() {
+            try {
+                const { default: QRCode } = await import("https://cdn.skypack.dev/qrcode@1.5.3");
+                const canvas = await QRCode.toCanvas(url, {
+                    width: 102,
+                    margin: 1,
+                    errorCorrectionLevel: "M",
+                    color: qrColor,
+                });
+                placeholder?.replaceChildren(canvas);
+            } catch (error) {
+                console.warn("QR generation failed:", error);
+            }
+        }
+
+        renderQr();
     </script>
 </body>
 </html>
