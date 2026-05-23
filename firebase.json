@@ -18,6 +18,8 @@
       "package.json",
       "package-lock.json",
       "playlist.json",
+      "test.html",
+      "testmen.html",
       "vite.config.js",
       "web/admin-src/**",
       "*.pptx"
