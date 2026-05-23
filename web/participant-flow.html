@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shinjuku DOOH Project | 参加フロー</title>
+  <title>Shinjuku Sparkle | Tokimeki Donation</title>
   <base href="/" />
   <script>
     (() => {
@@ -16,16 +16,43 @@
       }
     })();
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="web/theme.css" />
   <link rel="stylesheet" href="web/participant-flow.css" />
+  <link rel="stylesheet" href="web/theme-sparkle.css" />
   <link rel="stylesheet" href="web/theme-morning.css" />
 </head>
 <body>
+  <div class="sparkle-pattern" aria-hidden="true"></div>
+  <div class="sparkle-particles" aria-hidden="true">
+    <span>favorite</span>
+    <span>auto_awesome</span>
+    <span>favorite</span>
+    <span>star</span>
+    <span>favorite</span>
+    <span>auto_awesome</span>
+  </div>
+
+  <header class="sparkle-appbar" aria-label="Shinjuku Sparkle">
+    <div class="sparkle-brand">
+      <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
+      <strong>Shinjuku Sparkle</strong>
+    </div>
+    <img
+      src="https://lh3.googleusercontent.com/aida-public/AB6AXuA61ghM1R-NKq7lge3c9j8MW5ihq9vk1exBZGW0rZ2I7flTEAFtkamDpZXigbdNh69lvQCOK0TpJEqrt7cdh5pA-q6mA5PRnwkfrkUelMqk6-AroQDfGuhWHmjpbEN9BUzU0OE0BkdLL0t-ddqJ36pOKumB4em3YDNXfEwKWHqXGPfW6jmRpPMFAzKG-TS6gE6K4ziUgJtzsFc6bhXMBKhtA__In8_upC-auNbZ8ovY_tN48sud2CtqC1wpq9KnUPDm5haAmFxgz5Y"
+      alt=""
+      class="sparkle-avatar"
+    />
+  </header>
+
   <main class="app" id="app">
     <section class="app-hero" aria-labelledby="campaignTitle">
-      <p class="eyebrow">Shinjuku DOOH Project</p>
-      <h1 id="campaignTitle">新宿を<br><span class="no-break"><span class="quote-mark quote-mark-open">「</span>新<span class="quote-mark quote-mark-close">」</span>しく</span></h1>
-      <p class="lead">QRを読み取ったあなたの1スワイプが、デモ募金としてモノクロの新宿に色を戻す参加体験です。</p>
+      <p class="eyebrow">Shinjuku Sparkle</p>
+      <h1 id="campaignTitle">ときめきを<br><span class="no-break">新宿へ</span></h1>
+      <p class="lead">1スワイプのデモ寄付で、街にやさしい光を届ける参加体験です。</p>
       <figure class="hero-visual">
         <img src="assets/test.png?v=20260520" alt="モノクロの新宿が参加によって明るく色づくビジュアル" />
       </figure>
@@ -40,40 +67,58 @@
 
     <div class="viewport" id="viewport">
       <div class="track" id="track">
-        <section class="step is-current" data-step="0" data-label="デモ募金" aria-labelledby="swipeTitle">
+        <section class="step is-current" data-step="0" data-label="寄付" aria-labelledby="swipeTitle">
           <span class="step-count">01</span>
-          <h2 id="swipeTitle">スワイプして100円を届ける</h2>
-          <p>画面を下から上までスワイプすると、デモ募金が自動で確定して次のページへ切り替わります。表示名はあとで任意入力できます。</p>
-          <div class="swipe-stage" aria-hidden="true">
+          <h2 id="swipeTitle">上にスワイプして寄付する</h2>
+          <p>ハートを上へ送ると、歌舞伎町の子ども支援に¥100のデモ寄付が届きます。</p>
+          <div class="donation-preview sparkle-total" aria-label="本日のデモ寄付">
+            <span>Today's Contribution</span>
+            <strong>¥100</strong>
+          </div>
+          <div class="swipe-stage sparkle-meter" aria-hidden="true">
             <span class="spark spark-a"></span>
             <span class="spark spark-b"></span>
             <span class="spark spark-c"></span>
             <span class="light-beam"></span>
           </div>
-          <div class="slider-wrap" aria-hidden="true"></div>
-          <p class="hint" id="swipeHint">下から上まで一気にスワイプしてください。</p>
+          <div class="slider-wrap" aria-hidden="true">
+            <span class="heart-core material-symbols-outlined">favorite</span>
+            <span class="heart-shine material-symbols-outlined">auto_awesome</span>
+          </div>
+          <p class="hint" id="swipeHint">ハートを上まで一気にスワイプしてください。</p>
+          <article class="project-card" aria-label="支援プロジェクト">
+            <img
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPtynejijqFZd5NIb1gQY5cqn6qsuhxyC8OQs7otkqkk10d2ooti3vW_lgbq4_RNTtXmDXR2Km33MHMRopJhu3eKtaFMVJ3jvfYk4GBBJeoPENdbalaojE4RlKdxJBxEzktHTnWadyJmUMoxUHk5aAtG28ZqW2e2nu6RrrvtPHEtpw673W3s8MlzdbfIjGT_QSsvYV3P_v-aAUap_efwsRUZL0GSXdxL9xWhBINM8ykFX-gkdFwnNZWy1CCeu9iK4of0Bj6FP_QAM"
+              alt=""
+            />
+            <div>
+              <h3>Shinjuku Children's Fund</h3>
+              <p>音楽とアートで、都市の子どもたちの放課後を支えます。</p>
+            </div>
+          </article>
         </section>
 
-        <section class="step" data-step="1" data-label="参加完了" aria-labelledby="thanksTitle" aria-live="polite">
+        <section class="step" data-step="1" data-label="Thanks" aria-labelledby="thanksTitle" aria-live="polite">
           <span class="step-count">02</span>
-          <h2 id="thanksTitle">デモ募金で、灯りがひとつ増えました。</h2>
+          <h2 id="thanksTitle">ありがとうございます！</h2>
+          <p>Your sparkle made Shinjuku shine brighter today.</p>
           <div class="counter-box" id="counterBox">
-            <span>デモ募金総額</span>
+            <span>Today's Contribution</span>
             <strong><span id="counterValue">100</span><span class="unit">円</span></strong>
             <small>参加人数 <span id="counterParticipants">1</span>人</small>
             <em>+¥100</em>
           </div>
-          <button class="primary" type="button" data-next>参加証を受け取る</button>
+          <button class="primary" type="button" data-next>Sparkle Certificate を受け取る</button>
         </section>
 
-        <section class="step" data-step="2" data-label="参加証作成" aria-labelledby="certificateTitle">
+        <section class="step" data-step="2" data-label="Certificate" aria-labelledby="certificateTitle">
           <span class="step-count">03</span>
-          <h2 id="certificateTitle">新しい新宿に名前を残す</h2>
+          <h2 id="certificateTitle">Sparkle Certificate に名前を残す</h2>
           <label for="nickname">表示名（任意）</label>
-          <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
+          <input id="nickname" type="text" maxlength="20" placeholder="Sparkle Supporter" autocomplete="nickname" />
           <article class="card" id="certificatePreview" aria-live="polite">
-            <p>SHINJUKU COLOR SUPPORTER</p>
-            <h3 id="previewName">匿名サポーター</h3>
+            <p>RADIANT SPARKLE CERTIFICATE</p>
+            <h3 id="previewName">Sparkle Supporter</h3>
           </article>
           <div class="actions">
             <button class="primary" type="button" id="createCard">この名前で作成する</button>
@@ -81,12 +126,12 @@
           </div>
         </section>
 
-        <section class="step" data-step="3" data-label="シェア" aria-labelledby="shareTitle">
+        <section class="step" data-step="3" data-label="Share" aria-labelledby="shareTitle">
           <span class="step-count">04</span>
           <h2 id="shareTitle">参加証が届きました。</h2>
           <article class="card done" id="finalCard" aria-live="polite"></article>
           <div class="actions stacked">
-            <button class="primary" type="button" id="downloadBtn">画像を保存</button>
+            <button class="primary" type="button" id="downloadBtn">Certificate を保存</button>
             <button class="ghost" type="button" id="shareBtn">リンクをコピー</button>
           </div>
           <p id="shareStatus" aria-live="polite"></p>
@@ -95,11 +140,26 @@
     </div>
 
     <p class="swipe-hint" id="swipeHintNav" aria-hidden="true">上にスワイプ</p>
-
-    <div class="celebration" id="celebration" aria-hidden="true">
-      <span></span><span></span><span></span><span></span><span></span><span></span>
-    </div>
   </main>
+
+  <nav class="sparkle-bottom-nav" aria-label="Shinjuku Sparkle menu">
+    <button type="button" aria-label="Home">
+      <span class="material-symbols-outlined" aria-hidden="true">home</span>
+      <small>Home</small>
+    </button>
+    <button type="button" aria-label="Donate" class="is-active">
+      <span class="material-symbols-outlined" aria-hidden="true">favorite</span>
+      <small>Donate</small>
+    </button>
+    <button type="button" aria-label="Impact">
+      <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+      <small>Impact</small>
+    </button>
+  </nav>
+
+  <div class="celebration" id="celebration" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
 
   <script type="module" src="web/participant-flow.js"></script>
 </body>
