@@ -47,7 +47,7 @@ const prefersReducedMotion = window.matchMedia(
 ).matches;
 
 function getDisplayName() {
-  return nickname.value.trim() || (isSparkleExperience ? "Sparkle Supporter" : "匿名サポーター");
+  return nickname.value.trim() || "匿名サポーター";
 }
 
 function getDemoDonationTotal(count = participantCount) {
@@ -173,7 +173,7 @@ function buildFinalCard() {
   label.textContent = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
     : isSparkleExperience
-      ? "RADIANT SPARKLE CERTIFICATE"
+      ? "新宿ときめき参加証"
       : "SHINJUKU COLOR SUPPORTER";
 
   const name = document.createElement("h3");
