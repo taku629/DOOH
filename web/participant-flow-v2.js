@@ -42,10 +42,32 @@ let isFinalCardBuilt = false;
 let isRegisteringParticipation = false;
 let isAutoCompletingSwipe = false;
 let swipeChargeValue = 0;
+let counterAnimationFrame = null;
 
-const prefersReducedMotion = window.matchMedia(
+const reducedMotionQuery = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
-).matches;
+);
+let prefersReducedMotion = reducedMotionQuery.matches;
+
+function handleReducedMotionChange(event) {
+  prefersReducedMotion = event.matches;
+
+  if (!prefersReducedMotion || !counterAnimationFrame || !counterValue || !counterBox) {
+    return;
+  }
+
+  cancelAnimationFrame(counterAnimationFrame);
+  counterAnimationFrame = null;
+  counterValue.textContent = getDemoDonationTotal().toLocaleString("ja-JP");
+  counterBox.classList.remove("is-counting");
+  counterBox.classList.add("is-counted");
+}
+
+if (reducedMotionQuery.addEventListener) {
+  reducedMotionQuery.addEventListener("change", handleReducedMotionChange);
+} else if (reducedMotionQuery.addListener) {
+  reducedMotionQuery.addListener(handleReducedMotionChange);
+}
 
 function getDisplayName() {
   return nickname.value.trim() || "匿名サポーター";
@@ -154,8 +176,14 @@ function animateCounter(target) {
     return;
   }
 
+  if (counterAnimationFrame) {
+    cancelAnimationFrame(counterAnimationFrame);
+    counterAnimationFrame = null;
+  }
+
   if (prefersReducedMotion) {
     counterValue.textContent = target.toLocaleString("ja-JP");
+    counterBox.classList.remove("is-counting");
     counterBox.classList.add("is-counted");
     return;
   }
@@ -174,16 +202,17 @@ function animateCounter(target) {
     counterValue.textContent = value.toLocaleString("ja-JP");
 
     if (progress < 1) {
-      requestAnimationFrame(tick);
+      counterAnimationFrame = requestAnimationFrame(tick);
       return;
     }
 
+    counterAnimationFrame = null;
     counterValue.textContent = target.toLocaleString("ja-JP");
     counterBox.classList.remove("is-counting");
     counterBox.classList.add("is-counted");
   }
 
-  requestAnimationFrame(tick);
+  counterAnimationFrame = requestAnimationFrame(tick);
 }
 
 function nextStep() {
@@ -286,7 +315,7 @@ async function completeSwipeCharge() {
 }
 
 function playCelebration() {
-  if (!celebration) {
+  if (!celebration || prefersReducedMotion) {
     return;
   }
 
@@ -308,9 +337,13 @@ async function copyShareLink() {
     }
 
     await navigator.clipboard.writeText(url);
-    shareStatus.textContent = "リンクをコピーしました。";
+    if (shareStatus) {
+      shareStatus.textContent = "リンクをコピーしました。";
+    }
   } catch {
-    shareStatus.textContent = `コピーできませんでした。URL: ${url}`;
+    if (shareStatus) {
+      shareStatus.textContent = `コピーできませんでした。URL: ${url}`;
+    }
   }
 }
 
@@ -349,7 +382,22 @@ let dragAxisLocked = null;
 let swipeStartValue = 0;
 let isChargingSwipe = false;
 
-function resetPointerState() {
+function releasePointerCapture(pointerId) {
+  if (pointerId === null || pointerId === undefined) {
+    return;
+  }
+
+  try {
+    if (viewport.hasPointerCapture?.(pointerId)) {
+      viewport.releasePointerCapture(pointerId);
+    }
+  } catch {
+    /* noop */
+  }
+}
+
+function resetPointerState(options = {}) {
+  const pointerId = activePointerId;
   activePointerId = null;
   pointerStartX = 0;
   pointerStartY = 0;
@@ -357,6 +405,10 @@ function resetPointerState() {
   dragAxisLocked = null;
   swipeStartValue = 0;
   isChargingSwipe = false;
+
+  if (options.releaseCapture !== false) {
+    releasePointerCapture(pointerId);
+  }
 }
 
 function isInteractiveTarget(target) {
@@ -368,6 +420,9 @@ function isInteractiveTarget(target) {
 }
 
 function startPointer(event) {
+  if (activePointerId !== null) {
+    return;
+  }
   if (event.pointerType === "mouse" && event.button !== 0) {
     return;
   }
@@ -382,6 +437,12 @@ function startPointer(event) {
   dragAxisLocked = null;
   swipeStartValue = swipeChargeValue;
   isChargingSwipe = false;
+
+  try {
+    viewport.setPointerCapture(event.pointerId);
+  } catch {
+    /* noop */
+  }
 }
 
 function movePointer(event) {
@@ -396,11 +457,6 @@ function movePointer(event) {
     if (Math.abs(dy) > DRAG_AXIS_THRESHOLD && Math.abs(dy) > Math.abs(dx)) {
       dragAxisLocked = "y";
       track.classList.add("is-dragging");
-      try {
-        viewport.setPointerCapture(event.pointerId);
-      } catch {
-        /* noop */
-      }
     } else if (Math.abs(dx) > DRAG_AXIS_THRESHOLD) {
       dragAxisLocked = "x";
     }
@@ -487,10 +543,21 @@ async function endPointer(event) {
   resetPointerState();
 }
 
+function cancelPointer(event) {
+  if (event.pointerId !== activePointerId) {
+    return;
+  }
+
+  track.classList.remove("is-dragging");
+  setTrackPosition(currentStep);
+  resetPointerState({ releaseCapture: false });
+}
+
 viewport.addEventListener("pointerdown", startPointer);
 viewport.addEventListener("pointermove", movePointer);
 viewport.addEventListener("pointerup", endPointer);
-viewport.addEventListener("pointercancel", endPointer);
+viewport.addEventListener("pointercancel", cancelPointer);
+viewport.addEventListener("lostpointercapture", cancelPointer);
 
 /* Step navigation buttons --------------------------------------------- */
 
@@ -505,11 +572,19 @@ nickname.addEventListener("input", () => {
 document.getElementById("createCard").addEventListener("click", finalizeCard);
 document.getElementById("skipName").addEventListener("click", finalizeCard);
 
-document.getElementById("downloadBtn").addEventListener("click", () => {
-  shareStatus.textContent = "デモ版: 参加証画像の保存は次タスクで実装します。";
-});
+const downloadBtn = document.getElementById("downloadBtn");
+if (downloadBtn) {
+  downloadBtn.addEventListener("click", () => {
+    if (shareStatus) {
+      shareStatus.textContent = "デモ版: 参加証画像の保存は次タスクで実装します。";
+    }
+  });
+}
 
-document.getElementById("shareBtn").addEventListener("click", copyShareLink);
+const shareBtn = document.getElementById("shareBtn");
+if (shareBtn) {
+  shareBtn.addEventListener("click", copyShareLink);
+}
 
 window.addEventListener("resize", () => {
   setTrackPosition(currentStep);
