@@ -204,6 +204,27 @@ button {
   z-index: 1;
 }
 
+.step[data-step="0"] {
+  overflow: hidden;
+  padding: 20px;
+}
+
+.step[data-step="0"] .step-count {
+  margin-bottom: 8px;
+}
+
+.step[data-step="0"] h2 {
+  margin-bottom: 8px;
+  font-size: clamp(1.55rem, 6.8vw, 2.08rem);
+  line-height: 1.12;
+}
+
+.step[data-step="0"] > p:first-of-type {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  line-height: 1.48;
+}
+
 .step-count {
   display: inline-flex;
   align-items: center;
@@ -469,6 +490,12 @@ input[type="text"]:focus {
   transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
+.step[data-step="0"] .slider-wrap {
+  min-height: clamp(184px, 30svh, 240px);
+  margin: 8px 0 6px;
+  padding: 18px 14px;
+}
+
 .slider-wrap::before,
 .slider-wrap::after {
   position: absolute;
@@ -532,6 +559,16 @@ input[type="text"]:focus {
     #ee6b6e 100%
   );
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.step[data-step="0"] .swipe-stage {
+  height: 44px;
+  margin: 0 0 8px;
+}
+
+.step[data-step="0"] .hint {
+  margin-top: 2px;
+  font-weight: 600;
 }
 
 .light-beam {
