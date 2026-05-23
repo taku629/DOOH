@@ -46,7 +46,7 @@ const prefersReducedMotion = window.matchMedia(
 ).matches;
 
 function getDisplayName() {
-  return nickname.value.trim() || "匿名サポーター";
+  return nickname.value.trim() || (activeTheme === "morning" ? "匿名サポーター" : "Sparkle Supporter");
 }
 
 function getDemoDonationTotal(count = participantCount) {
@@ -171,7 +171,7 @@ function buildFinalCard() {
   const label = document.createElement("p");
   label.textContent = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
-    : "SHINJUKU COLOR SUPPORTER";
+    : "RADIANT SPARKLE CERTIFICATE";
 
   const name = document.createElement("h3");
   name.textContent = getDisplayName();
@@ -179,7 +179,7 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = activeTheme === "morning"
     ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金が、朝の新宿に小さな余白をつくりました。`
-    : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
+    : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、今日の新宿にやさしい光を増やしました。`;
 
   finalCard.append(label, name, description);
 }
@@ -525,6 +525,8 @@ function applyThemeCopy() {
   const title = document.querySelector("#campaignTitle");
   const firstStepCopy = steps[0]?.querySelector("p");
   const previewLabel = document.querySelector("#certificatePreview p");
+  const previewName = document.getElementById("previewName");
+  const nicknameInput = document.getElementById("nickname");
 
   if (eyebrow) {
     eyebrow.textContent = "Morning Shinjuku";
@@ -540,6 +542,12 @@ function applyThemeCopy() {
   }
   if (previewLabel) {
     previewLabel.textContent = "SHINJUKU MORNING SUPPORTER";
+  }
+  if (previewName) {
+    previewName.textContent = "匿名サポーター";
+  }
+  if (nicknameInput) {
+    nicknameInput.placeholder = "匿名サポーター";
   }
   setText("swipeTitle", "3秒で100円を届ける");
   setText("swipeHint", "下から上へスワイプしてください。");
