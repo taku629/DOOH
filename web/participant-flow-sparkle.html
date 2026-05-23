@@ -128,6 +128,61 @@
     <p class="swipe-hint" id="swipeHintNav" aria-hidden="true">この画面を上にスワイプ</p>
   </main>
 
+  <div class="story-card-overlay" id="storyCardOverlay" aria-hidden="true" data-no-swipe>
+    <article
+      class="story-card"
+      id="storyCard"
+      role="status"
+      aria-live="polite"
+      aria-labelledby="storyCardTitle"
+      aria-describedby="storyCardDescription"
+    >
+      <div class="story-film" id="storyFilm" aria-hidden="true">
+        <svg class="patrol-drawing" viewBox="0 0 360 500" role="img" aria-labelledby="patrolSceneTitle patrolSceneDesc">
+          <title id="patrolSceneTitle">トー横周辺を見守る夜間パトロール</title>
+          <desc id="patrolSceneDesc">街灯の下で、民間警備員が若者や女性を見守りながら歩く手書き線画のアニメーションです。</desc>
+          <path class="drawing-wash lamp-wash" d="M132 112 C174 82 224 96 247 139 C282 203 248 328 179 360 C113 332 80 201 132 112Z" />
+          <path class="drawing-wash street-wash" d="M38 360 C98 337 262 337 323 360 L342 458 C257 482 107 482 20 458Z" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 0ms" d="M34 370 C92 350 268 350 326 370" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 25ms" d="M60 332 L60 218 L108 205 L108 332 M76 235 L92 231 M76 258 L92 255 M76 282 L92 280" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 55ms" d="M286 334 L286 232 L321 242 L321 334 M296 254 L311 258 M296 278 L311 282 M296 302 L311 305" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 85ms" d="M36 414 C92 397 270 397 326 414" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 120ms" d="M178 342 L178 153" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 150ms" d="M157 153 C172 139 193 139 207 153" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 180ms" d="M164 168 C174 180 192 180 202 168 L196 199 L170 199Z" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 210ms" d="M150 205 C171 214 198 214 219 205" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 260ms" d="M98 296 C98 285 106 278 116 279 C126 280 132 288 130 299" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 290ms" d="M114 300 C110 317 108 334 106 351" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 320ms" d="M111 320 C98 322 90 331 84 344" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 350ms" d="M112 351 C104 369 101 386 102 403" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 380ms" d="M116 351 C127 366 132 383 133 402" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 430ms" d="M231 229 C229 214 239 202 254 203 C268 205 275 219 270 232" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 460ms" d="M234 207 C246 194 265 195 276 208" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 490ms" d="M250 235 C243 259 239 282 238 306" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 520ms" d="M243 260 C225 266 215 279 207 296" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 550ms" d="M246 260 C264 266 278 278 288 294" />
+          <path class="drawing-line line-vest" pathLength="1" style="--draw-delay: 585ms" d="M238 244 L250 262 L264 244 M239 268 L261 268 M241 286 L256 286" />
+          <path class="drawing-line line-vest" pathLength="1" style="--draw-delay: 620ms" d="M252 270 C258 272 263 275 268 280" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 655ms" d="M238 306 C226 328 221 352 220 377" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 690ms" d="M244 306 C259 326 269 349 274 374" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 725ms" d="M289 292 C304 286 318 286 331 293" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 760ms" d="M286 292 L296 298" />
+          <path class="drawing-line line-beam" pathLength="1" style="--draw-delay: 800ms" d="M296 298 C318 294 335 301 349 316 M296 298 C319 307 333 321 341 340" />
+          <path class="drawing-line line-accent" pathLength="1" style="--draw-delay: 850ms" d="M204 297 C179 312 145 315 116 302" />
+          <path class="drawing-line line-heart" pathLength="1" style="--draw-delay: 900ms" d="M173 382 C166 374 151 377 151 390 C151 404 173 414 173 414 C173 414 195 404 195 390 C195 377 180 374 173 382Z" />
+        </svg>
+      </div>
+      <div class="story-card-body">
+        <p class="story-card-kicker">1スワイプの行き先</p>
+        <h2 id="storyCardTitle">夜の歌舞伎町を安全に</h2>
+        <p id="storyCardDescription">あなたの1スワイプが、若者や女性を守る民間警備員の夜通しのパトロール支援に繋がりました。</p>
+      </div>
+    </article>
+  </div>
+
   <div class="celebration" id="celebration" aria-hidden="true">
     <span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
