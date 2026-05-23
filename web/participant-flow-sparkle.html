@@ -105,8 +105,13 @@
         <section class="step" data-step="2" data-label="名前" aria-labelledby="certificateTitle">
           <span class="step-count">03</span>
           <h2 id="certificateTitle">参加証に名前を残す</h2>
-          <label for="nickname">表示名（任意）</label>
-          <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
+          <label class="sparkle-field-label" for="nickname">表示名（任意）</label>
+          <div class="sparkle-name-field">
+            <span class="sparkle-name-tab">ここに入力</span>
+            <span class="material-symbols-outlined sparkle-name-icon" aria-hidden="true">edit</span>
+            <input id="nickname" type="text" maxlength="20" placeholder="例：さくら" autocomplete="nickname" aria-describedby="nicknameHelp" />
+          </div>
+          <p class="field-helper" id="nicknameHelp">入力すると参加証に反映されます。未入力でも進めます。</p>
           <article class="card" id="certificatePreview" aria-live="polite">
             <p>新宿ときめき参加証</p>
             <h3 id="previewName">匿名サポーター</h3>
