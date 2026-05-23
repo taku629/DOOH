@@ -172,6 +172,25 @@ Rules の実ファイルは `database.rules.json` に置く。
 - Cloud Functions で「イベント作成」と「カウント加算」をサーバー側に集約する
 - イベント当日だけ書き込みを許可し、終了後は read-only に切り替える
 
+### Cloud Functions Hardening
+
+本番同時参加が大きくなる場合は、クライアントから `participation*` へ直接 `runTransaction()` しない。参加ページは Callable Function `submitSwipeComplete` だけを呼び、Function が Admin SDK で以下を multi-location update する。
+
+- `participation*/participantCount`: `ServerValue.increment(1)`
+- `participation*/swipes/{clientEventId}`: 参加イベント
+- `participation*/counterShards/{shardId}`: 高負荷時の分散カウンター
+- `participation*/eventIds/{clientEventId}`: 重複送信防止マーカー
+
+deploy 順は必ず `functions:submitSwipeComplete` が先、`database.rules.json` が後。Rules を先に反映すると、まだ Callable 化されていない参加ページからの直接書き込みが失敗する。
+
+```
+firebase deploy --only functions:submitSwipeComplete
+firebase deploy --only hosting
+firebase deploy --only database
+```
+
+`ENFORCE_APP_CHECK=true` を Functions の環境変数として設定すると Callable Function 側で App Check を強制する。App Check 未設定の検証環境では呼び出しが拒否されるため、本番直前に切り替える。
+
 ## Operations
 
 ### 初期化

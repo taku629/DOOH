@@ -4,6 +4,7 @@
   "scripts": {
     "build:admin": "vite build",
     "dev:admin": "vite --host 0.0.0.0",
+    "lint:functions": "npm --prefix functions run lint",
     "preview:admin": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
