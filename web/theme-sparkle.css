@@ -80,6 +80,53 @@ html:not([data-theme="morning"]) body {
   mix-blend-mode: multiply;
 }
 
+.sparkle-particles {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sparkle-particles span {
+  position: absolute;
+  bottom: -36px;
+  color: rgba(120, 85, 94, 0.22);
+  font-family: "Material Symbols Outlined";
+  font-size: 16px;
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 20;
+  animation: sparkleFloatSubtle 22s linear infinite;
+}
+
+.sparkle-particles span:nth-child(1) {
+  left: 12%;
+  animation-delay: -4s;
+}
+
+.sparkle-particles span:nth-child(2) {
+  left: 34%;
+  color: rgba(75, 98, 106, 0.18);
+  font-size: 18px;
+  animation-duration: 26s;
+  animation-delay: -12s;
+}
+
+.sparkle-particles span:nth-child(3) {
+  left: 66%;
+  color: rgba(120, 85, 94, 0.2);
+  font-size: 14px;
+  animation-duration: 24s;
+  animation-delay: -8s;
+}
+
+.sparkle-particles span:nth-child(4) {
+  left: 86%;
+  color: rgba(99, 96, 55, 0.16);
+  font-size: 17px;
+  animation-duration: 28s;
+  animation-delay: -16s;
+}
+
 .sparkle-appbar {
   position: fixed;
   top: 0;
@@ -432,10 +479,28 @@ html:not([data-theme="morning"]) .celebration span:nth-child(6) {
 }
 
 html[data-theme="morning"] .sparkle-pattern,
+html[data-theme="morning"] .sparkle-particles,
 html[data-theme="morning"] .sparkle-appbar,
 html[data-theme="morning"] .heart-core,
 html[data-theme="morning"] .heart-shine {
   display: none;
+}
+
+@keyframes sparkleFloatSubtle {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0) scale(0.82) rotate(0deg);
+  }
+  18% {
+    opacity: 0.58;
+  }
+  78% {
+    opacity: 0.46;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-110vh) translateX(14px) scale(1) rotate(14deg);
+  }
 }
 
 @keyframes sparklePulse {
@@ -470,7 +535,13 @@ html[data-theme="morning"] .heart-shine {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sparkle-particles span,
   .heart-shine {
     animation: none !important;
+  }
+
+  .sparkle-particles span {
+    opacity: 0.16;
+    transform: translateY(-45vh);
   }
 }
