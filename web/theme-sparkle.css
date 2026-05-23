@@ -1,4 +1,4 @@
-/* V1 Shinjuku Sparkle theme. Morning/v3 keeps using theme-morning.css. */
+/* V1 feminine participant theme. Morning/v3 keeps using theme-morning.css. */
 
 html:not([data-theme="morning"]) {
   color-scheme: light;
@@ -66,8 +66,7 @@ html:not([data-theme="morning"]) body {
   font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
 }
 
-.sparkle-pattern,
-.sparkle-particles {
+.sparkle-pattern {
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -80,28 +79,6 @@ html:not([data-theme="morning"]) body {
   opacity: 0.42;
   mix-blend-mode: multiply;
 }
-
-.sparkle-particles {
-  z-index: 1;
-  overflow: hidden;
-}
-
-.sparkle-particles span {
-  position: absolute;
-  bottom: -48px;
-  color: rgba(120, 85, 94, 0.3);
-  font-family: "Material Symbols Outlined";
-  font-size: 18px;
-  font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 24;
-  animation: sparkleFloat 12s linear infinite;
-}
-
-.sparkle-particles span:nth-child(1) { left: 8%; animation-duration: 10s; }
-.sparkle-particles span:nth-child(2) { left: 24%; animation-delay: -5s; color: rgba(75, 98, 106, 0.28); }
-.sparkle-particles span:nth-child(3) { left: 48%; animation-duration: 14s; animation-delay: -8s; }
-.sparkle-particles span:nth-child(4) { left: 66%; animation-duration: 11s; animation-delay: -3s; color: rgba(99, 96, 55, 0.24); }
-.sparkle-particles span:nth-child(5) { left: 82%; animation-duration: 13s; animation-delay: -6s; }
-.sparkle-particles span:nth-child(6) { left: 93%; animation-duration: 9s; animation-delay: -2s; color: rgba(75, 98, 106, 0.24); }
 
 .sparkle-appbar {
   position: fixed;
@@ -140,20 +117,11 @@ html:not([data-theme="morning"]) body {
   letter-spacing: 0;
 }
 
-.sparkle-avatar {
-  width: 42px;
-  height: 42px;
-  border: 2px solid var(--sparkle-pink);
-  border-radius: 999px;
-  object-fit: cover;
-  box-shadow: 0 8px 20px rgba(120, 85, 94, 0.14);
-}
-
 html:not([data-theme="morning"]) .app {
   position: relative;
   z-index: 2;
   width: min(100% - 32px, 430px);
-  padding: 84px 0 112px;
+  padding: 84px 0 44px;
 }
 
 html:not([data-theme="morning"]) .progress {
@@ -173,7 +141,7 @@ html:not([data-theme="morning"]) #progressBar {
 }
 
 html:not([data-theme="morning"]) .viewport {
-  height: clamp(458px, calc(100svh - 224px), 580px);
+  height: clamp(430px, calc(100svh - 184px), 580px);
   border: 1.5px solid rgba(255, 255, 255, 0.62);
   border-radius: var(--radius-xl);
   background: rgba(255, 255, 255, 0.52);
@@ -261,7 +229,7 @@ html:not([data-theme="morning"]) .sparkle-meter .spark {
 }
 
 html:not([data-theme="morning"]) .slider-wrap {
-  min-height: min(33vh, 245px);
+  min-height: min(34vh, 270px);
   margin: 10px 0 10px;
   border: 1.5px solid rgba(255, 255, 255, 0.64);
   border-radius: 34px;
@@ -333,39 +301,6 @@ html:not([data-theme="morning"]) .step.is-swipe-charged .slider-wrap {
     linear-gradient(180deg, rgba(255, 209, 220, 0.72), rgba(206, 231, 240, 0.44)),
     rgba(255, 255, 255, 0.84);
   box-shadow: 0 20px 46px rgba(255, 209, 220, 0.42);
-}
-
-.project-card {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.64);
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.54);
-  box-shadow: 0 14px 30px rgba(120, 85, 94, 0.1);
-}
-
-.project-card img {
-  flex: 0 0 auto;
-  width: 62px;
-  height: 62px;
-  border-radius: 20px;
-  object-fit: cover;
-}
-
-.project-card h3 {
-  margin: 0 0 4px;
-  color: var(--accent);
-  font-size: 0.96rem;
-  line-height: 1.25;
-}
-
-.project-card p {
-  margin: 0;
-  font-size: 0.78rem;
-  line-height: 1.45;
 }
 
 html:not([data-theme="morning"]) .primary,
@@ -456,60 +391,6 @@ html:not([data-theme="morning"]) .card h3 {
   letter-spacing: 0;
 }
 
-.sparkle-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  z-index: 50;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  width: 100%;
-  height: calc(78px + env(safe-area-inset-bottom));
-  padding: 8px 20px calc(8px + env(safe-area-inset-bottom));
-  border-top: 1px solid rgba(255, 255, 255, 0.64);
-  border-radius: 28px 28px 0 0;
-  background: rgba(255, 255, 255, 0.62);
-  box-shadow: 0 -12px 34px rgba(174, 198, 207, 0.22);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.sparkle-bottom-nav button {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 74px;
-  min-height: 52px;
-  border: 0;
-  border-radius: 999px;
-  color: rgba(79, 68, 70, 0.74);
-  background: transparent;
-  cursor: default;
-}
-
-.sparkle-bottom-nav button.is-active {
-  color: var(--accent);
-  background: rgba(255, 209, 220, 0.52);
-  box-shadow: 0 0 18px rgba(255, 209, 220, 0.58);
-}
-
-.sparkle-bottom-nav .material-symbols-outlined {
-  font-size: 25px;
-}
-
-.sparkle-bottom-nav .is-active .material-symbols-outlined {
-  font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 24;
-}
-
-.sparkle-bottom-nav small {
-  color: currentColor;
-  font-size: 0.72rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
 html:not([data-theme="morning"]) .celebration span {
   width: auto;
   height: auto;
@@ -536,30 +417,10 @@ html:not([data-theme="morning"]) .celebration span:nth-child(6) {
 }
 
 html[data-theme="morning"] .sparkle-pattern,
-html[data-theme="morning"] .sparkle-particles,
 html[data-theme="morning"] .sparkle-appbar,
-html[data-theme="morning"] .sparkle-bottom-nav,
-html[data-theme="morning"] .project-card,
 html[data-theme="morning"] .heart-core,
 html[data-theme="morning"] .heart-shine {
   display: none;
-}
-
-@keyframes sparkleFloat {
-  0% {
-    opacity: 0;
-    transform: translateY(0) translateX(0) scale(0.7) rotate(0deg);
-  }
-  12% {
-    opacity: 0.62;
-  }
-  78% {
-    opacity: 0.52;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-112vh) translateX(18px) scale(1.08) rotate(20deg);
-  }
 }
 
 @keyframes sparklePulse {
@@ -591,13 +452,9 @@ html[data-theme="morning"] .heart-shine {
     font-size: 6.2rem;
   }
 
-  .project-card {
-    padding: 10px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sparkle-particles span,
   .heart-shine {
     animation: none !important;
   }
