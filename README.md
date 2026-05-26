@@ -19,7 +19,8 @@
 
 - v1 DOOH 表示: `https://dooh-ca9c2.web.app/v1`
 - v1 参加ページ: `https://dooh-ca9c2.web.app/participant-v1`
-- v1 女性向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-sparkle`
+- v1 女性向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-women`
+- v1 男性向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-men`
 - v2 DOOH 表示: `https://dooh-ca9c2.web.app/v2`
 - v2 参加ページ: `https://dooh-ca9c2.web.app/participant-v2`
 - v3 DOOH 表示: `https://dooh-ca9c2.web.app/v3` または `https://dooh-ca9c2.web.app/v1?theme=morning`
@@ -50,7 +51,7 @@ Firebase 上に管理画面から公開した設定がある場合は、DOOH 表
 ### 2. スマートフォン参加フロー
 
 `web/participant-flow.html` は QR コードからアクセスする想定の参加ページです。
-v1 DOOH の QR は従来の `web/participant-flow.html` に遷移します。女性向けの参加UIは `web/participant-flow-sparkle.html` として別URLで公開します。
+v1 DOOH の QR は従来の `web/participant-flow.html` に遷移します。女性向けの参加UIは `web/participant-flow-sparkle.html`、男性向けの参加UIは `web/participant-flow-men.html` として別URLで公開します。
 
 参加ステップは以下の 5 段階です。
 
