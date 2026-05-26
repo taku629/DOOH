@@ -1,5 +1,6 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
 import { getParticipantCount, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
+import { isInappropriateName } from "../src/name-filter.js";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
 const steps = [...document.querySelectorAll(".step")];
@@ -127,7 +128,11 @@ function generateRandomGuestName() {
 const RANDOM_GUEST_NAME = generateRandomGuestName();
 
 function getDisplayName() {
-  return nickname.value.trim() || RANDOM_GUEST_NAME;
+  const input = nickname.value.trim();
+  if (!input || isInappropriateName(input)) {
+    return RANDOM_GUEST_NAME;
+  }
+  return input;
 }
 
 function getDemoDonationTotal(count = participantCount) {
