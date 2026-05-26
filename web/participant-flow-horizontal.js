@@ -36,8 +36,19 @@ const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
 ).matches;
 
+function generateRandomGuestName() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let suffix = "";
+  for (let i = 0; i < 4; i += 1) {
+    suffix += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `サポーター#${suffix}`;
+}
+
+const RANDOM_GUEST_NAME = generateRandomGuestName();
+
 function getDisplayName() {
-  return nickname.value.trim() || "匿名サポーター";
+  return nickname.value.trim() || RANDOM_GUEST_NAME;
 }
 
 function getDemoDonationTotal(count = participantCount) {
