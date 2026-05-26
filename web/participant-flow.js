@@ -115,8 +115,19 @@ if (reducedMotionQuery.addEventListener) {
   reducedMotionQuery.addListener(handleReducedMotionChange);
 }
 
+function generateRandomGuestName() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let suffix = "";
+  for (let i = 0; i < 4; i += 1) {
+    suffix += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `サポーター#${suffix}`;
+}
+
+const RANDOM_GUEST_NAME = generateRandomGuestName();
+
 function getDisplayName() {
-  return nickname.value.trim() || "匿名サポーター";
+  return nickname.value.trim() || RANDOM_GUEST_NAME;
 }
 
 function getDemoDonationTotal(count = participantCount) {
@@ -876,10 +887,10 @@ function applyThemeCopy() {
     previewLabel.textContent = "SHINJUKU MORNING SUPPORTER";
   }
   if (previewName) {
-    previewName.textContent = "匿名サポーター";
+    previewName.textContent = RANDOM_GUEST_NAME;
   }
   if (nicknameInput) {
-    nicknameInput.placeholder = "匿名サポーター";
+    nicknameInput.placeholder = RANDOM_GUEST_NAME;
   }
   setText("swipeTitle", "上にスワイプして100円を届ける");
   setText("swipeHint", "この画面を上にスワイプしてください。");
