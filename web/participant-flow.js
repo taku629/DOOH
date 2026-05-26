@@ -35,8 +35,19 @@ document.documentElement.dataset.theme = activeTheme;
 const isSparkleExperience = document.documentElement.dataset.experience === "sparkle";
 const THANKS_STORIES = [
   {
+    id: "patrol",
     title: "夜の歌舞伎町を安全に",
     description: "あなたの1スワイプが、若者や女性を守る民間警備員の夜通しのパトロール支援に繋がりました。",
+  },
+  {
+    id: "graffiti",
+    title: "壁の落書き消去",
+    description: "あなたの1スワイプが、壁の落書きを消して街を明るく保つ活動に繋がり、体感治安の向上を支えました。",
+  },
+  {
+    id: "outreach",
+    title: "NPOによる声かけ・支援",
+    description: "あなたの1スワイプが、夜の街で困っている若者へ声をかけ、必要な支援につなぐNPO活動を支えました。",
   },
 ];
 const storyCardOverlay = document.getElementById("storyCardOverlay");
@@ -288,6 +299,7 @@ function showStoryThanksCard() {
   storyCardTitle.textContent = story.title;
   storyCardDescription.textContent = story.description;
   storyFilm.classList.remove("is-playing");
+  storyFilm.dataset.story = story.id;
   void storyFilm.offsetWidth;
   storyFilm.classList.add("is-playing");
 
