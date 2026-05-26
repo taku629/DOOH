@@ -696,13 +696,19 @@ html:not([data-theme="morning"]) .story-film::after {
   pointer-events: none;
 }
 
-.patrol-drawing {
+.story-drawing {
   position: absolute;
   inset: 0;
   z-index: 2;
-  display: block;
+  display: none;
   width: 100%;
   height: 100%;
+}
+
+html:not([data-theme="morning"]) .story-film[data-story="patrol"] .story-drawing-patrol,
+html:not([data-theme="morning"]) .story-film[data-story="graffiti"] .story-drawing-graffiti,
+html:not([data-theme="morning"]) .story-film[data-story="outreach"] .story-drawing-outreach {
+  display: block;
 }
 
 .drawing-wash {
@@ -718,6 +724,10 @@ html:not([data-theme="morning"]) .story-film::after {
   fill: rgba(109, 89, 68, 0.1);
 }
 
+.wall-wash {
+  fill: rgba(255, 250, 241, 0.34);
+}
+
 .drawing-line {
   fill: none;
   stroke: #4a4540;
@@ -730,9 +740,23 @@ html:not([data-theme="morning"]) .story-film::after {
   filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.22));
 }
 
+.drawing-label {
+  fill: rgba(74, 69, 64, 0.88);
+  font-family: "Quicksand", "Noto Sans JP", sans-serif;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: 0;
+  opacity: 0;
+}
+
 .line-soft {
   stroke: rgba(74, 69, 64, 0.58);
   stroke-width: 3.3;
+}
+
+.line-sign {
+  stroke: rgba(74, 69, 64, 0.72);
+  stroke-width: 3.5;
 }
 
 .line-accent {
@@ -750,9 +774,35 @@ html:not([data-theme="morning"]) .story-film::after {
   stroke-width: 3.1;
 }
 
+.line-graffiti {
+  stroke: rgba(120, 85, 94, 0.78);
+  stroke-width: 4.4;
+}
+
+.line-clean {
+  stroke: rgba(255, 250, 241, 0.9);
+  stroke-width: 13;
+  filter: drop-shadow(0 2px 0 rgba(74, 69, 64, 0.08));
+}
+
+.line-bubble {
+  stroke: rgba(74, 69, 64, 0.66);
+  stroke-width: 3.4;
+}
+
+.line-care {
+  stroke: rgba(120, 85, 94, 0.66);
+  stroke-width: 3.6;
+}
+
 .line-beam {
   stroke: rgba(255, 244, 217, 0.78);
   stroke-width: 3;
+}
+
+.line-sparkle {
+  stroke: rgba(255, 244, 217, 0.94);
+  stroke-width: 3.3;
 }
 
 .story-film.is-playing .drawing-wash {
@@ -761,6 +811,11 @@ html:not([data-theme="morning"]) .story-film::after {
 
 .story-film.is-playing .drawing-line {
   animation: drawingLineIn 520ms cubic-bezier(0.62, 0.02, 0.18, 1) forwards;
+  animation-delay: var(--draw-delay, 0ms);
+}
+
+.story-film.is-playing .drawing-label {
+  animation: drawingWashIn 420ms ease forwards;
   animation-delay: var(--draw-delay, 0ms);
 }
 
@@ -903,7 +958,8 @@ html[data-theme="morning"] .story-card-overlay {
   }
 
   .story-film.is-playing .drawing-wash,
-  .story-film.is-playing .drawing-line {
+  .story-film.is-playing .drawing-line,
+  .story-film.is-playing .drawing-label {
     animation: none !important;
   }
 
@@ -913,6 +969,10 @@ html[data-theme="morning"] .story-card-overlay {
 
   .drawing-line {
     stroke-dashoffset: 0;
+  }
+
+  .drawing-label {
+    opacity: 1;
   }
 
   html:not([data-theme="morning"]) .story-card-body {
