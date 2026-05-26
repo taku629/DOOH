@@ -19,7 +19,7 @@
 
 - v1 DOOH 表示: `https://dooh-ca9c2.web.app/v1`
 - v1 参加ページ: `https://dooh-ca9c2.web.app/participant-v1`
-- v1 女性向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-sparkle`
+- v1 女性向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-women`
 - v1 男性向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-men`
 - v2 DOOH 表示: `https://dooh-ca9c2.web.app/v2`
 - v2 参加ページ: `https://dooh-ca9c2.web.app/participant-v2`
