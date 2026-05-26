@@ -104,6 +104,32 @@ html[data-theme="morning"] .participation-signal p {
     letter-spacing: 0;
 }
 
+html[data-theme="morning"] .relight-goal {
+    border-bottom-color: rgba(30, 58, 138, 0.16);
+}
+
+html[data-theme="morning"] .participation-signal .relight-goal-copy {
+    font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    font-size: clamp(2.3rem, 4.8vw, 4.2rem);
+    line-height: 1.08;
+}
+
+html[data-theme="morning"] .participation-signal .relight-goal.is-reached .relight-goal-copy {
+    color: #2563eb;
+}
+
+html[data-theme="morning"] .relight-progress {
+    background: rgba(30, 58, 138, 0.1);
+}
+
+html[data-theme="morning"] .relight-progress span {
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+}
+
+html[data-theme="morning"] .participation-signal .donation-copy {
+    font-size: clamp(1.15rem, 2vw, 1.7rem);
+}
+
 html[data-theme="morning"] .participation-signal small {
     color: #4b5563;
     font-size: clamp(1rem, 1.4vw, 1.25rem);

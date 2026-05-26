@@ -297,6 +297,48 @@
             font-size: 1rem;
         }
 
+        .relight-goal {
+            margin: 0 0 18px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .participation-signal .relight-goal-copy {
+            margin: 0;
+            color: var(--ink);
+            font-size: clamp(1.8rem, 3.1vw, 2.8rem);
+            font-weight: 900;
+            line-height: 1.04;
+            letter-spacing: 0;
+        }
+
+        .participation-signal .relight-goal.is-reached .relight-goal-copy {
+            color: var(--accent-strong);
+        }
+
+        .relight-progress {
+            height: 10px;
+            margin-top: 14px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(20, 20, 20, 0.1);
+        }
+
+        .relight-progress span {
+            display: block;
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--accent), var(--gold));
+            transition: width 420ms ease;
+        }
+
+        .participation-signal .donation-copy {
+            margin-top: 16px;
+            font-size: clamp(1.05rem, 1.7vw, 1.45rem);
+            letter-spacing: 0;
+        }
+
         .participation-takeover {
             position: absolute;
             inset: 0;
@@ -475,7 +517,14 @@
 
         <section class="participation-signal" id="participationSignal" aria-live="polite">
             <strong>Live Relight</strong>
-            <p>デモ募金額 <span id="displayDonationTotal">¥0</span></p>
+            <div class="relight-goal" id="displayRelightGoal">
+                <p class="relight-goal-copy" id="displayRelightRemaining">あと50人で新宿が点灯</p>
+                <small id="displayRelightProgressText">現在 0人 / 50人で点灯</small>
+                <div class="relight-progress" aria-hidden="true">
+                    <span id="displayRelightProgressBar"></span>
+                </div>
+            </div>
+            <p class="donation-copy">デモ募金額 <span id="displayDonationTotal">¥0</span></p>
             <small>参加人数 <span id="displayParticipantCount">0</span>人</small>
             <small id="displayParticipantStatus">スマホからのデモ募金を待機中</small>
         </section>

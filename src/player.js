@@ -1,5 +1,5 @@
 import { playFallback } from "./fallback-handler.js";
-import { getDonationMilestoneVideo, getDonationTotalYen } from "./condition-manager.js";
+import { getDonationMilestoneGoal, getDonationMilestoneVideo, getDonationTotalYen } from "./condition-manager.js";
 import { subscribeToDisplayConfig, subscribeToParticipantCount, subscribeToSwipeCompletes } from "./firebase-bridge.js";
 import { logError, logPlayback } from "./logger.js";
 import { subscribeToParticipationEvents } from "./participation-bridge.js";
@@ -11,6 +11,10 @@ const displayShell = document.querySelector("#displayShell");
 const fallbackView = document.querySelector("#videoFallback");
 const participationTakeover = document.querySelector("#participationTakeover");
 const participationSignal = document.querySelector("#participationSignal");
+const relightGoal = document.querySelector("#displayRelightGoal");
+const relightRemaining = document.querySelector("#displayRelightRemaining");
+const relightProgressText = document.querySelector("#displayRelightProgressText");
+const relightProgressBar = document.querySelector("#displayRelightProgressBar");
 const donationTotal = document.querySelector("#displayDonationTotal");
 const participantCount = document.querySelector("#displayParticipantCount");
 const participantStatus = document.querySelector("#displayParticipantStatus");
@@ -44,6 +48,30 @@ function formatDonationTotal(count) {
     return `¥${getDonationTotalYen(count, DEMO_DONATION_YEN).toLocaleString("ja-JP")}`;
 }
 
+function updateRelightGoal(count) {
+    const goal = getDonationMilestoneGoal(playlist, count, DEMO_DONATION_YEN);
+    const formattedCount = Math.max(0, Number(count) || 0).toLocaleString("ja-JP");
+    const formattedTarget = goal.targetCount.toLocaleString("ja-JP");
+
+    relightGoal?.classList.toggle("is-reached", goal.reached);
+
+    if (relightRemaining) {
+        relightRemaining.textContent = goal.reached
+            ? "新宿が点灯しました"
+            : `あと${goal.remainingCount.toLocaleString("ja-JP")}人で新宿が点灯`;
+    }
+
+    if (relightProgressText) {
+        relightProgressText.textContent = goal.reached
+            ? `現在 ${formattedCount}人参加 / ${formattedTarget}人達成`
+            : `現在 ${formattedCount}人 / ${formattedTarget}人で点灯`;
+    }
+
+    if (relightProgressBar) {
+        relightProgressBar.style.width = `${goal.progress}%`;
+    }
+}
+
 function setLiveTotals(count) {
     displayedCount = count;
 
@@ -54,6 +82,8 @@ function setLiveTotals(count) {
     if (participantCount) {
         participantCount.textContent = count.toLocaleString("ja-JP");
     }
+
+    updateRelightGoal(count);
 }
 
 function updateLiveTotals(count, options = {}) {
@@ -162,6 +192,7 @@ function applyPlaylist(nextPlaylist, options = {}) {
     }
 
     playlist = nextPlaylist;
+    updateRelightGoal(displayCount);
     updateNormalVideoForCount(displayCount, { playNow: options.playNow }).catch(logError);
 }
 
@@ -224,6 +255,7 @@ async function startPlayer() {
     try {
         staticPlaylist = await loadPlaylist();
         playlist = staticPlaylist;
+        setLiveTotals(displayCount);
         normalVideoPath = getNormalVideoForCount(displayCount);
 
         player.addEventListener("playing", () => showFallbackView(false), { once: true });

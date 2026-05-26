@@ -1,4 +1,5 @@
-import { getParticipantCount, publishSwipeComplete } from "../src/firebase-bridge.js";
+import { getDonationMilestoneGoal } from "../src/condition-manager.js";
+import { getParticipantCount, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
 const steps = [...document.querySelectorAll(".step")];
@@ -26,6 +27,7 @@ const FALLBACK_COUNTER_TARGET = 0;
 const activeTheme = resolveTheme({ defaultTheme: "day" });
 const PARTICIPATION_CHANNEL = getChannelForTheme(activeTheme, "default");
 const DEMO_DONATION_YEN = 100;
+const PLAYLIST_PATH = new URL("../config/playlist.json", import.meta.url).href;
 const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
 const SWIPE_COMPLETE_SNAP_THRESHOLD = 96;
 const STORY_CARD_VISIBLE_MS = 2300;
@@ -35,13 +37,15 @@ document.documentElement.dataset.theme = activeTheme;
 const experience = document.documentElement.dataset.experience || "default";
 const isSparkleExperience = experience === "sparkle";
 const isMenExperience = experience === "men";
-const isStoryExperience = isSparkleExperience || isMenExperience;
+const isAllExperience = experience === "all";
+const isStoryExperience = isSparkleExperience || isMenExperience || isAllExperience;
 const THANKS_STORIES = [
   {
     id: "patrol",
     title: "夜の歌舞伎町を安全に",
     description: "あなたの1スワイプが、若者や女性を守る民間警備員の夜通しのパトロール支援に繋がりました。",
     descriptionMen: "あなたの1スワイプが、若者や街の安全を守る民間警備員の夜通しのパトロール支援に繋がりました。",
+    descriptionAll: "あなたの1スワイプが、若者や来街者を見守る民間警備員の夜通しのパトロール支援に繋がりました。",
   },
   {
     id: "graffiti",
@@ -80,6 +84,11 @@ let isAutoCompletingSwipe = false;
 let swipeChargeValue = 0;
 let counterAnimationFrame = null;
 let storyCardDismissTimer = null;
+let relightPlaylist = null;
+const milestonePreview = buildMilestonePreview();
+const milestonePrimary = milestonePreview?.querySelector("[data-milestone-primary]");
+const milestoneSecondary = milestonePreview?.querySelector("[data-milestone-secondary]");
+const milestoneProgressBar = milestonePreview?.querySelector("[data-milestone-bar]");
 
 const reducedMotionQuery = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
@@ -112,6 +121,111 @@ function getDisplayName() {
 
 function getDemoDonationTotal(count = participantCount) {
   return count * DEMO_DONATION_YEN;
+}
+
+function buildMilestonePreview() {
+  if (!swipeStep) {
+    return null;
+  }
+
+  const preview = document.createElement("div");
+  preview.className = "milestone-preview";
+  preview.id = "milestonePreview";
+  preview.setAttribute("aria-live", "polite");
+
+  const kicker = document.createElement("span");
+  kicker.textContent = "点灯チャレンジ";
+
+  const primary = document.createElement("strong");
+  primary.dataset.milestonePrimary = "";
+  primary.textContent = "あと50人で新宿が点灯";
+
+  const secondary = document.createElement("small");
+  secondary.dataset.milestoneSecondary = "";
+  secondary.textContent = "現在 0人 / 50人で点灯";
+
+  const progress = document.createElement("div");
+  progress.className = "milestone-progress";
+  progress.setAttribute("aria-hidden", "true");
+
+  const bar = document.createElement("span");
+  bar.dataset.milestoneBar = "";
+  progress.append(bar);
+
+  preview.append(kicker, primary, secondary, progress);
+
+  const donationPreview = swipeStep.querySelector(".donation-preview");
+  const swipeStage = swipeStep.querySelector(".swipe-stage");
+  if (donationPreview) {
+    donationPreview.after(preview);
+  } else if (swipeStage) {
+    swipeStage.before(preview);
+  } else {
+    swipeStep.append(preview);
+  }
+
+  return preview;
+}
+
+function updateMilestonePreview(count = participantCount) {
+  if (!milestonePreview) {
+    return;
+  }
+
+  const safeCount = Math.max(0, Number(count) || 0);
+  const goal = getDonationMilestoneGoal(relightPlaylist, safeCount, DEMO_DONATION_YEN);
+  const formattedCount = safeCount.toLocaleString("ja-JP");
+  const formattedTarget = goal.targetCount.toLocaleString("ja-JP");
+
+  milestonePreview.classList.toggle("is-reached", goal.reached);
+  milestonePreview.style.setProperty("--milestone-progress", `${goal.progress}%`);
+
+  if (milestonePrimary) {
+    milestonePrimary.textContent = goal.reached
+      ? "新宿が点灯しました"
+      : `あと${goal.remainingCount.toLocaleString("ja-JP")}人で新宿が点灯`;
+  }
+
+  if (milestoneSecondary) {
+    milestoneSecondary.textContent = goal.reached
+      ? `現在 ${formattedCount}人参加 / ${formattedTarget}人達成`
+      : `現在 ${formattedCount}人 / ${formattedTarget}人で点灯`;
+  }
+
+  if (milestoneProgressBar) {
+    milestoneProgressBar.style.width = `${goal.progress}%`;
+  }
+}
+
+function syncParticipantCount(count, options = {}) {
+  const numericCount = Number(count);
+  if (!Number.isFinite(numericCount)) {
+    return;
+  }
+
+  const safeCount = Math.max(0, numericCount);
+  participantCount = options.preserveLocal
+    ? Math.max(participantCount, safeCount)
+    : safeCount;
+
+  if (counterParticipants && (options.forceCounter || hasCountedParticipation || currentStep === 1)) {
+    counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
+  }
+
+  updateMilestonePreview(participantCount);
+}
+
+async function loadRelightPlaylist() {
+  try {
+    const response = await fetch(PLAYLIST_PATH, { cache: "no-cache" });
+    if (!response.ok) {
+      throw new Error(`playlist load failed: ${response.status}`);
+    }
+    relightPlaylist = await response.json();
+    updateMilestonePreview(participantCount);
+  } catch (error) {
+    console.warn("[playlist] relight milestone load failed:", error);
+  }
 }
 
 function normalizeSwipeValue(value) {
@@ -239,6 +353,8 @@ function buildFinalCard() {
   const label = document.createElement("p");
   label.textContent = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
+    : isAllExperience
+      ? "新宿みんなのアクション証"
     : isMenExperience
       ? "新宿ナイトアクション証"
     : isSparkleExperience
@@ -251,6 +367,8 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = activeTheme === "morning"
     ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金が、朝の新宿に小さな余白をつくりました。`
+    : isAllExperience
+      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、誰もが過ごしやすい新宿を支えるアクションに加わりました。`
     : isMenExperience
       ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、夜の新宿を支えるアクションに加わりました。`
     : isSparkleExperience
@@ -304,10 +422,13 @@ function showStoryThanksCard() {
   }
 
   const story = getRandomThanksStory();
+  const storyDescription = isAllExperience && story.descriptionAll
+    ? story.descriptionAll
+    : isMenExperience && story.descriptionMen
+      ? story.descriptionMen
+      : story.description;
   storyCardTitle.textContent = story.title;
-  storyCardDescription.textContent = isMenExperience && story.descriptionMen
-    ? story.descriptionMen
-    : story.description;
+  storyCardDescription.textContent = storyDescription;
   storyFilm.classList.remove("is-playing");
   storyFilm.dataset.story = story.id;
   void storyFilm.offsetWidth;
@@ -346,7 +467,9 @@ async function registerParticipation() {
       donationAmountYen: DEMO_DONATION_YEN,
     };
 
-    if (isMenExperience) {
+    if (isAllExperience) {
+      payload.source = "participant-flow-all";
+    } else if (isMenExperience) {
       payload.source = "participant-flow-men";
     } else if (isSparkleExperience) {
       payload.source = "participant-flow-sparkle";
@@ -365,6 +488,7 @@ async function registerParticipation() {
     if (counterParticipants) {
       counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
     }
+    updateMilestonePreview(participantCount);
     hasCountedParticipation = true;
     hasAnimatedCounter = false;
     return true;
@@ -700,22 +824,22 @@ window.addEventListener("resize", () => {
 updateSwipeCharge(0);
 applyThemeCopy();
 showStep(0);
+updateMilestonePreview(participantCount);
+loadRelightPlaylist();
 
 getParticipantCount({ channel: PARTICIPATION_CHANNEL })
   .then((count) => {
-    if (Number.isFinite(count) && count > 0 && !hasCountedParticipation) {
-      participantCount = count;
-    }
-    if (Number.isFinite(count) && count > 0 && hasCountedParticipation) {
-      participantCount = count;
-      if (counterParticipants) {
-        counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
-      }
-    }
+    syncParticipantCount(count, { preserveLocal: hasCountedParticipation });
   })
   .catch((error) => {
     console.warn("[firebase] participant count fetch failed:", error);
   });
+
+subscribeToParticipantCount((count) => {
+  syncParticipantCount(count, { preserveLocal: hasCountedParticipation });
+}, { channel: PARTICIPATION_CHANNEL }).catch((error) => {
+  console.warn("[firebase] participant count subscription failed:", error);
+});
 
 function applyThemeCopy() {
   if (activeTheme !== "morning") {
