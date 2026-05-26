@@ -35,13 +35,15 @@ document.documentElement.dataset.theme = activeTheme;
 const experience = document.documentElement.dataset.experience || "default";
 const isSparkleExperience = experience === "sparkle";
 const isMenExperience = experience === "men";
-const isStoryExperience = isSparkleExperience || isMenExperience;
+const isAllExperience = experience === "all";
+const isStoryExperience = isSparkleExperience || isMenExperience || isAllExperience;
 const THANKS_STORIES = [
   {
     id: "patrol",
     title: "夜の歌舞伎町を安全に",
     description: "あなたの1スワイプが、若者や女性を守る民間警備員の夜通しのパトロール支援に繋がりました。",
     descriptionMen: "あなたの1スワイプが、若者や街の安全を守る民間警備員の夜通しのパトロール支援に繋がりました。",
+    descriptionAll: "あなたの1スワイプが、若者や来街者を見守る民間警備員の夜通しのパトロール支援に繋がりました。",
   },
   {
     id: "graffiti",
@@ -239,6 +241,8 @@ function buildFinalCard() {
   const label = document.createElement("p");
   label.textContent = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
+    : isAllExperience
+      ? "新宿みんなのアクション証"
     : isMenExperience
       ? "新宿ナイトアクション証"
     : isSparkleExperience
@@ -251,6 +255,8 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = activeTheme === "morning"
     ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金が、朝の新宿に小さな余白をつくりました。`
+    : isAllExperience
+      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、誰もが過ごしやすい新宿を支えるアクションに加わりました。`
     : isMenExperience
       ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、夜の新宿を支えるアクションに加わりました。`
     : isSparkleExperience
@@ -304,10 +310,13 @@ function showStoryThanksCard() {
   }
 
   const story = getRandomThanksStory();
+  const storyDescription = isAllExperience && story.descriptionAll
+    ? story.descriptionAll
+    : isMenExperience && story.descriptionMen
+      ? story.descriptionMen
+      : story.description;
   storyCardTitle.textContent = story.title;
-  storyCardDescription.textContent = isMenExperience && story.descriptionMen
-    ? story.descriptionMen
-    : story.description;
+  storyCardDescription.textContent = storyDescription;
   storyFilm.classList.remove("is-playing");
   storyFilm.dataset.story = story.id;
   void storyFilm.offsetWidth;
@@ -346,7 +355,9 @@ async function registerParticipation() {
       donationAmountYen: DEMO_DONATION_YEN,
     };
 
-    if (isMenExperience) {
+    if (isAllExperience) {
+      payload.source = "participant-flow-all";
+    } else if (isMenExperience) {
       payload.source = "participant-flow-men";
     } else if (isSparkleExperience) {
       payload.source = "participant-flow-sparkle";

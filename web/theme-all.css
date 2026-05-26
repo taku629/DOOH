@@ -1,0 +1,490 @@
+/* V1 inclusive participant theme. It keeps the all flow structure but changes the visual tone. */
+
+html[data-experience="all"]:not([data-theme="morning"]) {
+  color-scheme: light;
+
+  --bg: #f7f8f3;
+  --bg-soft: rgba(255, 255, 255, 0.74);
+  --surface: rgba(255, 255, 255, 0.76);
+  --ink: #141816;
+  --ink-secondary: #3f4c47;
+  --ink-tertiary: rgba(63, 76, 71, 0.68);
+  --separator: rgba(20, 24, 22, 0.1);
+  --hairline: rgba(9, 121, 108, 0.18);
+
+  --accent: #087f73;
+  --accent-strong: #064f49;
+  --gold: #e7b931;
+  --blue: #2a8fbc;
+  --sparkle-pink: #2cbf8f;
+  --sparkle-pink-soft: #dff7ee;
+  --sparkle-mint: #7de0c5;
+  --sparkle-lilac: #aeb8b2;
+
+  --shadow-sm: 0 6px 18px rgba(20, 24, 22, 0.08);
+  --shadow-md: 0 16px 42px rgba(20, 24, 22, 0.13), 0 0 22px rgba(8, 127, 115, 0.08);
+  --shadow-lg: 0 28px 78px rgba(20, 24, 22, 0.16), 0 0 34px rgba(231, 185, 49, 0.14);
+
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 22px;
+  --radius-xl: 26px;
+
+  --font-sans:
+    "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, monospace;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) body {
+  color: var(--ink);
+  background:
+    linear-gradient(130deg, rgba(8, 127, 115, 0.08) 0 16%, transparent 16% 100%),
+    linear-gradient(235deg, rgba(231, 185, 49, 0.1) 0 14%, transparent 14% 100%),
+    repeating-linear-gradient(90deg, rgba(20, 24, 22, 0.035) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(0deg, rgba(20, 24, 22, 0.03) 0 1px, transparent 1px 34px),
+    linear-gradient(180deg, #fbfbf6 0%, #eef3eb 100%);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-pattern {
+  z-index: 0;
+  background:
+    linear-gradient(135deg, transparent 0 46%, rgba(8, 127, 115, 0.08) 46% 47%, transparent 47% 100%),
+    linear-gradient(45deg, transparent 0 52%, rgba(231, 185, 49, 0.08) 52% 53%, transparent 53% 100%);
+  background-size: 72px 72px, 96px 96px;
+  opacity: 0.8;
+  mix-blend-mode: screen;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-particles span {
+  color: rgba(8, 127, 115, 0.32);
+  filter: drop-shadow(0 0 14px rgba(8, 127, 115, 0.2));
+  font-size: 25px;
+  font-variation-settings: "FILL" 0, "wght" 600, "GRAD" 0, "opsz" 24;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-particles span:nth-child(2n) {
+  color: rgba(231, 185, 49, 0.4);
+  filter: drop-shadow(0 0 14px rgba(231, 185, 49, 0.22));
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-particles span:nth-child(3n) {
+  color: rgba(42, 143, 188, 0.28);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-appbar {
+  height: 66px;
+  border-bottom: 1px solid rgba(8, 127, 115, 0.16);
+  border-radius: 0 0 20px 20px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 12px 32px rgba(20, 24, 22, 0.1);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-brand {
+  color: var(--accent-strong);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-brand .material-symbols-outlined {
+  color: var(--gold);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-brand strong {
+  font-size: 1.06rem;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .progress {
+  color: var(--ink-tertiary);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .bar {
+  background: rgba(20, 24, 22, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(8, 127, 115, 0.16);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) #progressBar,
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-meter::before {
+  background: linear-gradient(90deg, var(--accent), var(--sparkle-pink), var(--gold));
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .viewport {
+  border-color: rgba(8, 127, 115, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(247, 248, 243, 0.8)),
+    rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-lg);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .viewport::before {
+  inset: auto -10% -42% -10%;
+  height: 280px;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(8, 127, 115, 0.1) 28%, rgba(231, 185, 49, 0.1) 72%, transparent 100%);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .step-count {
+  background: rgba(8, 127, 115, 0.1);
+  color: var(--accent-strong);
+  box-shadow: inset 0 0 0 1px rgba(8, 127, 115, 0.2);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) h2 {
+  color: var(--accent-strong);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) p,
+html[data-experience="all"]:not([data-theme="morning"]) .hint,
+html[data-experience="all"]:not([data-theme="morning"]) label,
+html[data-experience="all"]:not([data-theme="morning"]) small {
+  color: var(--ink-secondary);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .eyebrow {
+  color: var(--gold);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .lead {
+  color: var(--ink-secondary);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .hero-visual {
+  border-color: rgba(8, 127, 115, 0.14);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 18px 44px rgba(20, 24, 22, 0.12);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .hero-visual img {
+  filter: contrast(1.08) saturate(0.86) brightness(0.9);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-total {
+  border-color: rgba(8, 127, 115, 0.18);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 10px 28px rgba(20, 24, 22, 0.1);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-total span {
+  color: var(--ink-tertiary);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-total strong {
+  color: var(--sparkle-pink);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-meter {
+  background: rgba(20, 24, 22, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(8, 127, 115, 0.16);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .slider-wrap {
+  border-color: rgba(8, 127, 115, 0.18);
+  border-radius: 26px;
+  background:
+    linear-gradient(0deg, rgba(8, 127, 115, 0.2), rgba(231, 185, 49, 0.14)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat,
+    repeating-linear-gradient(90deg, rgba(20, 24, 22, 0.04) 0 1px, transparent 1px 22px),
+    rgba(255, 255, 255, 0.68);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42), 0 16px 34px rgba(20, 24, 22, 0.12);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .slider-wrap::before {
+  background:
+    linear-gradient(0deg, rgba(8, 127, 115, 0.42), rgba(231, 185, 49, 0.18), rgba(255, 255, 255, 0.08)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .slider-wrap::after {
+  color: rgba(8, 127, 115, 0.46);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .heart-core {
+  color: var(--accent);
+  font-size: clamp(5.9rem, 25vw, 7.4rem);
+  text-shadow: 0 0 18px rgba(8, 127, 115, 0.24), 0 0 36px rgba(231, 185, 49, 0.12);
+  font-variation-settings: "FILL" 0, "wght" 520, "GRAD" 0, "opsz" 48;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .heart-core.action-people {
+  width: clamp(10.2rem, 45vw, 13.4rem);
+  height: auto;
+  filter: drop-shadow(0 16px 26px rgba(8, 127, 115, 0.14));
+  overflow: visible;
+  text-shadow: none;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .action-people .people-head,
+html[data-experience="all"]:not([data-theme="morning"]) .action-people .people-body {
+  stroke: currentColor;
+  stroke-width: 5.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .action-people .people-head {
+  fill: rgba(255, 255, 255, 0.92);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .action-people .people-center {
+  fill: rgba(223, 247, 238, 0.96);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .action-people .people-side {
+  fill: rgba(255, 249, 230, 0.92);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .heart-shine {
+  top: 18%;
+  right: 23%;
+  color: var(--gold);
+  font-size: 30px;
+  animation: allPulse 1.55s ease-in-out infinite;
+  font-variation-settings: "FILL" 0, "wght" 560, "GRAD" 0, "opsz" 24;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .step.is-swipe-charged .heart-core,
+html[data-experience="all"]:not([data-theme="morning"]) .step.is-swipe-ready .heart-core {
+  color: var(--sparkle-pink);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .step.is-swipe-ready .slider-wrap,
+html[data-experience="all"]:not([data-theme="morning"]) .step.is-swipe-charged .slider-wrap {
+  background:
+    linear-gradient(180deg, rgba(8, 127, 115, 0.22), rgba(231, 185, 49, 0.18)),
+    rgba(255, 255, 255, 0.78);
+  box-shadow: 0 22px 48px rgba(8, 127, 115, 0.16);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .primary,
+html[data-experience="all"]:not([data-theme="morning"]) .ghost {
+  border-radius: 16px;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .primary {
+  color: #101210;
+  background: linear-gradient(135deg, var(--accent), var(--sparkle-pink));
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.36), 0 16px 32px rgba(20, 24, 22, 0.16);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .primary:hover {
+  background: linear-gradient(135deg, var(--accent-strong), var(--gold));
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .ghost {
+  color: var(--accent-strong);
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow: inset 0 0 0 1px rgba(8, 127, 115, 0.18);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-field-label,
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-name-tab {
+  color: var(--accent-strong);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-name-tab {
+  border-color: rgba(8, 127, 115, 0.18);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(20, 24, 22, 0.1);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-name-icon {
+  color: rgba(8, 127, 115, 0.72);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) input[type="text"],
+html[data-experience="all"]:not([data-theme="morning"]) .sparkle-name-field input[type="text"] {
+  border-color: rgba(8, 127, 115, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  box-shadow:
+    inset 0 2px 7px rgba(20, 24, 22, 0.06),
+    0 10px 24px rgba(20, 24, 22, 0.1);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) input[type="text"]::placeholder {
+  color: rgba(63, 76, 71, 0.52);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) input[type="text"]:focus {
+  border-color: var(--accent);
+  background: #ffffff;
+  box-shadow:
+    inset 0 0 0 1px rgba(8, 127, 115, 0.18),
+    0 0 0 5px rgba(8, 127, 115, 0.12),
+    0 14px 28px rgba(20, 24, 22, 0.14);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .field-helper {
+  color: rgba(63, 76, 71, 0.7);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .counter-box {
+  border-color: rgba(8, 127, 115, 0.16);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(8, 127, 115, 0.08), transparent 42%),
+    rgba(255, 255, 255, 0.72);
+  box-shadow: 0 18px 40px rgba(20, 24, 22, 0.12);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .counter-box::after {
+  background: linear-gradient(120deg, rgba(8, 127, 115, 0.18), transparent 65%);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) #counterValue,
+html[data-experience="all"]:not([data-theme="morning"]) .counter-box .unit {
+  color: var(--sparkle-pink);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .counter-box em {
+  background: var(--gold);
+  color: #14120b;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .card {
+  color: var(--accent-strong);
+  border-color: rgba(8, 127, 115, 0.16);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(8, 127, 115, 0.08), transparent 48%),
+    linear-gradient(315deg, rgba(231, 185, 49, 0.1), transparent 42%),
+    rgba(255, 255, 255, 0.72);
+  box-shadow: 0 20px 44px rgba(20, 24, 22, 0.13);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .card::before {
+  background: linear-gradient(90deg, rgba(8, 127, 115, 0.16), transparent 64%);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .card p,
+html[data-experience="all"]:not([data-theme="morning"]) .card.done p:last-of-type {
+  color: var(--ink-secondary);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .card h3 {
+  color: var(--sparkle-pink);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .celebration span {
+  color: var(--accent);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .celebration span::before {
+  content: "diversity_3";
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .celebration span:nth-child(2),
+html[data-experience="all"]:not([data-theme="morning"]) .celebration span:nth-child(5) {
+  color: var(--sparkle-pink);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .celebration span:nth-child(3),
+html[data-experience="all"]:not([data-theme="morning"]) .celebration span:nth-child(6) {
+  color: var(--gold);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-card-overlay {
+  background: rgba(20, 24, 22, 0.36);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-card {
+  border-color: rgba(8, 127, 115, 0.16);
+  border-radius: 24px;
+  background: #f9faf5;
+  box-shadow:
+    0 30px 74px rgba(20, 24, 22, 0.22),
+    0 0 30px rgba(8, 127, 115, 0.12);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-film {
+  background:
+    repeating-linear-gradient(90deg, rgba(20, 24, 22, 0.035) 0 1px, transparent 1px 22px),
+    linear-gradient(180deg, #f6f0d8 0%, #e8efe7 58%, #d8e5dd 100%);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-film::before {
+  background:
+    repeating-linear-gradient(0deg, rgba(8, 127, 115, 0.04) 0 1px, transparent 1px 6px),
+    linear-gradient(90deg, rgba(231, 185, 49, 0.1), transparent 36%, rgba(8, 127, 115, 0.1));
+  opacity: 0.64;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-film::after {
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(247, 248, 243, 0.18) 70%, rgba(247, 248, 243, 0.74) 100%);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .drawing-wash {
+  fill: rgba(8, 127, 115, 0.1);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .lamp-wash {
+  fill: rgba(231, 185, 49, 0.2);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .street-wash {
+  fill: rgba(8, 127, 115, 0.07);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .wall-wash {
+  fill: rgba(255, 255, 255, 0.34);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .drawing-line {
+  stroke: rgba(20, 24, 22, 0.82);
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.28));
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .drawing-label {
+  fill: rgba(8, 127, 115, 0.88);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .line-soft,
+html[data-experience="all"]:not([data-theme="morning"]) .line-bubble {
+  stroke: rgba(63, 76, 71, 0.56);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .line-accent,
+html[data-experience="all"]:not([data-theme="morning"]) .line-heart,
+html[data-experience="all"]:not([data-theme="morning"]) .line-care,
+html[data-experience="all"]:not([data-theme="morning"]) .line-graffiti {
+  stroke: rgba(8, 127, 115, 0.76);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .line-clean,
+html[data-experience="all"]:not([data-theme="morning"]) .line-beam,
+html[data-experience="all"]:not([data-theme="morning"]) .line-sparkle {
+  stroke: rgba(255, 255, 255, 0.9);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .line-vest,
+html[data-experience="all"]:not([data-theme="morning"]) .line-sign {
+  stroke: rgba(231, 185, 49, 0.82);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-card-body {
+  background: #f9faf5;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-card-kicker {
+  color: rgba(8, 127, 115, 0.76);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-card h2 {
+  color: var(--accent-strong);
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .story-card-body p:last-child {
+  color: rgba(63, 76, 71, 0.82);
+}
+
+@keyframes allPulse {
+  0%,
+  100% {
+    opacity: 0.56;
+    transform: translateY(0) scale(0.92);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.1);
+  }
+}
