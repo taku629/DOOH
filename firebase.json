@@ -50,6 +50,10 @@
         "destination": "/web/participant-flow-men.html"
       },
       {
+        "source": "/participant-v1-all",
+        "destination": "/web/participant-flow-all.html"
+      },
+      {
         "source": "/participant-v2",
         "destination": "/web/participant-flow-v2.html"
       },
