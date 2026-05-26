@@ -46,6 +46,10 @@
         "destination": "/web/participant-flow-sparkle.html"
       },
       {
+        "source": "/participant-v1-men",
+        "destination": "/web/participant-flow-men.html"
+      },
+      {
         "source": "/participant-v2",
         "destination": "/web/participant-flow-v2.html"
       },

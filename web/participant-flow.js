@@ -32,12 +32,16 @@ const STORY_CARD_VISIBLE_MS = 2300;
 const STORY_CARD_REDUCED_MOTION_MS = 1000;
 
 document.documentElement.dataset.theme = activeTheme;
-const isSparkleExperience = document.documentElement.dataset.experience === "sparkle";
+const experience = document.documentElement.dataset.experience || "default";
+const isSparkleExperience = experience === "sparkle";
+const isMenExperience = experience === "men";
+const isStoryExperience = isSparkleExperience || isMenExperience;
 const THANKS_STORIES = [
   {
     id: "patrol",
     title: "夜の歌舞伎町を安全に",
     description: "あなたの1スワイプが、若者や女性を守る民間警備員の夜通しのパトロール支援に繋がりました。",
+    descriptionMen: "あなたの1スワイプが、若者や街の安全を守る民間警備員の夜通しのパトロール支援に繋がりました。",
   },
   {
     id: "graffiti",
@@ -56,7 +60,7 @@ const storyCardTitle = document.getElementById("storyCardTitle");
 const storyCardDescription = document.getElementById("storyCardDescription");
 const storyFilm = document.getElementById("storyFilm");
 const shouldUseStoryThanksCard = Boolean(
-  isSparkleExperience &&
+  isStoryExperience &&
     activeTheme !== "morning" &&
     storyCardOverlay &&
     storyCard &&
@@ -235,6 +239,8 @@ function buildFinalCard() {
   const label = document.createElement("p");
   label.textContent = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
+    : isMenExperience
+      ? "新宿ナイトアクション証"
     : isSparkleExperience
       ? "新宿ときめき参加証"
       : "SHINJUKU COLOR SUPPORTER";
@@ -245,6 +251,8 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = activeTheme === "morning"
     ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金が、朝の新宿に小さな余白をつくりました。`
+    : isMenExperience
+      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、夜の新宿を支えるアクションに加わりました。`
     : isSparkleExperience
       ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、今日の新宿にやさしい光を増やしました。`
       : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
@@ -297,7 +305,9 @@ function showStoryThanksCard() {
 
   const story = getRandomThanksStory();
   storyCardTitle.textContent = story.title;
-  storyCardDescription.textContent = story.description;
+  storyCardDescription.textContent = isMenExperience && story.descriptionMen
+    ? story.descriptionMen
+    : story.description;
   storyFilm.classList.remove("is-playing");
   storyFilm.dataset.story = story.id;
   void storyFilm.offsetWidth;
@@ -336,9 +346,15 @@ async function registerParticipation() {
       donationAmountYen: DEMO_DONATION_YEN,
     };
 
+    if (isMenExperience) {
+      payload.source = "participant-flow-men";
+    } else if (isSparkleExperience) {
+      payload.source = "participant-flow-sparkle";
+    }
+
     if (PARTICIPATION_CHANNEL !== "default") {
       payload.channel = PARTICIPATION_CHANNEL;
-      payload.source = "participant-flow-morning";
+      payload.source = payload.source ?? "participant-flow-morning";
     }
 
     const result = await publishSwipeComplete(payload);
