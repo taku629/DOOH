@@ -1,4 +1,5 @@
 import { getParticipantCount, publishSwipeComplete } from "../src/firebase-bridge.js";
+import { isInappropriateName } from "../src/name-filter.js";
 
 const steps = [...document.querySelectorAll(".step")];
 const progressText = document.getElementById("progressText");
@@ -48,7 +49,11 @@ function generateRandomGuestName() {
 const RANDOM_GUEST_NAME = generateRandomGuestName();
 
 function getDisplayName() {
-  return nickname.value.trim() || RANDOM_GUEST_NAME;
+  const input = nickname.value.trim();
+  if (!input || isInappropriateName(input)) {
+    return RANDOM_GUEST_NAME;
+  }
+  return input;
 }
 
 function getDemoDonationTotal(count = participantCount) {
