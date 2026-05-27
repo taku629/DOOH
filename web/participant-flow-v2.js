@@ -1,4 +1,5 @@
 import { getParticipantCount, publishSwipeComplete } from "../src/firebase-bridge.js";
+import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
@@ -104,9 +105,12 @@ function updateSwipeCharge(value) {
   swipeChargeValue = normalized;
   updateSwipeAction(normalized);
 
+  triggerProgressHaptic(normalized);
+
   if (isComplete && !hasShownSwipeReadyEffect) {
     hasShownSwipeReadyEffect = true;
     swipeStep.classList.add("is-swipe-ready");
+    triggerCompletionHaptic();
     playCelebration();
     window.setTimeout(() => swipeStep.classList.remove("is-swipe-ready"), 950);
   }
