@@ -52,7 +52,7 @@ Firebase 上に管理画面から公開した設定がある場合は、DOOH 表
 ### 2. スマートフォン参加フロー
 
 `web/participant-flow.html` は QR コードからアクセスする想定の参加ページです。
-v1 DOOH の QR は従来の `web/participant-flow.html` に遷移します。女性向けの参加UIは `web/participant-flow-sparkle.html`、男性向けの参加UIは `web/participant-flow-men.html`、みんな向けの参加UIは `web/participant-flow-all.html` として別URLで公開します。
+v1 DOOH の QR は従来の `web/participant-flow.html` に遷移します。女性向けの参加UIは `web/participant-flow-women.html`、男性向けの参加UIは `web/participant-flow-men.html`、みんな向けの参加UIは `web/participant-flow-all.html` として別URLで公開します。
 
 参加ステップは以下の 5 段階です。
 
@@ -63,6 +63,8 @@ v1 DOOH の QR は従来の `web/participant-flow.html` に遷移します。女
 5. シェア
 
 スライダーを 100% まで動かして完了すると、1回あたり100円のデモ募金として参加数が加算され、DOOH 表示画面へ参加イベントが送られます。
+
+シェア画面では通常の Web Share、Instagramストーリー用画像、LINE、X、リンクコピーを提供します。Instagramストーリーは 9:16 の PNG をブラウザ上で生成し、`navigator.share()` がファイル共有に対応する端末では共有シートへ渡し、非対応環境では PNG 保存にフォールバックします。
 
 ### 3. 参加イベント連携
 
