@@ -52,7 +52,7 @@ Firebase 上に管理画面から公開した設定がある場合は、DOOH 表
 ### 2. スマートフォン参加フロー
 
 `web/participant-flow.html` は QR コードからアクセスする想定の参加ページです。
-v1 DOOH の QR は従来の `web/participant-flow.html` に遷移します。女性向けの参加UIは `web/participant-flow-sparkle.html`、男性向けの参加UIは `web/participant-flow-men.html`、みんな向けの参加UIは `web/participant-flow-all.html` として別URLで公開します。
+v1 DOOH の QR は従来の `web/participant-flow.html` に遷移します。女性向けの参加UIは `web/participant-flow-women.html`、男性向けの参加UIは `web/participant-flow-men.html`、みんな向けの参加UIは `web/participant-flow-all.html` として別URLで公開します。
 
 参加ステップは以下の 5 段階です。
 
