@@ -43,7 +43,7 @@
       },
       {
         "source": "/participant-v1-women",
-        "destination": "/web/participant-flow-sparkle.html"
+        "destination": "/web/participant-flow-women.html"
       },
       {
         "source": "/participant-v1-men",

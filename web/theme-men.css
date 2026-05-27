@@ -1,116 +1,134 @@
-/* V1 masculine participant theme. It keeps the sparkle flow structure but changes the visual tone. */
+/* V1 men participant theme. Monochrome marble frame matching SHINJUKU GIVE. */
 
 html[data-experience="men"]:not([data-theme="morning"]) {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --bg: #111211;
-  --bg-soft: rgba(245, 247, 241, 0.08);
-  --surface: rgba(26, 28, 27, 0.82);
-  --ink: #f3f5ed;
-  --ink-secondary: #c7cdc3;
-  --ink-tertiary: rgba(199, 205, 195, 0.72);
-  --separator: rgba(255, 255, 255, 0.12);
-  --hairline: rgba(111, 239, 219, 0.18);
+  --bg: #f9f9ff;
+  --bg-soft: rgba(255, 255, 255, 0.72);
+  --surface: rgba(255, 255, 255, 0.8);
+  --ink: #151919;
+  --ink-secondary: #5c5f60;
+  --ink-tertiary: rgba(92, 95, 96, 0.72);
+  --separator: rgba(21, 25, 25, 0.08);
+  --hairline: rgba(21, 25, 25, 0.14);
 
-  --accent: #6fefdb;
-  --accent-strong: #c6fff3;
-  --gold: #f4b84a;
-  --blue: #5fb6ff;
-  --sparkle-pink: #c8ff4d;
-  --sparkle-pink-soft: #25331f;
-  --sparkle-mint: #6fefdb;
-  --sparkle-lilac: #a8b0aa;
+  --accent: #151919;
+  --accent-strong: #050606;
+  --gold: #c4c7ca;
+  --blue: #2a313d;
+  --sparkle-pink: #151919;
+  --sparkle-pink-soft: #e7eefe;
+  --sparkle-mint: #f0f3ff;
+  --sparkle-lilac: #dce2f3;
 
-  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.22);
-  --shadow-md: 0 16px 42px rgba(0, 0, 0, 0.36), 0 0 22px rgba(111, 239, 219, 0.1);
-  --shadow-lg: 0 28px 78px rgba(0, 0, 0, 0.48), 0 0 34px rgba(244, 184, 74, 0.13);
+  --shadow-sm: 0 6px 18px rgba(21, 25, 25, 0.08);
+  --shadow-md: 0 18px 40px rgba(21, 25, 25, 0.12), 0 2px 0 rgba(255, 255, 255, 0.82) inset;
+  --shadow-lg: 0 26px 70px rgba(21, 25, 25, 0.18), 0 1px 0 rgba(255, 255, 255, 0.86) inset;
 
-  --radius-xs: 10px;
-  --radius-sm: 14px;
-  --radius-md: 18px;
-  --radius-lg: 22px;
-  --radius-xl: 26px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
 
   --font-sans:
-    "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
-  --font-mono: "SF Mono", ui-monospace, monospace;
+    "Hanken Grotesk", "Noto Sans JP", "Hiragino Sans", "Yu Gothic",
+    system-ui, sans-serif;
+  --font-mono: "Hanken Grotesk", ui-monospace, monospace;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) body {
   color: var(--ink);
   background:
-    linear-gradient(130deg, rgba(111, 239, 219, 0.09) 0 16%, transparent 16% 100%),
-    linear-gradient(235deg, rgba(244, 184, 74, 0.08) 0 14%, transparent 14% 100%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 34px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.028) 0 1px, transparent 1px 34px),
-    linear-gradient(180deg, #151716 0%, #0d0e0d 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(249, 249, 255, 0.92)),
+    linear-gradient(110deg, transparent 0 38%, rgba(21, 28, 39, 0.08) 39%, rgba(21, 28, 39, 0.08) 40%, transparent 41% 100%),
+    linear-gradient(210deg, transparent 0 58%, rgba(21, 28, 39, 0.06) 59%, rgba(21, 28, 39, 0.06) 60%, transparent 61% 100%),
+    linear-gradient(35deg, transparent 0 68%, rgba(21, 25, 25, 0.045) 69%, rgba(21, 25, 25, 0.045) 69.5%, transparent 70.5% 100%),
+    #f9f9ff;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-pattern {
   z-index: 0;
   background:
-    linear-gradient(135deg, transparent 0 46%, rgba(111, 239, 219, 0.08) 46% 47%, transparent 47% 100%),
-    linear-gradient(45deg, transparent 0 52%, rgba(244, 184, 74, 0.06) 52% 53%, transparent 53% 100%);
-  background-size: 72px 72px, 96px 96px;
-  opacity: 0.8;
-  mix-blend-mode: screen;
+    linear-gradient(115deg, transparent 0 47%, rgba(21, 25, 25, 0.09) 47.5%, rgba(21, 25, 25, 0.09) 48%, transparent 48.5% 100%),
+    linear-gradient(25deg, transparent 0 62%, rgba(21, 25, 25, 0.05) 62.5%, rgba(21, 25, 25, 0.05) 63%, transparent 63.5% 100%);
+  background-size: 170px 170px, 230px 230px;
+  background-position: 0 0, 44px 26px;
+  opacity: 0.72;
+  mix-blend-mode: multiply;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-particles span {
-  color: rgba(111, 239, 219, 0.38);
-  filter: drop-shadow(0 0 14px rgba(111, 239, 219, 0.26));
-  font-size: 25px;
-  font-variation-settings: "FILL" 0, "wght" 600, "GRAD" 0, "opsz" 24;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(21, 25, 25, 0.34);
+  border-radius: 2px;
+  color: transparent;
+  background: rgba(255, 255, 255, 0.36);
+  filter: drop-shadow(0 12px 18px rgba(21, 25, 25, 0.08));
+  font-size: 0;
+  transform: rotate(45deg);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-particles span:nth-child(2n) {
-  color: rgba(244, 184, 74, 0.36);
-  filter: drop-shadow(0 0 14px rgba(244, 184, 74, 0.2));
+  border-color: rgba(21, 25, 25, 0.24);
+  background: rgba(42, 49, 61, 0.08);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  transform: rotate(0deg);
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .sparkle-particles span:nth-child(3n) {
-  color: rgba(200, 255, 77, 0.32);
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-particles span:nth-child(4n) {
+  border-color: rgba(21, 25, 25, 0.28);
+  background: rgba(255, 255, 255, 0.22);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  transform: rotate(30deg);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-appbar {
   height: 66px;
-  border-bottom: 1px solid rgba(111, 239, 219, 0.2);
-  border-radius: 0 0 20px 20px;
-  background: rgba(15, 17, 16, 0.78);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.34);
+  border-bottom: 1px solid rgba(21, 25, 25, 0.08);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 12px 28px rgba(21, 25, 25, 0.08);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-brand {
-  color: var(--accent-strong);
+  color: var(--ink);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-brand .material-symbols-outlined {
-  color: var(--gold);
+  color: var(--ink);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-brand strong {
-  font-size: 1.06rem;
+  font-family: "EB Garamond", "Noto Sans JP", serif;
+  font-size: 1.32rem;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .progress {
-  color: var(--ink-tertiary);
+  color: rgba(21, 25, 25, 0.56);
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .bar {
-  background: rgba(255, 255, 255, 0.09);
-  box-shadow: inset 0 0 0 1px rgba(111, 239, 219, 0.16);
+html[data-experience="men"]:not([data-theme="morning"]) .bar,
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-meter {
+  background: rgba(21, 25, 25, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(21, 25, 25, 0.08);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) #progressBar,
-html[data-experience="men"]:not([data-theme="morning"]) .sparkle-meter::before {
-  background: linear-gradient(90deg, var(--accent), var(--sparkle-pink), var(--gold));
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-meter::before,
+html[data-experience="men"]:not([data-theme="morning"]) .milestone-progress span {
+  background: linear-gradient(90deg, #151919, #5c5f60);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .viewport {
-  border-color: rgba(111, 239, 219, 0.22);
+  border-color: rgba(21, 25, 25, 0.14);
+  border-radius: 10px;
   background:
-    linear-gradient(180deg, rgba(34, 38, 36, 0.92), rgba(17, 19, 18, 0.88)),
-    rgba(17, 19, 18, 0.86);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(247, 248, 252, 0.78)),
+    rgba(255, 255, 255, 0.78);
   box-shadow: var(--shadow-lg);
 }
 
@@ -118,228 +136,235 @@ html[data-experience="men"]:not([data-theme="morning"]) .viewport::before {
   inset: auto -10% -42% -10%;
   height: 280px;
   background:
-    linear-gradient(90deg, transparent 0%, rgba(111, 239, 219, 0.1) 28%, rgba(244, 184, 74, 0.08) 72%, transparent 100%);
+    linear-gradient(115deg, transparent 0 32%, rgba(21, 25, 25, 0.08) 32% 36%, transparent 36% 100%),
+    linear-gradient(55deg, transparent 0 58%, rgba(21, 25, 25, 0.055) 58% 63%, transparent 63% 100%);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .step-count {
-  background: rgba(111, 239, 219, 0.12);
-  color: var(--accent-strong);
-  box-shadow: inset 0 0 0 1px rgba(111, 239, 219, 0.24);
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(21, 25, 25, 0.16);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) h2 {
-  color: var(--accent-strong);
+  color: var(--ink);
+  font-family: "EB Garamond", "Noto Sans JP", serif;
+  font-size: clamp(2rem, 8vw, 2.7rem);
+  font-weight: 600;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .step[data-step="0"] h2 {
+  font-size: clamp(2.7rem, 14vw, 4.2rem);
+  line-height: 0.96;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) p,
 html[data-experience="men"]:not([data-theme="morning"]) .hint,
 html[data-experience="men"]:not([data-theme="morning"]) label,
-html[data-experience="men"]:not([data-theme="morning"]) small {
-  color: var(--ink-secondary);
-}
-
-html[data-experience="men"]:not([data-theme="morning"]) .eyebrow {
-  color: var(--gold);
-}
-
+html[data-experience="men"]:not([data-theme="morning"]) small,
 html[data-experience="men"]:not([data-theme="morning"]) .lead {
   color: var(--ink-secondary);
 }
 
+html[data-experience="men"]:not([data-theme="morning"]) .eyebrow {
+  color: var(--ink);
+}
+
 html[data-experience="men"]:not([data-theme="morning"]) .hero-visual {
-  border-color: rgba(111, 239, 219, 0.18);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+  border-color: rgba(21, 25, 25, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 18px 44px rgba(21, 25, 25, 0.12);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .hero-visual img {
-  filter: contrast(1.08) saturate(0.86) brightness(0.9);
+  filter: grayscale(1) contrast(1.08) brightness(1.04);
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .sparkle-total {
-  border-color: rgba(111, 239, 219, 0.22);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-total,
+html[data-experience="men"]:not([data-theme="morning"]) .milestone-preview,
+html[data-experience="men"]:not([data-theme="morning"]) .counter-box {
+  border-color: rgba(21, 25, 25, 0.14);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 16px 34px rgba(21, 25, 25, 0.1);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-total span {
   color: var(--ink-tertiary);
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .sparkle-total strong {
-  color: var(--sparkle-pink);
-}
-
-html[data-experience="men"]:not([data-theme="morning"]) .milestone-preview {
-  border-color: rgba(111, 239, 219, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
-}
-
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-total strong,
 html[data-experience="men"]:not([data-theme="morning"]) .milestone-preview > span,
 html[data-experience="men"]:not([data-theme="morning"]) .milestone-preview.is-reached strong {
-  color: var(--accent-strong);
+  color: var(--ink);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .milestone-progress {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(111, 239, 219, 0.18);
-}
-
-html[data-experience="men"]:not([data-theme="morning"]) .milestone-progress span {
-  background: linear-gradient(90deg, var(--accent), var(--sparkle-pink), var(--gold));
-}
-
-html[data-experience="men"]:not([data-theme="morning"]) .sparkle-meter {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(111, 239, 219, 0.18);
+  background: rgba(21, 25, 25, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(21, 25, 25, 0.08);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .slider-wrap {
-  border-color: rgba(111, 239, 219, 0.22);
-  border-radius: 26px;
+  border-color: rgba(21, 25, 25, 0.18);
+  border-radius: 12px;
   background:
-    linear-gradient(0deg, rgba(111, 239, 219, 0.26), rgba(200, 255, 77, 0.14)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat,
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 22px),
-    rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 16px 34px rgba(0, 0, 0, 0.28);
+    linear-gradient(0deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat,
+    linear-gradient(110deg, transparent 0 44%, rgba(255, 255, 255, 0.08) 45%, transparent 46% 100%),
+    #151919;
+  box-shadow: 0 22px 44px rgba(21, 25, 25, 0.24);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .slider-wrap::before {
   background:
-    linear-gradient(0deg, rgba(111, 239, 219, 0.48), rgba(200, 255, 77, 0.22), rgba(255, 255, 255, 0.08)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat;
+    linear-gradient(0deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .slider-wrap::after {
-  color: rgba(111, 239, 219, 0.52);
+  color: rgba(255, 255, 255, 0.34);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .heart-core {
-  color: var(--accent);
-  text-shadow: 0 0 22px rgba(111, 239, 219, 0.42), 0 0 42px rgba(200, 255, 77, 0.18);
+  color: #ffffff;
+  text-shadow: 0 0 28px rgba(255, 255, 255, 0.72), 0 12px 26px rgba(0, 0, 0, 0.24);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .heart-shine {
   top: 17%;
   right: 25%;
-  color: var(--gold);
-  animation: menPulse 1.35s ease-in-out infinite;
+  color: rgba(255, 255, 255, 0.74);
+  animation: sparklePulse 1.7s ease-in-out infinite;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .step.is-swipe-charged .heart-core,
 html[data-experience="men"]:not([data-theme="morning"]) .step.is-swipe-ready .heart-core {
-  color: var(--sparkle-pink);
+  color: #ffffff;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .step.is-swipe-ready .slider-wrap,
 html[data-experience="men"]:not([data-theme="morning"]) .step.is-swipe-charged .slider-wrap {
   background:
-    linear-gradient(180deg, rgba(111, 239, 219, 0.3), rgba(200, 255, 77, 0.2)),
-    rgba(255, 255, 255, 0.1);
-  box-shadow: 0 22px 48px rgba(111, 239, 219, 0.2);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06)),
+    #050606;
+  box-shadow: 0 24px 52px rgba(21, 25, 25, 0.3);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .primary,
 html[data-experience="men"]:not([data-theme="morning"]) .ghost {
-  border-radius: 16px;
+  border-radius: 8px;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .primary {
-  color: #101210;
-  background: linear-gradient(135deg, var(--accent), var(--sparkle-pink));
-  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.28), 0 16px 32px rgba(0, 0, 0, 0.32);
+  color: #ffffff;
+  background: #151919;
+  box-shadow: 0 14px 30px rgba(21, 25, 25, 0.18);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .primary:hover {
-  background: linear-gradient(135deg, var(--accent-strong), var(--gold));
+  background: #050606;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .ghost {
-  color: var(--accent-strong);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(111, 239, 219, 0.22);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(21, 25, 25, 0.18);
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .ghost:hover {
+  background: rgba(21, 25, 25, 0.06);
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .ghost.is-copied {
+  color: #14804c;
+  background: rgba(20, 128, 76, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(20, 128, 76, 0.34);
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .ghost.share-line,
+html[data-experience="men"]:not([data-theme="morning"]) .ghost.share-instagram,
+html[data-experience="men"]:not([data-theme="morning"]) .ghost.share-x {
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(21, 25, 25, 0.18);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-field-label,
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-name-tab {
-  color: var(--accent-strong);
+  color: var(--ink);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-name-tab {
-  border-color: rgba(111, 239, 219, 0.24);
-  border-radius: 12px;
-  background: #151716;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  border-color: rgba(21, 25, 25, 0.18);
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(21, 25, 25, 0.08);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-name-icon {
-  color: rgba(111, 239, 219, 0.74);
+  color: rgba(21, 25, 25, 0.62);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) input[type="text"],
 html[data-experience="men"]:not([data-theme="morning"]) .sparkle-name-field input[type="text"] {
-  border-color: rgba(111, 239, 219, 0.32);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(21, 25, 25, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
   color: var(--ink);
   box-shadow:
-    inset 0 2px 7px rgba(0, 0, 0, 0.22),
-    0 10px 24px rgba(0, 0, 0, 0.22);
+    inset 0 2px 7px rgba(21, 25, 25, 0.06),
+    0 8px 22px rgba(21, 25, 25, 0.08);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) input[type="text"]::placeholder {
-  color: rgba(199, 205, 195, 0.55);
+  color: rgba(21, 25, 25, 0.46);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) input[type="text"]:focus {
-  border-color: var(--accent);
-  background: rgba(20, 24, 22, 0.96);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.96);
   box-shadow:
-    inset 0 0 0 1px rgba(111, 239, 219, 0.2),
-    0 0 0 5px rgba(111, 239, 219, 0.16),
-    0 14px 28px rgba(0, 0, 0, 0.32);
+    inset 0 0 0 1px rgba(21, 25, 25, 0.22),
+    0 0 0 5px rgba(21, 25, 25, 0.08),
+    0 12px 26px rgba(21, 25, 25, 0.12);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .field-helper {
-  color: rgba(199, 205, 195, 0.72);
+  color: var(--ink-secondary);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .counter-box {
-  border-color: rgba(111, 239, 219, 0.18);
-  border-radius: 24px;
-  background:
-    linear-gradient(135deg, rgba(111, 239, 219, 0.1), transparent 42%),
-    rgba(255, 255, 255, 0.07);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  border-radius: 8px;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .counter-box::after {
-  background: linear-gradient(120deg, rgba(111, 239, 219, 0.26), transparent 65%);
+  background: linear-gradient(135deg, rgba(21, 25, 25, 0.08) 0 38%, transparent 38% 100%);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) #counterValue,
 html[data-experience="men"]:not([data-theme="morning"]) .counter-box .unit {
-  color: var(--sparkle-pink);
+  color: var(--ink);
+  background: none;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .counter-box em {
-  background: var(--gold);
-  color: #14120b;
+  color: #ffffff;
+  background: var(--ink);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .card {
-  color: var(--accent-strong);
-  border-color: rgba(111, 239, 219, 0.2);
-  border-radius: 24px;
+  color: var(--ink);
+  border-color: rgba(21, 25, 25, 0.18);
+  border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(111, 239, 219, 0.1), transparent 48%),
-    linear-gradient(315deg, rgba(244, 184, 74, 0.09), transparent 42%),
-    rgba(255, 255, 255, 0.07);
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.3);
+    linear-gradient(110deg, transparent 0 43%, rgba(21, 25, 25, 0.045) 44%, transparent 45% 100%),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: 0 20px 42px rgba(21, 25, 25, 0.12);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .card::before {
-  background: linear-gradient(90deg, rgba(111, 239, 219, 0.24), transparent 64%);
+  inset: 14px;
+  width: auto;
+  aspect-ratio: auto;
+  border: 1px solid rgba(21, 25, 25, 0.18);
+  border-radius: 0;
+  background: transparent;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .card p,
@@ -348,131 +373,198 @@ html[data-experience="men"]:not([data-theme="morning"]) .card.done p:last-of-typ
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .card h3 {
-  color: var(--sparkle-pink);
+  color: var(--ink);
+  font-family: "EB Garamond", "Noto Sans JP", serif;
+  font-weight: 600;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .celebration span {
-  color: var(--accent);
+  color: var(--ink);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .celebration span::before {
-  content: "bolt";
+  content: "diamond";
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .celebration span:nth-child(2),
-html[data-experience="men"]:not([data-theme="morning"]) .celebration span:nth-child(5) {
-  color: var(--sparkle-pink);
+html[data-experience="men"]:not([data-theme="morning"]) .celebration span:nth-child(2)::before,
+html[data-experience="men"]:not([data-theme="morning"]) .celebration span:nth-child(5)::before {
+  content: "change_history";
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .celebration span:nth-child(3),
-html[data-experience="men"]:not([data-theme="morning"]) .celebration span:nth-child(6) {
-  color: var(--gold);
+html[data-experience="men"]:not([data-theme="morning"]) .celebration span:nth-child(3)::before,
+html[data-experience="men"]:not([data-theme="morning"]) .celebration span:nth-child(6)::before {
+  content: "hexagon";
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .story-card-overlay {
-  background: rgba(6, 7, 7, 0.66);
+  background: rgba(21, 25, 25, 0.28);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .story-card {
-  border-color: rgba(111, 239, 219, 0.2);
-  border-radius: 24px;
-  background: #171918;
+  border-color: rgba(21, 25, 25, 0.16);
+  border-radius: 8px;
+  background: #ffffff;
   box-shadow:
-    0 30px 74px rgba(0, 0, 0, 0.54),
-    0 0 30px rgba(111, 239, 219, 0.14);
+    0 28px 70px rgba(21, 25, 25, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.82) inset;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .story-film {
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 22px),
-    linear-gradient(180deg, #242926 0%, #171918 58%, #101210 100%);
+    linear-gradient(110deg, transparent 0 42%, rgba(21, 25, 25, 0.08) 43%, transparent 44% 100%),
+    linear-gradient(180deg, #f9f9ff 0%, #e7eefe 100%);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .story-film::before {
   background:
-    repeating-linear-gradient(0deg, rgba(111, 239, 219, 0.045) 0 1px, transparent 1px 6px),
-    linear-gradient(90deg, rgba(244, 184, 74, 0.08), transparent 36%, rgba(111, 239, 219, 0.08));
-  opacity: 0.64;
+    repeating-linear-gradient(0deg, rgba(21, 25, 25, 0.035) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 9px);
+  opacity: 0.42;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .story-film::after {
   background:
-    linear-gradient(180deg, transparent 0%, rgba(16, 18, 16, 0.12) 70%, rgba(16, 18, 16, 0.76) 100%);
+    linear-gradient(180deg, transparent 0%, rgba(249, 249, 255, 0.28) 74%, rgba(249, 249, 255, 0.72) 100%);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .drawing-wash {
-  fill: rgba(111, 239, 219, 0.12);
+  fill: rgba(255, 255, 255, 0.32);
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .lamp-wash {
-  fill: rgba(244, 184, 74, 0.18);
-}
-
-html[data-experience="men"]:not([data-theme="morning"]) .street-wash {
-  fill: rgba(200, 255, 77, 0.08);
-}
-
+html[data-experience="men"]:not([data-theme="morning"]) .lamp-wash,
+html[data-experience="men"]:not([data-theme="morning"]) .street-wash,
 html[data-experience="men"]:not([data-theme="morning"]) .wall-wash {
-  fill: rgba(245, 247, 241, 0.08);
+  fill: rgba(21, 25, 25, 0.08);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .drawing-line {
-  stroke: rgba(243, 245, 237, 0.86);
-  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.34));
+  stroke: rgba(21, 25, 25, 0.82);
+  filter: none;
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .drawing-label {
-  fill: rgba(200, 255, 77, 0.9);
+  fill: rgba(21, 25, 25, 0.88);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .line-soft,
 html[data-experience="men"]:not([data-theme="morning"]) .line-bubble {
-  stroke: rgba(199, 205, 195, 0.56);
+  stroke: rgba(21, 25, 25, 0.56);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .line-accent,
 html[data-experience="men"]:not([data-theme="morning"]) .line-heart,
 html[data-experience="men"]:not([data-theme="morning"]) .line-care,
 html[data-experience="men"]:not([data-theme="morning"]) .line-graffiti {
-  stroke: rgba(111, 239, 219, 0.78);
+  stroke: rgba(21, 25, 25, 0.74);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .line-clean,
 html[data-experience="men"]:not([data-theme="morning"]) .line-beam,
 html[data-experience="men"]:not([data-theme="morning"]) .line-sparkle {
-  stroke: rgba(200, 255, 77, 0.88);
+  stroke: rgba(255, 255, 255, 0.9);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .line-vest,
 html[data-experience="men"]:not([data-theme="morning"]) .line-sign {
-  stroke: rgba(244, 184, 74, 0.8);
+  stroke: rgba(21, 25, 25, 0.68);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .story-card-body {
-  background: #171918;
+  background: #ffffff;
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .story-card-kicker {
-  color: rgba(244, 184, 74, 0.78);
+html[data-experience="men"]:not([data-theme="morning"]) .story-card-kicker,
+html[data-experience="men"]:not([data-theme="morning"]) .story-card-body p:last-child {
+  color: var(--ink-secondary);
 }
 
 html[data-experience="men"]:not([data-theme="morning"]) .story-card h2 {
-  color: var(--accent-strong);
+  color: var(--ink);
 }
 
-html[data-experience="men"]:not([data-theme="morning"]) .story-card-body p:last-child {
-  color: rgba(243, 245, 237, 0.78);
+/* Neutral marble finish for the monochrome participant page only. */
+html[data-experience="men"]:not([data-theme="morning"]) {
+  --bg: #f8f8f8;
+  --blue: #303030;
+  --gold: #c8c8c8;
+  --sparkle-pink-soft: #eeeeee;
+  --sparkle-mint: #f5f5f5;
+  --sparkle-lilac: #e7e7e7;
 }
 
-@keyframes menPulse {
-  0%,
-  100% {
-    opacity: 0.56;
-    transform: translateY(0) scale(0.92);
-  }
+html[data-experience="men"]:not([data-theme="morning"]) body {
+  background:
+    radial-gradient(ellipse at 16% 8%, rgba(255, 255, 255, 0.96) 0 12%, transparent 34%),
+    radial-gradient(ellipse at 82% 18%, rgba(230, 230, 230, 0.5) 0 14%, transparent 36%),
+    radial-gradient(ellipse at 42% 88%, rgba(190, 190, 190, 0.18) 0 14%, transparent 38%),
+    linear-gradient(118deg, transparent 0 29%, rgba(21, 21, 21, 0.052) 30%, transparent 33% 100%),
+    linear-gradient(128deg, transparent 0 47%, rgba(21, 21, 21, 0.12) 48%, rgba(21, 21, 21, 0.03) 49%, transparent 51% 100%),
+    linear-gradient(24deg, transparent 0 64%, rgba(48, 48, 48, 0.07) 65%, transparent 68% 100%),
+    #f8f8f8;
+}
 
-  50% {
-    opacity: 1;
-    transform: translateY(-6px) scale(1.1);
-  }
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-pattern {
+  background:
+    radial-gradient(ellipse at 30% 22%, rgba(255, 255, 255, 0.68), transparent 34%),
+    linear-gradient(114deg, transparent 0 43%, rgba(21, 21, 21, 0.1) 43.6%, transparent 45.2% 100%),
+    linear-gradient(35deg, transparent 0 61%, rgba(21, 21, 21, 0.055) 61.8%, transparent 63.4% 100%),
+    linear-gradient(148deg, transparent 0 72%, rgba(48, 48, 48, 0.07) 72.7%, transparent 74.4% 100%);
+  background-size: 100% 100%, 260px 260px, 320px 320px, 420px 420px;
+  background-position: 0 0, 12px 0, 64px 34px, -38px 80px;
+  opacity: 0.82;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-appbar,
+html[data-experience="men"]:not([data-theme="morning"]) .viewport,
+html[data-experience="men"]:not([data-theme="morning"]) .hero-visual,
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-total,
+html[data-experience="men"]:not([data-theme="morning"]) .milestone-preview,
+html[data-experience="men"]:not([data-theme="morning"]) .counter-box,
+html[data-experience="men"]:not([data-theme="morning"]) .card,
+html[data-experience="men"]:not([data-theme="morning"]) .story-card {
+  background:
+    linear-gradient(126deg, transparent 0 38%, rgba(21, 21, 21, 0.062) 39%, transparent 41% 100%),
+    linear-gradient(32deg, transparent 0 68%, rgba(48, 48, 48, 0.05) 69%, transparent 71% 100%),
+    radial-gradient(ellipse at 18% 12%, rgba(255, 255, 255, 0.9), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(242, 242, 242, 0.76));
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .viewport,
+html[data-experience="men"]:not([data-theme="morning"]) .card,
+html[data-experience="men"]:not([data-theme="morning"]) .story-card {
+  box-shadow:
+    0 28px 72px rgba(21, 21, 21, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 rgba(21, 21, 21, 0.05);
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .viewport::before {
+  background:
+    linear-gradient(118deg, transparent 0 28%, rgba(21, 21, 21, 0.08) 29%, transparent 32% 100%),
+    linear-gradient(58deg, transparent 0 59%, rgba(255, 255, 255, 0.42) 60%, transparent 64% 100%);
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .slider-wrap {
+  background:
+    linear-gradient(0deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.03)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat,
+    radial-gradient(ellipse at 18% 24%, rgba(255, 255, 255, 0.16), transparent 34%),
+    linear-gradient(120deg, transparent 0 36%, rgba(255, 255, 255, 0.16) 37%, transparent 39% 100%),
+    linear-gradient(30deg, transparent 0 68%, rgba(255, 255, 255, 0.08) 69%, transparent 71% 100%),
+    #151919;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .step.is-swipe-ready .slider-wrap,
+html[data-experience="men"]:not([data-theme="morning"]) .step.is-swipe-charged .slider-wrap {
+  background:
+    radial-gradient(ellipse at 22% 22%, rgba(255, 255, 255, 0.2), transparent 36%),
+    linear-gradient(118deg, transparent 0 38%, rgba(255, 255, 255, 0.18) 39%, transparent 41% 100%),
+    #050606;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .story-film,
+html[data-experience="men"]:not([data-theme="morning"]) .story-card-body {
+  background:
+    linear-gradient(126deg, transparent 0 42%, rgba(21, 21, 21, 0.075) 43%, transparent 45% 100%),
+    radial-gradient(ellipse at 22% 12%, rgba(255, 255, 255, 0.9), transparent 40%),
+    linear-gradient(180deg, #fbfbfb 0%, #ececec 100%);
 }
