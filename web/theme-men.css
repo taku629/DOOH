@@ -481,3 +481,90 @@ html[data-experience="men"]:not([data-theme="morning"]) .story-card-body p:last-
 html[data-experience="men"]:not([data-theme="morning"]) .story-card h2 {
   color: var(--ink);
 }
+
+/* Neutral marble finish for the monochrome participant page only. */
+html[data-experience="men"]:not([data-theme="morning"]) {
+  --bg: #f8f8f8;
+  --blue: #303030;
+  --gold: #c8c8c8;
+  --sparkle-pink-soft: #eeeeee;
+  --sparkle-mint: #f5f5f5;
+  --sparkle-lilac: #e7e7e7;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) body {
+  background:
+    radial-gradient(ellipse at 16% 8%, rgba(255, 255, 255, 0.96) 0 12%, transparent 34%),
+    radial-gradient(ellipse at 82% 18%, rgba(230, 230, 230, 0.5) 0 14%, transparent 36%),
+    radial-gradient(ellipse at 42% 88%, rgba(190, 190, 190, 0.18) 0 14%, transparent 38%),
+    linear-gradient(118deg, transparent 0 29%, rgba(21, 21, 21, 0.052) 30%, transparent 33% 100%),
+    linear-gradient(128deg, transparent 0 47%, rgba(21, 21, 21, 0.12) 48%, rgba(21, 21, 21, 0.03) 49%, transparent 51% 100%),
+    linear-gradient(24deg, transparent 0 64%, rgba(48, 48, 48, 0.07) 65%, transparent 68% 100%),
+    #f8f8f8;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-pattern {
+  background:
+    radial-gradient(ellipse at 30% 22%, rgba(255, 255, 255, 0.68), transparent 34%),
+    linear-gradient(114deg, transparent 0 43%, rgba(21, 21, 21, 0.1) 43.6%, transparent 45.2% 100%),
+    linear-gradient(35deg, transparent 0 61%, rgba(21, 21, 21, 0.055) 61.8%, transparent 63.4% 100%),
+    linear-gradient(148deg, transparent 0 72%, rgba(48, 48, 48, 0.07) 72.7%, transparent 74.4% 100%);
+  background-size: 100% 100%, 260px 260px, 320px 320px, 420px 420px;
+  background-position: 0 0, 12px 0, 64px 34px, -38px 80px;
+  opacity: 0.82;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-appbar,
+html[data-experience="men"]:not([data-theme="morning"]) .viewport,
+html[data-experience="men"]:not([data-theme="morning"]) .hero-visual,
+html[data-experience="men"]:not([data-theme="morning"]) .sparkle-total,
+html[data-experience="men"]:not([data-theme="morning"]) .milestone-preview,
+html[data-experience="men"]:not([data-theme="morning"]) .counter-box,
+html[data-experience="men"]:not([data-theme="morning"]) .card,
+html[data-experience="men"]:not([data-theme="morning"]) .story-card {
+  background:
+    linear-gradient(126deg, transparent 0 38%, rgba(21, 21, 21, 0.062) 39%, transparent 41% 100%),
+    linear-gradient(32deg, transparent 0 68%, rgba(48, 48, 48, 0.05) 69%, transparent 71% 100%),
+    radial-gradient(ellipse at 18% 12%, rgba(255, 255, 255, 0.9), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(242, 242, 242, 0.76));
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .viewport,
+html[data-experience="men"]:not([data-theme="morning"]) .card,
+html[data-experience="men"]:not([data-theme="morning"]) .story-card {
+  box-shadow:
+    0 28px 72px rgba(21, 21, 21, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 rgba(21, 21, 21, 0.05);
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .viewport::before {
+  background:
+    linear-gradient(118deg, transparent 0 28%, rgba(21, 21, 21, 0.08) 29%, transparent 32% 100%),
+    linear-gradient(58deg, transparent 0 59%, rgba(255, 255, 255, 0.42) 60%, transparent 64% 100%);
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .slider-wrap {
+  background:
+    linear-gradient(0deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.03)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat,
+    radial-gradient(ellipse at 18% 24%, rgba(255, 255, 255, 0.16), transparent 34%),
+    linear-gradient(120deg, transparent 0 36%, rgba(255, 255, 255, 0.16) 37%, transparent 39% 100%),
+    linear-gradient(30deg, transparent 0 68%, rgba(255, 255, 255, 0.08) 69%, transparent 71% 100%),
+    #151919;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .step.is-swipe-ready .slider-wrap,
+html[data-experience="men"]:not([data-theme="morning"]) .step.is-swipe-charged .slider-wrap {
+  background:
+    radial-gradient(ellipse at 22% 22%, rgba(255, 255, 255, 0.2), transparent 36%),
+    linear-gradient(118deg, transparent 0 38%, rgba(255, 255, 255, 0.18) 39%, transparent 41% 100%),
+    #050606;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .story-film,
+html[data-experience="men"]:not([data-theme="morning"]) .story-card-body {
+  background:
+    linear-gradient(126deg, transparent 0 42%, rgba(21, 21, 21, 0.075) 43%, transparent 45% 100%),
+    radial-gradient(ellipse at 22% 12%, rgba(255, 255, 255, 0.9), transparent 40%),
+    linear-gradient(180deg, #fbfbfb 0%, #ececec 100%);
+}
