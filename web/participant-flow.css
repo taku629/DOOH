@@ -495,6 +495,24 @@ label {
   flex-direction: column;
 }
 
+.ghost.share-line {
+  border-color: rgba(6, 199, 85, 0.42);
+  color: #06c755;
+}
+
+.ghost.share-line:hover {
+  background: rgba(6, 199, 85, 0.08);
+}
+
+.ghost.share-x {
+  border-color: rgba(0, 0, 0, 0.32);
+  color: #0f1419;
+}
+
+.ghost.share-x:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
 /* Inputs -------------------------------------------------------------- */
 
 input[type="text"] {

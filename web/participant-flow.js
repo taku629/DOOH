@@ -568,15 +568,27 @@ function playCelebration() {
   window.setTimeout(() => celebration.classList.remove("is-active"), 950);
 }
 
+function buildShareUrl() {
+  const url = new URL(location.href);
+  url.search = "";
+  url.hash = "";
+  return url.toString();
+}
+
+function buildShareText() {
+  const supporterName = getDisplayName();
+  return `新宿が私の1スワイプで色づきました 🌃\nSHINJUKU SUPPORTER「${supporterName}」として参加。\nあなたも →`;
+}
+
 async function copyShareLink() {
-  const url = location.href;
+  const url = buildShareUrl();
+  const text = `${buildShareText()} ${url}`;
 
   try {
     if (!navigator.clipboard?.writeText) {
       throw new Error("Clipboard API is unavailable.");
     }
-
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(text);
     if (shareStatus) {
       shareStatus.textContent = "リンクをコピーしました。";
     }
@@ -584,6 +596,59 @@ async function copyShareLink() {
     if (shareStatus) {
       shareStatus.textContent = `コピーできませんでした。URL: ${url}`;
     }
+  }
+}
+
+async function triggerWebShare() {
+  const url = buildShareUrl();
+  const text = buildShareText();
+
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
+      await navigator.share({
+        title: "Shinjuku DOOH Project",
+        text,
+        url,
+      });
+      if (shareStatus) {
+        shareStatus.textContent = "シェアありがとうございます。";
+      }
+      return;
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        return;
+      }
+      console.warn("[share] navigator.share failed:", error);
+    }
+  }
+  await copyShareLink();
+}
+
+function openShareWindow(url) {
+  try {
+    window.open(url, "_blank", "noopener,noreferrer");
+  } catch (_) {
+    location.href = url;
+  }
+}
+
+function shareToLine() {
+  const url = buildShareUrl();
+  const text = buildShareText();
+  const target = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+  openShareWindow(target);
+  if (shareStatus) {
+    shareStatus.textContent = "LINE のシェア画面を開きました。";
+  }
+}
+
+function shareToX() {
+  const url = buildShareUrl();
+  const text = buildShareText();
+  const target = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  openShareWindow(target);
+  if (shareStatus) {
+    shareStatus.textContent = "X のポスト画面を開きました。";
   }
 }
 
@@ -827,7 +892,22 @@ if (downloadBtn) {
 
 const shareBtn = document.getElementById("shareBtn");
 if (shareBtn) {
-  shareBtn.addEventListener("click", copyShareLink);
+  shareBtn.addEventListener("click", triggerWebShare);
+}
+
+const shareLineBtn = document.getElementById("shareLineBtn");
+if (shareLineBtn) {
+  shareLineBtn.addEventListener("click", shareToLine);
+}
+
+const shareXBtn = document.getElementById("shareXBtn");
+if (shareXBtn) {
+  shareXBtn.addEventListener("click", shareToX);
+}
+
+const shareCopyBtn = document.getElementById("shareCopyBtn");
+if (shareCopyBtn) {
+  shareCopyBtn.addEventListener("click", copyShareLink);
 }
 
 window.addEventListener("keydown", (event) => {
