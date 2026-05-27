@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>新宿ときめき参加体験</title>
+  <title>SHINJUKU GIVE 参加体験</title>
   <base href="/" />
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="apple-touch-icon" href="assets/favicon.svg" />
@@ -20,7 +20,7 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700&family=Hanken+Grotesk:wght@400;600;700&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="web/theme.css" />
   <link rel="stylesheet" href="web/participant-flow.css" />
@@ -30,32 +30,32 @@
 <body>
   <div class="sparkle-pattern" aria-hidden="true"></div>
   <div class="sparkle-particles" aria-hidden="true">
-    <span>crop_square</span>
+    <span>diamond</span>
     <span>change_history</span>
     <span>hexagon</span>
-    <span>polyline</span>
-    <span>crop_square</span>
+    <span>horizontal_rule</span>
+    <span>diamond</span>
     <span>change_history</span>
     <span>hexagon</span>
-    <span>polyline</span>
-    <span>crop_square</span>
+    <span>horizontal_rule</span>
+    <span>diamond</span>
     <span>change_history</span>
     <span>hexagon</span>
-    <span>polyline</span>
+    <span>horizontal_rule</span>
   </div>
 
-  <header class="sparkle-appbar" aria-label="新宿ときめき参加体験">
+  <header class="sparkle-appbar" aria-label="SHINJUKU GIVE 参加体験">
     <div class="sparkle-brand">
-      <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
-      <strong>新宿ときめき参加</strong>
+      <span class="material-symbols-outlined" aria-hidden="true">diamond</span>
+      <strong>SHINJUKU GIVE</strong>
     </div>
   </header>
 
   <main class="app" id="app">
     <section class="app-hero" aria-labelledby="campaignTitle">
-      <p class="eyebrow">参加デモ</p>
-      <h1 id="campaignTitle">ときめきを<br><span class="no-break">新宿へ</span></h1>
-      <p class="lead">上にスワイプして、街にやさしい光を届けるデモ体験です。</p>
+      <p class="eyebrow">Donation Action</p>
+      <h1 id="campaignTitle">SHINJUKU<br><span class="no-break">GIVE</span></h1>
+      <p class="lead">白と黒のコントラストで、静かに参加を届けるデモ体験です。</p>
       <figure class="hero-visual">
         <img src="assets/test.png?v=20260520" alt="モノクロの新宿が参加によって明るく色づくビジュアル" />
       </figure>
@@ -72,8 +72,8 @@
       <div class="track" id="track">
         <section class="step is-current" data-step="0" data-label="寄付" aria-labelledby="swipeTitle">
           <span class="step-count">01</span>
-          <h2 id="swipeTitle">上にスワイプして寄付する</h2>
-          <p>画面を開いたら、ハートを下から上へ一気にスワイプしてください。¥100のデモ寄付が反映されます。</p>
+          <h2 id="swipeTitle">¥100を届ける</h2>
+          <p>白いハンドルを下から上へスワイプしてください。¥100のデモ寄付が新宿に反映されます。</p>
           <div class="donation-preview sparkle-total" aria-label="本日のデモ寄付">
             <span>本日のデモ寄付</span>
             <strong>¥100</strong>
@@ -94,7 +94,7 @@
         <section class="step" data-step="1" data-label="完了" aria-labelledby="thanksTitle" aria-live="polite">
           <span class="step-count">02</span>
           <h2 id="thanksTitle">ありがとうございます！</h2>
-          <p>あなたの参加で、新宿にやさしい光が増えました。</p>
+          <p>あなたの参加で、新宿に静かな光が重なりました。</p>
           <div class="counter-box" id="counterBox">
             <span>本日のデモ寄付</span>
             <strong><span id="counterValue">100</span><span class="unit">円</span></strong>
@@ -115,7 +115,7 @@
           </div>
           <p class="field-helper" id="nicknameHelp">入力すると参加証に反映されます。未入力でも進めます。</p>
           <article class="card" id="certificatePreview" aria-live="polite">
-            <p>新宿ときめき参加証</p>
+            <p>SHINJUKU GIVE CERTIFICATE</p>
             <h3 id="previewName">匿名サポーター</h3>
           </article>
           <div class="actions">
@@ -130,7 +130,6 @@
           <article class="card done" id="finalCard" aria-live="polite"></article>
           <div class="actions stacked">
             <button class="primary" type="button" id="shareBtn">シェアする</button>
-            <button class="ghost share-instagram" type="button" id="shareInstagramStoryBtn">Instagramストーリー</button>
             <button class="ghost share-line" type="button" id="shareLineBtn">LINEで送る</button>
             <button class="ghost share-x" type="button" id="shareXBtn">Xにポスト</button>
             <button class="ghost" type="button" id="shareCopyBtn">リンクをコピー</button>

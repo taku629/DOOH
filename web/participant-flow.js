@@ -15,6 +15,7 @@ const nickname = document.getElementById("nickname");
 const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
 const shareStatus = document.getElementById("shareStatus");
+const shareCopyButton = document.getElementById("shareCopyBtn");
 const swipeControl = document.querySelector(".slider-wrap");
 const swipeHint = document.getElementById("swipeHint");
 const thanksTitle = document.getElementById("thanksTitle");
@@ -36,6 +37,7 @@ const STORY_CARD_VISIBLE_MS = 2300;
 const STORY_CARD_REDUCED_MOTION_MS = 1000;
 const STORY_IMAGE_WIDTH = 1080;
 const STORY_IMAGE_HEIGHT = 1920;
+const COPY_FEEDBACK_VISIBLE_MS = 2600;
 
 document.documentElement.dataset.theme = activeTheme;
 const experience = document.documentElement.dataset.experience || "default";
@@ -88,6 +90,7 @@ let isAutoCompletingSwipe = false;
 let swipeChargeValue = 0;
 let counterAnimationFrame = null;
 let storyCardDismissTimer = null;
+let copyFeedbackTimer = null;
 let relightPlaylist = null;
 const milestonePreview = buildMilestonePreview();
 const milestonePrimary = milestonePreview?.querySelector("[data-milestone-primary]");
@@ -371,9 +374,9 @@ function getCertificateContent() {
     : isAllExperience
       ? "新宿みんなのアクション証"
     : isMenExperience
-      ? "新宿ナイトアクション証"
+      ? "SHINJUKU GIVE CERTIFICATE"
     : isSparkleExperience
-      ? "新宿ときめき参加証"
+      ? "SHINJUKU GIVE CERTIFICATE"
       : "SHINJUKU COLOR SUPPORTER";
 
   const description = activeTheme === "morning"
@@ -381,9 +384,9 @@ function getCertificateContent() {
     : isAllExperience
       ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、誰もが過ごしやすい新宿を支えるアクションに加わりました。`
     : isMenExperience
-      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、夜の新宿を支えるアクションに加わりました。`
+      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、新宿に静かな光を重ねました。`
     : isSparkleExperience
-      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、今日の新宿にやさしい光を増やしました。`
+      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、新宿に静かな光を重ねました。`
       : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
 
   return { label, name, description };
@@ -589,6 +592,11 @@ function buildShareUrl() {
 
 function buildShareText() {
   const supporterName = getDisplayName();
+
+  if (isSparkleExperience || isMenExperience) {
+    return `SHINJUKU GIVEで¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}のデモ寄付に参加しました。\n${supporterName}の参加証を共有します。\nあなたも →`;
+  }
+
   return `新宿が私の1スワイプで色づきました 🌃\nSHINJUKU SUPPORTER「${supporterName}」として参加。\nあなたも →`;
 }
 
@@ -623,29 +631,29 @@ function getStorySharePalette() {
 
   if (isMenExperience) {
     return {
-      bg: "#101211",
-      panel: "#1b1f1d",
-      ink: "#f3f5ed",
-      muted: "#c7cdc3",
-      accent: "#6fefdb",
-      accentSoft: "rgba(111, 239, 219, 0.14)",
-      secondary: "#5fb6ff",
-      secondarySoft: "rgba(95, 182, 255, 0.14)",
-      highlight: "#f4b84a",
+      bg: "#f9f9ff",
+      panel: "#ffffff",
+      ink: "#151919",
+      muted: "#5c5f60",
+      accent: "#151919",
+      accentSoft: "rgba(21, 25, 25, 0.14)",
+      secondary: "#2a313d",
+      secondarySoft: "rgba(42, 49, 61, 0.1)",
+      highlight: "#c4c7ca",
     };
   }
 
   if (isSparkleExperience) {
     return {
-      bg: "#fff8f0",
-      panel: "#fffdf9",
-      ink: "#231914",
-      muted: "#5a4338",
-      accent: "#d85b13",
-      accentSoft: "rgba(216, 91, 19, 0.18)",
-      secondary: "#417989",
-      secondarySoft: "rgba(65, 121, 137, 0.16)",
-      highlight: "#f6b238",
+      bg: "#f9f9ff",
+      panel: "#ffffff",
+      ink: "#151919",
+      muted: "#5c5f60",
+      accent: "#151919",
+      accentSoft: "rgba(21, 25, 25, 0.14)",
+      secondary: "#2a313d",
+      secondarySoft: "rgba(42, 49, 61, 0.1)",
+      highlight: "#c4c7ca",
     };
   }
 
@@ -804,7 +812,8 @@ function drawStoryShareImage() {
   ctx.fillStyle = palette.muted;
   ctx.font = "700 34px Quicksand, 'Noto Sans JP', sans-serif";
   ctx.letterSpacing = "0px";
-  ctx.fillText("SHINJUKU DOOH PROJECT", 146, 486);
+  const storyProjectLabel = (isSparkleExperience || isMenExperience) ? "SHINJUKU GIVE" : "SHINJUKU DOOH PROJECT";
+  ctx.fillText(storyProjectLabel, 146, 486);
 
   ctx.fillStyle = palette.accent;
   ctx.font = "700 54px 'Noto Sans JP', sans-serif";
@@ -864,19 +873,51 @@ async function writeShareTextToClipboard() {
   return true;
 }
 
+function setShareStatus(message, tone = "info") {
+  if (!shareStatus) {
+    return;
+  }
+
+  shareStatus.textContent = message;
+  shareStatus.classList.remove("is-info", "is-success", "is-error");
+  shareStatus.classList.add("is-visible", `is-${tone}`);
+}
+
+function showCopyFeedback() {
+  if (!shareCopyButton) {
+    return;
+  }
+
+  if (!shareCopyButton.dataset.defaultLabel) {
+    shareCopyButton.dataset.defaultLabel = shareCopyButton.textContent.trim();
+  }
+
+  shareCopyButton.textContent = "コピーしました";
+  shareCopyButton.classList.add("is-copied");
+  shareCopyButton.setAttribute("aria-label", "リンクをコピーしました");
+
+  if (copyFeedbackTimer) {
+    window.clearTimeout(copyFeedbackTimer);
+  }
+
+  copyFeedbackTimer = window.setTimeout(() => {
+    shareCopyButton.textContent = shareCopyButton.dataset.defaultLabel || "リンクをコピー";
+    shareCopyButton.classList.remove("is-copied");
+    shareCopyButton.setAttribute("aria-label", shareCopyButton.dataset.defaultLabel || "リンクをコピー");
+    copyFeedbackTimer = null;
+  }, COPY_FEEDBACK_VISIBLE_MS);
+}
+
 async function copyShareLink() {
   try {
     const didCopy = await writeShareTextToClipboard();
     if (!didCopy) {
       throw new Error("Clipboard API is unavailable.");
     }
-    if (shareStatus) {
-      shareStatus.textContent = "リンクをコピーしました。";
-    }
+    showCopyFeedback();
+    setShareStatus("コピーしました。LINEやXにそのまま貼れます。", "success");
   } catch {
-    if (shareStatus) {
-      shareStatus.textContent = `コピーできませんでした。URL: ${buildShareUrl()}`;
-    }
+    setShareStatus(`コピーできませんでした。URL: ${buildShareUrl()}`, "error");
   }
 }
 
