@@ -34,6 +34,8 @@ const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
 const SWIPE_COMPLETE_SNAP_THRESHOLD = 96;
 const STORY_CARD_VISIBLE_MS = 2300;
 const STORY_CARD_REDUCED_MOTION_MS = 1000;
+const STORY_IMAGE_WIDTH = 1080;
+const STORY_IMAGE_HEIGHT = 1920;
 
 document.documentElement.dataset.theme = activeTheme;
 const experience = document.documentElement.dataset.experience || "default";
@@ -362,15 +364,9 @@ function nextStep() {
   }
 }
 
-function buildFinalCard() {
-  if (isFinalCardBuilt) {
-    return;
-  }
-  isFinalCardBuilt = true;
-  finalCard.replaceChildren();
-
-  const label = document.createElement("p");
-  label.textContent = activeTheme === "morning"
+function getCertificateContent() {
+  const name = getDisplayName();
+  const label = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
     : isAllExperience
       ? "新宿みんなのアクション証"
@@ -380,11 +376,7 @@ function buildFinalCard() {
       ? "新宿ときめき参加証"
       : "SHINJUKU COLOR SUPPORTER";
 
-  const name = document.createElement("h3");
-  name.textContent = getDisplayName();
-
-  const description = document.createElement("p");
-  description.textContent = activeTheme === "morning"
+  const description = activeTheme === "morning"
     ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金が、朝の新宿に小さな余白をつくりました。`
     : isAllExperience
       ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、誰もが過ごしやすい新宿を支えるアクションに加わりました。`
@@ -393,6 +385,26 @@ function buildFinalCard() {
     : isSparkleExperience
       ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、今日の新宿にやさしい光を増やしました。`
       : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
+
+  return { label, name, description };
+}
+
+function buildFinalCard() {
+  if (isFinalCardBuilt) {
+    return;
+  }
+  isFinalCardBuilt = true;
+  finalCard.replaceChildren();
+
+  const content = getCertificateContent();
+  const label = document.createElement("p");
+  label.textContent = content.label;
+
+  const name = document.createElement("h3");
+  name.textContent = content.name;
+
+  const description = document.createElement("p");
+  description.textContent = content.description;
 
   finalCard.append(label, name, description);
 }
@@ -491,7 +503,7 @@ async function registerParticipation() {
     } else if (isMenExperience) {
       payload.source = "participant-flow-men";
     } else if (isSparkleExperience) {
-      payload.source = "participant-flow-sparkle";
+      payload.source = "participant-flow-women";
     }
 
     if (PARTICIPATION_CHANNEL !== "default") {
@@ -580,21 +592,290 @@ function buildShareText() {
   return `新宿が私の1スワイプで色づきました 🌃\nSHINJUKU SUPPORTER「${supporterName}」として参加。\nあなたも →`;
 }
 
-async function copyShareLink() {
-  const url = buildShareUrl();
-  const text = `${buildShareText()} ${url}`;
+function getStorySharePalette() {
+  if (activeTheme === "morning") {
+    return {
+      bg: "#f8f2e7",
+      panel: "#fffdf8",
+      ink: "#241a14",
+      muted: "#66574d",
+      accent: "#cc5f28",
+      accentSoft: "rgba(204, 95, 40, 0.18)",
+      secondary: "#3f7f87",
+      secondarySoft: "rgba(63, 127, 135, 0.16)",
+      highlight: "#efb44c",
+    };
+  }
 
+  if (isAllExperience) {
+    return {
+      bg: "#f7f8f3",
+      panel: "#ffffff",
+      ink: "#141816",
+      muted: "#3f4c47",
+      accent: "#087f73",
+      accentSoft: "rgba(8, 127, 115, 0.18)",
+      secondary: "#2a8fbc",
+      secondarySoft: "rgba(42, 143, 188, 0.16)",
+      highlight: "#e7b931",
+    };
+  }
+
+  if (isMenExperience) {
+    return {
+      bg: "#101211",
+      panel: "#1b1f1d",
+      ink: "#f3f5ed",
+      muted: "#c7cdc3",
+      accent: "#6fefdb",
+      accentSoft: "rgba(111, 239, 219, 0.14)",
+      secondary: "#5fb6ff",
+      secondarySoft: "rgba(95, 182, 255, 0.14)",
+      highlight: "#f4b84a",
+    };
+  }
+
+  if (isSparkleExperience) {
+    return {
+      bg: "#fff8f0",
+      panel: "#fffdf9",
+      ink: "#231914",
+      muted: "#5a4338",
+      accent: "#d85b13",
+      accentSoft: "rgba(216, 91, 19, 0.18)",
+      secondary: "#417989",
+      secondarySoft: "rgba(65, 121, 137, 0.16)",
+      highlight: "#f6b238",
+    };
+  }
+
+  return {
+    bg: "#f9f6f1",
+    panel: "#ffffff",
+    ink: "#1d1d1f",
+    muted: "#5c5c61",
+    accent: "#ee6b6e",
+    accentSoft: "rgba(238, 107, 110, 0.18)",
+    secondary: "#156082",
+    secondarySoft: "rgba(21, 96, 130, 0.16)",
+    highlight: "#e5b95f",
+  };
+}
+
+function drawPolygon(ctx, points, fillStyle) {
+  ctx.beginPath();
+  points.forEach(([x, y], index) => {
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.closePath();
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+}
+
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+
+  if (typeof ctx.roundRect === "function") {
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, safeRadius);
+    return;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(x + safeRadius, y);
+  ctx.lineTo(x + width - safeRadius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+  ctx.lineTo(x + width, y + height - safeRadius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+  ctx.lineTo(x + safeRadius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+  ctx.lineTo(x, y + safeRadius);
+  ctx.quadraticCurveTo(x, y, x + safeRadius, y);
+}
+
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
+  const paragraphs = String(text).split("\n");
+  let nextY = y;
+  let drawnLines = 0;
+
+  for (const paragraph of paragraphs) {
+    let line = "";
+    const chars = Array.from(paragraph);
+
+    for (const char of chars) {
+      const testLine = `${line}${char}`;
+      if (line && ctx.measureText(testLine).width > maxWidth) {
+        ctx.fillText(line, x, nextY);
+        nextY += lineHeight;
+        drawnLines += 1;
+        if (drawnLines >= maxLines) {
+          return nextY;
+        }
+        line = char.trimStart();
+      } else {
+        line = testLine;
+      }
+    }
+
+    if (line || chars.length === 0) {
+      ctx.fillText(line, x, nextY);
+      nextY += lineHeight;
+      drawnLines += 1;
+      if (drawnLines >= maxLines) {
+        return nextY;
+      }
+    }
+  }
+
+  return nextY;
+}
+
+function canvasToBlob(canvas, type = "image/png", quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("Story image export failed."));
+      }
+    }, type, quality);
+  });
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function drawStoryShareImage() {
+  const palette = getStorySharePalette();
+  const content = getCertificateContent();
+  const url = buildShareUrl();
+  const canvas = document.createElement("canvas");
+  canvas.width = STORY_IMAGE_WIDTH;
+  canvas.height = STORY_IMAGE_HEIGHT;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = palette.bg;
+  ctx.fillRect(0, 0, STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT);
+
+  drawPolygon(ctx, [[0, 0], [520, 0], [0, 620]], palette.accentSoft);
+  drawPolygon(ctx, [[STORY_IMAGE_WIDTH, 0], [STORY_IMAGE_WIDTH, 520], [640, 0]], palette.secondarySoft);
+  drawPolygon(ctx, [[0, STORY_IMAGE_HEIGHT], [420, STORY_IMAGE_HEIGHT], [0, 1430]], palette.secondarySoft);
+  drawPolygon(
+    ctx,
+    [[STORY_IMAGE_WIDTH, STORY_IMAGE_HEIGHT], [STORY_IMAGE_WIDTH, 1310], [620, STORY_IMAGE_HEIGHT]],
+    palette.accentSoft
+  );
+
+  ctx.strokeStyle = palette.accent;
+  ctx.globalAlpha = 0.2;
+  ctx.lineWidth = 4;
+  for (let x = -180; x < STORY_IMAGE_WIDTH + 240; x += 160) {
+    ctx.beginPath();
+    ctx.moveTo(x, 260);
+    ctx.lineTo(x + 340, 0);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  drawRoundedRect(ctx, 86, 360, 908, 940, 54);
+  ctx.fillStyle = palette.panel;
+  ctx.fill();
+  ctx.strokeStyle = palette.accentSoft;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  ctx.fillStyle = palette.highlight;
+  ctx.fillRect(86, 360, 908, 18);
+  ctx.fillStyle = palette.accent;
+  ctx.fillRect(86, 378, 908, 10);
+
+  ctx.fillStyle = palette.muted;
+  ctx.font = "700 34px Quicksand, 'Noto Sans JP', sans-serif";
+  ctx.letterSpacing = "0px";
+  ctx.fillText("SHINJUKU DOOH PROJECT", 146, 486);
+
+  ctx.fillStyle = palette.accent;
+  ctx.font = "700 54px 'Noto Sans JP', sans-serif";
+  drawWrappedText(ctx, content.label, 146, 590, 788, 68, 2);
+
+  ctx.fillStyle = palette.ink;
+  ctx.font = "700 96px Quicksand, 'Noto Sans JP', sans-serif";
+  const nameStartY = 780;
+  const nameEndY = drawWrappedText(ctx, content.name, 146, nameStartY, 788, 112, 3);
+
+  ctx.strokeStyle = palette.accentSoft;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(146, nameEndY + 44);
+  ctx.lineTo(934, nameEndY + 44);
+  ctx.stroke();
+
+  ctx.fillStyle = palette.muted;
+  ctx.font = "500 44px 'Noto Sans JP', sans-serif";
+  drawWrappedText(ctx, content.description, 146, nameEndY + 132, 788, 66, 5);
+
+  ctx.fillStyle = palette.accent;
+  ctx.font = "700 70px Quicksand, 'Noto Sans JP', sans-serif";
+  ctx.fillText(`+¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}`, 146, 1216);
+
+  ctx.fillStyle = palette.ink;
+  ctx.font = "700 58px 'Noto Sans JP', sans-serif";
+  drawWrappedText(ctx, "新宿にやさしい光を届けました", 112, 1460, 856, 74, 2);
+
+  ctx.fillStyle = palette.muted;
+  ctx.font = "500 34px Quicksand, 'Noto Sans JP', sans-serif";
+  drawWrappedText(ctx, new URL(url).host, 112, 1620, 856, 46, 2);
+
+  return canvas;
+}
+
+async function createInstagramStoryImageFile() {
+  const canvas = drawStoryShareImage();
+  const blob = await canvasToBlob(canvas, "image/png");
+  const filename = "shinjuku-dooh-story.png";
+
+  if (typeof File === "function") {
+    return new File([blob], filename, { type: "image/png" });
+  }
+
+  blob.name = filename;
+  return blob;
+}
+
+async function writeShareTextToClipboard() {
+  const text = `${buildShareText()} ${buildShareUrl()}`;
+  if (!navigator.clipboard?.writeText) {
+    return false;
+  }
+
+  await navigator.clipboard.writeText(text);
+  return true;
+}
+
+async function copyShareLink() {
   try {
-    if (!navigator.clipboard?.writeText) {
+    const didCopy = await writeShareTextToClipboard();
+    if (!didCopy) {
       throw new Error("Clipboard API is unavailable.");
     }
-    await navigator.clipboard.writeText(text);
     if (shareStatus) {
       shareStatus.textContent = "リンクをコピーしました。";
     }
   } catch {
     if (shareStatus) {
-      shareStatus.textContent = `コピーできませんでした。URL: ${url}`;
+      shareStatus.textContent = `コピーできませんでした。URL: ${buildShareUrl()}`;
     }
   }
 }
@@ -622,6 +903,52 @@ async function triggerWebShare() {
     }
   }
   await copyShareLink();
+}
+
+async function shareToInstagramStory() {
+  if (shareStatus) {
+    shareStatus.textContent = "Instagramストーリー用画像を作成しています。";
+  }
+
+  try {
+    const file = await createInstagramStoryImageFile();
+    const files = [file];
+    const shareData = {
+      files,
+      title: "Shinjuku DOOH Story",
+      text: "Instagramストーリー用の参加証画像です。",
+    };
+
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.share === "function" &&
+      (!navigator.canShare || navigator.canShare({ files }))
+    ) {
+      await navigator.share(shareData);
+      if (shareStatus) {
+        shareStatus.textContent = "共有先でInstagramのストーリーズを選択してください。";
+      }
+      return;
+    }
+
+    downloadBlob(file, file.name || "shinjuku-dooh-story.png");
+    try {
+      await writeShareTextToClipboard();
+    } catch {
+      /* 保存フォールバックが主目的なので、コピー失敗は表示しない。 */
+    }
+    if (shareStatus) {
+      shareStatus.textContent = "ストーリー用PNGを保存しました。Instagramで画像を選択してください。";
+    }
+  } catch (error) {
+    if (error && error.name === "AbortError") {
+      return;
+    }
+    console.warn("[share] Instagram story share failed:", error);
+    if (shareStatus) {
+      shareStatus.textContent = "Instagramストーリー用画像を作成できませんでした。";
+    }
+  }
 }
 
 function openShareWindow(url) {
@@ -890,25 +1217,20 @@ if (downloadBtn) {
   });
 }
 
-const shareBtn = document.getElementById("shareBtn");
-if (shareBtn) {
-  shareBtn.addEventListener("click", triggerWebShare);
-}
+const shareProviders = [
+  { buttonId: "shareBtn", handler: triggerWebShare },
+  { buttonId: "shareInstagramStoryBtn", handler: shareToInstagramStory },
+  { buttonId: "shareLineBtn", handler: shareToLine },
+  { buttonId: "shareXBtn", handler: shareToX },
+  { buttonId: "shareCopyBtn", handler: copyShareLink },
+];
 
-const shareLineBtn = document.getElementById("shareLineBtn");
-if (shareLineBtn) {
-  shareLineBtn.addEventListener("click", shareToLine);
-}
-
-const shareXBtn = document.getElementById("shareXBtn");
-if (shareXBtn) {
-  shareXBtn.addEventListener("click", shareToX);
-}
-
-const shareCopyBtn = document.getElementById("shareCopyBtn");
-if (shareCopyBtn) {
-  shareCopyBtn.addEventListener("click", copyShareLink);
-}
+shareProviders.forEach(({ buttonId, handler }) => {
+  const button = document.getElementById(buttonId);
+  if (button) {
+    button.addEventListener("click", handler);
+  }
+});
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && storyCardOverlay?.classList.contains("is-active")) {

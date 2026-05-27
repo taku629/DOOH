@@ -504,6 +504,15 @@ label {
   background: rgba(6, 199, 85, 0.08);
 }
 
+.ghost.share-instagram {
+  border-color: rgba(225, 48, 108, 0.42);
+  color: #c13584;
+}
+
+.ghost.share-instagram:hover {
+  background: rgba(225, 48, 108, 0.08);
+}
+
 .ghost.share-x {
   border-color: rgba(0, 0, 0, 0.32);
   color: #0f1419;
