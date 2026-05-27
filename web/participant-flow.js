@@ -140,6 +140,11 @@ function getDemoDonationTotal(count = participantCount) {
 }
 
 function buildMilestonePreview() {
+  // 点灯チャレンジ表示はスワイプ画面を圧迫して「上へスワイプ」が画面外に
+  // 落ちる原因になっていたため、現在は無効化している。
+  return null;
+
+  // eslint-disable-next-line no-unreachable
   if (!swipeStep) {
     return null;
   }
