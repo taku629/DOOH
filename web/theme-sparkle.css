@@ -283,7 +283,11 @@ html:not([data-theme="morning"]) .step {
 }
 
 html:not([data-theme="morning"]) .step[data-step="0"] {
-  padding: 20px;
+  padding: 14px 20px 12px;
+}
+
+html:not([data-theme="morning"]) .step[data-step="0"] .step-count {
+  margin-bottom: 4px;
 }
 
 html:not([data-theme="morning"]) .step-count {
@@ -303,8 +307,15 @@ html:not([data-theme="morning"]) h2 {
 }
 
 html:not([data-theme="morning"]) .step[data-step="0"] h2 {
-  margin-bottom: 8px;
-  font-size: clamp(1.56rem, 7vw, 2.08rem);
+  margin-bottom: 4px;
+  font-size: clamp(1.4rem, 5.8vw, 1.88rem);
+  line-height: 1.1;
+}
+
+html:not([data-theme="morning"]) .step[data-step="0"] > p:first-of-type {
+  margin-bottom: 4px;
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
 html:not([data-theme="morning"]) p,
@@ -387,9 +398,9 @@ html:not([data-theme="morning"]) .slider-wrap {
 }
 
 html:not([data-theme="morning"]) .step[data-step="0"] .slider-wrap {
-  min-height: clamp(176px, 29svh, 224px);
-  margin: 8px 0 6px;
-  padding: 18px 14px;
+  min-height: clamp(150px, 24svh, 210px);
+  margin: 4px 0 4px;
+  padding: 14px 14px;
 }
 
 html:not([data-theme="morning"]) .slider-wrap::before {
