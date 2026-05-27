@@ -140,11 +140,6 @@ function getDemoDonationTotal(count = participantCount) {
 }
 
 function buildMilestonePreview() {
-  // 点灯チャレンジ表示はスワイプ画面を圧迫して「上へスワイプ」が画面外に
-  // 落ちる原因になっていたため、現在は無効化している。
-  return null;
-
-  // eslint-disable-next-line no-unreachable
   if (!swipeStep) {
     return null;
   }
@@ -175,12 +170,11 @@ function buildMilestonePreview() {
 
   preview.append(kicker, primary, secondary, progress);
 
-  const donationPreview = swipeStep.querySelector(".donation-preview");
-  const swipeStage = swipeStep.querySelector(".swipe-stage");
-  if (donationPreview) {
-    donationPreview.after(preview);
-  } else if (swipeStage) {
-    swipeStage.before(preview);
+  // viewport の中(スワイプ画面)に入れるとスワイプ領域を圧迫するので、
+  // viewport の直下に置いて、スワイプ UI は無傷のままチャレンジ進捗を表示する。
+  const viewportEl = document.getElementById("viewport");
+  if (viewportEl && viewportEl.parentNode) {
+    viewportEl.after(preview);
   } else {
     swipeStep.append(preview);
   }
