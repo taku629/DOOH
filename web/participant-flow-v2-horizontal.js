@@ -1,4 +1,5 @@
 import { getParticipantCount, publishSwipeComplete } from "../src/firebase-bridge.js";
+import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
 
 const steps = [...document.querySelectorAll(".step")];
@@ -431,9 +432,12 @@ swipeSlider.addEventListener("input", (event) => {
     ? "発光を確定する"
     : "ネオンを100%にして確定";
 
+  triggerProgressHaptic(value);
+
   if (isComplete && !hasShownSwipeReadyEffect) {
     hasShownSwipeReadyEffect = true;
     swipeStep.classList.add("is-swipe-ready");
+    triggerCompletionHaptic();
     playCelebration();
     window.setTimeout(() => swipeStep.classList.remove("is-swipe-ready"), 950);
   }

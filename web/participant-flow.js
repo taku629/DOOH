@@ -1,5 +1,6 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
 import { getParticipantCount, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
+import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
@@ -257,9 +258,12 @@ function updateSwipeCharge(value) {
   swipeStep.classList.toggle("is-swipe-active", normalized > 0);
   swipeStep.classList.toggle("is-swipe-charged", isComplete);
 
+  triggerProgressHaptic(normalized);
+
   if (isComplete && !hasShownSwipeReadyEffect) {
     hasShownSwipeReadyEffect = true;
     swipeStep.classList.add("is-swipe-ready");
+    triggerCompletionHaptic();
     playCelebration();
     window.setTimeout(() => swipeStep.classList.remove("is-swipe-ready"), 950);
   }
