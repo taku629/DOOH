@@ -46,6 +46,10 @@
         "destination": "/web/participant-flow-women.html"
       },
       {
+        "source": "/participant-v1-women-orange",
+        "destination": "/web/participant-flow-women-orange.html"
+      },
+      {
         "source": "/participant-v1-men",
         "destination": "/web/participant-flow-men.html"
       },
