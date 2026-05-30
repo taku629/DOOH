@@ -16,9 +16,9 @@ const h = React.createElement;
 const DEMO_DONATION_YEN = 100;
 const PLAYLIST_PATH = "/config/playlist.json";
 const CHANNEL_OPTIONS = [
-  { id: "default", label: "v1" },
-  { id: "v2", label: "v2" },
-  { id: "morning", label: "v3" },
+  { id: "default", label: "Women" },
+  { id: "v2", label: "Men" },
+  { id: "morning", label: "Morning" },
 ];
 
 function clone(value) {
@@ -42,7 +42,7 @@ function formatDate(value) {
 }
 
 function getChannelLabel(channel) {
-  return CHANNEL_OPTIONS.find((option) => option.id === channel)?.label || "v1";
+  return CHANNEL_OPTIONS.find((option) => option.id === channel)?.label || "Women";
 }
 
 function normalizePlaylist(playlist = {}) {
