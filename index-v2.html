@@ -591,7 +591,7 @@
             <div class="qr-copy">
                 <strong>Demo Donate</strong>
                 <p>スマホでQRを読み取り、¥100デモ募金で新宿に灯りを戻す</p>
-                <small id="qrCaption">参加ページ: https://dooh-ca9c2.web.app/participant-v2</small>
+                <small id="qrCaption">参加ページ: https://dooh-ca9c2.web.app/participant-v1-men</small>
             </div>
         </aside>
 
@@ -617,7 +617,7 @@
         const placeholder = document.getElementById("qrPlaceholder");
         const caption = document.getElementById("qrCaption");
         const theme = resolveTheme({ defaultTheme: "night" });
-        const url = buildThemeUrl("/participant-v2", theme);
+        const url = buildThemeUrl("/participant-v1-men", theme);
         const qrColor = theme === "morning"
             ? { dark: "#1e3a8a", light: "#ffffff" }
             : { dark: "#0e0e0e", light: "#ffffff" };

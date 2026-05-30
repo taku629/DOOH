@@ -18,12 +18,14 @@
 公開 URL は Firebase Hosting に統一しています。
 
 - v1 DOOH 表示: `https://dooh-ca9c2.web.app/v1`
+- v1 QR 参加ページ: `https://dooh-ca9c2.web.app/participant-v1-women-orange`
 - v1 参加ページ: `https://dooh-ca9c2.web.app/participant-v1`
 - v1 女性向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-women`
 - v1 女性向け参加ページ（オレンジ復刻）: `https://dooh-ca9c2.web.app/participant-v1-women-orange`
 - v1 男性向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-men`
 - v1 みんな向け参加ページ: `https://dooh-ca9c2.web.app/participant-v1-all`
 - v2 DOOH 表示: `https://dooh-ca9c2.web.app/v2`
+- v2 QR 参加ページ: `https://dooh-ca9c2.web.app/participant-v1-men`
 - v2 参加ページ: `https://dooh-ca9c2.web.app/participant-v2`
 - v3 DOOH 表示: `https://dooh-ca9c2.web.app/v3` または `https://dooh-ca9c2.web.app/v1?theme=morning`
 - v3 参加ページ: `https://dooh-ca9c2.web.app/participant-v3` または `https://dooh-ca9c2.web.app/participant-v1?theme=morning`
@@ -53,7 +55,7 @@ Firebase 上に管理画面から公開した設定がある場合は、DOOH 表
 ### 2. スマートフォン参加フロー
 
 `web/participant-flow.html` は QR コードからアクセスする想定の参加ページです。
-v1 DOOH の QR は従来の `web/participant-flow.html` に遷移します。女性向けの参加UIは `web/participant-flow-women.html`、男性向けの参加UIは `web/participant-flow-men.html`、みんな向けの参加UIは `web/participant-flow-all.html` として別URLで公開します。
+v1 DOOH の QR は女性向けオレンジ復刻版の `web/participant-flow-women-orange.html`、v2 DOOH の QR は男性向けの `web/participant-flow-men.html` に遷移します。従来版は `web/participant-flow.html`、女性向け大理石版は `web/participant-flow-women.html`、みんな向けの参加UIは `web/participant-flow-all.html` として別URLで公開します。
 
 参加ステップは以下の 5 段階です。
 
@@ -394,8 +396,8 @@ Firebase Realtime Database の `participation/participantCount` が未作成な�
 
 ### 動作
 
-- DOOH 画面 (`index.html`) を開くと、参加ページの URL を埋め込んだ QR コードが自動生成されます
-- スマホでQRを読み取ると参加ページ (`web/participant-flow.html`) が開きます
+- DOOH 画面 (`index.html` / `index-v2.html`) を開くと、参加ページの URL を埋め込んだ QR コードが自動生成されます
+- スマホでQRを読み取ると、v1 は女性向けオレンジ復刻版、v2 は男性向け参加ページが開きます
 - 参加フローでスワイプを 100% まで進め、「¥100をデモ募金する」を押すと `participation` 配下の transaction で `participantCount` の +1 と `swipes/{eventId}` のイベント作成をまとめて実行します
 - 参加済みの端末では `localStorage` の `dooh:participant-flow:participated` を見て、同じブラウザからの再カウントを防ぎます
 - DOOH 画面は新しい `swipe-completed` イベントを Firebase の `onChildAdded` で受信し、累計デモ募金額を表示して「参加演出のテイクオーバー画面 + 参加動画」に切り替えます
