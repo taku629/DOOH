@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja" data-experience="sparkle">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>新宿ときめき参加体験</title>
+  <base href="/" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="apple-touch-icon" href="assets/favicon.svg" />
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.search);
+      const requestedTheme = params.get("theme");
+      const hour = new Date().getHours();
+      const isMorningPath = /(^|\/)(v3|participant-v3)$/.test(location.pathname);
+      if (isMorningPath || requestedTheme === "morning" || (requestedTheme === "auto" && hour >= 7 && hour <= 10)) {
+        document.documentElement.dataset.theme = "morning";
+      }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="web/theme.css" />
+  <link rel="stylesheet" href="web/participant-flow-orange.css" />
+  <link rel="stylesheet" href="web/theme-sparkle-orange.css" />
+  <link rel="stylesheet" href="web/theme-morning.css" />
+</head>
+<body>
+  <div class="sparkle-pattern" aria-hidden="true"></div>
+  <div class="sparkle-particles" aria-hidden="true">
+    <span>crop_square</span>
+    <span>change_history</span>
+    <span>hexagon</span>
+    <span>polyline</span>
+    <span>crop_square</span>
+    <span>change_history</span>
+    <span>hexagon</span>
+    <span>polyline</span>
+    <span>crop_square</span>
+    <span>change_history</span>
+    <span>hexagon</span>
+    <span>polyline</span>
+  </div>
+
+  <header class="sparkle-appbar" aria-label="新宿ときめき参加体験">
+    <div class="sparkle-brand">
+      <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
+      <strong>新宿ときめき参加</strong>
+    </div>
+  </header>
+
+  <main class="app" id="app">
+    <section class="app-hero" aria-labelledby="campaignTitle">
+      <p class="eyebrow">参加デモ</p>
+      <h1 id="campaignTitle">ときめきを<br><span class="no-break">新宿へ</span></h1>
+      <p class="lead">上にスワイプして、街にやさしい光を届けるデモ体験です。</p>
+      <figure class="hero-visual">
+        <img src="assets/test.png?v=20260520" alt="モノクロの新宿が参加によって明るく色づくビジュアル" />
+      </figure>
+    </section>
+
+    <header class="progress" aria-label="進行状況">
+      <span id="progressText" aria-live="polite">1 / 4 ・ デモ募金</span>
+      <div class="bar" role="progressbar" aria-valuemin="1" aria-valuenow="1" aria-describedby="progressText">
+        <div id="progressBar"></div>
+      </div>
+    </header>
+
+    <div class="viewport" id="viewport">
+      <div class="track" id="track">
+        <section class="step is-current" data-step="0" data-label="寄付" aria-labelledby="swipeTitle">
+          <span class="step-count">01</span>
+          <h2 id="swipeTitle">上にスワイプして寄付する</h2>
+          <p>画面を開いたら、ハートを下から上へ一気にスワイプしてください。¥100のデモ寄付が反映されます。</p>
+          <div class="donation-preview sparkle-total" aria-label="本日のデモ寄付">
+            <span>本日のデモ寄付</span>
+            <strong>¥100</strong>
+          </div>
+          <div class="swipe-stage sparkle-meter" aria-hidden="true">
+            <span class="spark spark-a"></span>
+            <span class="spark spark-b"></span>
+            <span class="spark spark-c"></span>
+            <span class="light-beam"></span>
+          </div>
+          <div class="slider-wrap" aria-hidden="true">
+            <span class="heart-core material-symbols-outlined">favorite</span>
+            <span class="heart-shine material-symbols-outlined">auto_awesome</span>
+          </div>
+          <p class="hint" id="swipeHint">この画面を上にスワイプしてください。</p>
+        </section>
+
+        <section class="step" data-step="1" data-label="完了" aria-labelledby="thanksTitle" aria-live="polite">
+          <span class="step-count">02</span>
+          <h2 id="thanksTitle">ありがとうございます！</h2>
+          <p>あなたの参加で、新宿にやさしい光が増えました。</p>
+          <div class="counter-box" id="counterBox">
+            <span>本日のデモ寄付</span>
+            <strong><span id="counterValue">100</span><span class="unit">円</span></strong>
+            <small>参加人数 <span id="counterParticipants">1</span>人</small>
+            <em>+¥100</em>
+          </div>
+          <button class="primary" type="button" data-next>参加証を受け取る</button>
+        </section>
+
+        <section class="step" data-step="2" data-label="名前" aria-labelledby="certificateTitle">
+          <span class="step-count">03</span>
+          <h2 id="certificateTitle">参加証に名前を残す</h2>
+          <label class="sparkle-field-label" for="nickname">表示名（任意）</label>
+          <div class="sparkle-name-field">
+            <span class="sparkle-name-tab">ここに入力</span>
+            <span class="material-symbols-outlined sparkle-name-icon" aria-hidden="true">edit</span>
+            <input id="nickname" type="text" maxlength="20" placeholder="例：さくら" autocomplete="nickname" aria-describedby="nicknameHelp" />
+          </div>
+          <p class="field-helper" id="nicknameHelp">入力すると参加証に反映されます。未入力でも進めます。</p>
+          <article class="card" id="certificatePreview" aria-live="polite">
+            <p>新宿ときめき参加証</p>
+            <h3 id="previewName">匿名サポーター</h3>
+          </article>
+          <div class="actions">
+            <button class="primary" type="button" id="createCard">この名前で作成</button>
+            <button class="ghost" type="button" id="skipName">名前なしで作成</button>
+          </div>
+        </section>
+
+        <section class="step" data-step="3" data-label="参加証" aria-labelledby="shareTitle">
+          <span class="step-count">04</span>
+          <h2 id="shareTitle">参加証が届きました。</h2>
+          <article class="card done" id="finalCard" aria-live="polite"></article>
+          <div class="actions stacked">
+            <button class="primary" type="button" id="shareBtn">シェアする</button>
+            <button class="ghost share-instagram" type="button" id="shareInstagramStoryBtn">Instagramストーリー</button>
+            <button class="ghost share-line" type="button" id="shareLineBtn">LINEで送る</button>
+            <button class="ghost share-x" type="button" id="shareXBtn">Xにポスト</button>
+            <button class="ghost" type="button" id="shareCopyBtn">リンクをコピー</button>
+          </div>
+          <p id="shareStatus" aria-live="polite"></p>
+        </section>
+      </div>
+    </div>
+
+    <p class="swipe-hint" id="swipeHintNav" aria-hidden="true">この画面を上にスワイプ</p>
+  </main>
+
+  <div class="story-card-overlay" id="storyCardOverlay" aria-hidden="true" data-no-swipe>
+    <article
+      class="story-card"
+      id="storyCard"
+      role="status"
+      aria-live="polite"
+      aria-labelledby="storyCardTitle"
+      aria-describedby="storyCardDescription"
+    >
+      <div class="story-film" id="storyFilm" aria-hidden="true" data-story="patrol">
+        <svg class="story-drawing story-drawing-patrol" viewBox="0 0 360 500" role="img" aria-labelledby="patrolSceneTitle patrolSceneDesc">
+          <title id="patrolSceneTitle">トー横周辺を見守る夜間パトロール</title>
+          <desc id="patrolSceneDesc">街灯の下で、民間警備員が若者や女性を見守りながら歩く手書き線画のアニメーションです。</desc>
+          <path class="drawing-wash lamp-wash" d="M132 112 C174 82 224 96 247 139 C282 203 248 328 179 360 C113 332 80 201 132 112Z" />
+          <path class="drawing-wash street-wash" d="M38 360 C98 337 262 337 323 360 L342 458 C257 482 107 482 20 458Z" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 0ms" d="M34 370 C92 350 268 350 326 370" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 25ms" d="M60 332 L60 218 L108 205 L108 332 M76 235 L92 231 M76 258 L92 255 M76 282 L92 280" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 55ms" d="M286 334 L286 232 L321 242 L321 334 M296 254 L311 258 M296 278 L311 282 M296 302 L311 305" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 85ms" d="M36 414 C92 397 270 397 326 414" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 120ms" d="M178 342 L178 153" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 150ms" d="M157 153 C172 139 193 139 207 153" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 180ms" d="M164 168 C174 180 192 180 202 168 L196 199 L170 199Z" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 210ms" d="M150 205 C171 214 198 214 219 205" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 260ms" d="M98 296 C98 285 106 278 116 279 C126 280 132 288 130 299" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 290ms" d="M114 300 C110 317 108 334 106 351" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 320ms" d="M111 320 C98 322 90 331 84 344" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 350ms" d="M112 351 C104 369 101 386 102 403" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 380ms" d="M116 351 C127 366 132 383 133 402" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 430ms" d="M231 229 C229 214 239 202 254 203 C268 205 275 219 270 232" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 460ms" d="M234 207 C246 194 265 195 276 208" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 490ms" d="M250 235 C243 259 239 282 238 306" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 520ms" d="M243 260 C225 266 215 279 207 296" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 550ms" d="M246 260 C264 266 278 278 288 294" />
+          <path class="drawing-line line-vest" pathLength="1" style="--draw-delay: 585ms" d="M238 244 L250 262 L264 244 M239 268 L261 268 M241 286 L256 286" />
+          <path class="drawing-line line-vest" pathLength="1" style="--draw-delay: 620ms" d="M252 270 C258 272 263 275 268 280" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 655ms" d="M238 306 C226 328 221 352 220 377" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 690ms" d="M244 306 C259 326 269 349 274 374" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 725ms" d="M289 292 C304 286 318 286 331 293" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 760ms" d="M286 292 L296 298" />
+          <path class="drawing-line line-beam" pathLength="1" style="--draw-delay: 800ms" d="M296 298 C318 294 335 301 349 316 M296 298 C319 307 333 321 341 340" />
+          <path class="drawing-line line-accent" pathLength="1" style="--draw-delay: 850ms" d="M204 297 C179 312 145 315 116 302" />
+          <path class="drawing-line line-heart" pathLength="1" style="--draw-delay: 900ms" d="M173 382 C166 374 151 377 151 390 C151 404 173 414 173 414 C173 414 195 404 195 390 C195 377 180 374 173 382Z" />
+        </svg>
+        <svg class="story-drawing story-drawing-graffiti" viewBox="0 0 360 500" role="img" aria-labelledby="graffitiSceneTitle graffitiSceneDesc">
+          <title id="graffitiSceneTitle">壁の落書きを消す清掃活動</title>
+          <desc id="graffitiSceneDesc">落書きのある壁をスタッフが消して、街角が明るく整っていく手書き線画のアニメーションです。</desc>
+          <path class="drawing-wash wall-wash" d="M48 128 H318 V344 C252 366 112 366 48 344Z" />
+          <path class="drawing-wash street-wash" d="M28 354 C88 334 274 334 336 354 L346 456 C262 482 100 482 18 456Z" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 0ms" d="M48 128 H318 V344 C252 366 112 366 48 344Z" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 35ms" d="M72 158 H294 M72 190 H294 M72 222 H294 M72 254 H294 M72 286 H294" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 70ms" d="M88 128 V342 M145 128 V352 M204 128 V352 M262 128 V342" />
+          <path class="drawing-line line-graffiti" pathLength="1" style="--draw-delay: 145ms" d="M93 238 C122 194 152 282 184 230 C206 196 235 243 260 212" />
+          <path class="drawing-line line-graffiti" pathLength="1" style="--draw-delay: 210ms" d="M105 268 C132 248 159 247 188 269 C213 288 248 285 273 260" />
+          <path class="drawing-line line-graffiti" pathLength="1" style="--draw-delay: 275ms" d="M132 210 L151 242 L171 204 M213 244 C218 215 246 214 251 241" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 360ms" d="M258 318 C257 302 268 290 283 291 C298 292 307 306 302 321" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 395ms" d="M280 323 C273 344 270 368 270 392" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 430ms" d="M273 350 C252 358 239 372 231 390" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 465ms" d="M276 350 C296 359 311 373 323 392" />
+          <path class="drawing-line line-vest" pathLength="1" style="--draw-delay: 500ms" d="M269 332 L281 352 L296 332 M271 361 L293 361" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 535ms" d="M270 392 C258 413 253 432 253 452" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 565ms" d="M280 392 C294 411 302 431 306 450" />
+          <path class="drawing-line line-clean" pathLength="1" style="--draw-delay: 650ms" d="M86 224 C132 207 185 207 242 222" />
+          <path class="drawing-line line-clean" pathLength="1" style="--draw-delay: 735ms" d="M82 252 C134 235 200 237 278 253" />
+          <path class="drawing-line line-clean" pathLength="1" style="--draw-delay: 820ms" d="M96 280 C146 263 206 265 262 280" />
+          <path class="drawing-line line-accent" pathLength="1" style="--draw-delay: 910ms" d="M94 334 C148 352 226 352 281 333" />
+          <path class="drawing-line line-sparkle" pathLength="1" style="--draw-delay: 965ms" d="M111 183 L111 160 M99 171 H123 M238 173 L238 153 M227 163 H249" />
+        </svg>
+        <svg class="story-drawing story-drawing-outreach" viewBox="0 0 360 500" role="img" aria-labelledby="outreachSceneTitle outreachSceneDesc">
+          <title id="outreachSceneTitle">NPOによる若者への声かけと支援</title>
+          <desc id="outreachSceneDesc">NPOの相談ブースで、スタッフが座っている若者に声をかけ、相談カードや支援キットを差し出す手書き線画のアニメーションです。</desc>
+          <path class="drawing-wash lamp-wash" d="M72 104 H292 L322 176 H42Z" />
+          <path class="drawing-wash wall-wash" d="M74 176 H292 V350 H74Z" />
+          <path class="drawing-wash street-wash" d="M30 356 C92 335 268 335 330 356 L342 458 C258 482 102 482 18 458Z" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 0ms" d="M72 104 H292 L322 176 H42Z" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 35ms" d="M78 176 H286 M92 176 V346 M270 176 V346" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 70ms" d="M88 250 H274 V338 H88Z" />
+          <path class="drawing-line line-soft" pathLength="1" style="--draw-delay: 105ms" d="M100 283 H262 M100 309 H262" />
+          <path class="drawing-line line-sign" pathLength="1" style="--draw-delay: 140ms" d="M124 204 H236 V238 H124Z" />
+          <text class="drawing-label" x="148" y="229" style="--draw-delay: 520ms">NPO</text>
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 190ms" d="M92 340 H154 M104 340 C100 360 97 379 96 398 M142 340 C151 358 156 377 160 398" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 225ms" d="M92 267 C88 249 100 236 116 238 C132 240 141 255 136 271" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 260ms" d="M112 273 C105 292 103 312 104 332" />
+          <path class="drawing-line line-care" pathLength="1" style="--draw-delay: 295ms" d="M101 293 C82 298 69 309 60 326 M106 292 C126 302 140 317 148 336" />
+          <path class="drawing-line line-care" pathLength="1" style="--draw-delay: 330ms" d="M96 309 C113 319 129 319 146 309" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 365ms" d="M108 332 C99 351 94 372 92 395 M118 332 C132 350 141 371 146 394" />
+
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 420ms" d="M225 238 C222 220 234 207 251 209 C268 211 276 227 271 243" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 455ms" d="M247 247 C239 268 236 289 238 310" />
+          <path class="drawing-line line-vest" pathLength="1" style="--draw-delay: 490ms" d="M236 258 L248 277 L264 258 M238 283 L260 283" />
+          <path class="drawing-line line-care" pathLength="1" style="--draw-delay: 545ms" d="M236 280 C211 285 195 297 183 315" />
+          <path class="drawing-line line-accent" pathLength="1" style="--draw-delay: 585ms" d="M183 315 L147 306" />
+          <path class="drawing-line" pathLength="1" style="--draw-delay: 625ms" d="M258 280 C277 288 291 301 301 318" />
+
+          <path class="drawing-line line-bubble" pathLength="1" style="--draw-delay: 705ms" d="M126 128 C154 110 219 111 244 132 C268 153 259 183 229 194 C204 203 166 200 144 186 L119 198 L130 177 C114 162 112 140 126 128Z" />
+          <path class="drawing-line line-bubble" pathLength="1" style="--draw-delay: 760ms" d="M149 151 H223 M149 171 H204" />
+          <path class="drawing-line line-care" pathLength="1" style="--draw-delay: 820ms" d="M190 327 H228 V354 H190Z M198 341 H220 M209 332 V350" />
+          <path class="drawing-line line-care" pathLength="1" style="--draw-delay: 875ms" d="M250 326 H287 V356 H250Z M259 336 H278 M259 346 H274" />
+          <path class="drawing-line line-heart" pathLength="1" style="--draw-delay: 935ms" d="M182 410 C175 402 161 405 161 417 C161 430 182 439 182 439 C182 439 203 430 203 417 C203 405 189 402 182 410Z" />
+          <path class="drawing-line line-sparkle" pathLength="1" style="--draw-delay: 990ms" d="M294 213 L294 189 M282 201 H306 M66 218 L66 198 M56 208 H76" />
+        </svg>
+      </div>
+      <div class="story-card-body">
+        <p class="story-card-kicker">1スワイプの行き先</p>
+        <h2 id="storyCardTitle">夜の歌舞伎町を安全に</h2>
+        <p id="storyCardDescription">あなたの1スワイプが、若者や女性を守る民間警備員の夜通しのパトロール支援に繋がりました。</p>
+      </div>
+    </article>
+  </div>
+
+  <div class="celebration" id="celebration" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <script type="module" src="web/participant-flow-women-orange.js"></script>
+</body>
+</html>
