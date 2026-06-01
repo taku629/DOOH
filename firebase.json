@@ -34,6 +34,10 @@
         "destination": "/index-v2.html"
       },
       {
+        "source": "/demo",
+        "destination": "/demo.html"
+      },
+      {
         "source": "/v3",
         "destination": "/index.html"
       },
