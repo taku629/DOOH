@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>新宿インク演出デモ</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700&family=Hanken+Grotesk:wght@400;600;700&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet" />
+    <style>
+        /* モノクロ大理石テーマ（theme-men.css / SHINJUKU GIVE に準拠） */
+        :root {
+            --ink: #151919;
+            --ink-strong: #050606;
+            --ink-2: #5c5f60;
+            --silver: #c8c8c8;
+            --line: rgba(21, 25, 25, 0.14);
+            --line-soft: rgba(21, 25, 25, 0.08);
+            --font-sans: "Hanken Grotesk", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+            --font-serif: "EB Garamond", "Noto Sans JP", serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            color: var(--ink);
+            font-family: var(--font-sans);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 大理石の壁（参加サイトと同じ床面） */
+        body {
+            background:
+                radial-gradient(ellipse at 16% 8%, rgba(255, 255, 255, 0.96) 0 12%, transparent 34%),
+                radial-gradient(ellipse at 82% 18%, rgba(230, 230, 230, 0.5) 0 14%, transparent 36%),
+                radial-gradient(ellipse at 42% 88%, rgba(190, 190, 190, 0.18) 0 14%, transparent 38%),
+                linear-gradient(118deg, transparent 0 29%, rgba(21, 21, 21, 0.052) 30%, transparent 33% 100%),
+                linear-gradient(128deg, transparent 0 47%, rgba(21, 21, 21, 0.12) 48%, rgba(21, 21, 21, 0.03) 49%, transparent 51% 100%),
+                linear-gradient(24deg, transparent 0 64%, rgba(48, 48, 48, 0.07) 65%, transparent 68% 100%),
+                #f8f8f8;
+        }
+
+        /* ステージ：画面全体が新宿の写真。黒地に飛沫を screen で累積リビール */
+        .stage {
+            position: fixed;
+            inset: 0;
+            background: #050606;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+            isolation: isolate;
+        }
+
+        .ink-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            /* 全画面いっぱいに新宿を表示 */
+            object-fit: cover;
+            opacity: 0;
+            /* 黒背景を透過させ、飛沫の明部だけを累積させる */
+            mix-blend-mode: screen;
+            will-change: transform, opacity, filter;
+            pointer-events: none;
+        }
+
+        .ink-layer.is-revealed { opacity: 1; }
+
+        /* 全点灯時に画面全体をふわっと持ち上げる（白〜銀のモノクロ光） */
+        .stage.is-complete::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.16), transparent 58%),
+                radial-gradient(circle at 50% 46%, rgba(200, 200, 200, 0.12), transparent 72%);
+            mix-blend-mode: screen;
+            animation: glowPulse 3.2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* ===== ロワーサード：上下のグラデーションで画像を覆わず文字を載せる ===== */
+        .scrim {
+            position: fixed;
+            left: 0;
+            right: 0;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .scrim-top {
+            top: 0;
+            height: 22vh;
+            background: linear-gradient(to bottom, rgba(5, 6, 6, 0.62), rgba(5, 6, 6, 0) 100%);
+        }
+
+        .scrim-bottom {
+            bottom: 0;
+            height: 42vh;
+            background: linear-gradient(to top, rgba(5, 6, 6, 0.9) 0%, rgba(5, 6, 6, 0.62) 26%, rgba(5, 6, 6, 0) 100%);
+        }
+
+        /* ブランド（左上） */
+        .brandbar {
+            position: fixed;
+            top: clamp(20px, 2.6vw, 44px);
+            left: clamp(22px, 2.8vw, 52px);
+            z-index: 5;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-serif);
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            font-size: clamp(1rem, 1.5vw, 1.5rem);
+            color: #fff;
+            text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+        }
+
+        .brandbar::before {
+            content: "";
+            width: 11px; height: 11px;
+            border-radius: 999px;
+            background: #fff;
+            box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.16), 0 0 16px rgba(255, 255, 255, 0.6);
+            animation: livePulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.7); opacity: 0.55; }
+        }
+
+        /* 操作ヒント／LIVE状態（ブランドの下） */
+        .hint {
+            position: fixed;
+            top: clamp(56px, 5.4vw, 96px);
+            left: clamp(22px, 2.8vw, 52px);
+            z-index: 5;
+            font-size: clamp(0.72rem, 1vw, 0.92rem);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: rgba(255, 255, 255, 0.72);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+            transition: opacity 400ms ease;
+            pointer-events: none;
+        }
+
+        /* 下部ドック：左＝参加カウント／右＝QR＋CTA */
+        .dock {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 5;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: clamp(24px, 4vw, 80px);
+            padding: clamp(24px, 3.4vw, 64px) clamp(26px, 3.4vw, 68px);
+            pointer-events: none;
+        }
+
+        .live { position: relative; min-width: 0; color: #fff; }
+
+        /* 参加した瞬間だけ一瞬出る「ありがとう」（常時表示しない・レイアウトを動かさない） */
+        .thanks {
+            position: absolute;
+            bottom: calc(100% + 4px);
+            left: 0;
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            font-family: var(--font-serif);
+            font-weight: 600;
+            font-size: clamp(1rem, 1.6vw, 1.5rem);
+            color: #fff;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .thanks::before {
+            content: "";
+            width: 8px; height: 8px;
+            border-radius: 999px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.75);
+        }
+
+        .live .value span.num { display: inline-block; }
+
+        .live .label {
+            display: block;
+            font-size: clamp(0.7rem, 1vw, 0.95rem);
+            font-weight: 700;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.74);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .live .value {
+            display: flex;
+            align-items: baseline;
+            gap: 0.18em;
+            margin: 2px 0 14px;
+            font-family: var(--font-serif);
+            font-weight: 600;
+            font-size: clamp(3rem, 8vw, 7rem);
+            line-height: 0.86;
+            letter-spacing: -0.01em;
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+            text-shadow: 0 6px 30px rgba(0, 0, 0, 0.55);
+        }
+
+        .live .value span.unit {
+            font-family: var(--font-sans);
+            font-size: 0.26em;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .progress-wrap { width: min(460px, 52vw); }
+
+        .progress-text {
+            margin: 0 0 10px;
+            font-family: var(--font-serif);
+            font-size: clamp(1.05rem, 2vw, 1.7rem);
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+        }
+
+        .progress-text.is-complete { color: #fff; }
+
+        .progress-bar {
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            overflow: hidden;
+        }
+
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #ffffff, #c8c8c8);
+            box-shadow: 0 0 14px rgba(255, 255, 255, 0.5);
+            transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ===== QR＋CTA（右下：視線の終着点・既存DOOHと同じ参加リンク） ===== */
+        .cta {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: clamp(14px, 1.4vw, 22px);
+            pointer-events: auto;
+        }
+
+        .cta-copy { text-align: right; color: #fff; }
+
+        .cta-copy strong {
+            display: block;
+            font-family: var(--font-serif);
+            font-weight: 600;
+            font-size: clamp(1.1rem, 1.8vw, 1.8rem);
+            line-height: 1.1;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+        }
+
+        .cta-copy small {
+            display: block;
+            margin-top: 8px;
+            font-size: clamp(0.74rem, 1vw, 0.95rem);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: rgba(255, 255, 255, 0.82);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .qr-code {
+            width: clamp(108px, 11vw, 156px);
+            padding: 10px;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+            line-height: 0;
+        }
+
+        /* 正方形のQRを等比表示。qrcodeライブラリが付ける inline style を !important で上書き */
+        .qr-code canvas, .qr-code img {
+            display: block;
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: 1;
+        }
+
+        /* 参加URLの控えめ表示（左下の下端） */
+        .url-note {
+            position: fixed;
+            left: clamp(26px, 3.4vw, 68px);
+            bottom: clamp(10px, 1.2vw, 18px);
+            z-index: 5;
+            font-size: clamp(0.6rem, 0.82vw, 0.76rem);
+            letter-spacing: 0.02em;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        /* 操作系（デモ用ツール）：右上 */
+        .tools {
+            position: fixed;
+            top: clamp(16px, 2.4vw, 36px);
+            right: clamp(16px, 2.4vw, 36px);
+            z-index: 6;
+            display: flex;
+            gap: 10px;
+        }
+
+        .tools button {
+            pointer-events: auto;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(21, 25, 25, 0.18);
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--ink);
+            font-family: var(--font-sans);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(21, 25, 25, 0.08);
+            transition: transform 120ms ease, border-color 160ms ease, background 160ms ease;
+        }
+
+        .tools button:hover { border-color: var(--ink); }
+        .tools button:active { transform: scale(0.94); }
+        .tools button.is-on {
+            border-color: var(--ink);
+            background: var(--ink);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <main class="stage" id="stage" aria-label="新宿インク演出デモ"></main>
+
+    <div class="scrim scrim-top" aria-hidden="true"></div>
+    <div class="scrim scrim-bottom" aria-hidden="true"></div>
+
+    <div class="brandbar">SHINJUKU DOOH</div>
+    <div class="hint" id="hint">画面クリック / スペースキー で参加者 +1</div>
+
+    <div class="dock">
+        <div class="live">
+            <p class="thanks" id="thanks" aria-hidden="true"></p>
+            <span class="label">参加者</span>
+            <span class="value"><span class="num" id="countNum">0</span><span class="unit">人</span></span>
+            <div class="progress-wrap">
+                <p class="progress-text" id="progressText">あと9人で新宿が点灯</p>
+                <div class="progress-bar"><span id="progressBar"></span></div>
+            </div>
+        </div>
+
+        <aside class="cta" aria-label="スマホ参加QR案内">
+            <div class="cta-copy">
+                <strong>スマホで参加</strong>
+                <small id="qrCaption">¥100デモ募金で新宿を点灯</small>
+            </div>
+            <div class="qr-code" id="qrCode" aria-hidden="true">QR</div>
+        </aside>
+    </div>
+
+    <div class="url-note" id="urlNote">https://dooh-ca9c2.web.app/participant-v1-men</div>
+
+    <div class="tools">
+        <button id="addBtn" type="button">＋ 1人参加</button>
+        <button id="autoBtn" type="button">▶ 自動</button>
+        <button id="resetBtn" type="button">↺ リセット</button>
+    </div>
+
+    <script>
+        const TOTAL = 9;
+        const stage = document.getElementById("stage");
+        const countNum = document.getElementById("countNum");
+        const progressText = document.getElementById("progressText");
+        const progressBar = document.getElementById("progressBar");
+        const hint = document.getElementById("hint");
+        const addBtn = document.getElementById("addBtn");
+        const autoBtn = document.getElementById("autoBtn");
+        const resetBtn = document.getElementById("resetBtn");
+
+        // 飛沫レイヤーを9枚生成（黒地は screen 合成で透過 → 明部だけ累積）
+        const layers = [];
+        for (let i = 1; i <= TOTAL; i++) {
+            const img = document.createElement("img");
+            img.className = "ink-layer";
+            img.src = `assets/ink/${String(i).padStart(2, "0")}.jpg`;
+            img.alt = "";
+            img.decoding = "async";
+            stage.appendChild(img);
+            layers.push(img);
+        }
+
+        let count = 0;          // 累計参加者
+        let revealed = 0;       // 既に出ている飛沫レイヤー数
+        let autoTimer = null;
+        let liveActive = false; // Firebaseの実カウントに連動中か
+
+        // インクが飛び散る「ポップ」アニメーション
+        function splat(el) {
+            el.animate(
+                [
+                    { transform: "scale(0.28) rotate(-7deg)", filter: "blur(14px)", opacity: 0, offset: 0 },
+                    { transform: "scale(1.12) rotate(2deg)", filter: "blur(1px)", opacity: 1, offset: 0.55 },
+                    { transform: "scale(0.97) rotate(-1deg)", filter: "blur(0px)", opacity: 1, offset: 0.78 },
+                    { transform: "scale(1) rotate(0deg)", filter: "blur(0px)", opacity: 1, offset: 1 },
+                ],
+                { duration: 720, easing: "cubic-bezier(0.18, 1.25, 0.32, 1)", fill: "both" }
+            );
+        }
+
+        function updateHud() {
+            countNum.textContent = count.toLocaleString("ja-JP");
+            const remaining = Math.max(0, TOTAL - revealed);
+            const done = revealed >= TOTAL;
+            progressBar.style.width = `${(revealed / TOTAL) * 100}%`;
+            progressText.classList.toggle("is-complete", done);
+            stage.classList.toggle("is-complete", done);
+            progressText.textContent = done
+                ? "新宿が点灯しました ✦"
+                : `あと${remaining}人で新宿が点灯`;
+        }
+
+        const thanks = document.getElementById("thanks");
+
+        // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
+        const AUTO_NAME_RE = /^サポーター#/;
+        const PLACEHOLDER_NAMES = new Set(["匿名サポーター", "匿名", "Guest", "参加者"]);
+
+        function isRealName(raw) {
+            return raw.length > 0 && !AUTO_NAME_RE.test(raw) && !PLACEHOLDER_NAMES.has(raw);
+        }
+
+        // 参加した瞬間だけ一瞬出して消す（常時表示しない）。実名のときだけ名前を出す
+        function showThanks(name) {
+            if (!thanks) return;
+            const raw = String(name ?? "").trim().slice(0, 24);
+            thanks.textContent = isRealName(raw)
+                ? `ありがとう、${raw}さん`
+                : "ご参加ありがとうございます";
+            thanks.getAnimations().forEach((a) => a.cancel());
+            thanks.animate(
+                [
+                    { opacity: 0, transform: "translateY(10px)" },
+                    { opacity: 1, transform: "translateY(0)", offset: 0.12 },
+                    { opacity: 1, transform: "translateY(0)", offset: 0.8 },
+                    { opacity: 0, transform: "translateY(-6px)" },
+                ],
+                { duration: 3200, easing: "ease" }
+            );
+        }
+
+        // カウントを軽く弾ませてライブ感を出す
+        function pulseCount() {
+            countNum.animate(
+                [
+                    { transform: "scale(1)" },
+                    { transform: "scale(1.16)", offset: 0.3 },
+                    { transform: "scale(1)" },
+                ],
+                { duration: 650, easing: "cubic-bezier(0.18, 1.2, 0.32, 1)" }
+            );
+        }
+
+        // 飛沫を1つ飛ばす（人数カウントとは独立）
+        function triggerSplat() {
+            if (revealed < TOTAL) {
+                // 次の飛沫を飛び散らせて新しい範囲を出す
+                const el = layers[revealed];
+                el.classList.add("is-revealed");
+                splat(el);
+                revealed += 1;
+                updateHud(); // 進捗バー/テキストを飛沫ごとに更新（ライブ連動の連続表示にも対応）
+            } else {
+                // 全点灯後も参加するたびに既存の飛沫を弾けさせて反応させる
+                splat(layers[Math.floor(Math.random() * TOTAL)]);
+            }
+        }
+
+        // 手動トリガー（オフラインデモ用）。Firebase連動中は無効。
+        function addParticipant() {
+            if (liveActive) return;
+            count += 1;
+            triggerSplat();
+            updateHud();
+            pulseCount();
+            showThanks("匿名サポーター");
+            if (hint && count === 1) hint.style.opacity = "0";
+        }
+
+        // 飛沫の出方を target 枚に合わせる（実カウントのリセット/巻き戻し対応）
+        function rebuildReveal(target) {
+            revealed = Math.max(0, Math.min(TOTAL, target));
+            layers.forEach((el, i) => {
+                el.getAnimations().forEach((a) => a.cancel());
+                el.classList.toggle("is-revealed", i < revealed);
+            });
+        }
+
+        // Firebaseの実カウントを反映：増えた分だけ飛沫を飛ばす
+        function applyLiveCount(next) {
+            const n = Math.max(0, Number(next) || 0);
+            const delta = n - count;
+            count = n;
+
+            if (delta > 0) {
+                const bursts = Math.min(delta, TOTAL);
+                for (let i = 0; i < bursts; i++) {
+                    setTimeout(triggerSplat, i * 200);
+                }
+                pulseCount(); // 名前は swipe イベント側で表示
+            } else if (delta < 0) {
+                rebuildReveal(n); // サーバ側でカウントがリセットされた場合
+            }
+
+            updateHud();
+        }
+
+        // 連動開始：手動ツールを隠して実カウント主導に切り替え
+        function activateLive() {
+            if (liveActive) return;
+            liveActive = true;
+            if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+            document.querySelector(".tools")?.style.setProperty("display", "none");
+            if (hint) {
+                hint.textContent = "● LIVE — スマホ参加に連動中";
+                hint.style.opacity = "1";
+            }
+        }
+
+        function reset() {
+            count = 0;
+            revealed = 0;
+            layers.forEach((el) => {
+                el.getAnimations().forEach((a) => a.cancel());
+                el.classList.remove("is-revealed");
+            });
+            if (hint) hint.style.opacity = "1";
+            updateHud();
+        }
+
+        function toggleAuto() {
+            if (autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = null;
+                autoBtn.classList.remove("is-on");
+                autoBtn.textContent = "▶ 自動";
+                return;
+            }
+            autoBtn.classList.add("is-on");
+            autoBtn.textContent = "⏸ 停止";
+            addParticipant();
+            autoTimer = setInterval(addParticipant, 1400);
+        }
+
+        // 操作：ステージのどこでも参加 +1
+        stage.addEventListener("click", addParticipant);
+
+        addBtn.addEventListener("click", (e) => { e.stopPropagation(); addParticipant(); });
+        autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
+        resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Space" || e.code === "Enter" || e.code === "ArrowRight") {
+                e.preventDefault();
+                addParticipant();
+            } else if (e.code === "KeyA") {
+                toggleAuto();
+            } else if (e.code === "KeyR") {
+                reset();
+            }
+        });
+
+        updateHud();
+
+        // Firebase連動スクリプト（module）から呼べるように公開
+        window.__inkDemo = { activateLive, applyLiveCount, showThanks };
+    </script>
+
+    <script type="module">
+        // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
+        import { subscribeToParticipantCount, subscribeToSwipeCompletes } from "./src/firebase-bridge.js";
+        import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
+
+        const theme = resolveTheme({ defaultTheme: "day" });
+        const channel = getChannelForTheme(theme, "default");
+
+        subscribeToParticipantCount((liveCount) => {
+            // 最初のスナップショットが届いた＝Firebase接続済み → 連動モードへ
+            window.__inkDemo?.activateLive();
+            window.__inkDemo?.applyLiveCount(liveCount);
+        }, { channel }).catch((error) => {
+            console.info("[demo] live sync disabled (offline/manual):", error);
+        });
+
+        // スワイプ完了イベント（名前入り）→ 一瞬の「ありがとう」表示に使う
+        subscribeToSwipeCompletes((event) => {
+            window.__inkDemo?.showThanks(event?.name);
+        }, { channel }).catch((error) => {
+            console.info("[demo] swipe feed disabled:", error);
+        });
+    </script>
+
+    <script type="module">
+        // モノクロ（白黒）参加ページのQRを表示
+        const PARTICIPANT_URL = "https://dooh-ca9c2.web.app/participant-v1-men";
+        const qrCode = document.getElementById("qrCode");
+        const urlNote = document.getElementById("urlNote");
+
+        if (urlNote) urlNote.textContent = PARTICIPANT_URL;
+
+        try {
+            const { default: QRCode } = await import("https://cdn.skypack.dev/qrcode@1.5.3");
+            const canvas = await QRCode.toCanvas(PARTICIPANT_URL, {
+                width: 160,
+                margin: 1,
+                errorCorrectionLevel: "M",
+                color: { dark: "#151919", light: "#ffffff" },
+            });
+            qrCode?.replaceChildren(canvas);
+        } catch (error) {
+            console.warn("QR generation failed:", error);
+        }
+    </script>
+</body>
+</html>
