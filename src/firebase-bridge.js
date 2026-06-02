@@ -6,6 +6,7 @@ const PARTICIPATION_PATH = "participation";
 const PARTICIPATION_V2_PATH = "participationV2";
 const PARTICIPATION_MORNING_PATH = "participationMorning";
 const DISPLAY_CONFIG_PATH = "displayConfig";
+const NAME_SHOUTS_PATH = "nameShouts";
 
 let configPromise;
 let firebaseSdkPromise;
@@ -40,6 +41,10 @@ function getSwipesPath(channel) {
 
 function getDisplayConfigPath(channel) {
     return `${DISPLAY_CONFIG_PATH}/${normalizeChannel(channel)}`;
+}
+
+function getNameShoutsPath(channel) {
+    return `${NAME_SHOUTS_PATH}/${normalizeChannel(channel)}`;
 }
 
 async function loadConfig() {
@@ -259,6 +264,75 @@ export async function subscribeToSwipeCompletes(callback, options = {}) {
 
         const data = snap.val();
         if (!data || data.type !== "swipe-completed") {
+            return;
+        }
+
+        callback({ id: snap.key, ...data });
+    });
+}
+
+// 参加カウントとは独立した「名前だけ」の通知（名前確定時に送る・カウントは増やさない）
+export async function publishNameAnnouncement(payload = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return { fallback: true };
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return { fallback: true };
+    }
+
+    const channel = normalizeChannel(payload.channel);
+    const rawName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : null;
+
+    try {
+        const ref = sdk.push(sdk.ref(database, getNameShoutsPath(channel)));
+        await sdk.set(ref, {
+            type: "name-announced",
+            createdAt: sdk.serverTimestamp(),
+            name: rawName || null,
+            source: payload.source ?? channel,
+        });
+        return { key: ref.key };
+    } catch (error) {
+        console.warn("[firebase] name announcement failed:", error);
+        return { fallback: true };
+    }
+}
+
+export async function subscribeToNameAnnouncements(callback, options = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return () => {};
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return () => {};
+    }
+
+    const channel = normalizeChannel(options.channel);
+    const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
+    const knownIds = new Set();
+
+    try {
+        const snapshot = await sdk.get(shoutsRef);
+        if (snapshot.exists()) {
+            snapshot.forEach((child) => {
+                knownIds.add(child.key);
+            });
+        }
+    } catch (error) {
+        console.warn("[firebase] initial name shouts fetch failed:", error);
+    }
+
+    return sdk.onChildAdded(shoutsRef, (snap) => {
+        if (knownIds.has(snap.key)) {
+            return;
+        }
+        knownIds.add(snap.key);
+
+        const data = snap.val();
+        if (!data || data.type !== "name-announced") {
             return;
         }
 
