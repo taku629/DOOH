@@ -420,6 +420,8 @@
 
     <script>
         const TOTAL = 9;
+        // ?dev で開くと、Firebase連動中でも手動ツールで動作確認できる（QR不要）
+        const DEV = new URLSearchParams(location.search).has("dev");
         const stage = document.getElementById("stage");
         const countNum = document.getElementById("countNum");
         const progressText = document.getElementById("progressText");
@@ -542,7 +544,7 @@
 
         // 手動トリガー（オフラインデモ用）。Firebase連動中は無効。
         function addParticipant() {
-            if (liveActive) return;
+            if (liveActive && !DEV) return;
             count += 1;
             triggerSplat();
             updateHud();
@@ -566,6 +568,8 @@
         function applyLiveCount(next) {
             const n = Math.max(0, Number(next) || 0);
             const delta = n - count;
+            // DEVモードでは手動操作中の表示を、低い/同値のライブ値で巻き戻さない
+            if (DEV && delta <= 0) return;
             count = n;
 
             if (delta > 0) {
@@ -585,10 +589,13 @@
         function activateLive() {
             if (liveActive) return;
             liveActive = true;
-            if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-            document.querySelector(".tools")?.style.setProperty("display", "none");
+            if (!DEV && autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+            // DEVモードでは手動ツールを隠さず、動作確認に使えるようにする
+            if (!DEV) document.querySelector(".tools")?.style.setProperty("display", "none");
             if (hint) {
-                hint.textContent = "● LIVE — スマホ参加に連動中";
+                hint.textContent = DEV
+                    ? "● LIVE（DEV：手動 / 📡本番+1 で確認）"
+                    : "● LIVE — スマホ参加に連動中";
                 hint.style.opacity = "1";
             }
         }
@@ -646,11 +653,26 @@
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { subscribeToParticipantCount, subscribeToNameAnnouncements } from "./src/firebase-bridge.js";
+        import { subscribeToParticipantCount, subscribeToNameAnnouncements, publishSwipeComplete } from "./src/firebase-bridge.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
         const theme = resolveTheme({ defaultTheme: "day" });
         const channel = getChannelForTheme(theme, "default");
+
+        // ?dev のときだけ「本番+1」ボタンを出す：QRと同じFirebaseイベントを1件送って連動確認できる
+        if (new URLSearchParams(location.search).has("dev")) {
+            const tools = document.querySelector(".tools");
+            const liveBtn = document.createElement("button");
+            liveBtn.type = "button";
+            liveBtn.textContent = "📡 本番+1";
+            liveBtn.title = "実際のQR参加と同じFirebaseイベントをDEV用に1件送る";
+            liveBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                publishSwipeComplete({ channel, source: "dev-demo", donationAmountYen: 100 })
+                    .catch((error) => console.warn("[demo] dev swipe failed:", error));
+            });
+            tools?.appendChild(liveBtn);
+        }
 
         subscribeToParticipantCount((liveCount) => {
             // 最初のスナップショットが届いた＝Firebase接続済み → 連動モードへ
