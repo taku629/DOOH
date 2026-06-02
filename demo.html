@@ -633,25 +633,47 @@
     </script>
 
     <script type="module">
-        // モノクロ（白黒）参加ページのQRを表示
-        const PARTICIPANT_URL = "https://dooh-ca9c2.web.app/participant-v1-men";
+        // 時間で参加ページのQRを切替：偶数時=男性 / 奇数時=女性
+        const MEN_URL = "https://dooh-ca9c2.web.app/participant-v1-men";
+        const WOMEN_URL = "https://dooh-ca9c2.web.app/participant-v1-women";
         const qrCode = document.getElementById("qrCode");
         const urlNote = document.getElementById("urlNote");
 
-        if (urlNote) urlNote.textContent = PARTICIPANT_URL;
+        const { default: QRCode } = await import("https://cdn.skypack.dev/qrcode@1.5.3");
 
-        try {
-            const { default: QRCode } = await import("https://cdn.skypack.dev/qrcode@1.5.3");
-            const canvas = await QRCode.toCanvas(PARTICIPANT_URL, {
-                width: 160,
-                margin: 1,
-                errorCorrectionLevel: "M",
-                color: { dark: "#151919", light: "#ffffff" },
-            });
-            qrCode?.replaceChildren(canvas);
-        } catch (error) {
-            console.warn("QR generation failed:", error);
+        function pickParticipantUrl(now = new Date()) {
+            return now.getHours() % 2 === 0 ? MEN_URL : WOMEN_URL;
         }
+
+        async function renderQr() {
+            const url = pickParticipantUrl();
+            if (urlNote) urlNote.textContent = url;
+            try {
+                const canvas = await QRCode.toCanvas(url, {
+                    width: 160,
+                    margin: 1,
+                    errorCorrectionLevel: "M",
+                    color: { dark: "#151919", light: "#ffffff" },
+                });
+                qrCode?.replaceChildren(canvas);
+            } catch (error) {
+                console.warn("QR generation failed:", error);
+            }
+        }
+
+        function scheduleNextHourly() {
+            const now = new Date();
+            const next = new Date(now);
+            next.setHours(now.getHours() + 1, 0, 0, 50);
+            const delay = next.getTime() - now.getTime();
+            setTimeout(async () => {
+                await renderQr();
+                scheduleNextHourly();
+            }, delay);
+        }
+
+        await renderQr();
+        scheduleNextHourly();
     </script>
 </body>
 </html>

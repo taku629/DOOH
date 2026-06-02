@@ -1219,7 +1219,6 @@ if (downloadBtn) {
 
 const shareProviders = [
   { buttonId: "shareBtn", handler: triggerWebShare },
-  { buttonId: "shareInstagramStoryBtn", handler: shareToInstagramStory },
   { buttonId: "shareLineBtn", handler: shareToLine },
   { buttonId: "shareXBtn", handler: shareToX },
   { buttonId: "shareCopyBtn", handler: copyShareLink },
