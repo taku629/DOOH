@@ -55,6 +55,17 @@
             isolation: isolate;
         }
 
+        /* 待機画面：いま入れた新宿の写真をそのまま全画面表示 */
+        .base-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            pointer-events: none;
+        }
+
         .ink-layer {
             position: absolute;
             inset: 0;
@@ -62,6 +73,7 @@
             height: 100%;
             /* 全画面いっぱいに新宿を表示 */
             object-fit: cover;
+            z-index: 1;
             opacity: 0;
             /* 黒背景を透過させ、飛沫の明部だけを累積させる */
             mix-blend-mode: screen;
@@ -362,7 +374,9 @@
     </style>
 </head>
 <body>
-    <main class="stage" id="stage" aria-label="新宿インク演出デモ"></main>
+    <main class="stage" id="stage" aria-label="新宿インク演出デモ">
+        <img class="base-layer" src="assets/ink/Shinjuku_06_0-00-00-00_1.jpg" alt="" decoding="async" />
+    </main>
 
     <div class="scrim scrim-top" aria-hidden="true"></div>
     <div class="scrim scrim-bottom" aria-hidden="true"></div>
@@ -447,7 +461,7 @@
             progressText.classList.toggle("is-complete", done);
             stage.classList.toggle("is-complete", done);
             progressText.textContent = done
-                ? "新宿が点灯しました ✦"
+                ? "新宿きれいになりました ✦"
                 : `あと${remaining}人で新宿が点灯`;
         }
 
