@@ -609,7 +609,7 @@
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { subscribeToParticipantCount, subscribeToSwipeCompletes } from "./src/firebase-bridge.js";
+        import { subscribeToParticipantCount, subscribeToNameAnnouncements } from "./src/firebase-bridge.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
         const theme = resolveTheme({ defaultTheme: "day" });
@@ -617,17 +617,18 @@
 
         subscribeToParticipantCount((liveCount) => {
             // 最初のスナップショットが届いた＝Firebase接続済み → 連動モードへ
+            // カウント＋インクはスワイプ時に即反応
             window.__inkDemo?.activateLive();
             window.__inkDemo?.applyLiveCount(liveCount);
         }, { channel }).catch((error) => {
             console.info("[demo] live sync disabled (offline/manual):", error);
         });
 
-        // スワイプ完了イベント（名前入り）→ 一瞬の「ありがとう」表示に使う
-        subscribeToSwipeCompletes((event) => {
+        // 名前確定イベント → そのタイミングで「ありがとう」を表示（実名のときだけ名前入り）
+        subscribeToNameAnnouncements((event) => {
             window.__inkDemo?.showThanks(event?.name);
         }, { channel }).catch((error) => {
-            console.info("[demo] swipe feed disabled:", error);
+            console.info("[demo] name feed disabled:", error);
         });
     </script>
 
