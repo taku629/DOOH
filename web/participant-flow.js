@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getParticipantCount, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
+import { getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
@@ -484,6 +484,29 @@ function finalizeCard() {
   isFinalCardBuilt = false;
   buildFinalCard();
   nextStep();
+}
+
+// 名前確定時に「実名だけ」をDOOHへ通知（カウントは増やさない）。一度だけ送る。
+let hasAnnouncedName = false;
+function announceParticipantName(useTypedName) {
+  if (hasAnnouncedName) {
+    return;
+  }
+  hasAnnouncedName = true;
+
+  const typed = nickname.value.trim();
+  const name = useTypedName && typed && !isInappropriateName(typed) ? typed : null;
+
+  const payload = { name, channel: PARTICIPATION_CHANNEL };
+  if (isAllExperience) {
+    payload.source = "participant-flow-all";
+  } else if (isMenExperience) {
+    payload.source = "participant-flow-men";
+  } else if (isSparkleExperience) {
+    payload.source = "participant-flow-women";
+  }
+
+  publishNameAnnouncement(payload).catch(() => {});
 }
 
 async function registerParticipation() {
@@ -1246,8 +1269,14 @@ nickname.addEventListener("input", () => {
   previewName.textContent = getDisplayName();
 });
 
-document.getElementById("createCard").addEventListener("click", finalizeCard);
-document.getElementById("skipName").addEventListener("click", finalizeCard);
+document.getElementById("createCard").addEventListener("click", () => {
+  announceParticipantName(true);
+  finalizeCard();
+});
+document.getElementById("skipName").addEventListener("click", () => {
+  announceParticipantName(false);
+  finalizeCard();
+});
 
 const downloadBtn = document.getElementById("downloadBtn");
 if (downloadBtn) {
