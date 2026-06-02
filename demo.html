@@ -83,6 +83,12 @@
 
         .ink-layer.is-revealed { opacity: 1; }
 
+        /* 仕上げの一枚：飛沫ではなく完成版の新宿をくっきり最前面に重ねる */
+        .final-layer {
+            z-index: 2;
+            mix-blend-mode: normal;
+        }
+
         /* 全点灯時に画面全体をふわっと持ち上げる（白〜銀のモノクロ光） */
         .stage.is-complete::after {
             content: "";
@@ -435,6 +441,14 @@
             layers.push(img);
         }
 
+        // 9枚が出揃った最後に重ねる仕上げの一枚
+        const finalLayer = document.createElement("img");
+        finalLayer.className = "ink-layer final-layer";
+        finalLayer.src = "assets/ink/Shinjuku_11.png";
+        finalLayer.alt = "";
+        finalLayer.decoding = "async";
+        stage.appendChild(finalLayer);
+
         let count = 0;          // 累計参加者
         let revealed = 0;       // 既に出ている飛沫レイヤー数
         let autoTimer = null;
@@ -514,6 +528,11 @@
                 el.classList.add("is-revealed");
                 splat(el);
                 revealed += 1;
+                if (revealed >= TOTAL) {
+                    // 9枚出揃ったら仕上げの一枚を重ねる
+                    finalLayer.classList.add("is-revealed");
+                    splat(finalLayer);
+                }
                 updateHud(); // 進捗バー/テキストを飛沫ごとに更新（ライブ連動の連続表示にも対応）
             } else {
                 // 全点灯後も参加するたびに既存の飛沫を弾けさせて反応させる
@@ -539,6 +558,8 @@
                 el.getAnimations().forEach((a) => a.cancel());
                 el.classList.toggle("is-revealed", i < revealed);
             });
+            finalLayer.getAnimations().forEach((a) => a.cancel());
+            finalLayer.classList.toggle("is-revealed", revealed >= TOTAL);
         }
 
         // Firebaseの実カウントを反映：増えた分だけ飛沫を飛ばす
@@ -579,6 +600,8 @@
                 el.getAnimations().forEach((a) => a.cancel());
                 el.classList.remove("is-revealed");
             });
+            finalLayer.getAnimations().forEach((a) => a.cancel());
+            finalLayer.classList.remove("is-revealed");
             if (hint) hint.style.opacity = "1";
             updateHud();
         }
