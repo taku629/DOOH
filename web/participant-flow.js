@@ -160,11 +160,11 @@ function buildMilestonePreview() {
 
   const primary = document.createElement("strong");
   primary.dataset.milestonePrimary = "";
-  primary.textContent = "あと50人で新宿が点灯";
+  primary.textContent = "あと9人で新宿が点灯";
 
   const secondary = document.createElement("small");
   secondary.dataset.milestoneSecondary = "";
-  secondary.textContent = "現在 0人 / 50人で点灯";
+  secondary.textContent = "現在 0人 / 9人で点灯";
 
   const progress = document.createElement("div");
   progress.className = "milestone-progress";

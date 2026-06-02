@@ -4,8 +4,8 @@
   "participationReturnSeconds": 8,
   "donationMilestones": [
     {
-      "name": "total-5000",
-      "thresholdYen": 5000,
+      "name": "total-900",
+      "thresholdYen": 900,
       "video": "videos/milestone-5000.mp4"
     }
   ],
