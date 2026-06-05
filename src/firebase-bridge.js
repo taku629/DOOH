@@ -1,5 +1,4 @@
 import { publishParticipationEvent } from "./participation-bridge.js";
-import { buildParticipationTransactionValue } from "./participation-transaction.mjs";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
 const PARTICIPATION_PATH = "participation";
@@ -10,8 +9,10 @@ const NAME_SHOUTS_PATH = "nameShouts";
 
 let configPromise;
 let firebaseSdkPromise;
+let firebaseFunctionsSdkPromise;
 let appPromise;
 let databasePromise;
+let functionsPromise;
 
 function normalizeChannel(channel = "default") {
     return channel === "v2" || channel === "morning" ? channel : "default";
@@ -92,6 +93,20 @@ async function loadFirebaseSdk() {
     return firebaseSdkPromise;
 }
 
+async function loadFirebaseFunctionsSdk() {
+    if (firebaseFunctionsSdkPromise) {
+        return firebaseFunctionsSdkPromise;
+    }
+
+    firebaseFunctionsSdkPromise = import("https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js")
+        .catch((error) => {
+            console.warn("[firebase] Functions SDK load failed; local fallback enabled:", error);
+            return null;
+        });
+
+    return firebaseFunctionsSdkPromise;
+}
+
 async function ensureApp() {
     if (appPromise) {
         return appPromise;
@@ -137,6 +152,32 @@ async function ensureDatabase() {
     return databasePromise;
 }
 
+async function ensureFunctions() {
+    if (functionsPromise) {
+        return functionsPromise;
+    }
+
+    functionsPromise = (async () => {
+        const app = await ensureApp();
+        if (!app) {
+            return null;
+        }
+
+        const functionsSdk = await loadFirebaseFunctionsSdk();
+        if (!functionsSdk) {
+            return null;
+        }
+
+        return functionsSdk.getFunctions(app, "asia-southeast1");
+    })();
+
+    return functionsPromise;
+}
+
+function createClientEventId() {
+    return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+}
+
 function publishLocalSwipeComplete(payload = {}) {
     const channel = normalizeChannel(payload.channel);
     const event = publishParticipationEvent({
@@ -155,47 +196,36 @@ function publishLocalSwipeComplete(payload = {}) {
 }
 
 export async function publishSwipeComplete(payload = {}) {
-    const database = await ensureDatabase();
-    if (!database) {
-        return publishLocalSwipeComplete(payload);
-    }
-    const sdk = await loadFirebaseSdk();
-    if (!sdk) {
+    const channel = normalizeChannel(payload.channel);
+    const functions = await ensureFunctions();
+
+    if (!functions) {
         return publishLocalSwipeComplete(payload);
     }
 
-    const channel = normalizeChannel(payload.channel);
+    const functionsSdk = await loadFirebaseFunctionsSdk();
+    if (!functionsSdk) {
+        return publishLocalSwipeComplete(payload);
+    }
 
     try {
-        const eventRef = sdk.push(sdk.ref(database, getSwipesPath(channel)));
-        if (!eventRef.key) {
-            throw new Error("Swipe event key could not be generated.");
-        }
-        const event = {
-            key: eventRef.key,
-            createdAt: sdk.serverTimestamp(),
+        const submitSwipeComplete = functionsSdk.httpsCallable(functions, "submitSwipeComplete");
+        const result = await submitSwipeComplete({
+            channel,
             source: payload.source ?? channel,
             name: payload.name ?? null,
-            donationAmountYen: Number(payload.donationAmountYen) || null,
-            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-        };
-
-        const participationRef = sdk.ref(database, getParticipationPath(channel));
-        const result = await sdk.runTransaction(participationRef, (currentValue) => {
-            return buildParticipationTransactionValue(currentValue, event);
+            donationAmountYen: Number(payload.donationAmountYen) || 100,
+            clientEventId: payload.clientEventId || createClientEventId(),
+            returnCount: false,
         });
-        if (!result.committed) {
-            throw new Error("Participation transaction was not committed.");
-        }
-        const committedData = result.snapshot.val() || {};
-        const participantCount = Number(committedData.participantCount) || 0;
-
+        const eventId = result.data?.eventId || null;
         return {
-            count: participantCount,
-            eventRef,
+            count: Number(result.data?.count) || null,
+            duplicate: Boolean(result.data?.duplicate),
+            eventRef: eventId ? { key: eventId } : null,
         };
     } catch (error) {
-        console.warn("[firebase] swipe publish failed; local fallback enabled:", error);
+        console.warn("[functions] swipe publish failed; local fallback enabled:", error);
         return publishLocalSwipeComplete(payload);
     }
 }

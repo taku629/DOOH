@@ -3,48 +3,63 @@
     ".read": false,
     ".write": false,
     "participation": {
-      ".read": true,
-      ".write": "auth != null || (newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1))",
+      ".write": false,
       "participantCount": {
-        ".validate": "newData.isNumber() && newData.val() >= 0"
+        ".read": true,
+        ".write": false
       },
       "swipes": {
-        "$eventId": {
-          ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
-        }
+        ".read": true,
+        ".write": false,
+        ".indexOn": ["createdAt"]
       },
-      "$other": {
-        ".validate": false
+      "counterShards": {
+        ".read": false,
+        ".write": false
+      },
+      "eventIds": {
+        ".read": false,
+        ".write": false
       }
     },
     "participationV2": {
-      ".read": true,
-      ".write": "auth != null || (newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1))",
+      ".write": false,
       "participantCount": {
-        ".validate": "newData.isNumber() && newData.val() >= 0"
+        ".read": true,
+        ".write": false
       },
       "swipes": {
-        "$eventId": {
-          ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
-        }
+        ".read": true,
+        ".write": false,
+        ".indexOn": ["createdAt"]
       },
-      "$other": {
-        ".validate": false
+      "counterShards": {
+        ".read": false,
+        ".write": false
+      },
+      "eventIds": {
+        ".read": false,
+        ".write": false
       }
     },
     "participationMorning": {
-      ".read": true,
-      ".write": "auth != null || (newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1))",
+      ".write": false,
       "participantCount": {
-        ".validate": "newData.isNumber() && newData.val() >= 0"
+        ".read": true,
+        ".write": false
       },
       "swipes": {
-        "$eventId": {
-          ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
-        }
+        ".read": true,
+        ".write": false,
+        ".indexOn": ["createdAt"]
       },
-      "$other": {
-        ".validate": false
+      "counterShards": {
+        ".read": false,
+        ".write": false
+      },
+      "eventIds": {
+        ".read": false,
+        ".write": false
       }
     },
     "nameShouts": {
@@ -61,8 +76,8 @@
     },
     "displayConfig": {
       "$channel": {
-        ".read": true,
-        ".write": "auth != null && ($channel === 'default' || $channel === 'v2' || $channel === 'morning')"
+        ".read": "$channel === 'default' || $channel === 'v2' || $channel === 'morning'",
+        ".write": false
       }
     }
   }
