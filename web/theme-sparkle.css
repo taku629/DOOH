@@ -1214,6 +1214,22 @@ html[data-experience="sparkle"]:not([data-theme="morning"]) .card h3 {
   font-weight: 600;
 }
 
+html[data-experience="sparkle"]:not([data-theme="morning"]) #certificatePreview {
+  min-height: 148px;
+  padding: 28px 26px;
+}
+
+html[data-experience="sparkle"]:not([data-theme="morning"]) #certificatePreview p {
+  margin-bottom: 14px;
+  line-height: 1.3;
+}
+
+html[data-experience="sparkle"]:not([data-theme="morning"]) #certificatePreview h3 {
+  margin: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 html[data-experience="sparkle"]:not([data-theme="morning"]) .story-card-overlay {
   background: rgba(21, 25, 25, 0.28);
 }
