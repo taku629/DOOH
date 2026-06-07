@@ -352,6 +352,8 @@ html[data-experience="men"]:not([data-theme="morning"]) .card {
   color: var(--ink);
   border-color: rgba(21, 25, 25, 0.18);
   border-radius: 8px;
+  /* 装飾枠(::before)が inset:14px なので、本文も全方向そろえて枠内で均等に見せる */
+  padding: 26px;
   background:
     linear-gradient(110deg, transparent 0 43%, rgba(21, 25, 25, 0.045) 44%, transparent 45% 100%),
     rgba(255, 255, 255, 0.82);
