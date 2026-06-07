@@ -528,9 +528,9 @@ function getCertificateContent() {
     : isAllExperience
       ? "新宿みんなのアクション証"
     : isMenExperience
-      ? "SHINJUKU GIVE CERTIFICATE"
+      ? "CERTIFICATE OF SUPPORT"
     : isSparkleExperience
-      ? "SHINJUKU GIVE CERTIFICATE"
+      ? "CERTIFICATE OF SUPPORT"
       : "SHINJUKU COLOR SUPPORTER";
 
   const description = activeTheme === "morning"
@@ -1423,9 +1423,14 @@ document.querySelectorAll("[data-next]").forEach((button) => {
   button.addEventListener("click", nextStep);
 });
 
-nickname.addEventListener("input", () => {
+// 表示名を参加証プレビューへ即時反映。日本語IMEの変換中(composition)でも更新されるよう
+// input だけでなく composition 系イベントも拾う（一部の端末は input が確定まで走らないため）。
+const syncPreviewName = () => {
   previewName.textContent = getDisplayName();
-});
+};
+nickname.addEventListener("input", syncPreviewName);
+nickname.addEventListener("compositionupdate", syncPreviewName);
+nickname.addEventListener("compositionend", syncPreviewName);
 
 document.getElementById("createCard").addEventListener("click", () => {
   announceParticipantName(true);
