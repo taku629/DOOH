@@ -366,8 +366,9 @@
             aspect-ratio: 1;
         }
 
-        /* 参加URLの控えめ表示（左下の下端） */
+        /* QR遷移先の確認用。通常表示では隠し、?dev のときだけ表示する。 */
         .url-note {
+            display: none;
             position: fixed;
             left: clamp(26px, 3.4vw, 68px);
             bottom: clamp(10px, 1.2vw, 18px);
@@ -376,6 +377,10 @@
             letter-spacing: 0.02em;
             color: rgba(255, 255, 255, 0.5);
             pointer-events: none;
+        }
+
+        .url-note.is-dev-visible {
+            display: block;
         }
 
         /* 操作系（デモ用ツール）：右上 */
@@ -470,6 +475,9 @@
         const addBtn = document.getElementById("addBtn");
         const autoBtn = document.getElementById("autoBtn");
         const resetBtn = document.getElementById("resetBtn");
+        const urlNote = document.getElementById("urlNote");
+
+        urlNote?.classList.toggle("is-dev-visible", DEV);
 
         // 飛沫レイヤーを9枚生成（黒地は screen 合成で透過 → 明部だけ累積）
         const layers = [];
