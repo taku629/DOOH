@@ -27,8 +27,11 @@
   <link rel="stylesheet" href="web/theme-sparkle.css" />
   <link rel="stylesheet" href="web/theme-men.css" />
   <link rel="stylesheet" href="web/theme-morning.css" />
+  <link rel="stylesheet" href="web/outro.css" />
 </head>
-<body>
+<body
+  data-post-flow-form="https://forms.gle/xYiJasuYBkR6YnF78"
+  data-post-flow-delay="5000">
   <div class="sparkle-pattern" aria-hidden="true"></div>
   <div class="sparkle-particles" aria-hidden="true">
     <span>diamond</span>
@@ -260,6 +263,27 @@
 
   <div class="celebration" id="celebration" aria-hidden="true">
     <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="outro-overlay" id="outroOverlay" aria-hidden="true" data-no-swipe>
+    <div class="outro-card" id="outroCard">
+      <div class="outro-scene">
+        <span class="outro-ring r1"></span>
+        <span class="outro-ring r2"></span>
+        <span class="material-symbols-outlined outro-glyph" id="outroGlyph">shield</span>
+      </div>
+      <div class="outro-body">
+        <p class="outro-kicker">1スワイプの行き先</p>
+        <h2 class="outro-title" id="outroTitle"></h2>
+        <p class="outro-desc" id="outroDesc"></p>
+      </div>
+      <div class="outro-cta">
+        <p class="outro-note">ご参加ありがとうございました。<br />この後、アンケートにご協力ください。</p>
+        <button type="button" class="outro-btn" id="outroAnswerBtn">今すぐ答える</button>
+        <p class="outro-auto">まもなく自動で移動します…</p>
+      </div>
+      <div class="outro-timer"><i></i></div>
+    </div>
   </div>
 
   <script type="module" src="web/participant-flow.js"></script>

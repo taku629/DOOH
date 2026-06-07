@@ -25,6 +25,27 @@ const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
 const swipeStep = steps[0];
 
+// 体験アウトロ（サンクス＋アンケート予告）。men / women のみ存在。
+const outroOverlay = document.getElementById("outroOverlay");
+const outroCard = document.getElementById("outroCard");
+const outroGlyph = document.getElementById("outroGlyph");
+const outroTitle = document.getElementById("outroTitle");
+const outroDesc = document.getElementById("outroDesc");
+const outroAnswerBtn = document.getElementById("outroAnswerBtn");
+const outroTimerFill = outroOverlay?.querySelector(".outro-timer i");
+const OUTRO_SCENES = [
+  { glyph: "shield", title: "夜の歌舞伎町を安全に", desc: "あなたの1スワイプが、夜通しの見回りパトロールを支えます。" },
+  { glyph: "cleaning_services", title: "街の落書きを消す", desc: "荒れた壁を消し、街角を明るく整える清掃活動に届きます。" },
+  { glyph: "volunteer_activism", title: "若者に手を差し伸べる", desc: "NPOの声かけと相談支援に、そっと加わります。" },
+];
+let outroStarted = false;
+let outroSceneTimer = null;
+let swipeCardShown = false;
+let swipeCardDone = false;
+
+// チーム比較用トグル：?thanks=svg で旧・手描き線画ストーリーカード、未指定なら新カード（thanks-proto風）
+const thanksStyle = new URLSearchParams(location.search).get("thanks");
+
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
 const activeTheme = resolveTheme({ defaultTheme: "day" });
@@ -307,6 +328,12 @@ function showStep(index) {
   app.classList.toggle("is-post-participation", index >= 1);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
 
+  // 体験の最終ステップ（参加証/シェア）に到達したら、アンケートフォームへ自動遷移する。
+  // 遷移は body[data-post-flow-form] が設定されたフロー（Men/Women）でのみ有効。
+  if (index === totalSteps - 1) {
+    scheduleFormRedirect();
+  }
+
   if (index === 1 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
@@ -315,6 +342,133 @@ function showStep(index) {
     }
     window.setTimeout(() => animateCounter(getDemoDonationTotal()), delay);
   }
+}
+
+// ===== 体験終了後のアンケートフォーム遷移 =====
+// body に data-post-flow-form="<URL>"（任意で data-post-flow-delay="<ms>"）がある場合のみ、
+// 最終ステップ到達から指定秒後にフォームへ遷移する。属性が無いフローでは何もしない。
+let formRedirectTimer = null;
+
+function scheduleFormRedirect() {
+  if (formRedirectTimer || outroStarted) {
+    return;
+  }
+  const formUrl = (document.body?.dataset?.postFlowForm || "").trim();
+  if (!formUrl) {
+    return; // URL未設定（対象外フロー）→ 遷移しない
+  }
+
+  // 最後はシンプルに「アンケート予告＋今すぐ答えるボタン」を出して遷移（thanks-proto カードはスワイプ直後で出す）。
+  // オーバーレイが無いフローでは控えめな予告のあと自動遷移する。
+  if (outroOverlay && outroCard) {
+    startSurveyOutro(formUrl);
+    return;
+  }
+
+  const delay = Number(document.body?.dataset?.postFlowDelay) || 5000;
+  if (shareStatus) {
+    shareStatus.textContent = "まもなくアンケートに移動します…";
+    shareStatus.classList.remove("is-error", "is-success");
+    shareStatus.classList.add("is-visible", "is-info");
+  }
+  formRedirectTimer = window.setTimeout(() => {
+    window.location.href = formUrl;
+  }, delay);
+}
+
+function redirectToForm(formUrl) {
+  window.clearTimeout(formRedirectTimer);
+  window.clearTimeout(outroSceneTimer);
+  window.location.href = formUrl;
+}
+
+// thanks-proto 風カードの共通開閉
+function openOutro(mode) {
+  outroOverlay.classList.remove("mode-story", "mode-survey");
+  outroOverlay.classList.add(mode === "survey" ? "mode-survey" : "mode-story");
+  outroOverlay.setAttribute("aria-hidden", "false");
+  outroOverlay.classList.add("is-active");
+}
+function closeOutro() {
+  window.clearTimeout(outroSceneTimer);
+  outroOverlay.classList.remove("is-active");
+  outroOverlay.setAttribute("aria-hidden", "true");
+  outroCard.classList.remove("is-playing");
+}
+
+function playOutroScene(index) {
+  const scene = OUTRO_SCENES[index];
+  if (!scene) {
+    return;
+  }
+  outroCard.classList.remove("is-playing");
+  if (outroGlyph) outroGlyph.textContent = scene.glyph;
+  if (outroTitle) outroTitle.textContent = scene.title;
+  if (outroDesc) outroDesc.textContent = scene.desc;
+  void outroCard.offsetWidth; // リフロー強制でアニメ再start
+  outroCard.classList.add("is-playing");
+}
+
+// 【スワイプ直後】thanks-proto のカードを1つだけ出す（3つからランダムに1シーン）。
+// 表示後に完了ステップへ自動進行。タップでも早送り可能。従来のランダム線画ストーリーの置き換え。
+function showSwipeStoryCard() {
+  // スワイプ中に何度も呼ばれてもカードは一度きり（ランダム1シーンに固定）。
+  if (swipeCardShown || swipeCardDone) {
+    return true;
+  }
+  swipeCardShown = true;
+  const holdMs = Number(document.body?.dataset?.swipeSceneMs) || 2600;
+  openOutro("story");
+  const idx = Math.floor(Math.random() * OUTRO_SCENES.length);
+  playOutroScene(idx);
+  window.clearTimeout(outroSceneTimer);
+  outroSceneTimer = window.setTimeout(advanceAfterSwipeCard, holdMs);
+  outroOverlay.addEventListener("click", advanceAfterSwipeCard, { once: true });
+  return true;
+}
+
+function advanceAfterSwipeCard() {
+  if (swipeCardDone) {
+    return;
+  }
+  swipeCardDone = true;
+  closeOutro();
+  if (currentStep === 0 && hasCountedParticipation) {
+    nextStep();
+  }
+}
+
+// 【体験の最後】シンプルな感謝＋アンケート予告＋ボタンを出して、数秒で自動遷移。
+function startSurveyOutro(formUrl) {
+  if (outroStarted) {
+    return;
+  }
+  outroStarted = true;
+
+  const lead = Number(document.body?.dataset?.postFlowLead) || 1800;
+  const autoMs = Number(document.body?.dataset?.postFlowDelay) || 5000;
+
+  if (outroAnswerBtn) {
+    outroAnswerBtn.addEventListener("click", () => redirectToForm(formUrl), { once: true });
+  }
+
+  window.setTimeout(() => {
+    if (outroGlyph) outroGlyph.textContent = "favorite";
+    if (outroTitle) outroTitle.textContent = "ありがとうございました";
+    if (outroDesc) outroDesc.textContent = "あなたの参加が、新宿に光を重ねました。";
+    openOutro("survey");
+    void outroCard.offsetWidth;
+    outroCard.classList.add("is-playing");
+
+    if (outroTimerFill && !prefersReducedMotion) {
+      outroTimerFill.style.transition = `transform ${autoMs}ms linear`;
+      requestAnimationFrame(() => {
+        outroTimerFill.style.transform = "scaleX(1)";
+      });
+    }
+
+    formRedirectTimer = window.setTimeout(() => redirectToForm(formUrl), autoMs);
+  }, lead);
 }
 
 function animateCounter(target) {
@@ -451,6 +605,10 @@ function scheduleStoryCardDismiss() {
 }
 
 function showStoryThanksCard() {
+  // men / women：スワイプ直後は thanks-proto のカードを出す（?thanks=svg のときは旧・手描き線画にする）。
+  if (thanksStyle !== "svg" && outroOverlay && outroCard) {
+    return showSwipeStoryCard();
+  }
   if (!shouldUseStoryThanksCard) {
     return false;
   }
