@@ -457,6 +457,8 @@
 
     <div class="tools">
         <button id="addBtn" type="button">＋ 1人参加</button>
+        <button id="completeBtn" type="button" hidden>達成まで進める</button>
+        <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -464,7 +466,10 @@
     <script>
         const TOTAL = 9;
         // ?dev で開くと、Firebase連動中でも手動ツールで動作確認できる（QR不要）
-        const DEV = new URLSearchParams(location.search).has("dev");
+        const params = new URLSearchParams(location.search);
+        const DEV = params.has("dev");
+        const DEMO_MODE = params.has("demo");
+        const MANUAL_MODE = DEV || DEMO_MODE;
         const stage = document.getElementById("stage");
         const countNum = document.getElementById("countNum");
         const progressText = document.getElementById("progressText");
@@ -475,9 +480,15 @@
         const addBtn = document.getElementById("addBtn");
         const autoBtn = document.getElementById("autoBtn");
         const resetBtn = document.getElementById("resetBtn");
+        const completeBtn = document.getElementById("completeBtn");
+        const skipSceneBtn = document.getElementById("skipSceneBtn");
         const urlNote = document.getElementById("urlNote");
 
         urlNote?.classList.toggle("is-dev-visible", DEV);
+        if (DEMO_MODE) {
+            completeBtn.hidden = false;
+            skipSceneBtn.hidden = false;
+        }
 
         // 飛沫レイヤーを9枚生成（黒地は screen 合成で透過 → 明部だけ累積）
         const layers = [];
@@ -517,7 +528,7 @@
         let celebrationStartedAt = 0;
         let activeChallengeNumber = 0;
         let liveCountInitialized = false;
-        const SCENE_TIME_SCALE = new URLSearchParams(location.search).has("fast") ? 0.1 : 1;
+        const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = 20_000 * SCENE_TIME_SCALE;
         const WARM_SCENE_MS = 60_000 * SCENE_TIME_SCALE;
 
@@ -619,6 +630,25 @@
             warmTimer = setTimeout(finishCelebration, CLEAN_SCENE_MS + WARM_SCENE_MS);
         }
 
+        function skipScene() {
+            if (!celebrationActive) {
+                return;
+            }
+
+            const elapsed = Date.now() - celebrationStartedAt;
+            if (elapsed < CLEAN_SCENE_MS) {
+                clearCelebrationTimers();
+                celebrationStartedAt = Date.now() - CLEAN_SCENE_MS;
+                warmLayer.classList.add("is-revealed");
+                updateHud();
+                startCountdownTimer();
+                warmTimer = setTimeout(finishCelebration, WARM_SCENE_MS);
+                return;
+            }
+
+            finishCelebration();
+        }
+
         const thanks = document.getElementById("thanks");
 
         // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
@@ -681,13 +711,27 @@
 
         // 手動トリガー（オフラインデモ用）。Firebase連動中は無効。
         function addParticipant() {
-            if (liveActive && !DEV) return;
+            if (liveActive && !MANUAL_MODE) return;
             count += 1;
             triggerSplat();
             updateHud();
             pulseCount();
             showThanks("匿名サポーター");
             if (hint && count === 1) hint.style.opacity = "0";
+        }
+
+        function completeCurrentChallenge() {
+            if (celebrationActive) {
+                return;
+            }
+
+            const remaining = Math.max(1, TOTAL - revealed);
+            count += remaining;
+            for (let i = 0; i < remaining; i += 1) {
+                triggerSplat();
+            }
+            updateHud();
+            pulseCount();
         }
 
         // 飛沫の出方を target 枚に合わせる（実カウントのリセット/巻き戻し対応）
@@ -706,7 +750,7 @@
             const n = Math.max(0, Number(next) || 0);
             const delta = n - count;
             // DEVモードでは手動操作中の表示を、低い/同値のライブ値で巻き戻さない
-            if (DEV && delta <= 0) return;
+            if (MANUAL_MODE && delta <= 0) return;
 
             // 初回同期は過去の参加を再演せず、累計人数から現在の回と進捗を直接復元する。
             if (!liveCountInitialized) {
@@ -795,6 +839,8 @@
         stage.addEventListener("click", addParticipant);
 
         addBtn.addEventListener("click", (e) => { e.stopPropagation(); addParticipant(); });
+        completeBtn.addEventListener("click", (e) => { e.stopPropagation(); completeCurrentChallenge(); });
+        skipSceneBtn.addEventListener("click", (e) => { e.stopPropagation(); skipScene(); });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
 
@@ -812,7 +858,7 @@
         updateHud();
 
         // Firebase連動スクリプト（module）から呼べるように公開
-        window.__inkDemo = { activateLive, applyLiveCount, showThanks };
+        window.__inkDemo = { activateLive, applyLiveCount, showThanks, skipScene, completeCurrentChallenge };
     </script>
 
     <script type="module">
@@ -823,8 +869,12 @@
         const theme = resolveTheme({ defaultTheme: "day" });
         const channel = getChannelForTheme(theme, "default");
 
+        const searchParams = new URLSearchParams(location.search);
+        const isDevMode = searchParams.has("dev");
+        const isDemoMode = searchParams.has("demo");
+
         // ?dev のときだけ「本番+1」ボタンを出す：QRと同じFirebaseイベントを1件送って連動確認できる
-        if (new URLSearchParams(location.search).has("dev")) {
+        if (isDevMode) {
             const tools = document.querySelector(".tools");
             const liveBtn = document.createElement("button");
             liveBtn.type = "button";
@@ -838,21 +888,23 @@
             tools?.appendChild(liveBtn);
         }
 
-        subscribeToParticipantCount((liveCount) => {
-            // 最初のスナップショットが届いた＝Firebase接続済み → 連動モードへ
-            // カウント＋インクはスワイプ時に即反応
-            window.__inkDemo?.activateLive();
-            window.__inkDemo?.applyLiveCount(liveCount);
-        }, { channel }).catch((error) => {
-            console.info("[demo] live sync disabled (offline/manual):", error);
-        });
+        if (!isDemoMode) {
+            subscribeToParticipantCount((liveCount) => {
+                // 最初のスナップショットが届いた＝Firebase接続済み → 連動モードへ
+                // カウント＋インクはスワイプ時に即反応
+                window.__inkDemo?.activateLive();
+                window.__inkDemo?.applyLiveCount(liveCount);
+            }, { channel }).catch((error) => {
+                console.info("[demo] live sync disabled (offline/manual):", error);
+            });
 
-        // 名前確定イベント → そのタイミングで「ありがとう」を表示（実名のときだけ名前入り）
-        subscribeToNameAnnouncements((event) => {
-            window.__inkDemo?.showThanks(event?.name);
-        }, { channel }).catch((error) => {
-            console.info("[demo] name feed disabled:", error);
-        });
+            // 名前確定イベント → そのタイミングで「ありがとう」を表示（実名のときだけ名前入り）
+            subscribeToNameAnnouncements((event) => {
+                window.__inkDemo?.showThanks(event?.name);
+            }, { channel }).catch((error) => {
+                console.info("[demo] name feed disabled (offline/manual):", error);
+            });
+        }
     </script>
 
     <script type="module">
