@@ -515,6 +515,8 @@
         let countdownTimer = null;
         let celebrationActive = false;
         let celebrationStartedAt = 0;
+        let activeChallengeNumber = 0;
+        let liveCountInitialized = false;
         const SCENE_TIME_SCALE = new URLSearchParams(location.search).has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = 20_000 * SCENE_TIME_SCALE;
         const WARM_SCENE_MS = 60_000 * SCENE_TIME_SCALE;
@@ -538,7 +540,7 @@
             const done = revealed >= TOTAL || celebrationActive;
             if (challengeLabel) {
                 const challengeNumber = celebrationActive
-                    ? Math.max(1, Math.ceil(count / TOTAL))
+                    ? activeChallengeNumber
                     : Math.floor(count / TOTAL) + 1;
                 challengeLabel.textContent = `第${challengeNumber}回 点灯チャレンジ`;
             }
@@ -564,7 +566,7 @@
                 ? CLEAN_SCENE_MS + WARM_SCENE_MS - elapsed
                 : CLEAN_SCENE_MS - elapsed;
             const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-            const nextChallenge = Math.max(2, Math.ceil(count / TOTAL) + 1);
+            const nextChallenge = activeChallengeNumber + 1;
 
             transitionCountdown.textContent = isWarmScene
                 ? `第${nextChallenge}回チャレンジへ あと${remainingSeconds}秒`
@@ -591,6 +593,7 @@
             clearCelebrationTimers();
             celebrationActive = false;
             celebrationStartedAt = 0;
+            activeChallengeNumber = 0;
             warmLayer.classList.remove("is-revealed");
             finalLayer.classList.remove("is-revealed");
             rebuildReveal(count % TOTAL);
@@ -601,6 +604,7 @@
             clearCelebrationTimers();
             celebrationActive = true;
             celebrationStartedAt = Date.now();
+            activeChallengeNumber = Math.max(1, Math.floor((count - revealed) / TOTAL) + 1);
             finalLayer.classList.add("is-revealed");
             splat(finalLayer);
             updateHud();
@@ -703,6 +707,22 @@
             const delta = n - count;
             // DEVモードでは手動操作中の表示を、低い/同値のライブ値で巻き戻さない
             if (DEV && delta <= 0) return;
+
+            // 初回同期は過去の参加を再演せず、累計人数から現在の回と進捗を直接復元する。
+            if (!liveCountInitialized) {
+                liveCountInitialized = true;
+                count = n;
+                clearCelebrationTimers();
+                celebrationActive = false;
+                celebrationStartedAt = 0;
+                activeChallengeNumber = 0;
+                warmLayer.classList.remove("is-revealed");
+                finalLayer.classList.remove("is-revealed");
+                rebuildReveal(n % TOTAL);
+                updateHud();
+                return;
+            }
+
             count = n;
 
             if (delta > 0) {
@@ -715,6 +735,7 @@
                 clearCelebrationTimers();
                 celebrationActive = false;
                 celebrationStartedAt = 0;
+                activeChallengeNumber = 0;
                 warmLayer.classList.remove("is-revealed");
                 rebuildReveal(n % TOTAL); // サーバ側でカウントがリセットされた場合
             }
@@ -743,6 +764,8 @@
             clearCelebrationTimers();
             celebrationActive = false;
             celebrationStartedAt = 0;
+            activeChallengeNumber = 0;
+            liveCountInitialized = false;
             layers.forEach((el) => {
                 el.getAnimations().forEach((a) => a.cancel());
                 el.classList.remove("is-revealed");
