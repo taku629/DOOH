@@ -835,6 +835,8 @@ input[type="text"]:focus {
   margin-top: 16px;
   padding: 24px 22px;
   border-radius: var(--radius-lg);
+  /* flex(縦)で縮められて説明文がはみ出す(枠外/見切れ)のを防ぐ。内容に合わせて伸ばす */
+  flex-shrink: 0;
   color: #fff;
   background: linear-gradient(140deg, #1d1d1f 0%, #2c2c2e 55%, #3a3a3c 100%);
   box-shadow:
