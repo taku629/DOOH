@@ -536,8 +536,8 @@
         let activeChallengeNumber = 0;
         let liveCountInitialized = false;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
-        const CLEAN_SCENE_MS = 20_000 * SCENE_TIME_SCALE;
-        const WARM_SCENE_MS = 60_000 * SCENE_TIME_SCALE;
+        const CLEAN_SCENE_MS = (DEMO_MODE ? 8_000 : 20_000) * SCENE_TIME_SCALE;
+        const WARM_SCENE_MS = (DEMO_MODE ? 12_000 : 60_000) * SCENE_TIME_SCALE;
 
         // インクが飛び散る「ポップ」アニメーション
         function splat(el) {
