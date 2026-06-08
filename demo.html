@@ -445,7 +445,7 @@
             <span class="value"><span class="num" id="countNum">0</span><span class="unit">人</span></span>
             <div class="progress-wrap">
                 <span class="challenge-label" id="challengeLabel">第1回 点灯チャレンジ</span>
-                <p class="progress-text" id="progressText">あと9人で新宿が点灯</p>
+                <p class="progress-text" id="progressText">あと9人で取り組みが見えてくる</p>
                 <p class="transition-countdown" id="transitionCountdown" aria-live="polite"></p>
                 <div class="progress-bar"><span id="progressBar"></span></div>
             </div>
@@ -454,7 +454,7 @@
         <aside class="cta" aria-label="スマホ参加QR案内">
             <div class="cta-copy">
                 <strong>スマホで参加</strong>
-                <small id="qrCaption">¥100デモ募金で新宿を点灯</small>
+                <small id="qrCaption">参加アクションで取り組みを可視化</small>
             </div>
             <div class="qr-code" id="qrCode" aria-hidden="true">QR</div>
         </aside>
@@ -566,10 +566,10 @@
             progressText.classList.toggle("is-complete", done);
             stage.classList.toggle("is-complete", done);
             progressText.textContent = warmLayer.classList.contains("is-revealed")
-                ? "みんなの参加で、新宿に温かい光が灯りました"
+                ? "みんなの関心が、新宿への応援として重なりました"
                 : done
-                ? "新宿がきれいになりました"
-                : `あと${remaining}人で新宿が点灯`;
+                ? "新宿で続く取り組みが見えてきました"
+                : `あと${remaining}人で取り組みが見えてくる`;
         }
 
         function updateTransitionCountdown() {
@@ -588,7 +588,7 @@
 
             transitionCountdown.textContent = isWarmScene
                 ? `第${nextChallenge}回チャレンジへ あと${remainingSeconds}秒`
-                : `温かな新宿へ あと${remainingSeconds}秒`;
+                : `応援の光へ あと${remainingSeconds}秒`;
         }
 
         function startCountdownTimer() {

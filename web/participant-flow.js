@@ -34,9 +34,9 @@ const outroDesc = document.getElementById("outroDesc");
 const outroAnswerBtn = document.getElementById("outroAnswerBtn");
 const outroTimerFill = outroOverlay?.querySelector(".outro-timer i");
 const OUTRO_SCENES = [
-  { glyph: "shield", title: "夜の歌舞伎町を安全に", desc: "あなたの1スワイプが、夜通しの見回りパトロールを支えます。" },
-  { glyph: "cleaning_services", title: "街の落書きを消す", desc: "荒れた壁を消し、街角を明るく整える清掃活動に届きます。" },
-  { glyph: "volunteer_activism", title: "若者に手を差し伸べる", desc: "NPOの声かけと相談支援に、そっと加わります。" },
+  { glyph: "shield", title: "夜の歌舞伎町を見守る取り組み", desc: "新宿で続く夜間パトロールを知るきっかけになります。" },
+  { glyph: "cleaning_services", title: "街の環境を整える取り組み", desc: "落書き消去など、街の環境を整える活動を知るきっかけになります。" },
+  { glyph: "volunteer_activism", title: "若者を支える取り組み", desc: "NPOによる声かけや相談支援を知るきっかけになります。" },
 ];
 let outroStarted = false;
 let outroSceneTimer = null;
@@ -69,20 +69,20 @@ const isStoryExperience = isSparkleExperience || isMenExperience || isAllExperie
 const THANKS_STORIES = [
   {
     id: "patrol",
-    title: "夜の歌舞伎町を安全に",
-    description: "あなたの1スワイプが、若者や女性を守る民間警備員の夜通しのパトロール支援に繋がりました。",
-    descriptionMen: "あなたの1スワイプが、若者や街の安全を守る民間警備員の夜通しのパトロール支援に繋がりました。",
-    descriptionAll: "あなたの1スワイプが、若者や来街者を見守る民間警備員の夜通しのパトロール支援に繋がりました。",
+    title: "夜の歌舞伎町を見守る取り組み",
+    description: "新宿で続く夜間パトロールを知り、応援する意思を示しました。",
+    descriptionMen: "新宿で続く夜間パトロールを知り、応援する意思を示しました。",
+    descriptionAll: "新宿で続く夜間パトロールを知り、応援する意思を示しました。",
   },
   {
     id: "graffiti",
     title: "壁の落書き消去",
-    description: "あなたの1スワイプが、壁の落書きを消して街を明るく保つ活動に繋がり、体感治安の向上を支えました。",
+    description: "落書き消去など、街の環境を整える活動を知り、応援する意思を示しました。",
   },
   {
     id: "outreach",
     title: "NPOによる声かけ・支援",
-    description: "あなたの1スワイプが、夜の街で困っている若者へ声をかけ、必要な支援につなぐNPO活動を支えました。",
+    description: "若者を支えるNPOの活動を知り、応援する意思を示しました。",
   },
 ];
 const storyCardOverlay = document.getElementById("storyCardOverlay");
@@ -534,14 +534,14 @@ function getCertificateContent() {
       : "SHINJUKU COLOR SUPPORTER";
 
   const description = activeTheme === "morning"
-    ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金が、朝の新宿に小さな余白をつくりました。`
+    ? `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、朝の新宿を応援する意思を示すデモ表示です。`
     : isAllExperience
-      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、誰もが過ごしやすい新宿を支えるアクションに加わりました。`
+      ? `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、誰もが過ごしやすい新宿を応援する意思を示すデモ表示です。`
     : isMenExperience
-      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、新宿に静かな光を重ねました。`
+      ? `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、新宿を応援する意思を示すデモ表示です。`
     : isSparkleExperience
-      ? `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ寄付が、新宿に静かな光を重ねました。`
-      : `あなたの¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}デモ募金で街に色が広がっています。`;
+      ? `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、新宿を応援する意思を示すデモ表示です。`
+      : `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、新宿を応援する意思を示すデモ表示です。`;
 
   return { label, name, description };
 }
@@ -736,7 +736,7 @@ async function completeSwipeCharge() {
   isAutoCompletingSwipe = true;
   updateSwipeCharge(100);
   if (swipeHint) {
-    swipeHint.textContent = "デモ募金を反映しています。";
+    swipeHint.textContent = "応援アクションを反映しています。";
   }
 
   const didComplete = await markParticipationComplete();
@@ -775,10 +775,10 @@ function buildShareText() {
   const supporterName = getDisplayName();
 
   if (isSparkleExperience || isMenExperience) {
-    return `SHINJUKU GIVEで¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}のデモ寄付に参加しました。\n${supporterName}の参加証を共有します。\nあなたも →`;
+    return `SHINJUKU GIVEの応援アクションに参加しました。\n${supporterName}の参加証を共有します。\nあなたも →`;
   }
 
-  return `新宿が私の1スワイプで色づきました 🌃\nSHINJUKU SUPPORTER「${supporterName}」として参加。\nあなたも →`;
+  return `新宿で続く取り組みを知り、応援の意思を示しました。\nSHINJUKU SUPPORTER「${supporterName}」として参加。\nあなたも →`;
 }
 
 function getStorySharePalette() {
@@ -1518,7 +1518,7 @@ function applyThemeCopy() {
     eyebrow.textContent = "Morning Shinjuku";
   }
   if (lead) {
-    lead.textContent = "通勤前の3秒で参加できる、朝の新宿向けデモ募金体験です。";
+    lead.textContent = "通勤前の3秒で参加できる、朝の新宿への応援アクションです。";
   }
   if (title) {
     title.innerHTML = "朝の新宿に<br><span class=\"no-break\">3秒で参加</span>";
@@ -1535,7 +1535,7 @@ function applyThemeCopy() {
   if (nicknameInput) {
     nicknameInput.placeholder = RANDOM_GUEST_NAME;
   }
-  setText("swipeTitle", "上にスワイプして100円を届ける");
+  setText("swipeTitle", "上にスワイプして応援する");
   setText("swipeHint", "この画面を上にスワイプしてください。");
   setText("thanksTitle", "参加が朝の新宿に反映されました。");
   setText("certificateTitle", "朝の参加証を受け取る");
