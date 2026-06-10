@@ -357,9 +357,9 @@
         }
 
         .qr-code {
-            width: clamp(108px, 11vw, 156px);
-            padding: 10px;
-            border-radius: 12px;
+            width: clamp(148px, 15vw, 220px);
+            padding: 12px;
+            border-radius: 14px;
             background: #fff;
             box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
             line-height: 0;
@@ -932,7 +932,7 @@
             if (urlNote) urlNote.textContent = url;
             try {
                 const canvas = await QRCode.toCanvas(url, {
-                    width: 160,
+                    width: 240,
                     margin: 1,
                     errorCorrectionLevel: "M",
                     color: { dark: "#151919", light: "#ffffff" },
