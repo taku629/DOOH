@@ -644,18 +644,21 @@ function finalizeCard() {
   nextStep();
 }
 
-// 名前確定時に「実名だけ」をDOOHへ通知（カウントは増やさない）。一度だけ送る。
+// 寄付デモ完了後、公開に同意して入力された表示名だけをDOOHへ一度通知する。
 let hasAnnouncedName = false;
-function announceParticipantName(useTypedName) {
-  if (hasAnnouncedName) {
+function announceDonorName() {
+  if (hasAnnouncedName || !hasCountedParticipation) {
     return;
   }
-  hasAnnouncedName = true;
 
   const typed = nickname.value.trim();
-  const name = useTypedName && typed && !isInappropriateName(typed) ? typed : null;
+  if (!typed || isInappropriateName(typed)) {
+    return;
+  }
 
-  const payload = { name, channel: PARTICIPATION_CHANNEL };
+  hasAnnouncedName = true;
+
+  const payload = { name: typed, channel: PARTICIPATION_CHANNEL };
   if (isAllExperience) {
     payload.source = "participant-flow-all";
   } else if (isMenExperience) {
@@ -1433,11 +1436,10 @@ nickname.addEventListener("compositionupdate", syncPreviewName);
 nickname.addEventListener("compositionend", syncPreviewName);
 
 document.getElementById("createCard").addEventListener("click", () => {
-  announceParticipantName(true);
+  announceDonorName();
   finalizeCard();
 });
 document.getElementById("skipName").addEventListener("click", () => {
-  announceParticipantName(false);
   finalizeCard();
 });
 
