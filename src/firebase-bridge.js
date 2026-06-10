@@ -340,6 +340,36 @@ export async function subscribeToNameAnnouncements(callback, options = {}) {
     });
 }
 
+export async function getRecentNameAnnouncements(options = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return [];
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return [];
+    }
+
+    const channel = normalizeChannel(options.channel);
+    const requestedLimit = Math.floor(Number(options.limit) || 30);
+    const limit = Math.max(1, Math.min(requestedLimit, 100));
+    const query = sdk.query(
+        sdk.ref(database, getNameShoutsPath(channel)),
+        sdk.limitToLast(limit)
+    );
+    const snapshot = await sdk.get(query);
+    const announcements = [];
+
+    snapshot.forEach((child) => {
+        const data = child.val();
+        if (data?.type === "name-announced") {
+            announcements.push({ id: child.key, ...data });
+        }
+    });
+
+    return announcements;
+}
+
 export async function subscribeToDisplayConfig(callback, options = {}) {
     const database = await ensureDatabase();
     if (!database) {
