@@ -72,7 +72,8 @@
           <span class="step-count">03</span>
           <h2 id="certificateTitle">新しい新宿に名前を残す</h2>
           <label for="nickname">表示名（任意）</label>
-          <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" />
+          <input id="nickname" type="text" maxlength="20" placeholder="匿名サポーター" autocomplete="nickname" aria-describedby="nicknameHelp" />
+          <p class="field-helper" id="nicknameHelp">入力した名前は参加証とDOOHに数秒間表示されます。本名ではなくニックネームを入力してください。未入力でも進めます。</p>
           <article class="card" id="certificatePreview" aria-live="polite">
             <p>SHINJUKU COLOR SUPPORTER</p>
             <h3 id="previewName">匿名サポーター</h3>

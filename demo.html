@@ -211,22 +211,32 @@
 
         .live { position: relative; min-width: 0; color: #fff; }
 
-        /* 参加した瞬間だけ一瞬出る「ありがとう」（常時表示しない・レイアウトを動かさない） */
+        /* 寄付者名を右から左へ流す放送テロップ。 */
         .thanks {
-            position: absolute;
-            bottom: calc(100% + 4px);
+            position: fixed;
+            top: clamp(84px, 12vh, 150px);
             left: 0;
+            z-index: 7;
             margin: 0;
             display: inline-flex;
             align-items: center;
             gap: 10px;
             white-space: nowrap;
-            font-family: var(--font-serif);
-            font-weight: 600;
-            font-size: clamp(1rem, 1.6vw, 1.5rem);
+            padding: clamp(10px, 1vw, 16px) clamp(16px, 1.5vw, 26px);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 999px;
+            background: rgba(15, 18, 18, 0.7);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            font-family: var(--font-sans);
+            font-weight: 700;
+            font-size: clamp(1.05rem, 1.9vw, 1.8rem);
             color: #fff;
-            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
             opacity: 0;
+            transform: translateX(100vw);
+            will-change: transform, opacity;
             pointer-events: none;
         }
 
@@ -466,6 +476,7 @@
         <button id="addBtn" type="button">＋ 1人参加</button>
         <button id="completeBtn" type="button" hidden>達成まで進める</button>
         <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
+        <button id="donorNameTestBtn" type="button" hidden>寄付者名テスト</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -489,9 +500,11 @@
         const resetBtn = document.getElementById("resetBtn");
         const completeBtn = document.getElementById("completeBtn");
         const skipSceneBtn = document.getElementById("skipSceneBtn");
+        const donorNameTestBtn = document.getElementById("donorNameTestBtn");
         const urlNote = document.getElementById("urlNote");
 
         urlNote?.classList.toggle("is-dev-visible", DEV);
+        donorNameTestBtn.hidden = !MANUAL_MODE;
         if (DEMO_MODE) {
             completeBtn.hidden = false;
             skipSceneBtn.hidden = false;
@@ -666,23 +679,80 @@
             return raw.length > 0 && !AUTO_NAME_RE.test(raw) && !PLACEHOLDER_NAMES.has(raw);
         }
 
-        // 参加した瞬間だけ一瞬出して消す（常時表示しない）。実名のときだけ名前を出す
-        function showThanks(name) {
-            if (!thanks) return;
-            const raw = String(name ?? "").trim().slice(0, 24);
-            thanks.textContent = isRealName(raw)
-                ? `ありがとう、${raw}さん`
-                : "ご参加ありがとうございます";
+        const donorNameQueue = [];
+        const donorNameRotation = [];
+        let isShowingDonorName = false;
+        let donorNameRotationIndex = 0;
+        let donorNameRotationTimer = null;
+
+        function addToDonorNameRotation(name) {
+            const existingIndex = donorNameRotation.indexOf(name);
+            if (existingIndex >= 0) donorNameRotation.splice(existingIndex, 1);
+            donorNameRotation.push(name);
+            if (donorNameRotation.length > 30) donorNameRotation.shift();
+            donorNameRotationIndex %= Math.max(1, donorNameRotation.length);
+        }
+
+        function scheduleNextDonorName() {
+            clearTimeout(donorNameRotationTimer);
+            if (donorNameQueue.length > 0) {
+                showNextDonorName();
+                return;
+            }
+            if (donorNameRotation.length === 0) return;
+
+            donorNameRotationTimer = setTimeout(() => {
+                const name = donorNameRotation[donorNameRotationIndex];
+                donorNameRotationIndex = (donorNameRotationIndex + 1) % donorNameRotation.length;
+                donorNameQueue.push(name);
+                showNextDonorName();
+            }, 2000);
+        }
+
+        // 新着を優先しつつ、過去の寄付者名も一人ずつ巡回表示する。
+        function showNextDonorName() {
+            if (!thanks || isShowingDonorName || donorNameQueue.length === 0) return;
+            clearTimeout(donorNameRotationTimer);
+            isShowingDonorName = true;
+            const raw = donorNameQueue.shift();
+            thanks.textContent = `${raw}さん`;
             thanks.getAnimations().forEach((a) => a.cancel());
-            thanks.animate(
+            const animation = thanks.animate(
                 [
-                    { opacity: 0, transform: "translateY(10px)" },
-                    { opacity: 1, transform: "translateY(0)", offset: 0.12 },
-                    { opacity: 1, transform: "translateY(0)", offset: 0.8 },
-                    { opacity: 0, transform: "translateY(-6px)" },
+                    { opacity: 0, transform: "translateX(100vw)" },
+                    { opacity: 1, transform: "translateX(72vw)", offset: 0.1 },
+                    { opacity: 1, transform: "translateX(28vw)", offset: 0.52 },
+                    { opacity: 1, transform: "translateX(-40%)", offset: 0.82 },
+                    { opacity: 0, transform: "translateX(-110%)" },
                 ],
-                { duration: 3200, easing: "ease" }
+                { duration: 6500, easing: "linear" }
             );
+            animation.finished
+                .catch(() => {})
+                .finally(() => {
+                    isShowingDonorName = false;
+                    scheduleNextDonorName();
+                });
+        }
+
+        function showThanks(name) {
+            const raw = String(name ?? "").trim().slice(0, 24);
+            if (!isRealName(raw)) return;
+            addToDonorNameRotation(raw);
+            if (donorNameQueue.length >= 30) donorNameQueue.shift();
+            donorNameQueue.push(raw);
+            showNextDonorName();
+        }
+
+        function setDonorNameRotation(names) {
+            donorNameRotation.length = 0;
+            [...names].reverse().forEach((name) => {
+                const raw = String(name ?? "").trim().slice(0, 24);
+                if (isRealName(raw)) addToDonorNameRotation(raw);
+            });
+            donorNameRotation.reverse();
+            donorNameRotationIndex = 0;
+            scheduleNextDonorName();
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -848,6 +918,7 @@
         addBtn.addEventListener("click", (e) => { e.stopPropagation(); addParticipant(); });
         completeBtn.addEventListener("click", (e) => { e.stopPropagation(); completeCurrentChallenge(); });
         skipSceneBtn.addEventListener("click", (e) => { e.stopPropagation(); skipScene(); });
+        donorNameTestBtn.addEventListener("click", (e) => { e.stopPropagation(); showThanks("テストサポーター"); });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
 
@@ -865,12 +936,13 @@
         updateHud();
 
         // Firebase連動スクリプト（module）から呼べるように公開
-        window.__inkDemo = { activateLive, applyLiveCount, showThanks, skipScene, completeCurrentChallenge };
+        window.__inkDemo = { activateLive, applyLiveCount, showThanks, setDonorNameRotation, skipScene, completeCurrentChallenge };
     </script>
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { subscribeToParticipantCount, subscribeToNameAnnouncements, publishSwipeComplete } from "./src/firebase-bridge.js";
+        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, publishSwipeComplete } from "./src/firebase-bridge.js";
+        import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
         const theme = resolveTheme({ defaultTheme: "day" });
@@ -905,13 +977,27 @@
                 console.info("[demo] live sync disabled (offline/manual):", error);
             });
 
-            // 名前確定イベント → そのタイミングで「ありがとう」を表示（実名のときだけ名前入り）
-            subscribeToNameAnnouncements((event) => {
-                window.__inkDemo?.showThanks(event?.name);
-            }, { channel }).catch((error) => {
-                console.info("[demo] name feed disabled (offline/manual):", error);
-            });
         }
+
+        getRecentNameAnnouncements({ channel, limit: 30 })
+            .then((events) => {
+                const names = events
+                    .map((event) => String(event?.name ?? "").trim())
+                    .filter((name) => name && !isInappropriateName(name));
+                window.__inkDemo?.setDonorNameRotation(names);
+            })
+            .catch((error) => {
+                console.info("[demo] donor history disabled (offline/manual):", error);
+            });
+
+        // 新しい寄付者名は巡回表示より優先し、以後の巡回リストにも追加する。
+        subscribeToNameAnnouncements((event) => {
+            if (!isInappropriateName(String(event?.name ?? ""))) {
+                window.__inkDemo?.showThanks(event?.name);
+            }
+        }, { channel }).catch((error) => {
+            console.info("[demo] name feed disabled (offline/manual):", error);
+        });
     </script>
 
     <script type="module">
