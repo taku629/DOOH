@@ -211,41 +211,47 @@
 
         .live { position: relative; min-width: 0; color: #fff; }
 
-        /* 寄付者名を右から左へ流す放送テロップ。 */
+        /* 複数の寄付者名を連結して右から左へ流し続ける放送テロップ。 */
         .thanks {
             position: fixed;
             top: clamp(84px, 12vh, 150px);
             left: 0;
+            right: 0;
             z-index: 7;
             margin: 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            white-space: nowrap;
-            padding: clamp(10px, 1vw, 16px) clamp(16px, 1.5vw, 26px);
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            border-radius: 999px;
-            background: rgba(15, 18, 18, 0.7);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            overflow: hidden;
             font-family: var(--font-sans);
             font-weight: 700;
             font-size: clamp(1.05rem, 1.9vw, 1.8rem);
             color: #fff;
             text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
-            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
-            opacity: 0;
-            transform: translateX(100vw);
-            will-change: transform, opacity;
             pointer-events: none;
         }
 
-        .thanks::before {
-            content: "";
-            width: 8px; height: 8px;
-            border-radius: 999px;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.75);
+        .thanks-track {
+            display: flex;
+            width: max-content;
+            will-change: transform;
+            animation: donor-ticker var(--ticker-duration, 36s) linear infinite;
+        }
+
+        .thanks-group {
+            display: block;
+            flex: none;
+            min-width: 100vw;
+            box-sizing: border-box;
+            padding: clamp(10px, 1vw, 16px) clamp(30px, 4vw, 70px);
+            border-block: 1px solid rgba(255, 255, 255, 0.24);
+            background: rgba(15, 18, 18, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+            white-space: nowrap;
+        }
+
+        @keyframes donor-ticker {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
         }
 
         .live .value span.num { display: inline-block; }
@@ -548,6 +554,7 @@
         let celebrationStartedAt = 0;
         let activeChallengeNumber = 0;
         let liveCountInitialized = false;
+        let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = (DEMO_MODE ? 8_000 : 20_000) * SCENE_TIME_SCALE;
         const WARM_SCENE_MS = (DEMO_MODE ? 12_000 : 60_000) * SCENE_TIME_SCALE;
@@ -679,69 +686,44 @@
             return raw.length > 0 && !AUTO_NAME_RE.test(raw) && !PLACEHOLDER_NAMES.has(raw);
         }
 
-        const donorNameQueue = [];
         const donorNameRotation = [];
-        let isShowingDonorName = false;
-        let donorNameRotationIndex = 0;
-        let donorNameRotationTimer = null;
 
         function addToDonorNameRotation(name) {
             const existingIndex = donorNameRotation.indexOf(name);
             if (existingIndex >= 0) donorNameRotation.splice(existingIndex, 1);
             donorNameRotation.push(name);
             if (donorNameRotation.length > 30) donorNameRotation.shift();
-            donorNameRotationIndex %= Math.max(1, donorNameRotation.length);
         }
 
-        function scheduleNextDonorName() {
-            clearTimeout(donorNameRotationTimer);
-            if (donorNameQueue.length > 0) {
-                showNextDonorName();
+        function renderDonorTicker() {
+            if (!thanks || donorNameRotation.length === 0) {
+                thanks?.replaceChildren();
                 return;
             }
-            if (donorNameRotation.length === 0) return;
 
-            donorNameRotationTimer = setTimeout(() => {
-                const name = donorNameRotation[donorNameRotationIndex];
-                donorNameRotationIndex = (donorNameRotationIndex + 1) % donorNameRotation.length;
-                donorNameQueue.push(name);
-                showNextDonorName();
-            }, 2000);
-        }
+            const names = [];
+            while (names.length < Math.max(12, donorNameRotation.length)) {
+                names.push(...donorNameRotation);
+            }
+            const text = names.map((name) => `${name}さん`).join("　◆　");
+            const track = document.createElement("span");
+            track.className = "thanks-track";
+            track.style.setProperty("--ticker-duration", `${Math.max(28, names.length * 3.2)}s`);
 
-        // 新着を優先しつつ、過去の寄付者名も一人ずつ巡回表示する。
-        function showNextDonorName() {
-            if (!thanks || isShowingDonorName || donorNameQueue.length === 0) return;
-            clearTimeout(donorNameRotationTimer);
-            isShowingDonorName = true;
-            const raw = donorNameQueue.shift();
-            thanks.textContent = `${raw}さん`;
-            thanks.getAnimations().forEach((a) => a.cancel());
-            const animation = thanks.animate(
-                [
-                    { opacity: 0, transform: "translateX(100vw)" },
-                    { opacity: 1, transform: "translateX(72vw)", offset: 0.1 },
-                    { opacity: 1, transform: "translateX(28vw)", offset: 0.52 },
-                    { opacity: 1, transform: "translateX(-40%)", offset: 0.82 },
-                    { opacity: 0, transform: "translateX(-110%)" },
-                ],
-                { duration: 6500, easing: "linear" }
-            );
-            animation.finished
-                .catch(() => {})
-                .finally(() => {
-                    isShowingDonorName = false;
-                    scheduleNextDonorName();
-                });
+            for (let i = 0; i < 2; i += 1) {
+                const group = document.createElement("span");
+                group.className = "thanks-group";
+                group.textContent = `${text}　◆　`;
+                track.appendChild(group);
+            }
+            thanks.replaceChildren(track);
         }
 
         function showThanks(name) {
             const raw = String(name ?? "").trim().slice(0, 24);
             if (!isRealName(raw)) return;
             addToDonorNameRotation(raw);
-            if (donorNameQueue.length >= 30) donorNameQueue.shift();
-            donorNameQueue.push(raw);
-            showNextDonorName();
+            renderDonorTicker();
         }
 
         function setDonorNameRotation(names) {
@@ -751,8 +733,7 @@
                 if (isRealName(raw)) addToDonorNameRotation(raw);
             });
             donorNameRotation.reverse();
-            donorNameRotationIndex = 0;
-            scheduleNextDonorName();
+            renderDonorTicker();
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -918,7 +899,12 @@
         addBtn.addEventListener("click", (e) => { e.stopPropagation(); addParticipant(); });
         completeBtn.addEventListener("click", (e) => { e.stopPropagation(); completeCurrentChallenge(); });
         skipSceneBtn.addEventListener("click", (e) => { e.stopPropagation(); skipScene(); });
-        donorNameTestBtn.addEventListener("click", (e) => { e.stopPropagation(); showThanks("テストサポーター"); });
+        donorNameTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const testNames = ["さくら", "タクヤ", "ミナ", "新宿サポーター"];
+            showThanks(testNames[donorNameTestIndex % testNames.length]);
+            donorNameTestIndex += 1;
+        });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
 
