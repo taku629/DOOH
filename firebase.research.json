@@ -1,0 +1,49 @@
+{
+  "hosting": {
+    "site": "shinjuku-dooh-research",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firebase.research.json",
+      "**/.*",
+      "**/node_modules/**",
+      "README.md",
+      "docs/**",
+      "scripts/**",
+      "database.rules.json",
+      "package.json",
+      "package-lock.json",
+      "playlist.json",
+      "test.html",
+      "testmen.html",
+      "vite.config.js",
+      "web/admin-src/**",
+      "*.pptx"
+    ],
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "/research",
+        "type": 302
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/research",
+        "destination": "/research-preview.html"
+      },
+      {
+        "source": "/demo",
+        "destination": "/demo.html"
+      },
+      {
+        "source": "/men",
+        "destination": "/web/participant-flow-men.html"
+      },
+      {
+        "source": "/women",
+        "destination": "/web/participant-flow-women.html"
+      }
+    ]
+  }
+}
