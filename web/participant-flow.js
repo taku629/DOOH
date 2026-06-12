@@ -1561,7 +1561,7 @@ function applyThemeCopy() {
     nicknameInput.placeholder = RANDOM_GUEST_NAME;
   }
   setText("swipeTitle", "上にスワイプして応援する");
-  setText("swipeHint", "この画面を上にスワイプしてください。");
+  setText("swipeHint", "");
   setText("thanksTitle", "参加が朝の新宿に反映されました。");
   setText("certificateTitle", "朝の参加証を受け取る");
   setText("shareTitle", "参加証が作成されました。");

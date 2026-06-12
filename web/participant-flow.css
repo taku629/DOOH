@@ -272,6 +272,10 @@ label {
   line-height: 1.6;
 }
 
+.hint:empty {
+  display: none;
+}
+
 label {
   display: block;
   margin: 18px 0 0;
