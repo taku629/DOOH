@@ -163,6 +163,10 @@ button {
   -webkit-user-select: none;
 }
 
+.viewport.is-participation-step {
+  touch-action: pan-y;
+}
+
 .viewport::before {
   position: absolute;
   inset: auto -10% -60% -10%;
@@ -205,7 +209,10 @@ button {
 }
 
 .step[data-step="0"] {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 14px 20px 12px;
 }
 

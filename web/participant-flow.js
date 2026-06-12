@@ -318,6 +318,7 @@ function setTrackPosition(index, dragPercent = 0) {
 
 function showStep(index) {
   currentStep = index;
+  viewport.classList.toggle("is-participation-step", index === 0);
   steps.forEach((step, stepIndex) => {
     const isCurrent = stepIndex === index;
     step.classList.toggle("is-current", isCurrent);
