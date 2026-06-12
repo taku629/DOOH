@@ -178,6 +178,10 @@ export async function publishSwipeComplete(payload = {}) {
             name: payload.name ?? null,
             donationAmountYen: Number(payload.donationAmountYen) || null,
             userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+            participationDate: payload.participationDate ?? null,
+            isReturning: payload.isReturning === true,
+            isConsecutiveReturn: payload.isConsecutiveReturn === true,
+            streakDays: Math.max(1, Number(payload.streakDays) || 1),
         };
 
         const participationRef = sdk.ref(database, getParticipationPath(channel));
@@ -292,6 +296,9 @@ export async function publishNameAnnouncement(payload = {}) {
             createdAt: sdk.serverTimestamp(),
             name: rawName || null,
             source: payload.source ?? channel,
+            isReturning: payload.isReturning === true,
+            isConsecutiveReturn: payload.isConsecutiveReturn === true,
+            streakDays: Math.max(1, Number(payload.streakDays) || 1),
         });
         return { key: ref.key };
     } catch (error) {

@@ -236,7 +236,9 @@
         }
 
         .thanks-group {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 1.2em;
             flex: none;
             min-width: 100vw;
             box-sizing: border-box;
@@ -249,9 +251,74 @@
             white-space: nowrap;
         }
 
+        .ticker-name {
+            color: #fff;
+        }
+
+        .ticker-name.is-returning {
+            color: #ffc16b;
+            text-shadow: 0 0 14px rgba(255, 139, 39, 0.72);
+        }
+
+        .ticker-separator {
+            color: rgba(255, 255, 255, 0.92);
+        }
+
         @keyframes donor-ticker {
             from { transform: translateX(0); }
             to { transform: translateX(-50%); }
+        }
+
+        /* 参加した瞬間だけ、寄付者名テロップとは別に表示するお礼通知。 */
+        .participation-thanks {
+            position: absolute;
+            bottom: calc(100% + 4px);
+            left: 0;
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            color: #fff;
+            font-family: var(--font-serif);
+            font-size: clamp(1rem, 1.6vw, 1.5rem);
+            font-weight: 600;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .participation-thanks::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: currentColor;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .participation-thanks.is-returning {
+            color: #ffc16b;
+            text-shadow: 0 2px 16px rgba(117, 51, 0, 0.7);
+        }
+
+        .stage.is-returning-pulse::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 30% 70%, rgba(255, 150, 54, 0.34), transparent 38%),
+                radial-gradient(circle at 70% 30%, rgba(255, 207, 125, 0.2), transparent 46%);
+            mix-blend-mode: screen;
+            animation: returningPulse 2600ms ease-out both;
+        }
+
+        @keyframes returningPulse {
+            0% { opacity: 0; }
+            25% { opacity: 1; }
+            100% { opacity: 0; }
         }
 
         .live .value span.num { display: inline-block; }
@@ -453,9 +520,9 @@
 
     <div class="brandbar">SHINJUKU DOOH</div>
     <div class="hint" id="hint">画面クリック / スペースキー で参加者 +1</div>
-
     <div class="dock">
         <div class="live">
+            <p class="participation-thanks" id="participationThanks" aria-live="polite">ご参加ありがとうございます</p>
             <p class="thanks" id="thanks" aria-hidden="true"></p>
             <span class="label">累計参加者</span>
             <span class="value"><span class="num" id="countNum">0</span><span class="unit">人</span></span>
@@ -482,7 +549,8 @@
         <button id="addBtn" type="button">＋ 1人参加</button>
         <button id="completeBtn" type="button" hidden>達成まで進める</button>
         <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
-        <button id="donorNameTestBtn" type="button" hidden>寄付者名テスト</button>
+        <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
+        <button id="returningParticipantTestBtn" type="button" hidden>翌日の継続参加を再現</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -501,16 +569,19 @@
         const challengeLabel = document.getElementById("challengeLabel");
         const transitionCountdown = document.getElementById("transitionCountdown");
         const hint = document.getElementById("hint");
+        const participationThanks = document.getElementById("participationThanks");
         const addBtn = document.getElementById("addBtn");
         const autoBtn = document.getElementById("autoBtn");
         const resetBtn = document.getElementById("resetBtn");
         const completeBtn = document.getElementById("completeBtn");
         const skipSceneBtn = document.getElementById("skipSceneBtn");
-        const donorNameTestBtn = document.getElementById("donorNameTestBtn");
+        const newParticipantTestBtn = document.getElementById("newParticipantTestBtn");
+        const returningParticipantTestBtn = document.getElementById("returningParticipantTestBtn");
         const urlNote = document.getElementById("urlNote");
 
         urlNote?.classList.toggle("is-dev-visible", DEV);
-        donorNameTestBtn.hidden = !MANUAL_MODE;
+        newParticipantTestBtn.hidden = !MANUAL_MODE;
+        returningParticipantTestBtn.hidden = !MANUAL_MODE;
         if (DEMO_MODE) {
             completeBtn.hidden = false;
             skipSceneBtn.hidden = false;
@@ -688,11 +759,31 @@
 
         const donorNameRotation = [];
 
-        function addToDonorNameRotation(name) {
-            const existingIndex = donorNameRotation.indexOf(name);
+        function addToDonorNameRotation(name, options = {}) {
+            const entry = {
+                name,
+                isReturning: options.isReturning === true,
+                streakDays: Math.max(1, Number(options.streakDays) || 1),
+            };
+            const existingIndex = donorNameRotation.findIndex((item) => item.name === name);
             if (existingIndex >= 0) donorNameRotation.splice(existingIndex, 1);
-            donorNameRotation.push(name);
+            donorNameRotation.push(entry);
             if (donorNameRotation.length > 30) donorNameRotation.shift();
+        }
+
+        function appendTickerItems(group, entries) {
+            entries.forEach((entry) => {
+                const name = document.createElement("span");
+                name.className = "ticker-name";
+                name.classList.toggle("is-returning", entry.isReturning);
+                name.textContent = `${entry.name}さん`;
+                group.appendChild(name);
+
+                const separator = document.createElement("span");
+                separator.className = "ticker-separator";
+                separator.textContent = "◆";
+                group.appendChild(separator);
+            });
         }
 
         function renderDonorTicker() {
@@ -701,39 +792,67 @@
                 return;
             }
 
-            const names = [];
-            while (names.length < Math.max(12, donorNameRotation.length)) {
-                names.push(...donorNameRotation);
+            const entries = [];
+            while (entries.length < Math.max(12, donorNameRotation.length)) {
+                entries.push(...donorNameRotation);
             }
-            const text = names.map((name) => `${name}さん`).join("　◆　");
             const track = document.createElement("span");
             track.className = "thanks-track";
-            track.style.setProperty("--ticker-duration", `${Math.max(28, names.length * 3.2)}s`);
+            track.style.setProperty("--ticker-duration", `${Math.max(28, entries.length * 3.2)}s`);
 
             for (let i = 0; i < 2; i += 1) {
                 const group = document.createElement("span");
                 group.className = "thanks-group";
-                group.textContent = `${text}　◆　`;
+                appendTickerItems(group, entries);
                 track.appendChild(group);
             }
             thanks.replaceChildren(track);
         }
 
-        function showThanks(name) {
+        function showThanks(name, options = {}) {
             const raw = String(name ?? "").trim().slice(0, 24);
             if (!isRealName(raw)) return;
-            addToDonorNameRotation(raw);
+            addToDonorNameRotation(raw, options);
             renderDonorTicker();
+            showParticipationThanks(raw, options);
         }
 
         function setDonorNameRotation(names) {
             donorNameRotation.length = 0;
-            [...names].reverse().forEach((name) => {
-                const raw = String(name ?? "").trim().slice(0, 24);
-                if (isRealName(raw)) addToDonorNameRotation(raw);
+            [...names].reverse().forEach((entry) => {
+                const raw = String(entry?.name ?? entry ?? "").trim().slice(0, 24);
+                if (isRealName(raw)) addToDonorNameRotation(raw, entry);
             });
             donorNameRotation.reverse();
             renderDonorTicker();
+        }
+
+        function showParticipationThanks(name, options = {}) {
+            if (!participationThanks) return;
+            const raw = String(name ?? "").trim().slice(0, 24);
+            const isReturning = options.isReturning === true;
+            participationThanks.classList.toggle("is-returning", isReturning);
+            participationThanks.textContent = isReturning
+                ? `${isRealName(raw) ? `おかえりなさい、${raw}さん` : "おかえりなさい"}`
+                : isRealName(raw)
+                    ? `ありがとう、${raw}さん`
+                    : "ご参加ありがとうございます";
+            stage.classList.remove("is-returning-pulse");
+            if (isReturning) {
+                void stage.offsetWidth;
+                stage.classList.add("is-returning-pulse");
+                window.setTimeout(() => stage.classList.remove("is-returning-pulse"), 2700);
+            }
+            participationThanks.getAnimations().forEach((animation) => animation.cancel());
+            participationThanks.animate(
+                [
+                    { opacity: 0, transform: "translateY(10px)" },
+                    { opacity: 1, transform: "translateY(0)", offset: 0.12 },
+                    { opacity: 1, transform: "translateY(0)", offset: 0.8 },
+                    { opacity: 0, transform: "translateY(-6px)" },
+                ],
+                { duration: 3200, easing: "ease" }
+            );
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -774,7 +893,7 @@
             triggerSplat();
             updateHud();
             pulseCount();
-            showThanks("匿名サポーター");
+            showParticipationThanks();
             if (hint && count === 1) hint.style.opacity = "0";
         }
 
@@ -832,7 +951,7 @@
                 for (let i = 0; i < bursts; i++) {
                     setTimeout(triggerSplat, i * 200);
                 }
-                pulseCount(); // 名前は swipe イベント側で表示
+                pulseCount();
             } else if (delta < 0) {
                 clearCelebrationTimers();
                 celebrationActive = false;
@@ -899,11 +1018,15 @@
         addBtn.addEventListener("click", (e) => { e.stopPropagation(); addParticipant(); });
         completeBtn.addEventListener("click", (e) => { e.stopPropagation(); completeCurrentChallenge(); });
         skipSceneBtn.addEventListener("click", (e) => { e.stopPropagation(); skipScene(); });
-        donorNameTestBtn.addEventListener("click", (e) => {
+        newParticipantTestBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             const testNames = ["さくら", "タクヤ", "ミナ", "新宿サポーター"];
-            showThanks(testNames[donorNameTestIndex % testNames.length]);
+            showThanks(testNames[donorNameTestIndex % testNames.length], { isReturning: false, streakDays: 1 });
             donorNameTestIndex += 1;
+        });
+        returningParticipantTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            showThanks("さくら", { isReturning: true, isConsecutiveReturn: true, streakDays: 2 });
         });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
@@ -922,12 +1045,12 @@
         updateHud();
 
         // Firebase連動スクリプト（module）から呼べるように公開
-        window.__inkDemo = { activateLive, applyLiveCount, showThanks, setDonorNameRotation, skipScene, completeCurrentChallenge };
+        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, skipScene, completeCurrentChallenge };
     </script>
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, publishSwipeComplete } from "./src/firebase-bridge.js";
+        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
@@ -967,10 +1090,10 @@
 
         getRecentNameAnnouncements({ channel, limit: 30 })
             .then((events) => {
-                const names = events
-                    .map((event) => String(event?.name ?? "").trim())
-                    .filter((name) => name && !isInappropriateName(name));
-                window.__inkDemo?.setDonorNameRotation(names);
+                const validEvents = events
+                    .map((event) => ({ ...event, name: String(event?.name ?? "").trim() }))
+                    .filter((event) => event.name && !isInappropriateName(event.name));
+                window.__inkDemo?.setDonorNameRotation(validEvents);
             })
             .catch((error) => {
                 console.info("[demo] donor history disabled (offline/manual):", error);
@@ -979,11 +1102,19 @@
         // 新しい寄付者名は巡回表示より優先し、以後の巡回リストにも追加する。
         subscribeToNameAnnouncements((event) => {
             if (!isInappropriateName(String(event?.name ?? ""))) {
-                window.__inkDemo?.showThanks(event?.name);
+                window.__inkDemo?.showThanks(event?.name, event);
             }
         }, { channel }).catch((error) => {
             console.info("[demo] name feed disabled (offline/manual):", error);
         });
+
+        if (!isDemoMode) {
+            subscribeToSwipeCompletes((event) => {
+                window.__inkDemo?.showParticipationThanks(event?.name, event);
+            }, { channel }).catch((error) => {
+                console.info("[demo] returning participant feed disabled (offline/manual):", error);
+            });
+        }
     </script>
 
     <script type="module">
