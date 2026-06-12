@@ -726,6 +726,12 @@ async function registerParticipation() {
     updateMilestonePreview(participantCount);
     hasCountedParticipation = true;
     hasAnimatedCounter = false;
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: "dooh-research-participation-complete",
+        participantCount,
+      }, location.origin);
+    }
     return true;
   } catch (error) {
     console.warn("[firebase] participation count update failed:", error);

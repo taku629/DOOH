@@ -87,6 +87,47 @@
             display: none;
         }
 
+        .handoff {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: grid;
+            place-items: center;
+            background: rgba(5, 6, 6, 0.94);
+            color: #fff;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 240ms ease, visibility 240ms ease;
+            pointer-events: none;
+        }
+
+        .handoff.is-active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .handoff-inner {
+            display: grid;
+            justify-items: center;
+            gap: 16px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .handoff-ring {
+            width: 54px;
+            height: 54px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: handoff-spin 800ms linear infinite;
+        }
+
+        @keyframes handoff-spin {
+            to { transform: rotate(360deg); }
+        }
+
         .panel {
             display: grid;
             grid-template-rows: auto minmax(0, 1fr);
@@ -252,6 +293,13 @@
         </section>
     </main>
 
+    <div class="handoff" id="handoff" aria-hidden="true">
+        <div class="handoff-inner">
+            <span class="handoff-ring" aria-hidden="true"></span>
+            <span>DOOHへ反映しています</span>
+        </div>
+    </div>
+
     <script>
         const local = ["localhost", "127.0.0.1"].includes(location.hostname);
         const participantRoutes = local
@@ -269,7 +317,9 @@
         const focusBtn = document.getElementById("focusBtn");
         const participantTab = document.getElementById("participantTab");
         const doohTab = document.getElementById("doohTab");
+        const handoff = document.getElementById("handoff");
         const analyticsQueue = [];
+        let handoffTimer = null;
 
         function trackResearchEvent(name, parameters = {}) {
             if (typeof window.__logResearchEvent === "function") {
@@ -312,6 +362,30 @@
             }
         }
 
+        function showDoohAfterParticipation(participantCount) {
+            if (!matchMedia("(max-width: 820px)").matches) {
+                trackResearchEvent("research_auto_handoff", {
+                    layout: "desktop",
+                    participant_count: Number(participantCount) || 0,
+                });
+                return;
+            }
+
+            window.clearTimeout(handoffTimer);
+            handoff.classList.add("is-active");
+            handoff.setAttribute("aria-hidden", "false");
+            trackResearchEvent("research_auto_handoff", {
+                layout: "mobile",
+                participant_count: Number(participantCount) || 0,
+            });
+
+            handoffTimer = window.setTimeout(() => {
+                showMobilePanel("dooh");
+                handoff.classList.remove("is-active");
+                handoff.setAttribute("aria-hidden", "true");
+            }, 800);
+        }
+
         participantType.addEventListener("change", () => {
             loadParticipant();
             trackResearchEvent("participant_variant_select", {
@@ -328,6 +402,16 @@
             trackResearchEvent("research_dooh_focus", {
                 enabled: focused ? 1 : 0,
             });
+        });
+        window.addEventListener("message", (event) => {
+            if (
+                event.origin !== location.origin ||
+                event.source !== participantFrame.contentWindow ||
+                event.data?.type !== "dooh-research-participation-complete"
+            ) {
+                return;
+            }
+            showDoohAfterParticipation(event.data.participantCount);
         });
 
         showMobilePanel("participant");
