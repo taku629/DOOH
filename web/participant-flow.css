@@ -583,6 +583,12 @@ input[type="text"]:focus {
   transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
+.slider-wrap.is-pointer-active {
+  outline: 3px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 3px;
+  transform: scale(0.985);
+}
+
 .step[data-step="0"] .slider-wrap {
   min-height: clamp(150px, 24svh, 210px);
   margin: 4px 0 4px;

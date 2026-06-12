@@ -1282,6 +1282,7 @@ function releasePointerCapture(pointerId) {
 
 function resetPointerState(options = {}) {
   const pointerId = activePointerId;
+  swipeControl?.classList.remove("is-pointer-active");
   activePointerId = null;
   pointerStartX = 0;
   pointerStartY = 0;
@@ -1313,6 +1314,9 @@ function startPointer(event) {
   if (isInteractiveTarget(event.target)) {
     return;
   }
+  if (currentStep === 0 && !event.target.closest(".slider-wrap")) {
+    return;
+  }
 
   activePointerId = event.pointerId;
   pointerStartX = event.clientX;
@@ -1321,6 +1325,9 @@ function startPointer(event) {
   dragAxisLocked = null;
   swipeStartValue = swipeChargeValue;
   isChargingSwipe = false;
+  if (currentStep === 0) {
+    swipeControl?.classList.add("is-pointer-active");
+  }
 
   try {
     viewport.setPointerCapture(event.pointerId);
