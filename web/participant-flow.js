@@ -2,6 +2,7 @@ import { getDonationMilestoneGoal } from "../src/condition-manager.js";
 import { getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
+import { getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
 const steps = [...document.querySelectorAll(".step")];
@@ -646,6 +647,7 @@ function finalizeCard() {
 
 // 寄付デモ完了後、公開に同意して入力された表示名だけをDOOHへ一度通知する。
 let hasAnnouncedName = false;
+let completedParticipationVisit = null;
 function announceDonorName() {
   if (hasAnnouncedName || !hasCountedParticipation) {
     return;
@@ -658,7 +660,13 @@ function announceDonorName() {
 
   hasAnnouncedName = true;
 
-  const payload = { name: typed, channel: PARTICIPATION_CHANNEL };
+  const payload = {
+    name: typed,
+    channel: PARTICIPATION_CHANNEL,
+    isReturning: completedParticipationVisit?.isReturning === true,
+    isConsecutiveReturn: completedParticipationVisit?.isConsecutiveReturn === true,
+    streakDays: completedParticipationVisit?.streakDays ?? 1,
+  };
   if (isAllExperience) {
     payload.source = "participant-flow-all";
   } else if (isMenExperience) {
@@ -680,9 +688,14 @@ async function registerParticipation() {
   isRegisteringParticipation = true;
 
   try {
+    const visit = getParticipationVisit();
     const payload = {
       name: getDisplayName(),
       donationAmountYen: DEMO_DONATION_YEN,
+      participationDate: visit.participationDate,
+      isReturning: visit.isReturning,
+      isConsecutiveReturn: visit.isConsecutiveReturn,
+      streakDays: visit.streakDays,
     };
 
     if (isAllExperience) {
@@ -699,6 +712,10 @@ async function registerParticipation() {
     }
 
     const result = await publishSwipeComplete(payload);
+    if (!result?.fallback) {
+      saveParticipationVisit(visit);
+      completedParticipationVisit = visit;
+    }
     const committedCount = Number(result?.count);
     participantCount = Number.isFinite(committedCount)
       ? committedCount
