@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111313" />
+    <title>DOOH調査</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --ink: #111313;
+            --panel: #1a1d1d;
+            --line: rgba(255, 255, 255, 0.14);
+            --muted: rgba(255, 255, 255, 0.66);
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--ink);
+            color: #fff;
+            font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+        }
+
+        body {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 58px;
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(17, 19, 19, 0.96);
+        }
+
+        .title {
+            margin-right: auto;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .title small {
+            display: block;
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 0.68rem;
+            font-weight: 500;
+        }
+
+        button, select {
+            min-height: 36px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #252929;
+            color: #fff;
+            font: inherit;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        button {
+            padding: 0 13px;
+            cursor: pointer;
+        }
+
+        select { padding: 0 28px 0 10px; }
+        button:hover, select:hover { border-color: rgba(255, 255, 255, 0.42); }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(270px, 0.34fr) minmax(0, 0.66fr);
+            gap: 12px;
+            min-height: 0;
+            padding: 12px;
+        }
+
+        .panel {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--panel);
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--line);
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        .panel-head span {
+            color: var(--muted);
+            font-size: 0.64rem;
+            font-weight: 500;
+        }
+
+        .viewport {
+            position: relative;
+            display: grid;
+            place-items: center;
+            min-height: 0;
+            overflow: hidden;
+            background: #090a0a;
+        }
+
+        iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #fff;
+        }
+
+        .phone-frame {
+            width: min(100%, 430px);
+            height: 100%;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        body.dooh-focus .workspace { grid-template-columns: minmax(210px, 0.22fr) minmax(0, 0.78fr); }
+
+        @media (max-width: 820px) {
+            body { overflow: auto; height: auto; }
+            .toolbar { position: sticky; top: 0; z-index: 3; flex-wrap: wrap; }
+            .title { width: 100%; }
+            .workspace {
+                grid-template-columns: 1fr;
+                grid-template-rows: minmax(640px, 82vh) minmax(360px, 56vw);
+                min-height: calc(100vh - 100px);
+            }
+            body.dooh-focus .workspace { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="toolbar">
+        <div class="title">
+            DOOH調査
+            <small>左で参加すると、右のDOOHへ反映されます</small>
+        </div>
+        <select id="participantType" aria-label="参加画面を選択">
+            <option value="men">参加画面：MEN</option>
+            <option value="women">参加画面：WOMEN</option>
+        </select>
+        <button id="reloadBtn" type="button">両画面を再読み込み</button>
+        <button id="focusBtn" type="button" aria-pressed="false">DOOHを大きく</button>
+    </header>
+
+    <main class="workspace">
+        <section class="panel">
+            <div class="panel-head">参加者のスマホ <span>ここで操作</span></div>
+            <div class="viewport">
+                <div class="phone-frame">
+                    <iframe id="participantFrame" title="参加者のスマホ画面"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head">新宿DOOH <span>参加結果を確認</span></div>
+            <div class="viewport">
+                <iframe id="doohFrame" title="新宿DOOH画面"></iframe>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const local = ["localhost", "127.0.0.1"].includes(location.hostname);
+        const participantRoutes = local
+            ? {
+                men: "web/participant-flow-men.html",
+                women: "web/participant-flow-women.html",
+            }
+            : { men: "/men", women: "/women" };
+        const doohRoute = local ? "demo.html" : "/demo";
+
+        const participantFrame = document.getElementById("participantFrame");
+        const doohFrame = document.getElementById("doohFrame");
+        const participantType = document.getElementById("participantType");
+        const reloadBtn = document.getElementById("reloadBtn");
+        const focusBtn = document.getElementById("focusBtn");
+
+        function loadParticipant() {
+            participantFrame.src = participantRoutes[participantType.value];
+        }
+
+        function reloadFrames() {
+            loadParticipant();
+            doohFrame.src = `${doohRoute}?research=1&t=${Date.now()}`;
+        }
+
+        participantType.addEventListener("change", loadParticipant);
+        reloadBtn.addEventListener("click", reloadFrames);
+        focusBtn.addEventListener("click", () => {
+            const focused = document.body.classList.toggle("dooh-focus");
+            focusBtn.setAttribute("aria-pressed", String(focused));
+            focusBtn.textContent = focused ? "左右を同じ幅に戻す" : "DOOHを大きく";
+        });
+
+        reloadFrames();
+    </script>
+</body>
+</html>

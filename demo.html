@@ -211,6 +211,30 @@
 
         .live { position: relative; min-width: 0; color: #fff; }
 
+        .live > .label,
+        .live > .value,
+        .cta,
+        .thanks {
+            transition: opacity 900ms ease, transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 完成映像の切替中は、固定情報を残しつつ映像へ視線を譲る。 */
+        body.is-scene-focus .live > .label,
+        body.is-scene-focus .live > .value {
+            opacity: 0.28;
+            transform: translateY(8px);
+        }
+
+        body.is-scene-focus .cta {
+            opacity: 0.42;
+            transform: translateY(8px) scale(0.96);
+        }
+
+        body.is-scene-focus .thanks {
+            opacity: 0.08;
+            transform: translateY(-4px);
+        }
+
         /* 複数の寄付者名を連結して右から左へ流し続ける放送テロップ。 */
         .thanks {
             position: fixed;
@@ -222,9 +246,9 @@
             overflow: hidden;
             font-family: var(--font-sans);
             font-weight: 700;
-            font-size: clamp(1.05rem, 1.9vw, 1.8rem);
-            color: #fff;
-            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+            font-size: clamp(0.72rem, 1.05vw, 1rem);
+            color: rgba(255, 255, 255, 0.82);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.42);
             pointer-events: none;
         }
 
@@ -238,30 +262,30 @@
         .thanks-group {
             display: flex;
             align-items: center;
-            gap: 1.2em;
+            gap: 0.85em;
             flex: none;
             min-width: 100vw;
             box-sizing: border-box;
-            padding: clamp(10px, 1vw, 16px) clamp(30px, 4vw, 70px);
-            border-block: 1px solid rgba(255, 255, 255, 0.24);
-            background: rgba(15, 18, 18, 0.72);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+            padding: clamp(6px, 0.55vw, 9px) clamp(22px, 3vw, 52px);
+            border-block: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(15, 18, 18, 0.38);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
             white-space: nowrap;
         }
 
         .ticker-name {
-            color: #fff;
+            color: rgba(255, 255, 255, 0.82);
         }
 
         .ticker-name.is-returning {
             color: #ffc16b;
-            text-shadow: 0 0 14px rgba(255, 139, 39, 0.72);
+            text-shadow: 0 0 10px rgba(255, 139, 39, 0.5);
         }
 
         .ticker-separator {
-            color: rgba(255, 255, 255, 0.92);
+            color: rgba(255, 255, 255, 0.62);
         }
 
         @keyframes donor-ticker {
@@ -698,9 +722,14 @@
             if (transitionCountdown) transitionCountdown.textContent = "";
         }
 
+        function setSceneFocus(active) {
+            document.body.classList.toggle("is-scene-focus", active);
+        }
+
         function finishCelebration() {
             clearCelebrationTimers();
             celebrationActive = false;
+            setSceneFocus(false);
             celebrationStartedAt = 0;
             activeChallengeNumber = 0;
             warmLayer.classList.remove("is-revealed");
@@ -712,6 +741,7 @@
         function startCelebration() {
             clearCelebrationTimers();
             celebrationActive = true;
+            setSceneFocus(true);
             celebrationStartedAt = Date.now();
             activeChallengeNumber = Math.max(1, Math.floor((count - revealed) / TOTAL) + 1);
             finalLayer.classList.add("is-revealed");
@@ -935,6 +965,7 @@
                 count = n;
                 clearCelebrationTimers();
                 celebrationActive = false;
+                setSceneFocus(false);
                 celebrationStartedAt = 0;
                 activeChallengeNumber = 0;
                 warmLayer.classList.remove("is-revealed");
@@ -955,6 +986,7 @@
             } else if (delta < 0) {
                 clearCelebrationTimers();
                 celebrationActive = false;
+                setSceneFocus(false);
                 celebrationStartedAt = 0;
                 activeChallengeNumber = 0;
                 warmLayer.classList.remove("is-revealed");
@@ -984,6 +1016,7 @@
             revealed = 0;
             clearCelebrationTimers();
             celebrationActive = false;
+            setSceneFocus(false);
             celebrationStartedAt = 0;
             activeChallengeNumber = 0;
             liveCountInitialized = false;
