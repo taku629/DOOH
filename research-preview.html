@@ -533,6 +533,11 @@
             if (event.data?.type === "dooh-research-card-complete") {
                 showDoohAfterParticipation(event.data.participantCount);
             }
+            if (event.data?.type === "dooh-research-support-choice") {
+                trackResearchEvent("research_support_choice", {
+                    support_choice: event.data.supportChoice || "unknown",
+                });
+            }
         });
         window.addEventListener("resize", updateDoohPreview);
 

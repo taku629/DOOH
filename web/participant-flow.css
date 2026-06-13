@@ -1095,6 +1095,109 @@ input[type="text"]:focus {
   }
 }
 
+.support-choice {
+  display: grid;
+  gap: 12px;
+  margin: 4px 0 22px;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.support-choice-kicker,
+.support-choice-lead,
+.support-choice-note {
+  margin: 0;
+}
+
+.support-choice-kicker {
+  color: var(--ink-secondary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.support-choice h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.4;
+}
+
+.support-choice-lead,
+.support-choice-note {
+  color: var(--ink-secondary);
+  font-size: 0.74rem;
+  line-height: 1.65;
+}
+
+.support-choice-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.support-choice-option {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 5px 9px;
+  border: 1px solid var(--hairline);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+}
+
+.support-choice-option .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.support-choice-option span:not(.material-symbols-outlined) {
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.support-choice-option small {
+  color: var(--ink-secondary);
+  font-size: 0.58rem;
+}
+
+.support-choice-option[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.support-choice-option[aria-pressed="true"] small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.support-choice-detail {
+  padding: 13px 14px;
+  border-radius: 13px;
+  background: rgba(21, 25, 25, 0.07);
+}
+
+.support-choice-detail h4,
+.support-choice-detail p {
+  margin: 0;
+}
+
+.support-choice-detail h4 {
+  margin-bottom: 6px;
+  font-size: 0.86rem;
+}
+
+.support-choice-detail p {
+  color: var(--ink-secondary);
+  font-size: 0.72rem;
+  line-height: 1.65;
+}
+
 /* Animations ---------------------------------------------------------- */
 
 @keyframes sweepLight {

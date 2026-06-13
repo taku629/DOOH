@@ -25,6 +25,8 @@ const track = document.getElementById("track");
 const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
 const swipeStep = steps[0];
+const supportChoiceButtons = [...document.querySelectorAll("[data-support-choice]")];
+const supportChoiceDetail = document.getElementById("supportChoiceDetail");
 
 // 体験アウトロ（サンクス＋アンケート予告）。men / women のみ存在。
 const outroOverlay = document.getElementById("outroOverlay");
@@ -86,6 +88,20 @@ const THANKS_STORIES = [
     description: "若者を支えるNPOの活動を知り、応援する意思を示しました。",
   },
 ];
+const SUPPORT_CHOICE_DETAILS = {
+  patrol: {
+    title: "夜間の見守り活動",
+    description: "夜間パトロールや声かけなど、街を見守る活動です。実運用では、実施団体・活動地域・費用の使途を確認できるようにします。",
+  },
+  graffiti: {
+    title: "街の環境整備",
+    description: "落書き消去や清掃など、街の環境を整える活動です。実運用では、作業内容・実施主体・活動報告を確認できるようにします。",
+  },
+  outreach: {
+    title: "若者への相談支援",
+    description: "若者への声かけや相談窓口につなぐ活動です。実運用では、支援団体・支援内容・寄付金の用途を確認できるようにします。",
+  },
+};
 const storyCardOverlay = document.getElementById("storyCardOverlay");
 const storyCard = document.getElementById("storyCard");
 const storyCardTitle = document.getElementById("storyCardTitle");
@@ -607,6 +623,10 @@ function scheduleStoryCardDismiss() {
 }
 
 function showStoryThanksCard() {
+  if (isMenExperience || isSparkleExperience) {
+    return false;
+  }
+
   // men / women：スワイプ直後は thanks-proto のカードを出す（?thanks=svg のときは旧・手描き線画にする）。
   if (thanksStyle !== "svg" && outroOverlay && outroCard) {
     return showSwipeStoryCard();
@@ -1479,6 +1499,32 @@ document.getElementById("createCard").addEventListener("click", () => {
 });
 document.getElementById("skipName").addEventListener("click", () => {
   finalizeCard();
+});
+
+supportChoiceButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const detail = SUPPORT_CHOICE_DETAILS[button.dataset.supportChoice];
+    if (!detail || !supportChoiceDetail) {
+      return;
+    }
+
+    supportChoiceButtons.forEach((option) => {
+      option.setAttribute("aria-pressed", String(option === button));
+    });
+    supportChoiceDetail.replaceChildren();
+    const title = document.createElement("h4");
+    title.textContent = detail.title;
+    const description = document.createElement("p");
+    description.textContent = detail.description;
+    supportChoiceDetail.append(title, description);
+    supportChoiceDetail.hidden = false;
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: "dooh-research-support-choice",
+        supportChoice: button.dataset.supportChoice,
+      }, location.origin);
+    }
+  });
 });
 
 window.addEventListener("message", (event) => {
