@@ -644,6 +644,13 @@ function finalizeCard() {
   isFinalCardBuilt = false;
   buildFinalCard();
   nextStep();
+  if (window.parent !== window) {
+    window.parent.postMessage({
+      type: "dooh-research-card-complete",
+      participantCount,
+      hasDisplayName: Boolean(nickname.value.trim()),
+    }, location.origin);
+  }
 }
 
 // 寄付デモ完了後、公開に同意して入力された表示名だけをDOOHへ一度通知する。
@@ -1472,6 +1479,19 @@ document.getElementById("createCard").addEventListener("click", () => {
 });
 document.getElementById("skipName").addEventListener("click", () => {
   finalizeCard();
+});
+
+window.addEventListener("message", (event) => {
+  if (
+    event.origin !== location.origin ||
+    event.source !== window.parent ||
+    event.data?.type !== "dooh-research-open-name-step"
+  ) {
+    return;
+  }
+
+  showStep(2);
+  window.setTimeout(() => nickname.focus(), 120);
 });
 
 const downloadBtn = document.getElementById("downloadBtn");

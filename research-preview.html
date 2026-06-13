@@ -212,6 +212,17 @@
             text-align: center;
         }
 
+        .orientation-action {
+            display: none;
+            min-height: 38px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 800;
+        }
+
         body.dooh-focus .workspace { grid-template-columns: minmax(210px, 0.22fr) minmax(0, 0.78fr); }
 
         @media (max-width: 1024px) {
@@ -291,6 +302,7 @@
 
         @media (max-width: 1024px) and (orientation: portrait) {
             .orientation-note { display: block; }
+            body.mobile-dooh .orientation-action { display: block; }
         }
     </style>
 </head>
@@ -330,6 +342,7 @@
                     <iframe id="doohFrame" title="新宿DOOH画面"></iframe>
                 </div>
                 <p class="orientation-note">横向きにするとDOOHを大きく確認できます</p>
+                <button class="orientation-action" id="orientationAction" type="button">横向きでDOOHを見る</button>
             </div>
         </section>
     </main>
@@ -359,9 +372,11 @@
         const focusBtn = document.getElementById("focusBtn");
         const participantTab = document.getElementById("participantTab");
         const doohTab = document.getElementById("doohTab");
+        const orientationAction = document.getElementById("orientationAction");
         const handoff = document.getElementById("handoff");
         const analyticsQueue = [];
         let handoffTimer = null;
+        let returnToNameTimer = null;
 
         function trackResearchEvent(name, parameters = {}) {
             if (typeof window.__logResearchEvent === "function") {
@@ -392,6 +407,7 @@
 
         function showMobilePanel(panel) {
             const showDooh = panel === "dooh";
+            window.clearTimeout(returnToNameTimer);
             document.body.classList.toggle("mobile-dooh", showDooh);
             document.body.classList.toggle("mobile-participant", !showDooh);
             participantTab.setAttribute("aria-selected", String(!showDooh));
@@ -405,6 +421,42 @@
             if (showDooh) {
                 requestAnimationFrame(updateDoohPreview);
             }
+        }
+
+        async function requestLandscapeView() {
+            if (!matchMedia("(max-width: 1024px)").matches) {
+                return;
+            }
+
+            try {
+                if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                    await document.documentElement.requestFullscreen();
+                }
+                if (screen.orientation?.lock) {
+                    await screen.orientation.lock("landscape");
+                }
+            } catch (error) {
+                console.info("[research] landscape lock is unavailable:", error);
+            }
+        }
+
+        function returnToNameInput() {
+            showMobilePanel("participant");
+            participantFrame.contentWindow?.postMessage({
+                type: "dooh-research-open-name-step",
+            }, location.origin);
+            trackResearchEvent("research_return_to_name", {
+                layout: "mobile",
+            });
+        }
+
+        function scheduleReturnToNameInput() {
+            if (!matchMedia("(max-width: 1024px)").matches) {
+                return;
+            }
+
+            window.clearTimeout(returnToNameTimer);
+            returnToNameTimer = window.setTimeout(returnToNameInput, 3500);
         }
 
         function updateDoohPreview() {
@@ -422,7 +474,7 @@
             doohFrame.style.transform = `scale(${scale})`;
         }
 
-        function showDoohAfterParticipation(participantCount) {
+        function showDoohAfterParticipation(participantCount, { returnToName = false } = {}) {
             if (!matchMedia("(max-width: 1024px)").matches) {
                 trackResearchEvent("research_auto_handoff", {
                     layout: "desktop",
@@ -443,6 +495,9 @@
                 showMobilePanel("dooh");
                 handoff.classList.remove("is-active");
                 handoff.setAttribute("aria-hidden", "true");
+                if (returnToName) {
+                    scheduleReturnToNameInput();
+                }
             }, 800);
         }
 
@@ -454,7 +509,11 @@
         });
         reloadBtn.addEventListener("click", () => reloadFrames({ track: true }));
         participantTab.addEventListener("click", () => showMobilePanel("participant"));
-        doohTab.addEventListener("click", () => showMobilePanel("dooh"));
+        doohTab.addEventListener("click", () => {
+            showMobilePanel("dooh");
+            requestLandscapeView();
+        });
+        orientationAction.addEventListener("click", requestLandscapeView);
         focusBtn.addEventListener("click", () => {
             const focused = document.body.classList.toggle("dooh-focus");
             focusBtn.setAttribute("aria-pressed", String(focused));
@@ -464,14 +523,16 @@
             });
         });
         window.addEventListener("message", (event) => {
-            if (
-                event.origin !== location.origin ||
-                event.source !== participantFrame.contentWindow ||
-                event.data?.type !== "dooh-research-participation-complete"
-            ) {
+            if (event.origin !== location.origin || event.source !== participantFrame.contentWindow) {
                 return;
             }
-            showDoohAfterParticipation(event.data.participantCount);
+
+            if (event.data?.type === "dooh-research-participation-complete") {
+                showDoohAfterParticipation(event.data.participantCount, { returnToName: true });
+            }
+            if (event.data?.type === "dooh-research-card-complete") {
+                showDoohAfterParticipation(event.data.participantCount);
+            }
         });
         window.addEventListener("resize", updateDoohPreview);
 
