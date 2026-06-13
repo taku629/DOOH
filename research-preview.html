@@ -128,10 +128,6 @@
             letter-spacing: 0.04em;
         }
 
-        .handoff-orientation {
-            display: none;
-        }
-
         .handoff-ring {
             width: 54px;
             height: 54px;
@@ -318,9 +314,8 @@
         }
 
         @media (max-width: 1024px) and (orientation: portrait) {
-            .orientation-note { display: block; }
-            body.mobile-dooh .orientation-action { display: block; }
-            .handoff-orientation { display: block; }
+            body.orientation-ready .orientation-note { display: block; }
+            body.mobile-dooh.orientation-ready .orientation-action { display: block; }
         }
     </style>
 </head>
@@ -371,7 +366,6 @@
             <span class="handoff-copy">
                 <strong id="handoffMessage">参加を受信しました</strong>
                 <small id="handoffStatus">DOOHへの反映を準備しています</small>
-                <small class="handoff-orientation">端末を横向きにすると大きく確認できます</small>
             </span>
         </div>
     </div>
@@ -401,8 +395,12 @@
         const analyticsQueue = [];
         let handoffTimer = null;
         let handoffStatusTimer = null;
+        let orientationPromptTimer = null;
+        let doohReplayTimer = null;
         let returnToNameTimer = null;
         const HANDOFF_DELAY_MS = 2000;
+        const ORIENTATION_PROMPT_DELAY_MS = 3500;
+        const RETURN_TO_NAME_DELAY_MS = 7000;
 
         function trackResearchEvent(name, parameters = {}) {
             if (typeof window.__logResearchEvent === "function") {
@@ -434,6 +432,8 @@
         function showMobilePanel(panel) {
             const showDooh = panel === "dooh";
             window.clearTimeout(returnToNameTimer);
+            window.clearTimeout(orientationPromptTimer);
+            document.body.classList.remove("orientation-ready");
             document.body.classList.toggle("mobile-dooh", showDooh);
             document.body.classList.toggle("mobile-participant", !showDooh);
             participantTab.setAttribute("aria-selected", String(!showDooh));
@@ -447,6 +447,28 @@
             if (showDooh) {
                 requestAnimationFrame(updateDoohPreview);
             }
+        }
+
+        function scheduleOrientationPrompt(delay = ORIENTATION_PROMPT_DELAY_MS) {
+            window.clearTimeout(orientationPromptTimer);
+            orientationPromptTimer = window.setTimeout(() => {
+                document.body.classList.add("orientation-ready");
+                updateDoohPreview();
+            }, delay);
+        }
+
+        function replayDoohParticipation(participantCount) {
+            const count = Number(participantCount);
+            const inkDemo = doohFrame.contentWindow?.__inkDemo;
+            if (!Number.isFinite(count) || !inkDemo?.applyLiveCount) {
+                return;
+            }
+
+            window.clearTimeout(doohReplayTimer);
+            inkDemo.applyLiveCount(Math.max(0, count - 1));
+            doohReplayTimer = window.setTimeout(() => {
+                doohFrame.contentWindow?.__inkDemo?.applyLiveCount(count);
+            }, 500);
         }
 
         async function requestLandscapeView() {
@@ -482,7 +504,7 @@
             }
 
             window.clearTimeout(returnToNameTimer);
-            returnToNameTimer = window.setTimeout(returnToNameInput, 3500);
+            returnToNameTimer = window.setTimeout(returnToNameInput, RETURN_TO_NAME_DELAY_MS);
         }
 
         function updateDoohPreview() {
@@ -527,9 +549,10 @@
 
             handoffTimer = window.setTimeout(() => {
                 showMobilePanel("dooh");
-                requestLandscapeView();
                 handoff.classList.remove("is-active");
                 handoff.setAttribute("aria-hidden", "true");
+                replayDoohParticipation(participantCount);
+                scheduleOrientationPrompt();
                 if (returnToName) {
                     scheduleReturnToNameInput();
                 }
@@ -546,7 +569,7 @@
         participantTab.addEventListener("click", () => showMobilePanel("participant"));
         doohTab.addEventListener("click", () => {
             showMobilePanel("dooh");
-            requestLandscapeView();
+            scheduleOrientationPrompt(1200);
         });
         orientationAction.addEventListener("click", requestLandscapeView);
         focusBtn.addEventListener("click", () => {
