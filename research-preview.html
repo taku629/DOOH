@@ -115,6 +115,23 @@
             letter-spacing: 0.08em;
         }
 
+        .handoff-copy {
+            display: grid;
+            gap: 7px;
+            text-align: center;
+        }
+
+        .handoff-copy small {
+            color: rgba(255, 255, 255, 0.62);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .handoff-orientation {
+            display: none;
+        }
+
         .handoff-ring {
             width: 54px;
             height: 54px;
@@ -303,6 +320,7 @@
         @media (max-width: 1024px) and (orientation: portrait) {
             .orientation-note { display: block; }
             body.mobile-dooh .orientation-action { display: block; }
+            .handoff-orientation { display: block; }
         }
     </style>
 </head>
@@ -350,7 +368,11 @@
     <div class="handoff" id="handoff" aria-hidden="true">
         <div class="handoff-inner">
             <span class="handoff-ring" aria-hidden="true"></span>
-            <span>DOOHへ反映しています</span>
+            <span class="handoff-copy">
+                <strong id="handoffMessage">参加を受信しました</strong>
+                <small id="handoffStatus">DOOHへの反映を準備しています</small>
+                <small class="handoff-orientation">端末を横向きにすると大きく確認できます</small>
+            </span>
         </div>
     </div>
 
@@ -374,9 +396,13 @@
         const doohTab = document.getElementById("doohTab");
         const orientationAction = document.getElementById("orientationAction");
         const handoff = document.getElementById("handoff");
+        const handoffMessage = document.getElementById("handoffMessage");
+        const handoffStatus = document.getElementById("handoffStatus");
         const analyticsQueue = [];
         let handoffTimer = null;
+        let handoffStatusTimer = null;
         let returnToNameTimer = null;
+        const HANDOFF_DELAY_MS = 2000;
 
         function trackResearchEvent(name, parameters = {}) {
             if (typeof window.__logResearchEvent === "function") {
@@ -484,6 +510,9 @@
             }
 
             window.clearTimeout(handoffTimer);
+            window.clearTimeout(handoffStatusTimer);
+            handoffMessage.textContent = "参加を受信しました";
+            handoffStatus.textContent = "DOOHへの反映を準備しています";
             handoff.classList.add("is-active");
             handoff.setAttribute("aria-hidden", "false");
             trackResearchEvent("research_auto_handoff", {
@@ -491,14 +520,20 @@
                 participant_count: Number(participantCount) || 0,
             });
 
+            handoffStatusTimer = window.setTimeout(() => {
+                handoffMessage.textContent = "DOOHへ反映しています";
+                handoffStatus.textContent = "まもなく画面が切り替わります";
+            }, 900);
+
             handoffTimer = window.setTimeout(() => {
                 showMobilePanel("dooh");
+                requestLandscapeView();
                 handoff.classList.remove("is-active");
                 handoff.setAttribute("aria-hidden", "true");
                 if (returnToName) {
                     scheduleReturnToNameInput();
                 }
-            }, 800);
+            }, HANDOFF_DELAY_MS);
         }
 
         participantType.addEventListener("change", () => {
