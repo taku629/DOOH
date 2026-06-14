@@ -195,6 +195,24 @@ button {
   transition: none;
 }
 
+/*
+ * iOS Safari can leave large blank compositing layers when a text input lives
+ * inside the vertically translated track. After participation, render only
+ * the active step normally instead of moving the stacked track.
+ */
+.app.is-post-participation .track {
+  transform: none !important;
+  will-change: auto;
+}
+
+.app.is-post-participation .step {
+  display: none;
+}
+
+.app.is-post-participation .step.is-current {
+  display: flex;
+}
+
 /* Step card ----------------------------------------------------------- */
 
 .step {
