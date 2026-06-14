@@ -20,14 +20,11 @@
       "web/admin-src/**",
       "*.pptx"
     ],
-    "redirects": [
+    "rewrites": [
       {
         "source": "/",
-        "destination": "/research",
-        "type": 302
-      }
-    ],
-    "rewrites": [
+        "destination": "/research-preview.html"
+      },
       {
         "source": "/research",
         "destination": "/research-preview.html"
