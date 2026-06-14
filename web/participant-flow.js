@@ -2,7 +2,8 @@ import { getDonationMilestoneGoal } from "../src/condition-manager.js";
 import { getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
-import { getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs";
+import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-2";
+import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-1";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
 const steps = [...document.querySelectorAll(".step")];
@@ -52,6 +53,7 @@ const returnTestDate = new URLSearchParams(location.search).get("return-test-dat
 const participationDateOverride = /^\d{4}-\d{2}-\d{2}$/.test(returnTestDate || "")
   ? returnTestDate
   : undefined;
+const pendingParticipationVisit = getParticipationVisit({ today: participationDateOverride });
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
@@ -709,6 +711,7 @@ function announceDonorName() {
     return;
   }
 
+  saveDisplayName(typed);
   hasAnnouncedName = true;
 
   const payload = {
@@ -1521,6 +1524,51 @@ nickname.addEventListener("input", syncPreviewName);
 nickname.addEventListener("compositionupdate", syncPreviewName);
 nickname.addEventListener("compositionend", syncPreviewName);
 
+function setupSavedNameChoice() {
+  const savedName = getSavedDisplayName();
+  const nameField = nickname.closest(".sparkle-name-field") ?? nickname;
+  const nameStep = nickname.closest(".step");
+  if (!savedName || !pendingParticipationVisit.isReturning || !nameStep) {
+    return;
+  }
+
+  const choice = document.createElement("section");
+  choice.className = "saved-name-choice";
+  choice.setAttribute("aria-label", "前回の表示名を使用");
+
+  const copy = document.createElement("p");
+  copy.innerHTML = `前回の表示名 <strong></strong> を使用しますか？`;
+  copy.querySelector("strong").textContent = savedName;
+
+  const actions = document.createElement("div");
+  actions.className = "saved-name-actions";
+  const reuseButton = document.createElement("button");
+  reuseButton.type = "button";
+  reuseButton.className = "primary";
+  reuseButton.textContent = "この名前を使う";
+  const changeButton = document.createElement("button");
+  changeButton.type = "button";
+  changeButton.className = "ghost";
+  changeButton.textContent = "名前を変更";
+  actions.append(reuseButton, changeButton);
+  choice.append(copy, actions);
+  nameStep.insertBefore(choice, nameField);
+
+  reuseButton.addEventListener("click", () => {
+    nickname.value = savedName;
+    syncPreviewName();
+    choice.hidden = true;
+  });
+  changeButton.addEventListener("click", () => {
+    nickname.value = "";
+    syncPreviewName();
+    choice.hidden = true;
+    nickname.focus();
+  });
+}
+
+setupSavedNameChoice();
+
 document.getElementById("createCard").addEventListener("click", () => {
   announceDonorName();
   finalizeCard();
@@ -1559,8 +1607,15 @@ window.addEventListener("message", (event) => {
   if (
     event.origin !== location.origin ||
     event.source !== window.parent ||
-    event.data?.type !== "dooh-research-open-name-step"
+    !["dooh-research-open-name-step", "dooh-research-reset-device"].includes(event.data?.type)
   ) {
+    return;
+  }
+
+  if (event.data.type === "dooh-research-reset-device") {
+    clearParticipationVisit();
+    clearSavedDisplayName();
+    window.parent.postMessage({ type: "dooh-research-device-reset" }, location.origin);
     return;
   }
 

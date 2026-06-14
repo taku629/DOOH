@@ -536,6 +536,42 @@ label {
   flex-direction: column;
 }
 
+.saved-name-choice {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 4px;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-sm);
+}
+
+.saved-name-choice p {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.saved-name-choice strong {
+  color: var(--ink);
+}
+
+.saved-name-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.saved-name-actions .primary,
+.saved-name-actions .ghost {
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+
 .ghost.share-line {
   border-color: rgba(6, 199, 85, 0.42);
   color: #06c755;

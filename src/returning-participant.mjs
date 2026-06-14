@@ -78,4 +78,9 @@ export function saveParticipationVisit(visit, options = {}) {
     }));
 }
 
+export function clearParticipationVisit(options = {}) {
+    const storage = options.storage ?? globalThis.localStorage;
+    storage?.removeItem(STORAGE_KEY);
+}
+
 export { STORAGE_KEY, formatLocalDate };

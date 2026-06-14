@@ -4,6 +4,7 @@ import test from "node:test";
 import {
     STORAGE_KEY,
     buildParticipationVisit,
+    clearParticipationVisit,
     getParticipationVisit,
     saveParticipationVisit,
 } from "../src/returning-participant.mjs";
@@ -17,6 +18,9 @@ function createStorage() {
         setItem(key, value) {
             values.set(key, value);
         },
+        removeItem(key) {
+            values.delete(key);
+        },
     };
 }
 
@@ -26,6 +30,16 @@ test("first participation is treated as new", () => {
     assert.equal(visit.isReturning, false);
     assert.equal(visit.isConsecutiveReturn, false);
     assert.equal(visit.streakDays, 1);
+});
+
+test("saved local participation can be cleared for testing", () => {
+    const storage = createStorage();
+    const visit = getParticipationVisit({ storage, today: "2026-06-11" });
+    saveParticipationVisit(visit, { storage });
+
+    clearParticipationVisit({ storage });
+
+    assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 
 test("participation on the following day increments the streak", () => {

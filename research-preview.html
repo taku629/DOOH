@@ -91,6 +91,10 @@
             display: none;
         }
 
+        .mobile-test-tools {
+            display: none;
+        }
+
         .handoff {
             position: fixed;
             inset: 0;
@@ -312,6 +316,51 @@
                 color: var(--ink);
             }
 
+            .mobile-test-tools {
+                position: fixed;
+                left: 8px;
+                bottom: max(8px, env(safe-area-inset-bottom));
+                z-index: 7;
+                display: block;
+                color: #fff;
+            }
+
+            .mobile-test-tools summary {
+                width: max-content;
+                padding: 8px 12px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 999px;
+                background: rgba(17, 19, 19, 0.78);
+                font-size: 0.68rem;
+                font-weight: 700;
+                list-style: none;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+            }
+
+            .mobile-test-tools summary::-webkit-details-marker {
+                display: none;
+            }
+
+            .mobile-test-actions {
+                display: grid;
+                gap: 6px;
+                width: 150px;
+                margin-bottom: 6px;
+                padding: 7px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+                background: rgba(17, 19, 19, 0.9);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+            }
+
+            .mobile-test-actions button {
+                min-height: 34px;
+                padding: 0 9px;
+                font-size: 0.66rem;
+            }
+
             .workspace {
                 width: 100%;
                 height: 100%;
@@ -359,6 +408,8 @@
             <option value="women">参加画面：WOMEN</option>
         </select>
         <button id="reloadBtn" type="button">両画面を再読み込み</button>
+        <button id="nextDayTestBtn" type="button">翌日参加を再現</button>
+        <button id="resetDeviceBtn" type="button">端末履歴をリセット</button>
         <button id="focusBtn" type="button" aria-pressed="false">DOOHを大きく</button>
         <button class="survey-entry" id="surveyBtn" type="button" hidden>アンケート</button>
     </header>
@@ -368,6 +419,13 @@
         <button id="doohTab" type="button" aria-selected="false">DOOH</button>
         <button class="survey-entry" id="surveyTab" type="button" aria-selected="false" hidden>アンケート</button>
     </nav>
+    <details class="mobile-test-tools">
+        <summary>動作テスト</summary>
+        <div class="mobile-test-actions">
+            <button id="mobileNextDayTestBtn" type="button">翌日参加を再現</button>
+            <button id="mobileResetDeviceBtn" type="button">端末履歴をリセット</button>
+        </div>
+    </details>
 
     <main class="workspace">
         <section class="panel participant-panel">
@@ -414,13 +472,17 @@
             : { men: "/men", women: "/women" };
         const doohRoute = local ? "demo.html" : "/demo";
         const SURVEY_URL = "https://forms.gle/xYiJasuYBkR6YnF78";
-        const returnTestDate = new URLSearchParams(location.search).get("return-test-date");
+        let activeReturnTestDate = new URLSearchParams(location.search).get("return-test-date");
 
         const participantFrame = document.getElementById("participantFrame");
         const doohFrame = document.getElementById("doohFrame");
         const doohFrameShell = document.getElementById("doohFrameShell");
         const participantType = document.getElementById("participantType");
         const reloadBtn = document.getElementById("reloadBtn");
+        const nextDayTestBtn = document.getElementById("nextDayTestBtn");
+        const resetDeviceBtn = document.getElementById("resetDeviceBtn");
+        const mobileNextDayTestBtn = document.getElementById("mobileNextDayTestBtn");
+        const mobileResetDeviceBtn = document.getElementById("mobileResetDeviceBtn");
         const focusBtn = document.getElementById("focusBtn");
         const participantTab = document.getElementById("participantTab");
         const doohTab = document.getElementById("doohTab");
@@ -445,6 +507,21 @@
         const ORIENTATION_PROMPT_DELAY_MS = 3500;
         const RETURN_TO_NAME_DELAY_MS = 7000;
 
+        function formatLocalDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function getNextTestDate() {
+            const baseDate = /^\d{4}-\d{2}-\d{2}$/.test(activeReturnTestDate || "")
+                ? new Date(`${activeReturnTestDate}T12:00:00`)
+                : new Date();
+            baseDate.setDate(baseDate.getDate() + 1);
+            return formatLocalDate(baseDate);
+        }
+
         function trackResearchEvent(name, parameters = {}) {
             if (typeof window.__logResearchEvent === "function") {
                 window.__logResearchEvent(name, parameters);
@@ -460,8 +537,9 @@
 
         function loadParticipant() {
             const participantUrl = new URL(participantRoutes[participantType.value], location.href);
-            if (/^\d{4}-\d{2}-\d{2}$/.test(returnTestDate || "")) {
-                participantUrl.searchParams.set("return-test-date", returnTestDate);
+            participantUrl.searchParams.set("rs-load", Date.now());
+            if (/^\d{4}-\d{2}-\d{2}$/.test(activeReturnTestDate || "")) {
+                participantUrl.searchParams.set("return-test-date", activeReturnTestDate);
             }
             participantFrame.src = participantUrl.href;
         }
@@ -655,6 +733,26 @@
             });
         });
         reloadBtn.addEventListener("click", () => reloadFrames({ track: true }));
+        function simulateNextDay() {
+            activeReturnTestDate = getNextTestDate();
+            showMobilePanel("participant");
+            loadParticipant();
+            showFlowGuide(
+                `${activeReturnTestDate} の参加を再現します`,
+                "前回名の再利用と継続日数カラーを確認できます"
+            );
+        }
+
+        function resetDeviceHistory() {
+            participantFrame.contentWindow?.postMessage({
+                type: "dooh-research-reset-device",
+            }, location.origin);
+        }
+
+        nextDayTestBtn.addEventListener("click", simulateNextDay);
+        mobileNextDayTestBtn.addEventListener("click", simulateNextDay);
+        resetDeviceBtn.addEventListener("click", resetDeviceHistory);
+        mobileResetDeviceBtn.addEventListener("click", resetDeviceHistory);
         participantTab.addEventListener("click", () => showMobilePanel("participant"));
         doohTab.addEventListener("click", () => {
             showMobilePanel("dooh");
@@ -698,6 +796,15 @@
                 trackResearchEvent("research_support_choice", {
                     support_choice: event.data.supportChoice || "unknown",
                 });
+            }
+            if (event.data?.type === "dooh-research-device-reset") {
+                activeReturnTestDate = "";
+                showMobilePanel("participant");
+                loadParticipant();
+                showFlowGuide(
+                    "端末履歴をリセットしました",
+                    "初回参加者として動作確認できます"
+                );
             }
         });
         window.addEventListener("resize", updateDoohPreview);
