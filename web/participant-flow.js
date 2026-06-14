@@ -57,8 +57,10 @@ const participationDateOverride = /^\d{4}-\d{2}-\d{2}$/.test(returnTestDate || "
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
 const activeTheme = resolveTheme({ defaultTheme: "day" });
-const requestedParticipationChannel = new URLSearchParams(location.search).get("channel");
-const PARTICIPATION_CHANNEL = requestedParticipationChannel === "research"
+const participationSearchParams = new URLSearchParams(location.search);
+const requestedParticipationChannel = participationSearchParams.get("channel");
+const isExplicitTeamTest = participationSearchParams.get("team-test") === "1";
+const PARTICIPATION_CHANNEL = requestedParticipationChannel === "research" && isExplicitTeamTest
   ? "research"
   : getChannelForTheme(activeTheme, "default");
 const participationStorageOptions = PARTICIPATION_CHANNEL === "research"

@@ -585,6 +585,7 @@
             participantUrl.searchParams.set("rs-load", Date.now());
             if (TEAM_TEST_MODE) {
                 participantUrl.searchParams.set("channel", PARTICIPATION_CHANNEL);
+                participantUrl.searchParams.set("team-test", "1");
             }
             if (/^\d{4}-\d{2}-\d{2}$/.test(activeReturnTestDate || "")) {
                 participantUrl.searchParams.set("return-test-date", activeReturnTestDate);
@@ -603,6 +604,7 @@
             doohUrl.searchParams.set("t", Date.now());
             if (TEAM_TEST_MODE) {
                 doohUrl.searchParams.set("channel", PARTICIPATION_CHANNEL);
+                doohUrl.searchParams.set("team-test", "1");
             }
             doohFrame.src = doohUrl.href;
             if (track) {

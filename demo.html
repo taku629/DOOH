@@ -1125,7 +1125,7 @@
 
         const theme = resolveTheme({ defaultTheme: "day" });
         const searchParams = new URLSearchParams(location.search);
-        const channel = searchParams.get("channel") === "research"
+        const channel = searchParams.get("channel") === "research" && searchParams.get("team-test") === "1"
             ? "research"
             : getChannelForTheme(theme, "default");
         const isDevMode = searchParams.has("dev");
