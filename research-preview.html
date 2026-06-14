@@ -251,7 +251,7 @@
             transform-origin: top left;
         }
 
-        .orientation-note {
+        .orientation-prompt {
             display: none;
             margin: 0;
             color: var(--muted);
@@ -259,17 +259,6 @@
             font-weight: 700;
             letter-spacing: 0.04em;
             text-align: center;
-        }
-
-        .orientation-action {
-            display: none;
-            min-height: 38px;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            font-size: 0.75rem;
-            font-weight: 800;
         }
 
         body.dooh-focus .workspace { grid-template-columns: minmax(210px, 0.22fr) minmax(0, 0.78fr); }
@@ -350,8 +339,7 @@
         }
 
         @media (max-width: 1024px) and (orientation: portrait) {
-            body.orientation-ready .orientation-note { display: block; }
-            body.mobile-dooh.orientation-ready .orientation-action { display: block; }
+            body.mobile-dooh.orientation-ready .orientation-prompt { display: block; }
         }
     </style>
 </head>
@@ -390,8 +378,7 @@
                 <div class="dooh-frame-shell" id="doohFrameShell">
                     <iframe id="doohFrame" title="新宿DOOH画面"></iframe>
                 </div>
-                <p class="orientation-note">横向きにするとDOOHを大きく確認できます</p>
-                <button class="orientation-action" id="orientationAction" type="button">横向きでDOOHを見る</button>
+                <p class="orientation-prompt">端末を横向きにしてご覧ください</p>
             </div>
         </section>
     </main>
@@ -419,6 +406,7 @@
             }
             : { men: "/men", women: "/women" };
         const doohRoute = local ? "demo.html" : "/demo";
+        const SURVEY_URL = "https://forms.gle/xYiJasuYBkR6YnF78";
 
         const participantFrame = document.getElementById("participantFrame");
         const doohFrame = document.getElementById("doohFrame");
@@ -428,7 +416,6 @@
         const focusBtn = document.getElementById("focusBtn");
         const participantTab = document.getElementById("participantTab");
         const doohTab = document.getElementById("doohTab");
-        const orientationAction = document.getElementById("orientationAction");
         const handoff = document.getElementById("handoff");
         const handoffMessage = document.getElementById("handoffMessage");
         const handoffStatus = document.getElementById("handoffStatus");
@@ -442,9 +429,11 @@
         let doohReplayTimer = null;
         let flowGuideTimer = null;
         let returnToNameTimer = null;
+        let surveyTimer = null;
         const HANDOFF_DELAY_MS = 2000;
         const ORIENTATION_PROMPT_DELAY_MS = 3500;
         const RETURN_TO_NAME_DELAY_MS = 7000;
+        const SURVEY_REDIRECT_DELAY_MS = 6500;
 
         function trackResearchEvent(name, parameters = {}) {
             if (typeof window.__logResearchEvent === "function") {
@@ -528,23 +517,6 @@
             }, 500);
         }
 
-        async function requestLandscapeView() {
-            if (!matchMedia("(max-width: 1024px)").matches) {
-                return;
-            }
-
-            try {
-                if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                    await document.documentElement.requestFullscreen();
-                }
-                if (screen.orientation?.lock) {
-                    await screen.orientation.lock("landscape");
-                }
-            } catch (error) {
-                console.info("[research] landscape lock is unavailable:", error);
-            }
-        }
-
         function returnToNameInput() {
             showMobilePanel("participant");
             participantFrame.contentWindow?.postMessage({
@@ -564,9 +536,26 @@
             returnToNameTimer = window.setTimeout(returnToNameInput, RETURN_TO_NAME_DELAY_MS);
         }
 
+        function scheduleSurveyRedirect(surveyUrl) {
+            if (!/^https:\/\/forms\.gle\//.test(surveyUrl || "")) {
+                return;
+            }
+
+            window.clearTimeout(surveyTimer);
+            surveyTimer = window.setTimeout(() => {
+                flowGuideTitle.textContent = "ご参加ありがとうございました";
+                flowGuideStatus.textContent = "アンケートへ移動します";
+                flowGuide.classList.add("is-active");
+                flowGuide.setAttribute("aria-hidden", "false");
+                window.setTimeout(() => {
+                    window.location.href = surveyUrl;
+                }, 1400);
+            }, SURVEY_REDIRECT_DELAY_MS);
+        }
+
         function updateDoohPreview() {
             const viewport = doohFrameShell.parentElement;
-            const note = viewport.querySelector(".orientation-note");
+            const note = viewport.querySelector(".orientation-prompt");
             const noteHeight = note && getComputedStyle(note).display !== "none"
                 ? note.getBoundingClientRect().height + 16
                 : 0;
@@ -586,6 +575,7 @@
             handoffDescription = "DOOHへの反映を準備しています",
             guideTitle = "",
             guideStatus = "",
+            surveyUrl = "",
         } = {}) {
             if (!matchMedia("(max-width: 1024px)").matches) {
                 trackResearchEvent("research_auto_handoff", {
@@ -625,6 +615,7 @@
                     scheduleReturnToNameInput();
                 } else {
                     scheduleOrientationPrompt(2600);
+                    scheduleSurveyRedirect(surveyUrl);
                 }
             }, HANDOFF_DELAY_MS);
         }
@@ -641,7 +632,6 @@
             showMobilePanel("dooh");
             scheduleOrientationPrompt(1200);
         });
-        orientationAction.addEventListener("click", requestLandscapeView);
         focusBtn.addEventListener("click", () => {
             const focused = document.body.classList.toggle("dooh-focus");
             focusBtn.setAttribute("aria-pressed", String(focused));
@@ -671,6 +661,7 @@
                         ? "参加証の名前がDOOHに表示されました"
                         : "参加証が作成されました",
                     guideStatus: "街の変化は増やさず、参加証の情報だけを反映しています",
+                    surveyUrl: event.data.surveyUrl || SURVEY_URL,
                 });
             }
             if (event.data?.type === "dooh-research-support-choice") {

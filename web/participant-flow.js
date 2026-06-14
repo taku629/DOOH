@@ -371,6 +371,10 @@ function scheduleFormRedirect() {
   if (formRedirectTimer || outroStarted) {
     return;
   }
+  // 調査用プレビューでは親画面がDOOH表示後のアンケート遷移を管理する。
+  if (window.parent !== window) {
+    return;
+  }
   const formUrl = (document.body?.dataset?.postFlowForm || "").trim();
   if (!formUrl) {
     return; // URL未設定（対象外フロー）→ 遷移しない
@@ -669,6 +673,7 @@ function finalizeCard() {
       type: "dooh-research-card-complete",
       participantCount,
       hasDisplayName: Boolean(nickname.value.trim()),
+      surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
     }, location.origin);
   }
 }
