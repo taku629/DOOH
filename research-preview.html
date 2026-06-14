@@ -495,7 +495,13 @@
                 });
             }
             if (showDooh) {
-                requestAnimationFrame(updateDoohPreview);
+                requestAnimationFrame(() => {
+                    updateDoohPreview();
+                    doohFrame.contentWindow?.__inkDemo?.resumeDonorTicker?.();
+                });
+                window.setTimeout(() => {
+                    doohFrame.contentWindow?.__inkDemo?.resumeDonorTicker?.();
+                }, 300);
             }
         }
 

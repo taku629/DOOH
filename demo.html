@@ -782,6 +782,7 @@
         // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
         const AUTO_NAME_RE = /^サポーター#/;
         const PLACEHOLDER_NAMES = new Set(["匿名サポーター", "匿名", "Guest", "参加者"]);
+        const MAX_DONOR_NAMES = 100;
 
         function isRealName(raw) {
             return raw.length > 0 && !AUTO_NAME_RE.test(raw) && !PLACEHOLDER_NAMES.has(raw);
@@ -798,7 +799,7 @@
             const existingIndex = donorNameRotation.findIndex((item) => item.name === name);
             if (existingIndex >= 0) donorNameRotation.splice(existingIndex, 1);
             donorNameRotation.push(entry);
-            if (donorNameRotation.length > 30) donorNameRotation.shift();
+            if (donorNameRotation.length > MAX_DONOR_NAMES) donorNameRotation.shift();
         }
 
         function appendTickerItems(group, entries) {
@@ -837,6 +838,11 @@
                 track.appendChild(group);
             }
             thanks.replaceChildren(track);
+        }
+
+        function resumeDonorTicker() {
+            if (donorNameRotation.length === 0) return;
+            renderDonorTicker();
         }
 
         function showThanks(name, options = {}) {
@@ -1078,7 +1084,7 @@
         updateHud();
 
         // Firebase連動スクリプト（module）から呼べるように公開
-        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, skipScene, completeCurrentChallenge };
+        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, resumeDonorTicker, skipScene, completeCurrentChallenge };
     </script>
 
     <script type="module">
@@ -1121,7 +1127,7 @@
 
         }
 
-        getRecentNameAnnouncements({ channel, limit: 30 })
+        getRecentNameAnnouncements({ channel, limit: 100 })
             .then((events) => {
                 const validEvents = events
                     .map((event) => ({ ...event, name: String(event?.name ?? "").trim() }))
