@@ -522,6 +522,35 @@
         const HANDOFF_DELAY_MS = 2000;
         const ORIENTATION_PROMPT_DELAY_MS = 3500;
         const RETURN_TO_NAME_DELAY_MS = 7000;
+        let hourlyParticipantTimer = null;
+
+        function pickParticipantType(now = new Date()) {
+            return now.getHours() % 2 === 0 ? "men" : "women";
+        }
+
+        function applyHourlyParticipantType({ reload = false } = {}) {
+            const nextType = pickParticipantType();
+            const didChange = participantType.value !== nextType;
+            participantType.value = nextType;
+
+            if (reload && didChange) {
+                loadParticipant();
+                trackResearchEvent("participant_variant_hourly_change", {
+                    participant_variant: nextType,
+                });
+            }
+        }
+
+        function scheduleNextHourlyParticipantType() {
+            window.clearTimeout(hourlyParticipantTimer);
+            const now = new Date();
+            const next = new Date(now);
+            next.setHours(now.getHours() + 1, 0, 0, 50);
+            hourlyParticipantTimer = window.setTimeout(() => {
+                applyHourlyParticipantType({ reload: true });
+                scheduleNextHourlyParticipantType();
+            }, next.getTime() - now.getTime());
+        }
 
         function formatLocalDate(date) {
             const year = date.getFullYear();
@@ -834,6 +863,8 @@
         });
         window.addEventListener("resize", updateDoohPreview);
 
+        applyHourlyParticipantType();
+        scheduleNextHourlyParticipantType();
         showMobilePanel("participant");
         reloadFrames();
         updateDoohPreview();
