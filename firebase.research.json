@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "shinjuku-dooh-research",
+    "site": "shinjuku-dooh-rs",
     "public": ".",
     "ignore": [
       "firebase.json",
