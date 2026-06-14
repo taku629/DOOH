@@ -5,6 +5,7 @@
     "ignore": [
       "firebase.json",
       "firebase.research.json",
+      "index.html",
       "**/.*",
       "**/node_modules/**",
       "README.md",
