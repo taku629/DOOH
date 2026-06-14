@@ -754,6 +754,8 @@ function markAlreadyParticipatedToday(visit) {
   hasCountedParticipation = true;
   hasAcceptedParticipation = false;
   hasAnnouncedName = true;
+  swipeStep?.classList.add("is-participation-locked");
+  swipeControl?.setAttribute("aria-disabled", "true");
   if (swipeHint) {
     swipeHint.textContent = "本日はすでに参加済みです。また明日の参加をお待ちしています。";
   }
@@ -1336,7 +1338,7 @@ function setSwipeFill(value) {
 
 function canAdvanceFrom(index) {
   if (index === 0) {
-    return swipeChargeValue >= 100;
+    return !pendingParticipationVisit.alreadyParticipatedToday && swipeChargeValue >= 100;
   }
   return true;
 }
@@ -1407,6 +1409,9 @@ function isInteractiveTarget(target) {
 
 function startPointer(event) {
   if (activePointerId !== null) {
+    return;
+  }
+  if (pendingParticipationVisit.alreadyParticipatedToday || hasCountedParticipation) {
     return;
   }
   if (currentStep !== 0) {
@@ -1709,6 +1714,9 @@ window.addEventListener("resize", () => {
 
 updateSwipeCharge(0);
 applyThemeCopy();
+if (pendingParticipationVisit.alreadyParticipatedToday) {
+  markAlreadyParticipatedToday(pendingParticipationVisit);
+}
 showStep(0);
 updateMilestonePreview(participantCount);
 loadRelightPlaylist();
