@@ -137,6 +137,42 @@
             animation: handoff-spin 800ms linear infinite;
         }
 
+        .flow-guide {
+            position: fixed;
+            left: 50%;
+            bottom: max(24px, env(safe-area-inset-bottom));
+            z-index: 8;
+            display: grid;
+            gap: 4px;
+            width: min(calc(100% - 32px), 430px);
+            padding: 14px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            background: rgba(5, 6, 6, 0.88);
+            color: #fff;
+            text-align: center;
+            opacity: 0;
+            transform: translate(-50%, 12px);
+            transition: opacity 240ms ease, transform 240ms ease;
+            pointer-events: none;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .flow-guide.is-active {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .flow-guide strong {
+            font-size: 0.88rem;
+        }
+
+        .flow-guide span {
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 0.7rem;
+        }
+
         @keyframes handoff-spin {
             to { transform: rotate(360deg); }
         }
@@ -369,6 +405,10 @@
             </span>
         </div>
     </div>
+    <div class="flow-guide" id="flowGuide" aria-live="polite" aria-hidden="true">
+        <strong id="flowGuideTitle"></strong>
+        <span id="flowGuideStatus"></span>
+    </div>
 
     <script>
         const local = ["localhost", "127.0.0.1"].includes(location.hostname);
@@ -392,11 +432,15 @@
         const handoff = document.getElementById("handoff");
         const handoffMessage = document.getElementById("handoffMessage");
         const handoffStatus = document.getElementById("handoffStatus");
+        const flowGuide = document.getElementById("flowGuide");
+        const flowGuideTitle = document.getElementById("flowGuideTitle");
+        const flowGuideStatus = document.getElementById("flowGuideStatus");
         const analyticsQueue = [];
         let handoffTimer = null;
         let handoffStatusTimer = null;
         let orientationPromptTimer = null;
         let doohReplayTimer = null;
+        let flowGuideTimer = null;
         let returnToNameTimer = null;
         const HANDOFF_DELAY_MS = 2000;
         const ORIENTATION_PROMPT_DELAY_MS = 3500;
@@ -433,6 +477,9 @@
             const showDooh = panel === "dooh";
             window.clearTimeout(returnToNameTimer);
             window.clearTimeout(orientationPromptTimer);
+            window.clearTimeout(flowGuideTimer);
+            flowGuide.classList.remove("is-active");
+            flowGuide.setAttribute("aria-hidden", "true");
             document.body.classList.remove("orientation-ready");
             document.body.classList.toggle("mobile-dooh", showDooh);
             document.body.classList.toggle("mobile-participant", !showDooh);
@@ -454,6 +501,16 @@
             orientationPromptTimer = window.setTimeout(() => {
                 document.body.classList.add("orientation-ready");
                 updateDoohPreview();
+            }, delay);
+        }
+
+        function showFlowGuide(title, status, delay = 0) {
+            window.clearTimeout(flowGuideTimer);
+            flowGuideTimer = window.setTimeout(() => {
+                flowGuideTitle.textContent = title;
+                flowGuideStatus.textContent = status;
+                flowGuide.classList.add("is-active");
+                flowGuide.setAttribute("aria-hidden", "false");
             }, delay);
         }
 
@@ -522,7 +579,14 @@
             doohFrame.style.transform = `scale(${scale})`;
         }
 
-        function showDoohAfterParticipation(participantCount, { returnToName = false } = {}) {
+        function showDoohAfterParticipation(participantCount, {
+            returnToName = false,
+            replayChange = false,
+            handoffTitle = "参加を受信しました",
+            handoffDescription = "DOOHへの反映を準備しています",
+            guideTitle = "",
+            guideStatus = "",
+        } = {}) {
             if (!matchMedia("(max-width: 1024px)").matches) {
                 trackResearchEvent("research_auto_handoff", {
                     layout: "desktop",
@@ -533,8 +597,8 @@
 
             window.clearTimeout(handoffTimer);
             window.clearTimeout(handoffStatusTimer);
-            handoffMessage.textContent = "参加を受信しました";
-            handoffStatus.textContent = "DOOHへの反映を準備しています";
+            handoffMessage.textContent = handoffTitle;
+            handoffStatus.textContent = handoffDescription;
             handoff.classList.add("is-active");
             handoff.setAttribute("aria-hidden", "false");
             trackResearchEvent("research_auto_handoff", {
@@ -543,7 +607,7 @@
             });
 
             handoffStatusTimer = window.setTimeout(() => {
-                handoffMessage.textContent = "DOOHへ反映しています";
+                handoffMessage.textContent = replayChange ? "DOOHへ反映しています" : "参加証をDOOHへ反映しています";
                 handoffStatus.textContent = "まもなく画面が切り替わります";
             }, 900);
 
@@ -551,10 +615,16 @@
                 showMobilePanel("dooh");
                 handoff.classList.remove("is-active");
                 handoff.setAttribute("aria-hidden", "true");
-                replayDoohParticipation(participantCount);
-                scheduleOrientationPrompt();
+                if (replayChange) {
+                    replayDoohParticipation(participantCount);
+                }
+                if (guideTitle) {
+                    showFlowGuide(guideTitle, guideStatus, replayChange ? 3500 : 900);
+                }
                 if (returnToName) {
                     scheduleReturnToNameInput();
+                } else {
+                    scheduleOrientationPrompt(2600);
                 }
             }, HANDOFF_DELAY_MS);
         }
@@ -586,10 +656,22 @@
             }
 
             if (event.data?.type === "dooh-research-participation-complete") {
-                showDoohAfterParticipation(event.data.participantCount, { returnToName: true });
+                showDoohAfterParticipation(event.data.participantCount, {
+                    returnToName: true,
+                    replayChange: true,
+                    guideTitle: "変化がDOOHに反映されました",
+                    guideStatus: "次は参加証を作ります。まもなく入力画面へ戻ります",
+                });
             }
             if (event.data?.type === "dooh-research-card-complete") {
-                showDoohAfterParticipation(event.data.participantCount);
+                showDoohAfterParticipation(event.data.participantCount, {
+                    handoffTitle: "参加証を作成しました",
+                    handoffDescription: "DOOHへ名前を反映しています",
+                    guideTitle: event.data.hasDisplayName
+                        ? "参加証の名前がDOOHに表示されました"
+                        : "参加証が作成されました",
+                    guideStatus: "街の変化は増やさず、参加証の情報だけを反映しています",
+                });
             }
             if (event.data?.type === "dooh-research-support-choice") {
                 trackResearchEvent("research_support_choice", {
