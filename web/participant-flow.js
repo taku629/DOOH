@@ -333,6 +333,10 @@ function setTrackPosition(index, dragPercent = 0) {
 }
 
 function showStep(index) {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+
   currentStep = index;
   viewport.classList.toggle("is-participation-step", index === 0);
   steps.forEach((step, stepIndex) => {
@@ -345,6 +349,15 @@ function showStep(index) {
   updateProgress(index);
   app.classList.toggle("is-post-participation", index >= 1);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
+
+  const resetStepScroll = () => {
+    viewport.scrollTop = 0;
+    if (steps[index]) {
+      steps[index].scrollTop = 0;
+    }
+  };
+  resetStepScroll();
+  requestAnimationFrame(resetStepScroll);
 
   // 体験の最終ステップ（参加証/シェア）に到達したら、アンケートフォームへ自動遷移する。
   // 遷移は body[data-post-flow-form] が設定されたフロー（Men/Women）でのみ有効。
@@ -1542,7 +1555,10 @@ window.addEventListener("message", (event) => {
   }
 
   showStep(2);
-  window.setTimeout(() => nickname.focus(), 120);
+  const nameStep = steps[2];
+  if (nameStep) {
+    nameStep.scrollTop = 0;
+  }
 });
 
 const downloadBtn = document.getElementById("downloadBtn");
