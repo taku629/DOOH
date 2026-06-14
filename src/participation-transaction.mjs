@@ -30,6 +30,7 @@ export function buildParticipationTransactionValue(currentValue, event) {
                 name: event.name ?? null,
                 donationAmountYen: event.donationAmountYen ?? null,
                 userAgent: event.userAgent ?? null,
+                visitorId: event.visitorId ?? null,
                 participationDate: event.participationDate ?? null,
                 isReturning: event.isReturning ?? false,
                 isConsecutiveReturn: event.isConsecutiveReturn ?? false,

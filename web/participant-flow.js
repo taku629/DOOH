@@ -48,6 +48,10 @@ let swipeCardDone = false;
 
 // チーム比較用トグル：?thanks=svg で旧・手描き線画ストーリーカード、未指定なら新カード（thanks-proto風）
 const thanksStyle = new URLSearchParams(location.search).get("thanks");
+const returnTestDate = new URLSearchParams(location.search).get("return-test-date");
+const participationDateOverride = /^\d{4}-\d{2}-\d{2}$/.test(returnTestDate || "")
+  ? returnTestDate
+  : undefined;
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
@@ -710,6 +714,7 @@ function announceDonorName() {
   const payload = {
     name: typed,
     channel: PARTICIPATION_CHANNEL,
+    visitorId: completedParticipationVisit?.visitorId ?? null,
     isReturning: completedParticipationVisit?.isReturning === true,
     isConsecutiveReturn: completedParticipationVisit?.isConsecutiveReturn === true,
     streakDays: completedParticipationVisit?.streakDays ?? 1,
@@ -735,10 +740,11 @@ async function registerParticipation() {
   isRegisteringParticipation = true;
 
   try {
-    const visit = getParticipationVisit();
+    const visit = getParticipationVisit({ today: participationDateOverride });
     const payload = {
       name: getDisplayName(),
       donationAmountYen: DEMO_DONATION_YEN,
+      visitorId: visit.visitorId,
       participationDate: visit.participationDate,
       isReturning: visit.isReturning,
       isConsecutiveReturn: visit.isConsecutiveReturn,
