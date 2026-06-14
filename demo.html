@@ -280,9 +280,16 @@
         }
 
         .ticker-name.is-returning {
-            color: #ffc16b;
-            text-shadow: 0 0 10px rgba(255, 139, 39, 0.5);
+            color: var(--returning-color, #ffc56d);
+            text-shadow: 0 0 10px color-mix(in srgb, var(--returning-color, #ffc56d) 58%, transparent);
         }
+
+        .streak-2 { --returning-color: #ffc56d; }
+        .streak-3 { --returning-color: #ff8a80; }
+        .streak-4 { --returning-color: #f48fb1; }
+        .streak-5 { --returning-color: #c5a3ff; }
+        .streak-6 { --returning-color: #80d8ff; }
+        .streak-7 { --returning-color: #7ee2b8; }
 
         .ticker-separator {
             color: rgba(255, 255, 255, 0.62);
@@ -322,8 +329,8 @@
         }
 
         .participation-thanks.is-returning {
-            color: #ffc16b;
-            text-shadow: 0 2px 16px rgba(117, 51, 0, 0.7);
+            color: var(--returning-color, #ffc56d);
+            text-shadow: 0 2px 16px color-mix(in srgb, var(--returning-color, #ffc56d) 48%, #000);
         }
 
         .stage.is-returning-pulse::before {
@@ -333,8 +340,8 @@
             z-index: 4;
             pointer-events: none;
             background:
-                radial-gradient(circle at 30% 70%, rgba(255, 150, 54, 0.34), transparent 38%),
-                radial-gradient(circle at 70% 30%, rgba(255, 207, 125, 0.2), transparent 46%);
+                radial-gradient(circle at 30% 70%, color-mix(in srgb, var(--returning-color, #ffc56d) 34%, transparent), transparent 38%),
+                radial-gradient(circle at 70% 30%, color-mix(in srgb, var(--returning-color, #ffc56d) 20%, transparent), transparent 46%);
             mix-blend-mode: screen;
             animation: returningPulse 2600ms ease-out both;
         }
@@ -574,7 +581,7 @@
         <button id="completeBtn" type="button" hidden>達成まで進める</button>
         <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
         <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
-        <button id="returningParticipantTestBtn" type="button" hidden>翌日の継続参加を再現</button>
+        <button id="returningParticipantTestBtn" type="button" hidden>2〜7日目の継続参加を再現</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -787,6 +794,19 @@
         }
 
         const donorNameRotation = [];
+        const STREAK_CLASS_NAMES = ["streak-2", "streak-3", "streak-4", "streak-5", "streak-6", "streak-7"];
+
+        function getStreakClass(options = {}) {
+            if (options.isReturning !== true) return "";
+            const streakDays = Math.min(7, Math.max(2, Number(options.streakDays) || 2));
+            return `streak-${streakDays}`;
+        }
+
+        function applyStreakClass(element, options = {}) {
+            element.classList.remove(...STREAK_CLASS_NAMES);
+            const streakClass = getStreakClass(options);
+            if (streakClass) element.classList.add(streakClass);
+        }
 
         function addToDonorNameRotation(name, options = {}) {
             const entry = {
@@ -802,6 +822,7 @@
                 const name = document.createElement("span");
                 name.className = "ticker-name";
                 name.classList.toggle("is-returning", entry.isReturning);
+                applyStreakClass(name, entry);
                 name.textContent = `${entry.name}さん`;
                 group.appendChild(name);
 
@@ -863,6 +884,8 @@
             const raw = String(name ?? "").trim().slice(0, 24);
             const isReturning = options.isReturning === true;
             participationThanks.classList.toggle("is-returning", isReturning);
+            applyStreakClass(participationThanks, options);
+            applyStreakClass(stage, options);
             participationThanks.textContent = isReturning
                 ? `${isRealName(raw) ? `おかえりなさい、${raw}さん` : "おかえりなさい"}`
                 : isRealName(raw)
@@ -1058,9 +1081,17 @@
             showThanks(testNames[donorNameTestIndex % testNames.length], { isReturning: false, streakDays: 1 });
             donorNameTestIndex += 1;
         });
+        let returningParticipantTestDay = 2;
         returningParticipantTestBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            showThanks("さくら", { isReturning: true, isConsecutiveReturn: true, streakDays: 2 });
+            showThanks("さくら", {
+                isReturning: true,
+                isConsecutiveReturn: true,
+                streakDays: returningParticipantTestDay,
+            });
+            returningParticipantTestDay = returningParticipantTestDay >= 7
+                ? 2
+                : returningParticipantTestDay + 1;
         });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
