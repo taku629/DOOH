@@ -835,6 +835,13 @@
                     guideStatus: "次は参加証を作ります。まもなく入力画面へ戻ります",
                 });
             }
+            if (event.data?.type === "dooh-research-already-participated") {
+                showMobilePanel("participant");
+                showFlowGuide(
+                    "本日はすでに参加済みです",
+                    "カウントと名前表示は増えません。また明日ご参加ください"
+                );
+            }
             if (event.data?.type === "dooh-research-card-complete") {
                 showDoohAfterParticipation(event.data.participantCount, {
                     handoffTitle: "参加証を作成しました",

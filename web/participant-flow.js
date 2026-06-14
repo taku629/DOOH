@@ -1,8 +1,8 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260614-research-1";
+import { getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260614-daily-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
-import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-3";
+import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-4";
 import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-2";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
@@ -141,6 +141,7 @@ const shouldUseStoryThanksCard = Boolean(
 let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
 let hasCountedParticipation = false;
+let hasAcceptedParticipation = false;
 let hasShownSwipeReadyEffect = false;
 let hasAnimatedCounter = false;
 let isFinalCardBuilt = false;
@@ -717,7 +718,7 @@ function finalizeCard() {
 let hasAnnouncedName = false;
 let completedParticipationVisit = null;
 function announceDonorName() {
-  if (hasAnnouncedName || !hasCountedParticipation) {
+  if (hasAnnouncedName || !hasAcceptedParticipation) {
     return;
   }
 
@@ -748,6 +749,25 @@ function announceDonorName() {
   publishNameAnnouncement(payload).catch(() => {});
 }
 
+function markAlreadyParticipatedToday(visit) {
+  completedParticipationVisit = visit;
+  hasCountedParticipation = true;
+  hasAcceptedParticipation = false;
+  hasAnnouncedName = true;
+  if (swipeHint) {
+    swipeHint.textContent = "本日はすでに参加済みです。また明日の参加をお待ちしています。";
+  }
+  if (thanksTitle) {
+    thanksTitle.textContent = "本日は参加済みです";
+  }
+  if (window.parent !== window) {
+    window.parent.postMessage({
+      type: "dooh-research-already-participated",
+      participantCount,
+    }, location.origin);
+  }
+}
+
 async function registerParticipation() {
   if (hasCountedParticipation) {
     return true;
@@ -762,6 +782,10 @@ async function registerParticipation() {
       today: participationDateOverride,
       storageKey: participationStorageOptions.storageKey,
     });
+    if (visit.alreadyParticipatedToday) {
+      markAlreadyParticipatedToday(visit);
+      return true;
+    }
     const payload = {
       name: getDisplayName(),
       donationAmountYen: DEMO_DONATION_YEN,
@@ -786,10 +810,12 @@ async function registerParticipation() {
     }
 
     const result = await publishSwipeComplete(payload);
-    if (!result?.fallback) {
-      saveParticipationVisit(visit, { storageKey: participationStorageOptions.storageKey });
-      completedParticipationVisit = visit;
+    if (result?.accepted === false) {
+      markAlreadyParticipatedToday(visit);
+      return true;
     }
+    saveParticipationVisit(visit, { storageKey: participationStorageOptions.storageKey });
+    completedParticipationVisit = visit;
     const committedCount = Number(result?.count);
     participantCount = Number.isFinite(committedCount)
       ? committedCount
@@ -799,6 +825,7 @@ async function registerParticipation() {
     }
     updateMilestonePreview(participantCount);
     hasCountedParticipation = true;
+    hasAcceptedParticipation = true;
     hasAnimatedCounter = false;
     if (window.parent !== window) {
       window.parent.postMessage({

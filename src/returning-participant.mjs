@@ -40,6 +40,7 @@ export function buildParticipationVisit(previous = {}, today = formatLocalDate()
     const previousStreak = Math.max(1, Number(previous.streakDays) || 1);
     const isReturning = dayDifference !== null && dayDifference >= 1;
     const isConsecutiveReturn = dayDifference === 1;
+    const alreadyParticipatedToday = dayDifference === 0;
     const streakDays = isConsecutiveReturn ? previousStreak + 1 : 1;
 
     return {
@@ -51,6 +52,7 @@ export function buildParticipationVisit(previous = {}, today = formatLocalDate()
         lastParticipationDate: today,
         isReturning,
         isConsecutiveReturn,
+        alreadyParticipatedToday,
         streakDays,
     };
 }

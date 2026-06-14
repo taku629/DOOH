@@ -9,8 +9,19 @@ export function buildParticipationTransactionValue(currentValue, event) {
         currentData.swipes && typeof currentData.swipes === "object"
             ? currentData.swipes
             : {};
+    const dailyParticipants =
+        currentData.dailyParticipants && typeof currentData.dailyParticipants === "object"
+            ? currentData.dailyParticipants
+            : {};
 
     if (swipes[event.key]) {
+        return currentData;
+    }
+
+    const participationDate =
+        typeof event.participationDate === "string" ? event.participationDate : null;
+    const visitorId = typeof event.visitorId === "string" ? event.visitorId : null;
+    if (participationDate && visitorId && dailyParticipants[participationDate]?.[visitorId]) {
         return currentData;
     }
 
@@ -37,5 +48,14 @@ export function buildParticipationTransactionValue(currentValue, event) {
                 streakDays: event.streakDays ?? 1,
             },
         },
+        dailyParticipants: participationDate && visitorId
+            ? {
+                ...dailyParticipants,
+                [participationDate]: {
+                    ...(dailyParticipants[participationDate] ?? {}),
+                    [visitorId]: participantCount,
+                },
+            }
+            : dailyParticipants,
     };
 }

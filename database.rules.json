@@ -13,6 +13,13 @@
           ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
         }
       },
+      "dailyParticipants": {
+        "$date": {
+          "$visitorId": {
+            ".validate": "newData.isNumber() && newData.val() >= 1"
+          }
+        }
+      },
       "$other": {
         ".validate": false
       }
@@ -26,6 +33,13 @@
       "swipes": {
         "$eventId": {
           ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
+        }
+      },
+      "dailyParticipants": {
+        "$date": {
+          "$visitorId": {
+            ".validate": "newData.isNumber() && newData.val() >= 1"
+          }
         }
       },
       "$other": {
@@ -43,6 +57,13 @@
           ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
         }
       },
+      "dailyParticipants": {
+        "$date": {
+          "$visitorId": {
+            ".validate": "newData.isNumber() && newData.val() >= 1"
+          }
+        }
+      },
       "$other": {
         ".validate": false
       }
@@ -56,6 +77,13 @@
       "swipes": {
         "$eventId": {
           ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
+        }
+      },
+      "dailyParticipants": {
+        "$date": {
+          "$visitorId": {
+            ".validate": "newData.isNumber() && newData.val() >= 1"
+          }
         }
       },
       "$other": {

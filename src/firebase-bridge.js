@@ -205,6 +205,7 @@ export async function publishSwipeComplete(payload = {}) {
         return {
             count: participantCount,
             eventRef,
+            accepted: Boolean(committedData.swipes?.[eventRef.key]),
         };
     } catch (error) {
         console.warn("[firebase] swipe publish failed; local fallback enabled:", error);

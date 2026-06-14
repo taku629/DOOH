@@ -68,7 +68,7 @@ test("participation on the following day increments the streak", () => {
     assert.equal(visit.streakDays, 4);
 });
 
-test("another participation on the same day stays a new daily participation", () => {
+test("another participation on the same day is marked as already participated", () => {
     const visit = buildParticipationVisit({
         visitorId: "anonymous-device",
         lastParticipationDate: "2026-06-12",
@@ -77,6 +77,7 @@ test("another participation on the same day stays a new daily participation", ()
 
     assert.equal(visit.isReturning, false);
     assert.equal(visit.isConsecutiveReturn, false);
+    assert.equal(visit.alreadyParticipatedToday, true);
     assert.equal(visit.streakDays, 1);
 });
 

@@ -813,8 +813,13 @@
                 name,
                 isReturning: options.isReturning === true,
                 streakDays: Math.max(1, Number(options.streakDays) || 1),
+                createdAt: Number(options.createdAt) || 0,
             };
             donorNameRotation.push(entry);
+            donorNameRotation.sort((a, b) =>
+                b.streakDays - a.streakDays ||
+                b.createdAt - a.createdAt
+            );
         }
 
         function appendTickerItems(group, entries) {
@@ -871,11 +876,10 @@
 
         function setDonorNameRotation(names) {
             donorNameRotation.length = 0;
-            [...names].reverse().forEach((entry) => {
+            names.forEach((entry) => {
                 const raw = String(entry?.name ?? entry ?? "").trim().slice(0, 24);
                 if (isRealName(raw)) addToDonorNameRotation(raw, entry);
             });
-            donorNameRotation.reverse();
             renderDonorTicker();
         }
 
@@ -1115,7 +1119,7 @@
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260614-research-1";
+        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260614-daily-1";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
