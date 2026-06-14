@@ -438,6 +438,7 @@
         let doohReplayTimer = null;
         let flowGuideTimer = null;
         let returnToNameTimer = null;
+        let surveyAutoOpenTimer = null;
         let activeSurveyUrl = SURVEY_URL;
         const HANDOFF_DELAY_MS = 2000;
         const ORIENTATION_PROMPT_DELAY_MS = 3500;
@@ -461,6 +462,7 @@
         }
 
         function reloadFrames({ track = false } = {}) {
+            window.clearTimeout(surveyAutoOpenTimer);
             surveyBtn.hidden = true;
             surveyTab.hidden = true;
             activeSurveyUrl = SURVEY_URL;
@@ -556,9 +558,12 @@
             activeSurveyUrl = surveyUrl;
             surveyBtn.hidden = false;
             surveyTab.hidden = false;
+            window.clearTimeout(surveyAutoOpenTimer);
+            surveyAutoOpenTimer = window.setTimeout(openSurvey, 7000);
         }
 
         function openSurvey() {
+            window.clearTimeout(surveyAutoOpenTimer);
             trackResearchEvent("research_survey_open", {
                 layout: matchMedia("(max-width: 1024px)").matches ? "mobile" : "desktop",
             });
@@ -674,7 +679,7 @@
                     guideTitle: event.data.hasDisplayName
                         ? "参加証の名前がDOOHに表示されました"
                         : "参加証が作成されました",
-                    guideStatus: "見終わったら、上の「アンケート」から感想をお聞かせください",
+                    guideStatus: "7秒後にアンケートへ移動します。上のタブから今すぐ回答もできます",
                     surveyUrl: event.data.surveyUrl || SURVEY_URL,
                 });
             }
