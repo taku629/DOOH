@@ -355,6 +355,7 @@ function showStep(index) {
     if (steps[index]) {
       steps[index].scrollTop = 0;
     }
+    window.scrollTo(0, 0);
   };
   resetStepScroll();
   requestAnimationFrame(resetStepScroll);
@@ -1354,13 +1355,16 @@ function startPointer(event) {
   if (activePointerId !== null) {
     return;
   }
+  if (currentStep !== 0) {
+    return;
+  }
   if (event.pointerType === "mouse" && event.button !== 0) {
     return;
   }
   if (isInteractiveTarget(event.target)) {
     return;
   }
-  if (currentStep === 0 && !event.target.closest(".slider-wrap")) {
+  if (!event.target.closest(".slider-wrap")) {
     return;
   }
 

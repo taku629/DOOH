@@ -201,8 +201,18 @@ button {
  * the active step normally instead of moving the stacked track.
  */
 .app.is-post-participation .track {
+  height: auto;
   transform: none !important;
   will-change: auto;
+}
+
+.app.is-post-participation .viewport {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  touch-action: pan-y;
+  user-select: auto;
+  -webkit-user-select: auto;
 }
 
 .app.is-post-participation .step {
@@ -211,6 +221,8 @@ button {
 
 .app.is-post-participation .step.is-current {
   display: flex;
+  min-height: 0;
+  overflow: visible;
 }
 
 /* Step card ----------------------------------------------------------- */
