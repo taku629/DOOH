@@ -1,9 +1,9 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
+import { getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260614-research-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
-import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-2";
-import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-1";
+import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-3";
+import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-2";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
 
 const steps = [...document.querySelectorAll(".step")];
@@ -53,12 +53,27 @@ const returnTestDate = new URLSearchParams(location.search).get("return-test-dat
 const participationDateOverride = /^\d{4}-\d{2}-\d{2}$/.test(returnTestDate || "")
   ? returnTestDate
   : undefined;
-const pendingParticipationVisit = getParticipationVisit({ today: participationDateOverride });
 
 const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
 const activeTheme = resolveTheme({ defaultTheme: "day" });
-const PARTICIPATION_CHANNEL = getChannelForTheme(activeTheme, "default");
+const requestedParticipationChannel = new URLSearchParams(location.search).get("channel");
+const PARTICIPATION_CHANNEL = requestedParticipationChannel === "research"
+  ? "research"
+  : getChannelForTheme(activeTheme, "default");
+const participationStorageOptions = PARTICIPATION_CHANNEL === "research"
+  ? {
+      storageKey: "shinjuku-dooh-participation-research",
+      displayNameStorageKey: "shinjuku-dooh-display-name-research",
+    }
+  : {
+      storageKey: "shinjuku-dooh-participation",
+      displayNameStorageKey: "shinjuku-dooh-display-name",
+    };
+const pendingParticipationVisit = getParticipationVisit({
+  today: participationDateOverride,
+  storageKey: participationStorageOptions.storageKey,
+});
 const DEMO_DONATION_YEN = 100;
 const PLAYLIST_PATH = new URL("../config/playlist.json", import.meta.url).href;
 const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
@@ -711,7 +726,7 @@ function announceDonorName() {
     return;
   }
 
-  saveDisplayName(typed);
+  saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
   hasAnnouncedName = true;
 
   const payload = {
@@ -743,7 +758,10 @@ async function registerParticipation() {
   isRegisteringParticipation = true;
 
   try {
-    const visit = getParticipationVisit({ today: participationDateOverride });
+    const visit = getParticipationVisit({
+      today: participationDateOverride,
+      storageKey: participationStorageOptions.storageKey,
+    });
     const payload = {
       name: getDisplayName(),
       donationAmountYen: DEMO_DONATION_YEN,
@@ -769,7 +787,7 @@ async function registerParticipation() {
 
     const result = await publishSwipeComplete(payload);
     if (!result?.fallback) {
-      saveParticipationVisit(visit);
+      saveParticipationVisit(visit, { storageKey: participationStorageOptions.storageKey });
       completedParticipationVisit = visit;
     }
     const committedCount = Number(result?.count);
@@ -1525,7 +1543,9 @@ nickname.addEventListener("compositionupdate", syncPreviewName);
 nickname.addEventListener("compositionend", syncPreviewName);
 
 function setupSavedNameChoice() {
-  const savedName = getSavedDisplayName();
+  const savedName = getSavedDisplayName({
+    storageKey: participationStorageOptions.displayNameStorageKey,
+  });
   const nameField = nickname.closest(".sparkle-name-field") ?? nickname;
   const nameStep = nickname.closest(".step");
   if (!savedName || !pendingParticipationVisit.isReturning || !nameStep) {
@@ -1613,8 +1633,8 @@ window.addEventListener("message", (event) => {
   }
 
   if (event.data.type === "dooh-research-reset-device") {
-    clearParticipationVisit();
-    clearSavedDisplayName();
+    clearParticipationVisit({ storageKey: participationStorageOptions.storageKey });
+    clearSavedDisplayName({ storageKey: participationStorageOptions.displayNameStorageKey });
     window.parent.postMessage({ type: "dooh-research-device-reset" }, location.origin);
     return;
   }

@@ -31,6 +31,10 @@
         "destination": "/research-preview.html"
       },
       {
+        "source": "/team-test",
+        "destination": "/research-preview.html"
+      },
+      {
         "source": "/demo",
         "destination": "/demo.html"
       },

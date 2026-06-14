@@ -5,6 +5,7 @@ const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).h
 const PARTICIPATION_PATH = "participation";
 const PARTICIPATION_V2_PATH = "participationV2";
 const PARTICIPATION_MORNING_PATH = "participationMorning";
+const PARTICIPATION_RESEARCH_PATH = "participationResearch";
 const DISPLAY_CONFIG_PATH = "displayConfig";
 const NAME_SHOUTS_PATH = "nameShouts";
 
@@ -14,7 +15,9 @@ let appPromise;
 let databasePromise;
 
 function normalizeChannel(channel = "default") {
-    return channel === "v2" || channel === "morning" ? channel : "default";
+    return channel === "v2" || channel === "morning" || channel === "research"
+        ? channel
+        : "default";
 }
 
 function getParticipationPath(channel = "default") {
@@ -26,6 +29,10 @@ function getParticipationPath(channel = "default") {
 
     if (normalizedChannel === "morning") {
         return PARTICIPATION_MORNING_PATH;
+    }
+
+    if (normalizedChannel === "research") {
+        return PARTICIPATION_RESEARCH_PATH;
     }
 
     return PARTICIPATION_PATH;

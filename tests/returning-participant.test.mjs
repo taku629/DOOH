@@ -42,6 +42,20 @@ test("saved local participation can be cleared for testing", () => {
     assert.equal(storage.getItem(STORAGE_KEY), null);
 });
 
+test("research participation storage stays separate from public participation", () => {
+    const storage = createStorage();
+    const publicVisit = getParticipationVisit({ storage, today: "2026-06-11" });
+    saveParticipationVisit(publicVisit, { storage });
+    const researchVisit = getParticipationVisit({
+        storage,
+        storageKey: `${STORAGE_KEY}-research`,
+        today: "2026-06-12",
+    });
+
+    assert.equal(researchVisit.isReturning, false);
+    assert.notEqual(researchVisit.visitorId, publicVisit.visitorId);
+});
+
 test("participation on the following day increments the streak", () => {
     const visit = buildParticipationVisit({
         visitorId: "anonymous-device",

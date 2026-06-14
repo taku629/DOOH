@@ -91,7 +91,16 @@
             display: none;
         }
 
+        .team-test-only,
         .mobile-test-tools {
+            display: none;
+        }
+
+        body.is-team-test .team-test-only {
+            display: inline-flex;
+        }
+
+        body.is-team-test .mobile-test-tools {
             display: none;
         }
 
@@ -316,7 +325,7 @@
                 color: var(--ink);
             }
 
-            .mobile-test-tools {
+            body.is-team-test .mobile-test-tools {
                 position: fixed;
                 left: 8px;
                 bottom: max(8px, env(safe-area-inset-bottom));
@@ -408,8 +417,8 @@
             <option value="women">参加画面：WOMEN</option>
         </select>
         <button id="reloadBtn" type="button">両画面を再読み込み</button>
-        <button id="nextDayTestBtn" type="button">翌日参加を再現</button>
-        <button id="resetDeviceBtn" type="button">端末履歴をリセット</button>
+        <button class="team-test-only" id="nextDayTestBtn" type="button">翌日参加を再現</button>
+        <button class="team-test-only" id="resetDeviceBtn" type="button">端末履歴をリセット</button>
         <button id="focusBtn" type="button" aria-pressed="false">DOOHを大きく</button>
         <button class="survey-entry" id="surveyBtn" type="button" hidden>アンケート</button>
     </header>
@@ -419,7 +428,7 @@
         <button id="doohTab" type="button" aria-selected="false">DOOH</button>
         <button class="survey-entry" id="surveyTab" type="button" aria-selected="false" hidden>アンケート</button>
     </nav>
-    <details class="mobile-test-tools">
+    <details class="mobile-test-tools team-test-only">
         <summary>動作テスト</summary>
         <div class="mobile-test-actions">
             <button id="mobileNextDayTestBtn" type="button">翌日参加を再現</button>
@@ -472,7 +481,14 @@
             : { men: "/men", women: "/women" };
         const doohRoute = local ? "demo.html" : "/demo";
         const SURVEY_URL = "https://forms.gle/xYiJasuYBkR6YnF78";
-        let activeReturnTestDate = new URLSearchParams(location.search).get("return-test-date");
+        const TEAM_TEST_MODE =
+            /(^|\/)team-test\/?$/.test(location.pathname) ||
+            (local && new URLSearchParams(location.search).has("team-test"));
+        const PARTICIPATION_CHANNEL = TEAM_TEST_MODE ? "research" : "default";
+        let activeReturnTestDate = TEAM_TEST_MODE
+            ? new URLSearchParams(location.search).get("return-test-date")
+            : "";
+        document.body.classList.toggle("is-team-test", TEAM_TEST_MODE);
 
         const participantFrame = document.getElementById("participantFrame");
         const doohFrame = document.getElementById("doohFrame");
@@ -538,6 +554,9 @@
         function loadParticipant() {
             const participantUrl = new URL(participantRoutes[participantType.value], location.href);
             participantUrl.searchParams.set("rs-load", Date.now());
+            if (TEAM_TEST_MODE) {
+                participantUrl.searchParams.set("channel", PARTICIPATION_CHANNEL);
+            }
             if (/^\d{4}-\d{2}-\d{2}$/.test(activeReturnTestDate || "")) {
                 participantUrl.searchParams.set("return-test-date", activeReturnTestDate);
             }
@@ -550,7 +569,13 @@
             surveyTab.hidden = true;
             activeSurveyUrl = SURVEY_URL;
             loadParticipant();
-            doohFrame.src = `${doohRoute}?research=1&t=${Date.now()}`;
+            const doohUrl = new URL(doohRoute, location.href);
+            doohUrl.searchParams.set("research", "1");
+            doohUrl.searchParams.set("t", Date.now());
+            if (TEAM_TEST_MODE) {
+                doohUrl.searchParams.set("channel", PARTICIPATION_CHANNEL);
+            }
+            doohFrame.src = doohUrl.href;
             if (track) {
                 trackResearchEvent("research_reload", {
                     participant_variant: participantType.value,

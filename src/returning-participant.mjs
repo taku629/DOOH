@@ -57,11 +57,12 @@ export function buildParticipationVisit(previous = {}, today = formatLocalDate()
 
 export function getParticipationVisit(options = {}) {
     const storage = options.storage ?? globalThis.localStorage;
+    const storageKey = options.storageKey ?? STORAGE_KEY;
     const today = options.today ?? formatLocalDate();
     let previous = {};
 
     try {
-        previous = JSON.parse(storage?.getItem(STORAGE_KEY) || "{}");
+        previous = JSON.parse(storage?.getItem(storageKey) || "{}");
     } catch {
         previous = {};
     }
@@ -71,7 +72,8 @@ export function getParticipationVisit(options = {}) {
 
 export function saveParticipationVisit(visit, options = {}) {
     const storage = options.storage ?? globalThis.localStorage;
-    storage?.setItem(STORAGE_KEY, JSON.stringify({
+    const storageKey = options.storageKey ?? STORAGE_KEY;
+    storage?.setItem(storageKey, JSON.stringify({
         visitorId: visit.visitorId,
         lastParticipationDate: visit.participationDate,
         streakDays: visit.streakDays,
@@ -80,7 +82,8 @@ export function saveParticipationVisit(visit, options = {}) {
 
 export function clearParticipationVisit(options = {}) {
     const storage = options.storage ?? globalThis.localStorage;
-    storage?.removeItem(STORAGE_KEY);
+    const storageKey = options.storageKey ?? STORAGE_KEY;
+    storage?.removeItem(storageKey);
 }
 
 export { STORAGE_KEY, formatLocalDate };

@@ -1115,14 +1115,15 @@
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260614-all-names";
+        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260614-research-1";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
         const theme = resolveTheme({ defaultTheme: "day" });
-        const channel = getChannelForTheme(theme, "default");
-
         const searchParams = new URLSearchParams(location.search);
+        const channel = searchParams.get("channel") === "research"
+            ? "research"
+            : getChannelForTheme(theme, "default");
         const isDevMode = searchParams.has("dev");
         const isDemoMode = searchParams.has("demo");
 

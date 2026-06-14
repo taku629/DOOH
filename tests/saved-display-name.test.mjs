@@ -31,3 +31,18 @@ test("display name can be saved, read, and cleared locally", () => {
     clearSavedDisplayName({ storage });
     assert.equal(getSavedDisplayName({ storage }), "");
 });
+
+test("research display name stays separate from public display name", () => {
+    const storage = createStorage();
+    saveDisplayName("公共表示名", { storage });
+    saveDisplayName("チーム表示名", {
+        storage,
+        storageKey: "shinjuku-dooh-display-name-research",
+    });
+
+    assert.equal(getSavedDisplayName({ storage }), "公共表示名");
+    assert.equal(getSavedDisplayName({
+        storage,
+        storageKey: "shinjuku-dooh-display-name-research",
+    }), "チーム表示名");
+});
