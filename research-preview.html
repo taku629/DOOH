@@ -72,6 +72,10 @@
             cursor: pointer;
         }
 
+        .survey-entry[hidden] {
+            display: none;
+        }
+
         select { padding: 0 28px 0 10px; }
         button:hover, select:hover { border-color: rgba(255, 255, 255, 0.42); }
 
@@ -281,7 +285,8 @@
                 right: 8px;
                 z-index: 6;
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-auto-flow: column;
+                grid-auto-columns: 1fr;
                 gap: 2px;
                 padding: 3px;
                 border: 1px solid rgba(255, 255, 255, 0.22);
@@ -355,11 +360,13 @@
         </select>
         <button id="reloadBtn" type="button">両画面を再読み込み</button>
         <button id="focusBtn" type="button" aria-pressed="false">DOOHを大きく</button>
+        <button class="survey-entry" id="surveyBtn" type="button" hidden>アンケート</button>
     </header>
 
     <nav class="mobile-switcher" aria-label="調査画面の切り替え">
         <button id="participantTab" type="button" aria-selected="true">参加</button>
         <button id="doohTab" type="button" aria-selected="false">DOOH</button>
+        <button class="survey-entry" id="surveyTab" type="button" aria-selected="false" hidden>アンケート</button>
     </nav>
 
     <main class="workspace">
@@ -416,6 +423,8 @@
         const focusBtn = document.getElementById("focusBtn");
         const participantTab = document.getElementById("participantTab");
         const doohTab = document.getElementById("doohTab");
+        const surveyBtn = document.getElementById("surveyBtn");
+        const surveyTab = document.getElementById("surveyTab");
         const handoff = document.getElementById("handoff");
         const handoffMessage = document.getElementById("handoffMessage");
         const handoffStatus = document.getElementById("handoffStatus");
@@ -429,11 +438,10 @@
         let doohReplayTimer = null;
         let flowGuideTimer = null;
         let returnToNameTimer = null;
-        let surveyTimer = null;
+        let activeSurveyUrl = SURVEY_URL;
         const HANDOFF_DELAY_MS = 2000;
         const ORIENTATION_PROMPT_DELAY_MS = 3500;
         const RETURN_TO_NAME_DELAY_MS = 7000;
-        const SURVEY_REDIRECT_DELAY_MS = 2500;
 
         function trackResearchEvent(name, parameters = {}) {
             if (typeof window.__logResearchEvent === "function") {
@@ -453,6 +461,9 @@
         }
 
         function reloadFrames({ track = false } = {}) {
+            surveyBtn.hidden = true;
+            surveyTab.hidden = true;
+            activeSurveyUrl = SURVEY_URL;
             loadParticipant();
             doohFrame.src = `${doohRoute}?research=1&t=${Date.now()}`;
             if (track) {
@@ -474,6 +485,7 @@
             document.body.classList.toggle("mobile-participant", !showDooh);
             participantTab.setAttribute("aria-selected", String(!showDooh));
             doohTab.setAttribute("aria-selected", String(showDooh));
+            surveyTab.setAttribute("aria-selected", "false");
             if (matchMedia("(max-width: 1024px)").matches) {
                 trackResearchEvent("research_panel_view", {
                     panel,
@@ -536,21 +548,21 @@
             returnToNameTimer = window.setTimeout(returnToNameInput, RETURN_TO_NAME_DELAY_MS);
         }
 
-        function scheduleSurveyRedirect(surveyUrl) {
+        function enableSurveyEntry(surveyUrl) {
             if (!/^https:\/\/forms\.gle\//.test(surveyUrl || "")) {
                 return;
             }
 
-            window.clearTimeout(surveyTimer);
-            surveyTimer = window.setTimeout(() => {
-                flowGuideTitle.textContent = "ご参加ありがとうございました";
-                flowGuideStatus.textContent = "アンケートへ移動します";
-                flowGuide.classList.add("is-active");
-                flowGuide.setAttribute("aria-hidden", "false");
-                window.setTimeout(() => {
-                    window.location.href = surveyUrl;
-                }, 600);
-            }, SURVEY_REDIRECT_DELAY_MS);
+            activeSurveyUrl = surveyUrl;
+            surveyBtn.hidden = false;
+            surveyTab.hidden = false;
+        }
+
+        function openSurvey() {
+            trackResearchEvent("research_survey_open", {
+                layout: matchMedia("(max-width: 1024px)").matches ? "mobile" : "desktop",
+            });
+            window.location.href = activeSurveyUrl;
         }
 
         function updateDoohPreview() {
@@ -615,7 +627,7 @@
                     scheduleReturnToNameInput();
                 } else {
                     scheduleOrientationPrompt(2600);
-                    scheduleSurveyRedirect(surveyUrl);
+                    enableSurveyEntry(surveyUrl);
                 }
             }, HANDOFF_DELAY_MS);
         }
@@ -632,6 +644,8 @@
             showMobilePanel("dooh");
             scheduleOrientationPrompt(1200);
         });
+        surveyBtn.addEventListener("click", openSurvey);
+        surveyTab.addEventListener("click", openSurvey);
         focusBtn.addEventListener("click", () => {
             const focused = document.body.classList.toggle("dooh-focus");
             focusBtn.setAttribute("aria-pressed", String(focused));
@@ -660,7 +674,7 @@
                     guideTitle: event.data.hasDisplayName
                         ? "参加証の名前がDOOHに表示されました"
                         : "参加証が作成されました",
-                    guideStatus: "街の変化は増やさず、参加証の情報だけを反映しています",
+                    guideStatus: "見終わったら、上の「アンケート」から感想をお聞かせください",
                     surveyUrl: event.data.surveyUrl || SURVEY_URL,
                 });
             }
