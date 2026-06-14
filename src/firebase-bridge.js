@@ -358,12 +358,11 @@ export async function getRecentNameAnnouncements(options = {}) {
     }
 
     const channel = normalizeChannel(options.channel);
+    const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
     const requestedLimit = Math.floor(Number(options.limit) || 30);
-    const limit = Math.max(1, Math.min(requestedLimit, 100));
-    const query = sdk.query(
-        sdk.ref(database, getNameShoutsPath(channel)),
-        sdk.limitToLast(limit)
-    );
+    const query = options.all === true
+        ? shoutsRef
+        : sdk.query(shoutsRef, sdk.limitToLast(Math.max(1, Math.min(requestedLimit, 100))));
     const snapshot = await sdk.get(query);
     const announcements = [];
 

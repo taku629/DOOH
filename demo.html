@@ -782,8 +782,6 @@
         // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
         const AUTO_NAME_RE = /^サポーター#/;
         const PLACEHOLDER_NAMES = new Set(["匿名サポーター", "匿名", "Guest", "参加者"]);
-        const MAX_DONOR_NAMES = 100;
-
         function isRealName(raw) {
             return raw.length > 0 && !AUTO_NAME_RE.test(raw) && !PLACEHOLDER_NAMES.has(raw);
         }
@@ -796,10 +794,7 @@
                 isReturning: options.isReturning === true,
                 streakDays: Math.max(1, Number(options.streakDays) || 1),
             };
-            const existingIndex = donorNameRotation.findIndex((item) => item.name === name);
-            if (existingIndex >= 0) donorNameRotation.splice(existingIndex, 1);
             donorNameRotation.push(entry);
-            if (donorNameRotation.length > MAX_DONOR_NAMES) donorNameRotation.shift();
         }
 
         function appendTickerItems(group, entries) {
@@ -1089,7 +1084,7 @@
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js";
+        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260614-all-names";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
@@ -1127,7 +1122,7 @@
 
         }
 
-        getRecentNameAnnouncements({ channel, limit: 100 })
+        getRecentNameAnnouncements({ channel, all: true })
             .then((events) => {
                 const validEvents = events
                     .map((event) => ({ ...event, name: String(event?.name ?? "").trim() }))
