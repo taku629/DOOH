@@ -18,7 +18,9 @@
 
         html, body {
             margin: 0;
+            width: 100%;
             min-height: 100%;
+            overflow-x: clip;
             background: var(--ink);
             color: #fff;
             font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
@@ -33,6 +35,7 @@
 
         .toolbar {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap: 12px;
             min-height: 58px;
@@ -42,6 +45,7 @@
         }
 
         .title {
+            min-width: 190px;
             margin-right: auto;
             font-size: 0.9rem;
             font-weight: 700;
@@ -83,8 +87,30 @@
             display: grid;
             grid-template-columns: minmax(270px, 0.34fr) minmax(0, 0.66fr);
             gap: 12px;
+            width: 100%;
             min-height: 0;
             padding: 12px;
+        }
+
+        @media (max-width: 1500px) and (min-width: 1025px) {
+            .toolbar {
+                gap: 8px;
+            }
+
+            .title {
+                flex: 1 0 100%;
+                min-width: 0;
+                margin-right: 0;
+            }
+
+            .title small {
+                display: inline;
+                margin: 0 0 0 8px;
+            }
+
+            button, select {
+                flex: 1 1 auto;
+            }
         }
 
         .mobile-switcher {
