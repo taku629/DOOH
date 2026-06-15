@@ -284,6 +284,15 @@
             text-shadow: 0 0 10px color-mix(in srgb, var(--returning-color, #ffc56d) 58%, transparent);
         }
 
+        .ticker-name.is-latest {
+            padding: 3px 9px;
+            border: 1px solid rgba(255, 255, 255, 0.52);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
+        }
+
         .streak-2 { --returning-color: #ffc56d; }
         .streak-3 { --returning-color: #ff8a80; }
         .streak-4 { --returning-color: #f48fb1; }
@@ -795,6 +804,9 @@
 
         const donorNameRotation = [];
         const STREAK_CLASS_NAMES = ["streak-2", "streak-3", "streak-4", "streak-5", "streak-6", "streak-7"];
+        const LATEST_DONOR_PRIORITY_MS = 12000;
+        let latestDonorEntry = null;
+        let latestDonorTimer = null;
 
         function getStreakClass(options = {}) {
             if (options.isReturning !== true) return "";
@@ -820,13 +832,15 @@
                 b.streakDays - a.streakDays ||
                 b.createdAt - a.createdAt
             );
+            return entry;
         }
 
-        function appendTickerItems(group, entries) {
+        function appendTickerItems(group, entries, priorityEntry = null) {
             entries.forEach((entry) => {
                 const name = document.createElement("span");
                 name.className = "ticker-name";
                 name.classList.toggle("is-returning", entry.isReturning);
+                name.classList.toggle("is-latest", entry === priorityEntry);
                 applyStreakClass(name, entry);
                 name.textContent = `${entry.name}さん`;
                 group.appendChild(name);
@@ -838,24 +852,27 @@
             });
         }
 
-        function renderDonorTicker() {
+        function renderDonorTicker(priorityEntry = null) {
             if (!thanks || donorNameRotation.length === 0) {
                 thanks?.replaceChildren();
                 return;
             }
 
+            const orderedEntries = priorityEntry
+                ? [priorityEntry, ...donorNameRotation.filter((entry) => entry !== priorityEntry)]
+                : donorNameRotation;
             const entries = [];
-            while (entries.length < Math.max(12, donorNameRotation.length)) {
-                entries.push(...donorNameRotation);
+            while (entries.length < Math.max(12, orderedEntries.length)) {
+                entries.push(...orderedEntries);
             }
             const track = document.createElement("span");
             track.className = "thanks-track";
-            track.style.setProperty("--ticker-duration", `${Math.max(28, entries.length * 3.2)}s`);
+            track.style.setProperty("--ticker-duration", `${Math.max(24, entries.length * 2.1)}s`);
 
             for (let i = 0; i < 2; i += 1) {
                 const group = document.createElement("span");
                 group.className = "thanks-group";
-                appendTickerItems(group, entries);
+                appendTickerItems(group, entries, priorityEntry);
                 track.appendChild(group);
             }
             thanks.replaceChildren(track);
@@ -869,13 +886,20 @@
         function showThanks(name, options = {}) {
             const raw = String(name ?? "").trim().slice(0, 24);
             if (!isRealName(raw)) return;
-            addToDonorNameRotation(raw, options);
-            renderDonorTicker();
+            latestDonorEntry = addToDonorNameRotation(raw, options);
+            renderDonorTicker(latestDonorEntry);
+            window.clearTimeout(latestDonorTimer);
+            latestDonorTimer = window.setTimeout(() => {
+                latestDonorEntry = null;
+                renderDonorTicker();
+            }, LATEST_DONOR_PRIORITY_MS);
             showParticipationThanks(raw, options);
         }
 
         function setDonorNameRotation(names) {
             donorNameRotation.length = 0;
+            latestDonorEntry = null;
+            window.clearTimeout(latestDonorTimer);
             names.forEach((entry) => {
                 const raw = String(entry?.name ?? entry ?? "").trim().slice(0, 24);
                 if (isRealName(raw)) addToDonorNameRotation(raw, entry);
