@@ -1,5 +1,6 @@
 import { publishParticipationEvent } from "./participation-bridge.js";
 import { buildParticipationTransactionValue } from "./participation-transaction.mjs";
+import { isInappropriateName } from "./name-filter.js";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
 const PARTICIPATION_PATH = "participation";
@@ -146,8 +147,10 @@ async function ensureDatabase() {
 
 function publishLocalSwipeComplete(payload = {}) {
     const channel = normalizeChannel(payload.channel);
+    const candidateName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : null;
     const event = publishParticipationEvent({
         ...payload,
+        name: candidateName && !isInappropriateName(candidateName) ? candidateName : null,
         channel,
         source: payload.source ?? channel,
         type: "swipe-completed",
@@ -172,6 +175,7 @@ export async function publishSwipeComplete(payload = {}) {
     }
 
     const channel = normalizeChannel(payload.channel);
+    const candidateName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : null;
 
     try {
         const eventRef = sdk.push(sdk.ref(database, getSwipesPath(channel)));
@@ -182,7 +186,7 @@ export async function publishSwipeComplete(payload = {}) {
             key: eventRef.key,
             createdAt: sdk.serverTimestamp(),
             source: payload.source ?? channel,
-            name: payload.name ?? null,
+            name: candidateName && !isInappropriateName(candidateName) ? candidateName : null,
             donationAmountYen: Number(payload.donationAmountYen) || null,
             userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
             visitorId: payload.visitorId ?? null,
@@ -282,7 +286,11 @@ export async function subscribeToSwipeCompletes(callback, options = {}) {
             return;
         }
 
-        callback({ id: snap.key, ...data });
+        callback({
+            id: snap.key,
+            ...data,
+            name: isInappropriateName(data.name) ? null : data.name,
+        });
     });
 }
 
@@ -298,7 +306,12 @@ export async function publishNameAnnouncement(payload = {}) {
     }
 
     const channel = normalizeChannel(payload.channel);
-    const rawName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : null;
+    const candidateName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : null;
+    const rawName = candidateName && !isInappropriateName(candidateName) ? candidateName : null;
+
+    if (!rawName) {
+        return { blocked: true };
+    }
 
     try {
         const ref = sdk.push(sdk.ref(database, getNameShoutsPath(channel)));
@@ -351,7 +364,7 @@ export async function subscribeToNameAnnouncements(callback, options = {}) {
         knownIds.add(snap.key);
 
         const data = snap.val();
-        if (!data || data.type !== "name-announced") {
+        if (!data || data.type !== "name-announced" || isInappropriateName(data.name)) {
             return;
         }
 
@@ -380,7 +393,7 @@ export async function getRecentNameAnnouncements(options = {}) {
 
     snapshot.forEach((child) => {
         const data = child.val();
-        if (data?.type === "name-announced") {
+        if (data?.type === "name-announced" && !isInappropriateName(data.name)) {
             announcements.push({ id: child.key, ...data });
         }
     });
