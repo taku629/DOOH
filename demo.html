@@ -591,6 +591,7 @@
         <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
         <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
         <button id="returningParticipantTestBtn" type="button" hidden>2〜7日目の継続参加を再現</button>
+        <button id="crowdTestBtn" type="button" hidden>30人同時参加を再現</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -617,11 +618,13 @@
         const skipSceneBtn = document.getElementById("skipSceneBtn");
         const newParticipantTestBtn = document.getElementById("newParticipantTestBtn");
         const returningParticipantTestBtn = document.getElementById("returningParticipantTestBtn");
+        const crowdTestBtn = document.getElementById("crowdTestBtn");
         const urlNote = document.getElementById("urlNote");
 
         urlNote?.classList.toggle("is-dev-visible", DEV);
         newParticipantTestBtn.hidden = !MANUAL_MODE;
         returningParticipantTestBtn.hidden = !MANUAL_MODE;
+        crowdTestBtn.hidden = !MANUAL_MODE;
         if (DEMO_MODE) {
             completeBtn.hidden = false;
             skipSceneBtn.hidden = false;
@@ -665,6 +668,8 @@
         let celebrationStartedAt = 0;
         let activeChallengeNumber = 0;
         let liveCountInitialized = false;
+        let visualizedLiveCount = 0;
+        let liveVisualTimer = null;
         let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = (DEMO_MODE ? 8_000 : 20_000) * SCENE_TIME_SCALE;
@@ -804,9 +809,12 @@
 
         const donorNameRotation = [];
         const STREAK_CLASS_NAMES = ["streak-2", "streak-3", "streak-4", "streak-5", "streak-6", "streak-7"];
-        const LATEST_DONOR_PRIORITY_MS = 12000;
+        const NAME_NOTIFICATION_MS = 3400;
         let latestDonorEntry = null;
-        let latestDonorTimer = null;
+        const nameNotificationQueue = [];
+        let nameNotificationTimer = null;
+        const participationThanksQueue = [];
+        let participationThanksTimer = null;
 
         function getStreakClass(options = {}) {
             if (options.isReturning !== true) return "";
@@ -883,23 +891,41 @@
             renderDonorTicker();
         }
 
+        function processNameNotificationQueue() {
+            if (nameNotificationTimer || nameNotificationQueue.length === 0) return;
+            const next = nameNotificationQueue.shift();
+            latestDonorEntry = next;
+            renderDonorTicker(latestDonorEntry);
+            showParticipationThanks(next.name, next);
+            nameNotificationTimer = window.setTimeout(() => {
+                nameNotificationTimer = null;
+                latestDonorEntry = null;
+                renderDonorTicker();
+                processNameNotificationQueue();
+            }, NAME_NOTIFICATION_MS);
+        }
+
         function showThanks(name, options = {}) {
             const raw = String(name ?? "").trim().slice(0, 24);
             if (!isRealName(raw)) return;
-            latestDonorEntry = addToDonorNameRotation(raw, options);
+            const entry = addToDonorNameRotation(raw, options);
+            nameNotificationQueue.push(entry);
+            if (nameNotificationQueue.length > 120) {
+                nameNotificationQueue.splice(0, nameNotificationQueue.length - 120);
+            }
             renderDonorTicker(latestDonorEntry);
-            window.clearTimeout(latestDonorTimer);
-            latestDonorTimer = window.setTimeout(() => {
-                latestDonorEntry = null;
-                renderDonorTicker();
-            }, LATEST_DONOR_PRIORITY_MS);
-            showParticipationThanks(raw, options);
+            processNameNotificationQueue();
         }
 
         function setDonorNameRotation(names) {
             donorNameRotation.length = 0;
             latestDonorEntry = null;
-            window.clearTimeout(latestDonorTimer);
+            window.clearTimeout(nameNotificationTimer);
+            nameNotificationTimer = null;
+            nameNotificationQueue.length = 0;
+            window.clearTimeout(participationThanksTimer);
+            participationThanksTimer = null;
+            participationThanksQueue.length = 0;
             names.forEach((entry) => {
                 const raw = String(entry?.name ?? entry ?? "").trim().slice(0, 24);
                 if (isRealName(raw)) addToDonorNameRotation(raw, entry);
@@ -907,7 +933,7 @@
             renderDonorTicker();
         }
 
-        function showParticipationThanks(name, options = {}) {
+        function renderParticipationThanks(name, options = {}) {
             if (!participationThanks) return;
             const raw = String(name ?? "").trim().slice(0, 24);
             const isReturning = options.isReturning === true;
@@ -935,6 +961,24 @@
                 ],
                 { duration: 3200, easing: "ease" }
             );
+        }
+
+        function processParticipationThanksQueue() {
+            if (participationThanksTimer || participationThanksQueue.length === 0) return;
+            const next = participationThanksQueue.shift();
+            renderParticipationThanks(next.name, next.options);
+            participationThanksTimer = window.setTimeout(() => {
+                participationThanksTimer = null;
+                processParticipationThanksQueue();
+            }, NAME_NOTIFICATION_MS);
+        }
+
+        function showParticipationThanks(name, options = {}) {
+            participationThanksQueue.push({ name, options });
+            if (participationThanksQueue.length > 120) {
+                participationThanksQueue.splice(0, participationThanksQueue.length - 120);
+            }
+            processParticipationThanksQueue();
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -1015,6 +1059,7 @@
             if (!liveCountInitialized) {
                 liveCountInitialized = true;
                 count = n;
+                visualizedLiveCount = n;
                 clearCelebrationTimers();
                 celebrationActive = false;
                 setSceneFocus(false);
@@ -1030,12 +1075,29 @@
             count = n;
 
             if (delta > 0) {
-                const bursts = Math.min(delta, TOTAL);
-                for (let i = 0; i < bursts; i++) {
-                    setTimeout(triggerSplat, i * 200);
-                }
                 pulseCount();
+                if (!liveVisualTimer) {
+                    liveVisualTimer = window.setInterval(() => {
+                        if (visualizedLiveCount >= count) {
+                            window.clearInterval(liveVisualTimer);
+                            liveVisualTimer = null;
+                            if (hint && !DEV) hint.textContent = "● LIVE — スマホ参加に連動中";
+                            return;
+                        }
+                        visualizedLiveCount += 1;
+                        triggerSplat();
+                        if (hint && !DEV) {
+                            const pending = Math.max(0, count - visualizedLiveCount);
+                            hint.textContent = pending > 0
+                                ? `● LIVE — あと${pending}人の参加を順番に反映中`
+                                : "● LIVE — スマホ参加に連動中";
+                        }
+                    }, 260);
+                }
             } else if (delta < 0) {
+                if (liveVisualTimer) window.clearInterval(liveVisualTimer);
+                liveVisualTimer = null;
+                visualizedLiveCount = n;
                 clearCelebrationTimers();
                 celebrationActive = false;
                 setSceneFocus(false);
@@ -1072,6 +1134,9 @@
             celebrationStartedAt = 0;
             activeChallengeNumber = 0;
             liveCountInitialized = false;
+            visualizedLiveCount = 0;
+            if (liveVisualTimer) window.clearInterval(liveVisualTimer);
+            liveVisualTimer = null;
             layers.forEach((el) => {
                 el.getAnimations().forEach((a) => a.cancel());
                 el.classList.remove("is-revealed");
@@ -1120,6 +1185,20 @@
             returningParticipantTestDay = returningParticipantTestDay >= 7
                 ? 2
                 : returningParticipantTestDay + 1;
+        });
+        crowdTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!liveCountInitialized) {
+                applyLiveCount(count);
+            }
+            applyLiveCount(count + 30);
+            for (let index = 1; index <= 30; index += 1) {
+                showThanks(`テスト${String(index).padStart(2, "0")}`, {
+                    isReturning: index % 5 === 0,
+                    streakDays: index % 5 === 0 ? 2 : 1,
+                    createdAt: Date.now() + index,
+                });
+            }
         });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });

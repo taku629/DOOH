@@ -73,3 +73,20 @@ test("existing swipe history migrates into server participant history", () => {
     assert.equal(nextDay.swipes["event-2"].streakDays, 4);
     assert.equal(nextDay.participantHistory["existing-device"].streakDays, 4);
 });
+
+test("thirty distinct simultaneous-style events are all counted once", () => {
+    let data = {};
+
+    for (let index = 0; index < 30; index += 1) {
+        data = buildParticipationTransactionValue(data, {
+            key: `event-${index}`,
+            visitorId: `visitor-${index}`,
+            participationDate: "2026-06-16",
+            createdAt: index,
+        });
+    }
+
+    assert.equal(data.participantCount, 30);
+    assert.equal(Object.keys(data.swipes).length, 30);
+    assert.equal(Object.keys(data.dailyParticipants["2026-06-16"]).length, 30);
+});

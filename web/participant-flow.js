@@ -875,6 +875,12 @@ async function registerParticipation() {
     }
 
     const result = await publishSwipeComplete(payload);
+    if (result?.failed === true) {
+      if (swipeHint) {
+        swipeHint.textContent = "通信が混み合っています。接続を確認して、もう一度スワイプしてください。";
+      }
+      return false;
+    }
     if (result?.accepted === false) {
       markAlreadyParticipatedToday(visit);
       return true;
