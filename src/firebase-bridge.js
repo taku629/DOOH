@@ -201,11 +201,13 @@ export async function publishSwipeComplete(payload = {}) {
         }
         const committedData = result.snapshot.val() || {};
         const participantCount = Number(committedData.participantCount) || 0;
+        const committedEvent = committedData.swipes?.[eventRef.key] ?? null;
 
         return {
             count: participantCount,
             eventRef,
-            accepted: Boolean(committedData.swipes?.[eventRef.key]),
+            event: committedEvent,
+            accepted: Boolean(committedEvent),
         };
     } catch (error) {
         console.warn("[firebase] swipe publish failed; local fallback enabled:", error);

@@ -20,6 +20,11 @@
           }
         }
       },
+      "participantHistory": {
+        "$visitorId": {
+          ".validate": "newData.hasChildren(['lastParticipationDate', 'streakDays']) && newData.child('lastParticipationDate').isString() && newData.child('streakDays').isNumber() && newData.child('streakDays').val() >= 1"
+        }
+      },
       "$other": {
         ".validate": false
       }
@@ -40,6 +45,11 @@
           "$visitorId": {
             ".validate": "newData.isNumber() && newData.val() >= 1"
           }
+        }
+      },
+      "participantHistory": {
+        "$visitorId": {
+          ".validate": "newData.hasChildren(['lastParticipationDate', 'streakDays']) && newData.child('lastParticipationDate').isString() && newData.child('streakDays').isNumber() && newData.child('streakDays').val() >= 1"
         }
       },
       "$other": {
@@ -64,6 +74,11 @@
           }
         }
       },
+      "participantHistory": {
+        "$visitorId": {
+          ".validate": "newData.hasChildren(['lastParticipationDate', 'streakDays']) && newData.child('lastParticipationDate').isString() && newData.child('streakDays').isNumber() && newData.child('streakDays').val() >= 1"
+        }
+      },
       "$other": {
         ".validate": false
       }
@@ -84,6 +99,11 @@
           "$visitorId": {
             ".validate": "newData.isNumber() && newData.val() >= 1"
           }
+        }
+      },
+      "participantHistory": {
+        "$visitorId": {
+          ".validate": "newData.hasChildren(['lastParticipationDate', 'streakDays']) && newData.child('lastParticipationDate').isString() && newData.child('streakDays').isNumber() && newData.child('streakDays').val() >= 1"
         }
       },
       "$other": {

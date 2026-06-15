@@ -818,8 +818,14 @@ async function registerParticipation() {
       markAlreadyParticipatedToday(visit);
       return true;
     }
-    saveParticipationVisit(visit, { storageKey: participationStorageOptions.storageKey });
-    completedParticipationVisit = visit;
+    const committedVisit = {
+      ...visit,
+      isReturning: result?.event?.isReturning === true,
+      isConsecutiveReturn: result?.event?.isConsecutiveReturn === true,
+      streakDays: Math.max(1, Number(result?.event?.streakDays) || 1),
+    };
+    saveParticipationVisit(committedVisit, { storageKey: participationStorageOptions.storageKey });
+    completedParticipationVisit = committedVisit;
     const committedCount = Number(result?.count);
     participantCount = Number.isFinite(committedCount)
       ? committedCount
