@@ -609,6 +609,9 @@
         function loadParticipant() {
             const participantUrl = new URL(participantRoutes[participantType.value], location.href);
             participantUrl.searchParams.set("rs-load", Date.now());
+            if (new URLSearchParams(location.search).get("source") === "slack") {
+                participantUrl.searchParams.set("source", "slack");
+            }
             if (TEAM_TEST_MODE) {
                 participantUrl.searchParams.set("channel", PARTICIPATION_CHANNEL);
                 participantUrl.searchParams.set("team-test", "1");

@@ -85,6 +85,7 @@ const STORY_CARD_REDUCED_MOTION_MS = 1000;
 const STORY_IMAGE_WIDTH = 1080;
 const STORY_IMAGE_HEIGHT = 1920;
 const COPY_FEEDBACK_VISIBLE_MS = 2600;
+const EXTERNAL_BROWSER_GUIDE_SESSION_KEY = "shinjuku-dooh-external-browser-guide-dismissed";
 
 document.documentElement.dataset.theme = activeTheme;
 const experience = document.documentElement.dataset.experience || "default";
@@ -92,6 +93,67 @@ const isSparkleExperience = experience === "sparkle";
 const isMenExperience = experience === "men";
 const isAllExperience = experience === "all";
 const isStoryExperience = isSparkleExperience || isMenExperience || isAllExperience;
+
+function shouldShowExternalBrowserGuide() {
+  const source = participationSearchParams.get("source");
+  const userAgent = navigator.userAgent || "";
+  const referrer = document.referrer || "";
+  return source === "slack" || /Slack/i.test(userAgent) || /slack\.com/i.test(referrer);
+}
+
+function setupExternalBrowserGuide() {
+  let wasDismissed = false;
+  try {
+    wasDismissed = Boolean(sessionStorage.getItem(EXTERNAL_BROWSER_GUIDE_SESSION_KEY));
+  } catch {
+    wasDismissed = false;
+  }
+  if (!shouldShowExternalBrowserGuide() || wasDismissed) {
+    return;
+  }
+
+  const guide = document.createElement("section");
+  guide.className = "external-browser-guide";
+  guide.setAttribute("role", "dialog");
+  guide.setAttribute("aria-modal", "true");
+  guide.setAttribute("aria-labelledby", "externalBrowserGuideTitle");
+  guide.innerHTML = `
+    <div class="external-browser-guide-card">
+      <h2 id="externalBrowserGuideTitle">Slackから開かず、ブラウザから開いてください</h2>
+      <p>翌日の参加記録と前回の名前を引き継ぐため、SafariまたはChromeを使用してください。</p>
+      <p class="external-browser-guide-note">右上のメニューから「ブラウザで開く」を選択してください。</p>
+      <div class="external-browser-guide-actions">
+        <button class="primary" type="button" data-copy-external-link>リンクをコピー</button>
+        <button class="ghost" type="button" data-dismiss-external-guide>このまま試す</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(guide);
+
+  const dismiss = () => {
+    try {
+      sessionStorage.setItem(EXTERNAL_BROWSER_GUIDE_SESSION_KEY, "1");
+    } catch {
+      /* Storage can be unavailable in some in-app browsers. */
+    }
+    guide.hidden = true;
+  };
+  guide.querySelector("[data-dismiss-external-guide]")?.addEventListener("click", dismiss);
+  guide.querySelector("[data-copy-external-link]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const url = new URL(location.href);
+    url.searchParams.delete("source");
+    url.searchParams.delete("rs-load");
+    try {
+      await navigator.clipboard.writeText(url.href);
+      button.textContent = "コピーしました";
+    } catch {
+      button.textContent = "右上メニューからブラウザで開く";
+    }
+  });
+}
+
+setupExternalBrowserGuide();
 const THANKS_STORIES = [
   {
     id: "patrol",
