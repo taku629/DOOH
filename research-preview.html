@@ -516,6 +516,7 @@
         </select>
         <button id="reloadBtn" type="button">両画面を再読み込み</button>
         <button class="team-test-only" id="nextDayTestBtn" type="button">翌日参加を再現</button>
+        <button class="team-test-only" id="crowdTestBtn" type="button">50人同時参加を再現</button>
         <button class="team-test-only" id="resetDeviceBtn" type="button">端末履歴をリセット</button>
         <button id="focusBtn" type="button" aria-pressed="false">DOOHを大きく</button>
         <button class="survey-entry" id="surveyBtn" type="button" hidden>アンケート</button>
@@ -541,6 +542,7 @@
         <summary>動作テスト</summary>
         <div class="mobile-test-actions">
             <button id="mobileNextDayTestBtn" type="button">翌日参加を再現</button>
+            <button id="mobileCrowdTestBtn" type="button">50人同時参加を再現</button>
             <button id="mobileResetDeviceBtn" type="button">端末履歴をリセット</button>
         </div>
     </details>
@@ -607,8 +609,10 @@
         const participantType = document.getElementById("participantType");
         const reloadBtn = document.getElementById("reloadBtn");
         const nextDayTestBtn = document.getElementById("nextDayTestBtn");
+        const crowdTestBtn = document.getElementById("crowdTestBtn");
         const resetDeviceBtn = document.getElementById("resetDeviceBtn");
         const mobileNextDayTestBtn = document.getElementById("mobileNextDayTestBtn");
+        const mobileCrowdTestBtn = document.getElementById("mobileCrowdTestBtn");
         const mobileResetDeviceBtn = document.getElementById("mobileResetDeviceBtn");
         const focusBtn = document.getElementById("focusBtn");
         const participantTab = document.getElementById("participantTab");
@@ -937,8 +941,19 @@
             }, location.origin);
         }
 
+        function simulateCrowdTest() {
+            showMobilePanel("dooh");
+            doohFrame.contentWindow?.__inkDemo?.simulateCrowd?.(50);
+            showFlowGuide(
+                "50人同時参加を再現しています",
+                "積み上げ通知と連結テロップを確認してください"
+            );
+        }
+
         nextDayTestBtn.addEventListener("click", simulateNextDay);
         mobileNextDayTestBtn.addEventListener("click", simulateNextDay);
+        crowdTestBtn.addEventListener("click", simulateCrowdTest);
+        mobileCrowdTestBtn.addEventListener("click", simulateCrowdTest);
         resetDeviceBtn.addEventListener("click", resetDeviceHistory);
         mobileResetDeviceBtn.addEventListener("click", resetDeviceHistory);
         participantTab.addEventListener("click", () => showMobilePanel("participant"));

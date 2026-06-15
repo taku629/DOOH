@@ -1224,19 +1224,23 @@
                 ? 2
                 : returningParticipantTestDay + 1;
         });
-        crowdTestBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
+        function simulateCrowd(size = 50) {
+            const safeSize = Math.max(1, Math.min(100, Math.floor(Number(size) || 50)));
             if (!liveCountInitialized) {
                 applyLiveCount(count);
             }
-            applyLiveCount(count + 50);
-            for (let index = 1; index <= 50; index += 1) {
+            applyLiveCount(count + safeSize);
+            for (let index = 1; index <= safeSize; index += 1) {
                 showThanks(`テスト${String(index).padStart(2, "0")}`, {
                     isReturning: index % 5 === 0,
                     streakDays: index % 5 === 0 ? 2 : 1,
                     createdAt: Date.now() + index,
                 });
             }
+        }
+        crowdTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            simulateCrowd(50);
         });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
@@ -1255,7 +1259,7 @@
         updateHud();
 
         // Firebase連動スクリプト（module）から呼べるように公開
-        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, resumeDonorTicker, skipScene, completeCurrentChallenge };
+        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, resumeDonorTicker, simulateCrowd, skipScene, completeCurrentChallenge };
     </script>
 
     <script type="module">
