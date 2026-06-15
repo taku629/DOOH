@@ -98,7 +98,8 @@ function shouldShowExternalBrowserGuide() {
   const source = participationSearchParams.get("source");
   const userAgent = navigator.userAgent || "";
   const referrer = document.referrer || "";
-  return source === "slack" || /Slack/i.test(userAgent) || /slack\.com/i.test(referrer);
+  const isInsideResearchPreview = window.parent !== window;
+  return !isInsideResearchPreview && (source === "slack" || /Slack/i.test(userAgent) || /slack\.com/i.test(referrer));
 }
 
 function setupExternalBrowserGuide() {
@@ -141,9 +142,7 @@ function setupExternalBrowserGuide() {
   guide.querySelector("[data-dismiss-external-guide]")?.addEventListener("click", dismiss);
   guide.querySelector("[data-copy-external-link]")?.addEventListener("click", async (event) => {
     const button = event.currentTarget;
-    const url = new URL(location.href);
-    url.searchParams.delete("source");
-    url.searchParams.delete("rs-load");
+    const url = new URL("https://shinjuku-dooh-rs.web.app/");
     try {
       await navigator.clipboard.writeText(url.href);
       button.textContent = "コピーしました";

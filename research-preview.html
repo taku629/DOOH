@@ -216,6 +216,78 @@
             font-size: 0.7rem;
         }
 
+        .slack-browser-guide {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(5, 6, 6, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        .slack-browser-guide[hidden] {
+            display: none;
+        }
+
+        .slack-browser-guide-card {
+            display: grid;
+            gap: 14px;
+            width: min(100%, 430px);
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            background: #fff;
+            color: #111313;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+        }
+
+        .slack-browser-guide-card h2,
+        .slack-browser-guide-card p {
+            margin: 0;
+        }
+
+        .slack-browser-guide-card h2 {
+            font-size: clamp(1.25rem, 5vw, 1.65rem);
+            line-height: 1.35;
+        }
+
+        .slack-browser-guide-card p {
+            color: #5e6363;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .slack-browser-guide-note {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #f0f2f2;
+            color: #111313 !important;
+            font-weight: 700;
+        }
+
+        .slack-browser-guide-actions {
+            display: grid;
+            gap: 8px;
+        }
+
+        .slack-browser-guide-actions button {
+            width: 100%;
+            min-height: 48px;
+        }
+
+        .slack-browser-guide-actions .copy {
+            border-color: #111313;
+            background: #111313;
+        }
+
+        .slack-browser-guide-actions .continue {
+            background: #f0f2f2;
+            color: #111313;
+        }
+
         @keyframes handoff-spin {
             to { transform: rotate(360deg); }
         }
@@ -454,6 +526,17 @@
         <button id="doohTab" type="button" aria-selected="false">DOOH</button>
         <button class="survey-entry" id="surveyTab" type="button" aria-selected="false" hidden>アンケート</button>
     </nav>
+    <section class="slack-browser-guide" id="slackBrowserGuide" role="dialog" aria-modal="true" aria-labelledby="slackBrowserGuideTitle" hidden>
+        <div class="slack-browser-guide-card">
+            <h2 id="slackBrowserGuideTitle">Slackから開かず、ブラウザから開いてください</h2>
+            <p>翌日の参加記録と前回の名前を引き継ぐため、SafariまたはChromeを使用してください。</p>
+            <p class="slack-browser-guide-note">右上のメニューから「ブラウザで開く」を選択してください。</p>
+            <div class="slack-browser-guide-actions">
+                <button class="copy" id="copyBrowserUrlBtn" type="button">リンクをコピー</button>
+                <button class="continue" id="continueInSlackBtn" type="button">このまま試す</button>
+            </div>
+        </div>
+    </section>
     <details class="mobile-test-tools team-test-only">
         <summary>動作テスト</summary>
         <div class="mobile-test-actions">
@@ -511,6 +594,8 @@
             /(^|\/)team-test\/?$/.test(location.pathname) ||
             (local && new URLSearchParams(location.search).has("team-test"));
         const PARTICIPATION_CHANNEL = TEAM_TEST_MODE ? "research" : "default";
+        const SLACK_SOURCE_MODE = new URLSearchParams(location.search).get("source") === "slack";
+        const PUBLIC_BROWSER_URL = "https://shinjuku-dooh-rs.web.app/";
         let activeReturnTestDate = TEAM_TEST_MODE
             ? new URLSearchParams(location.search).get("return-test-date")
             : "";
@@ -536,6 +621,9 @@
         const flowGuide = document.getElementById("flowGuide");
         const flowGuideTitle = document.getElementById("flowGuideTitle");
         const flowGuideStatus = document.getElementById("flowGuideStatus");
+        const slackBrowserGuide = document.getElementById("slackBrowserGuide");
+        const copyBrowserUrlBtn = document.getElementById("copyBrowserUrlBtn");
+        const continueInSlackBtn = document.getElementById("continueInSlackBtn");
         const analyticsQueue = [];
         let handoffTimer = null;
         let handoffStatusTimer = null;
@@ -620,6 +708,21 @@
                 participantUrl.searchParams.set("return-test-date", activeReturnTestDate);
             }
             participantFrame.src = participantUrl.href;
+        }
+
+        if (SLACK_SOURCE_MODE) {
+            slackBrowserGuide.hidden = false;
+            copyBrowserUrlBtn.addEventListener("click", async () => {
+                try {
+                    await navigator.clipboard.writeText(PUBLIC_BROWSER_URL);
+                    copyBrowserUrlBtn.textContent = "コピーしました";
+                } catch {
+                    copyBrowserUrlBtn.textContent = PUBLIC_BROWSER_URL;
+                }
+            });
+            continueInSlackBtn.addEventListener("click", () => {
+                slackBrowserGuide.hidden = true;
+            });
         }
 
         function reloadFrames({ track = false } = {}) {
