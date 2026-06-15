@@ -90,3 +90,20 @@ test("thirty distinct simultaneous-style events are all counted once", () => {
     assert.equal(Object.keys(data.swipes).length, 30);
     assert.equal(Object.keys(data.dailyParticipants["2026-06-16"]).length, 30);
 });
+
+test("fifty distinct simultaneous-style events are all counted once", () => {
+    let data = {};
+
+    for (let index = 0; index < 50; index += 1) {
+        data = buildParticipationTransactionValue(data, {
+            key: `crowd-event-${index}`,
+            visitorId: `crowd-visitor-${index}`,
+            participationDate: "2026-06-16",
+            createdAt: index,
+        });
+    }
+
+    assert.equal(data.participantCount, 50);
+    assert.equal(Object.keys(data.swipes).length, 50);
+    assert.equal(Object.keys(data.dailyParticipants["2026-06-16"]).length, 50);
+});

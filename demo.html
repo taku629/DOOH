@@ -315,31 +315,64 @@
             bottom: calc(100% + 4px);
             left: 0;
             margin: 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: clamp(5px, 0.55vw, 9px);
+            width: min(58vw, 720px);
             color: #fff;
             font-family: var(--font-serif);
-            font-size: clamp(1rem, 1.6vw, 1.5rem);
-            font-weight: 600;
-            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
-            opacity: 0;
             pointer-events: none;
         }
 
-        .participation-thanks::before {
+        .participation-thanks-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 100%;
+            padding: clamp(5px, 0.5vw, 8px) clamp(10px, 1vw, 16px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            background: rgba(15, 18, 18, 0.54);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: clamp(0.78rem, 1.18vw, 1.12rem);
+            font-weight: 600;
+            line-height: 1.25;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+            white-space: nowrap;
+            animation: participation-stack-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .participation-thanks-item::before {
             content: "";
             width: 8px;
             height: 8px;
+            flex: none;
             border-radius: 999px;
             background: currentColor;
             box-shadow: 0 0 10px currentColor;
         }
 
-        .participation-thanks.is-returning {
+        .participation-thanks-item.is-returning {
             color: var(--returning-color, #ffc56d);
             text-shadow: 0 2px 16px color-mix(in srgb, var(--returning-color, #ffc56d) 48%, #000);
+        }
+
+        .participation-thanks-item.is-leaving {
+            animation: participation-stack-out 460ms ease-in both;
+        }
+
+        @keyframes participation-stack-in {
+            from { opacity: 0; transform: translateY(18px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes participation-stack-out {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-16px); }
         }
 
         .stage.is-returning-pulse::before {
@@ -562,7 +595,7 @@
     <div class="hint" id="hint">画面クリック / スペースキー で参加者 +1</div>
     <div class="dock">
         <div class="live">
-            <p class="participation-thanks" id="participationThanks" aria-live="polite">ご参加ありがとうございます</p>
+            <div class="participation-thanks" id="participationThanks" aria-live="polite"></div>
             <p class="thanks" id="thanks" aria-hidden="true"></p>
             <span class="label">累計参加者</span>
             <span class="value"><span class="num" id="countNum">0</span><span class="unit">人</span></span>
@@ -591,7 +624,7 @@
         <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
         <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
         <button id="returningParticipantTestBtn" type="button" hidden>2〜7日目の継続参加を再現</button>
-        <button id="crowdTestBtn" type="button" hidden>30人同時参加を再現</button>
+        <button id="crowdTestBtn" type="button" hidden>50人同時参加を再現</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -810,11 +843,14 @@
         const donorNameRotation = [];
         const STREAK_CLASS_NAMES = ["streak-2", "streak-3", "streak-4", "streak-5", "streak-6", "streak-7"];
         const NAME_NOTIFICATION_MS = 3400;
+        const PARTICIPATION_STACK_VISIBLE_MS = 7000;
+        const PARTICIPATION_STACK_MAX_VISIBLE = 6;
+        const PARTICIPATION_STACK_ARRIVAL_MS = 380;
         let latestDonorEntry = null;
         const nameNotificationQueue = [];
         let nameNotificationTimer = null;
-        const participationThanksQueue = [];
-        let participationThanksTimer = null;
+        const participationStackQueue = [];
+        let participationStackTimer = null;
 
         function getStreakClass(options = {}) {
             if (options.isReturning !== true) return "";
@@ -896,7 +932,6 @@
             const next = nameNotificationQueue.shift();
             latestDonorEntry = next;
             renderDonorTicker(latestDonorEntry);
-            showParticipationThanks(next.name, next);
             nameNotificationTimer = window.setTimeout(() => {
                 nameNotificationTimer = null;
                 latestDonorEntry = null;
@@ -914,6 +949,7 @@
                 nameNotificationQueue.splice(0, nameNotificationQueue.length - 120);
             }
             renderDonorTicker(latestDonorEntry);
+            showParticipationThanks(raw, entry);
             processNameNotificationQueue();
         }
 
@@ -923,9 +959,6 @@
             window.clearTimeout(nameNotificationTimer);
             nameNotificationTimer = null;
             nameNotificationQueue.length = 0;
-            window.clearTimeout(participationThanksTimer);
-            participationThanksTimer = null;
-            participationThanksQueue.length = 0;
             names.forEach((entry) => {
                 const raw = String(entry?.name ?? entry ?? "").trim().slice(0, 24);
                 if (isRealName(raw)) addToDonorNameRotation(raw, entry);
@@ -933,52 +966,57 @@
             renderDonorTicker();
         }
 
+        function removeParticipationThanksItem(item) {
+            if (!item?.isConnected || item.classList.contains("is-leaving")) return;
+            item.classList.add("is-leaving");
+            window.setTimeout(() => item.remove(), 480);
+        }
+
         function renderParticipationThanks(name, options = {}) {
             if (!participationThanks) return;
             const raw = String(name ?? "").trim().slice(0, 24);
             const isReturning = options.isReturning === true;
-            participationThanks.classList.toggle("is-returning", isReturning);
-            applyStreakClass(participationThanks, options);
+            const item = document.createElement("div");
+            item.className = "participation-thanks-item";
+            item.classList.toggle("is-returning", isReturning);
+            applyStreakClass(item, options);
             applyStreakClass(stage, options);
-            participationThanks.textContent = isReturning
+            item.textContent = isReturning
                 ? `${isRealName(raw) ? `おかえりなさい、${raw}さん` : "おかえりなさい"}`
                 : isRealName(raw)
                     ? `ありがとう、${raw}さん`
                     : "ご参加ありがとうございます";
+            participationThanks.appendChild(item);
+            const visibleItems = [...participationThanks.children]
+                .filter((child) => !child.classList.contains("is-leaving"));
+            if (visibleItems.length > PARTICIPATION_STACK_MAX_VISIBLE) {
+                removeParticipationThanksItem(visibleItems[0]);
+            }
             stage.classList.remove("is-returning-pulse");
             if (isReturning) {
                 void stage.offsetWidth;
                 stage.classList.add("is-returning-pulse");
                 window.setTimeout(() => stage.classList.remove("is-returning-pulse"), 2700);
             }
-            participationThanks.getAnimations().forEach((animation) => animation.cancel());
-            participationThanks.animate(
-                [
-                    { opacity: 0, transform: "translateY(10px)" },
-                    { opacity: 1, transform: "translateY(0)", offset: 0.12 },
-                    { opacity: 1, transform: "translateY(0)", offset: 0.8 },
-                    { opacity: 0, transform: "translateY(-6px)" },
-                ],
-                { duration: 3200, easing: "ease" }
-            );
+            window.setTimeout(() => removeParticipationThanksItem(item), PARTICIPATION_STACK_VISIBLE_MS);
         }
 
-        function processParticipationThanksQueue() {
-            if (participationThanksTimer || participationThanksQueue.length === 0) return;
-            const next = participationThanksQueue.shift();
+        function processParticipationStackQueue() {
+            if (participationStackTimer || participationStackQueue.length === 0) return;
+            const next = participationStackQueue.shift();
             renderParticipationThanks(next.name, next.options);
-            participationThanksTimer = window.setTimeout(() => {
-                participationThanksTimer = null;
-                processParticipationThanksQueue();
-            }, NAME_NOTIFICATION_MS);
+            participationStackTimer = window.setTimeout(() => {
+                participationStackTimer = null;
+                processParticipationStackQueue();
+            }, PARTICIPATION_STACK_ARRIVAL_MS);
         }
 
         function showParticipationThanks(name, options = {}) {
-            participationThanksQueue.push({ name, options });
-            if (participationThanksQueue.length > 120) {
-                participationThanksQueue.splice(0, participationThanksQueue.length - 120);
+            participationStackQueue.push({ name, options });
+            if (participationStackQueue.length > 120) {
+                participationStackQueue.splice(0, participationStackQueue.length - 120);
             }
-            processParticipationThanksQueue();
+            processParticipationStackQueue();
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -1191,8 +1229,8 @@
             if (!liveCountInitialized) {
                 applyLiveCount(count);
             }
-            applyLiveCount(count + 30);
-            for (let index = 1; index <= 30; index += 1) {
+            applyLiveCount(count + 50);
+            for (let index = 1; index <= 50; index += 1) {
                 showThanks(`テスト${String(index).padStart(2, "0")}`, {
                     isReturning: index % 5 === 0,
                     streakDays: index % 5 === 0 ? 2 : 1,
