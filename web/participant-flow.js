@@ -122,7 +122,7 @@ function setupExternalBrowserGuide() {
     <div class="external-browser-guide-card">
       <h2 id="externalBrowserGuideTitle">Slackから開かず、ブラウザから開いてください</h2>
       <p>翌日の参加記録と前回の名前を引き継ぐため、SafariまたはChromeを使用してください。</p>
-      <p class="external-browser-guide-note">右上のメニューから「ブラウザで開く」を選択してください。</p>
+      <p class="external-browser-guide-note">共有ボタンやメニューから「ブラウザで開く」を選ぶか、下のリンクをコピーしてSafari・Chromeに貼り付けてください。</p>
       <div class="external-browser-guide-actions">
         <button class="primary" type="button" data-copy-external-link>リンクをコピー</button>
         <button class="ghost" type="button" data-dismiss-external-guide>このまま試す</button>
