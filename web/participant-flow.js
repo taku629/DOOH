@@ -969,9 +969,9 @@ function playCelebration() {
 }
 
 function buildShareUrl() {
-  const url = new URL(location.href);
-  url.search = "";
-  url.hash = "";
+  const url = location.hostname === "shinjuku-dooh-rs.web.app"
+    ? new URL("https://shinjuku-dooh-rs.web.app/")
+    : new URL("/", location.href);
   return url.toString();
 }
 
