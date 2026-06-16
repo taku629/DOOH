@@ -419,6 +419,44 @@ export async function getRecentNameAnnouncements(options = {}) {
     return announcements;
 }
 
+export async function getLatestNameAnnouncementForVisitor(visitorId, options = {}) {
+    if (typeof visitorId !== "string" || !visitorId) {
+        return null;
+    }
+
+    const database = await ensureDatabase();
+    if (!database) {
+        return null;
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return null;
+    }
+
+    const channel = normalizeChannel(options.channel);
+    const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
+    const query = sdk.query(
+        shoutsRef,
+        sdk.orderByChild("visitorId"),
+        sdk.equalTo(visitorId)
+    );
+    const snapshot = await sdk.get(query);
+    const announcements = [];
+
+    snapshot.forEach((child) => {
+        const data = child.val();
+        if (data?.type === "name-announced" && !isInappropriateName(data.name)) {
+            announcements.push({ id: child.key, ...data });
+        }
+    });
+
+    announcements.sort((a, b) =>
+        (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0) ||
+        String(b.id).localeCompare(String(a.id))
+    );
+    return announcements[0] ?? null;
+}
+
 export async function subscribeToDisplayConfig(callback, options = {}) {
     const database = await ensureDatabase();
     if (!database) {

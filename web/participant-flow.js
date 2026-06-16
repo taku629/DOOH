@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260614-daily-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260614-daily-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
 import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-4";
@@ -1649,10 +1649,38 @@ nickname.addEventListener("input", syncPreviewName);
 nickname.addEventListener("compositionupdate", syncPreviewName);
 nickname.addEventListener("compositionend", syncPreviewName);
 
-function setupSavedNameChoice() {
-  const savedName = getSavedDisplayName({
+async function resolveSavedNameChoice() {
+  const localSavedName = getSavedDisplayName({
     storageKey: participationStorageOptions.displayNameStorageKey,
   });
+  if (localSavedName) {
+    return localSavedName;
+  }
+
+  if (!pendingParticipationVisit.isReturning || !pendingParticipationVisit.visitorId) {
+    return "";
+  }
+
+  try {
+    const latestName = await getLatestNameAnnouncementForVisitor(pendingParticipationVisit.visitorId, {
+      channel: PARTICIPATION_CHANNEL,
+    });
+    const remoteSavedName = String(latestName?.name ?? "").trim().slice(0, 20);
+    if (remoteSavedName && !isInappropriateName(remoteSavedName)) {
+      saveDisplayName(remoteSavedName, {
+        storageKey: participationStorageOptions.displayNameStorageKey,
+      });
+      return remoteSavedName;
+    }
+  } catch (error) {
+    console.info("[participant] saved name fallback unavailable:", error);
+  }
+
+  return "";
+}
+
+async function setupSavedNameChoice() {
+  const savedName = await resolveSavedNameChoice();
   const nameField = nickname.closest(".sparkle-name-field") ?? nickname;
   const nameStep = nickname.closest(".step");
   if (!savedName || !pendingParticipationVisit.isReturning || !nameStep) {

@@ -113,6 +113,7 @@
     "nameShouts": {
       "$channel": {
         ".read": true,
+        ".indexOn": ["visitorId"],
         "$eventId": {
           ".write": "!data.exists() && ($channel === 'default' || $channel === 'v2' || $channel === 'morning' || $channel === 'research')",
           ".validate": "newData.hasChildren(['type', 'createdAt']) && newData.child('type').val() === 'name-announced' && (!newData.child('name').exists() || newData.child('name').val() === null || (newData.child('name').isString() && newData.child('name').val().length <= 24))",
