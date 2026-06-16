@@ -630,13 +630,9 @@
     </div>
 
     <script>
+        const TOTAL = 9;
         // ?dev で開くと、Firebase連動中でも手動ツールで動作確認できる（QR不要）
         const params = new URLSearchParams(location.search);
-        const requestedGoal = Number(params.get("goal") || params.get("challengeGoal"));
-        const TOTAL = Number.isFinite(requestedGoal)
-            ? Math.max(1, Math.min(99, Math.floor(requestedGoal)))
-            : 9;
-        const INK_LAYER_COUNT = 9;
         const DEV = params.has("dev");
         const DEMO_MODE = params.has("demo");
         const MANUAL_MODE = DEV || DEMO_MODE;
@@ -669,7 +665,7 @@
 
         // 飛沫レイヤーを9枚生成（黒地は screen 合成で透過 → 明部だけ累積）
         const layers = [];
-        for (let i = 1; i <= INK_LAYER_COUNT; i++) {
+        for (let i = 1; i <= TOTAL; i++) {
             const img = document.createElement("img");
             img.className = "ink-layer";
             img.src = `assets/ink/${String(i).padStart(2, "0")}.jpg`;
@@ -679,7 +675,7 @@
             layers.push(img);
         }
 
-        // 達成人数に到達した最後に重ねる仕上げの一枚
+        // 9枚が出揃った最後に重ねる仕上げの一枚
         const finalLayer = document.createElement("img");
         finalLayer.className = "ink-layer final-layer";
         finalLayer.src = "assets/ink/Shinjuku_11.png";
@@ -868,11 +864,6 @@
             if (streakClass) element.classList.add(streakClass);
         }
 
-        function getVisibleLayerCount(progress = revealed) {
-            if (progress <= 0) return 0;
-            return Math.min(layers.length, Math.ceil((progress / TOTAL) * layers.length));
-        }
-
         function addToDonorNameRotation(name, options = {}) {
             const entry = {
                 name,
@@ -1052,22 +1043,13 @@
         // 飛沫を1つ飛ばす（人数カウントとは独立）
         function triggerSplat() {
             if (revealed < TOTAL) {
-                // 達成人数に対して9枚の飛沫を段階的に出す。goal=20 なら約2人ごとに映像が進む。
-                const previousVisibleLayers = getVisibleLayerCount(revealed);
+                // 次の飛沫を飛び散らせて新しい範囲を出す
+                const el = layers[revealed];
+                el.classList.add("is-revealed");
+                splat(el);
                 revealed += 1;
-                const nextVisibleLayers = getVisibleLayerCount(revealed);
-                if (nextVisibleLayers > previousVisibleLayers) {
-                    for (let index = previousVisibleLayers; index < nextVisibleLayers; index += 1) {
-                        const el = layers[index];
-                        el.classList.add("is-revealed");
-                        splat(el);
-                    }
-                } else {
-                    const fallbackIndex = Math.max(0, Math.min(layers.length - 1, nextVisibleLayers - 1));
-                    splat(layers[fallbackIndex]);
-                }
                 if (revealed >= TOTAL) {
-                    // 達成人数ごとに、きれいな新宿 → 温かな新宿 → 次のチャレンジへ進む
+                    // 9人ごとに、きれいな新宿 → 温かな新宿 → 次のチャレンジへ進む
                     startCelebration();
                 }
                 updateHud(); // 進捗バー/テキストを飛沫ごとに更新（ライブ連動の連続表示にも対応）
@@ -1105,10 +1087,9 @@
         // 飛沫の出方を target 枚に合わせる（実カウントのリセット/巻き戻し対応）
         function rebuildReveal(target) {
             revealed = Math.max(0, Math.min(TOTAL, target));
-            const visibleLayers = getVisibleLayerCount(revealed);
             layers.forEach((el, i) => {
                 el.getAnimations().forEach((a) => a.cancel());
-                el.classList.toggle("is-revealed", i < visibleLayers);
+                el.classList.toggle("is-revealed", i < revealed);
             });
             finalLayer.getAnimations().forEach((a) => a.cancel());
             finalLayer.classList.toggle("is-revealed", revealed >= TOTAL || celebrationActive);
