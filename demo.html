@@ -705,7 +705,7 @@
         let liveVisualTimer = null;
         let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
-        const CLEAN_SCENE_MS = (DEMO_MODE ? 8_000 : 20_000) * SCENE_TIME_SCALE;
+        const CLEAN_SCENE_MS = 7_000 * SCENE_TIME_SCALE;
         const WARM_SCENE_MS = (DEMO_MODE ? 12_000 : 60_000) * SCENE_TIME_SCALE;
 
         // インクが飛び散る「ポップ」アニメーション
@@ -993,7 +993,7 @@
             item.textContent = isReturning
                 ? `${isRealName(raw) ? `おかえりなさい、${raw}さん` : "おかえりなさい"}`
                 : isRealName(raw)
-                    ? `ありがとう、${raw}さん`
+                    ? `${raw}さん、ご参加ありがとうございます`
                     : "ご参加ありがとうございます";
             participationThanks.appendChild(item);
             const visibleItems = [...participationThanks.children]
