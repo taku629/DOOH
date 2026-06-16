@@ -1250,12 +1250,32 @@ async function createInstagramStoryImageFile() {
 
 async function writeShareTextToClipboard() {
   const text = `${buildShareText()} ${buildShareUrl()}`;
-  if (!navigator.clipboard?.writeText) {
-    return false;
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall back for in-app browsers or stricter clipboard permissions.
+    }
   }
 
-  await navigator.clipboard.writeText(text);
-  return true;
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.top = "-1000px";
+  textarea.style.left = "-1000px";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    textarea.remove();
+  }
 }
 
 function setShareStatus(message, tone = "info") {
