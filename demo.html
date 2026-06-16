@@ -867,10 +867,19 @@
         function addToDonorNameRotation(name, options = {}) {
             const entry = {
                 name,
+                visitorId: typeof options.visitorId === "string" ? options.visitorId : "",
                 isReturning: options.isReturning === true,
                 streakDays: Math.max(1, Number(options.streakDays) || 1),
                 createdAt: Number(options.createdAt) || 0,
             };
+            const dedupeKey = entry.visitorId ? `visitor:${entry.visitorId}` : `name:${entry.name}`;
+            const existingIndex = donorNameRotation.findIndex((current) => {
+                const currentKey = current.visitorId ? `visitor:${current.visitorId}` : `name:${current.name}`;
+                return currentKey === dedupeKey;
+            });
+            if (existingIndex >= 0) {
+                donorNameRotation.splice(existingIndex, 1);
+            }
             donorNameRotation.push(entry);
             donorNameRotation.sort((a, b) =>
                 b.streakDays - a.streakDays ||
