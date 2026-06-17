@@ -706,7 +706,6 @@
         let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = 7_000 * SCENE_TIME_SCALE;
-        const WARM_SCENE_MS = (DEMO_MODE ? 12_000 : 60_000) * SCENE_TIME_SCALE;
 
         // インクが飛び散る「ポップ」アニメーション
         function splat(el) {
@@ -748,16 +747,11 @@
             }
 
             const elapsed = Date.now() - celebrationStartedAt;
-            const isWarmScene = elapsed >= CLEAN_SCENE_MS;
-            const remainingMs = isWarmScene
-                ? CLEAN_SCENE_MS + WARM_SCENE_MS - elapsed
-                : CLEAN_SCENE_MS - elapsed;
+            const remainingMs = CLEAN_SCENE_MS - elapsed;
             const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
             const nextChallenge = activeChallengeNumber + 1;
 
-            transitionCountdown.textContent = isWarmScene
-                ? `第${nextChallenge}回チャレンジへ あと${remainingSeconds}秒`
-                : `応援の光へ あと${remainingSeconds}秒`;
+            transitionCountdown.textContent = `第${nextChallenge}回チャレンジへ あと${remainingSeconds}秒`;
         }
 
         function startCountdownTimer() {
@@ -803,28 +797,11 @@
             updateHud();
             startCountdownTimer();
 
-            celebrationTimer = setTimeout(() => {
-                warmLayer.classList.add("is-revealed");
-                updateHud();
-                updateTransitionCountdown();
-            }, CLEAN_SCENE_MS);
-
-            warmTimer = setTimeout(finishCelebration, CLEAN_SCENE_MS + WARM_SCENE_MS);
+            celebrationTimer = setTimeout(finishCelebration, CLEAN_SCENE_MS);
         }
 
         function skipScene() {
             if (!celebrationActive) {
-                return;
-            }
-
-            const elapsed = Date.now() - celebrationStartedAt;
-            if (elapsed < CLEAN_SCENE_MS) {
-                clearCelebrationTimers();
-                celebrationStartedAt = Date.now() - CLEAN_SCENE_MS;
-                warmLayer.classList.add("is-revealed");
-                updateHud();
-                startCountdownTimer();
-                warmTimer = setTimeout(finishCelebration, WARM_SCENE_MS);
                 return;
             }
 
