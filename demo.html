@@ -782,7 +782,8 @@
             activeChallengeNumber = 0;
             warmLayer.classList.remove("is-revealed");
             finalLayer.classList.remove("is-revealed");
-            rebuildReveal(count % TOTAL);
+            // 達成演出中に参加が重なっても、次の回は荒廃状態から始める。
+            rebuildReveal(0);
             updateHud();
         }
 
