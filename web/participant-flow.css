@@ -367,6 +367,15 @@ label {
   letter-spacing: 0;
 }
 
+.funding-note {
+  line-height: 1.75;
+}
+
+.swipe-instruction {
+  color: var(--ink-secondary);
+  font-weight: 700;
+}
+
 .milestone-preview {
   display: grid;
   gap: 2px;
