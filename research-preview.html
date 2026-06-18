@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111313" />
+    <title>DOOH調査</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --ink: #111313;
+            --panel: #1a1d1d;
+            --line: rgba(255, 255, 255, 0.14);
+            --muted: rgba(255, 255, 255, 0.66);
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            min-height: 100%;
+            overflow-x: clip;
+            background: var(--ink);
+            color: #fff;
+            font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+        }
+
+        body {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            min-height: 58px;
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(17, 19, 19, 0.96);
+        }
+
+        .title {
+            min-width: 190px;
+            margin-right: auto;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .title small {
+            display: block;
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 0.68rem;
+            font-weight: 500;
+        }
+
+        button, select {
+            min-height: 36px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #252929;
+            color: #fff;
+            font: inherit;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        button {
+            padding: 0 13px;
+            cursor: pointer;
+        }
+
+        .survey-entry[hidden] {
+            display: none;
+        }
+
+        select { padding: 0 28px 0 10px; }
+        button:hover, select:hover { border-color: rgba(255, 255, 255, 0.42); }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(270px, 0.34fr) minmax(0, 0.66fr);
+            gap: 12px;
+            width: 100%;
+            min-height: 0;
+            padding: 12px;
+        }
+
+        @media (max-width: 1500px) and (min-width: 1025px) {
+            .toolbar {
+                gap: 8px;
+            }
+
+            .title {
+                flex: 1 0 100%;
+                min-width: 0;
+                margin-right: 0;
+            }
+
+            .title small {
+                display: inline;
+                margin: 0 0 0 8px;
+            }
+
+            button, select {
+                flex: 1 1 auto;
+            }
+        }
+
+        .mobile-switcher {
+            display: none;
+        }
+
+        .team-test-only,
+        .mobile-test-tools {
+            display: none;
+        }
+
+        body.is-team-test .team-test-only {
+            display: inline-flex;
+        }
+
+        body.is-team-test .mobile-test-tools {
+            display: none;
+        }
+
+        .handoff {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: grid;
+            place-items: center;
+            background: rgba(5, 6, 6, 0.94);
+            color: #fff;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 240ms ease, visibility 240ms ease;
+            pointer-events: none;
+        }
+
+        .handoff.is-active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .handoff-inner {
+            display: grid;
+            justify-items: center;
+            gap: 16px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .handoff-copy {
+            display: grid;
+            gap: 7px;
+            text-align: center;
+        }
+
+        .handoff-copy small {
+            color: rgba(255, 255, 255, 0.62);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .handoff-ring {
+            width: 54px;
+            height: 54px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: handoff-spin 800ms linear infinite;
+        }
+
+        .flow-guide {
+            position: fixed;
+            left: 50%;
+            bottom: max(24px, env(safe-area-inset-bottom));
+            z-index: 8;
+            display: grid;
+            gap: 4px;
+            width: min(calc(100% - 32px), 430px);
+            padding: 14px 18px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            background: rgba(5, 6, 6, 0.88);
+            color: #fff;
+            text-align: center;
+            opacity: 0;
+            transform: translate(-50%, 12px);
+            transition: opacity 240ms ease, transform 240ms ease;
+            pointer-events: none;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .flow-guide.is-active {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .flow-guide strong {
+            font-size: 0.88rem;
+        }
+
+        .flow-guide span {
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 0.7rem;
+        }
+
+        .slack-browser-guide {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(5, 6, 6, 0.92);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        .slack-browser-guide[hidden] {
+            display: none;
+        }
+
+        .slack-browser-guide-card {
+            display: grid;
+            gap: 14px;
+            width: min(100%, 430px);
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            background: #fff;
+            color: #111313;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+        }
+
+        .slack-browser-guide-card h2,
+        .slack-browser-guide-card p {
+            margin: 0;
+        }
+
+        .slack-browser-guide-card h2 {
+            font-size: clamp(1.25rem, 5vw, 1.65rem);
+            line-height: 1.35;
+        }
+
+        .slack-browser-guide-card p {
+            color: #5e6363;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .slack-browser-guide-note {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #f0f2f2;
+            color: #111313 !important;
+            font-weight: 700;
+        }
+
+        .slack-browser-guide-actions {
+            display: grid;
+            gap: 8px;
+        }
+
+        .slack-browser-guide-actions button {
+            width: 100%;
+            min-height: 48px;
+        }
+
+        .slack-browser-guide-actions .copy {
+            border-color: #111313;
+            background: #111313;
+        }
+
+        .slack-browser-guide-actions .continue {
+            background: #f0f2f2;
+            color: #111313;
+        }
+
+        @keyframes handoff-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .panel {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--panel);
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--line);
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        .panel-head span {
+            color: var(--muted);
+            font-size: 0.64rem;
+            font-weight: 500;
+        }
+
+        .viewport {
+            position: relative;
+            display: grid;
+            place-items: center;
+            min-height: 0;
+            overflow: hidden;
+            background: #090a0a;
+        }
+
+        iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #fff;
+        }
+
+        .phone-frame {
+            width: min(100%, 430px);
+            height: 100%;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .dooh-view {
+            align-content: center;
+            gap: 16px;
+        }
+
+        .dooh-frame-shell {
+            position: relative;
+            flex: none;
+            overflow: hidden;
+            background: #050606;
+            box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+        }
+
+        .dooh-frame-shell iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1280px;
+            height: 720px;
+            transform-origin: top left;
+        }
+
+        .orientation-prompt {
+            display: none;
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-align: center;
+        }
+
+        body.dooh-focus .workspace { grid-template-columns: minmax(210px, 0.22fr) minmax(0, 0.78fr); }
+
+        @media (max-width: 1024px) {
+            body {
+                display: grid;
+                grid-template-rows: minmax(0, 1fr);
+                height: 100dvh;
+                overflow: hidden;
+            }
+
+            .toolbar {
+                display: none;
+            }
+
+            .mobile-switcher {
+                position: fixed;
+                top: max(8px, env(safe-area-inset-top));
+                right: 8px;
+                z-index: 6;
+                display: grid;
+                grid-auto-flow: column;
+                grid-auto-columns: 1fr;
+                gap: 2px;
+                padding: 3px;
+                border: 1px solid rgba(255, 255, 255, 0.22);
+                border-radius: 999px;
+                background: rgba(17, 19, 19, 0.72);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+            }
+
+            .mobile-switcher button {
+                min-width: 62px;
+                min-height: 30px;
+                padding: 0 10px;
+                border: 0;
+                border-radius: 999px;
+                color: var(--muted);
+                font-size: 0.68rem;
+            }
+
+            .mobile-switcher button[aria-selected="true"] {
+                background: #fff;
+                color: var(--ink);
+            }
+
+            body.is-team-test .mobile-test-tools {
+                position: fixed;
+                left: 8px;
+                bottom: max(8px, env(safe-area-inset-bottom));
+                z-index: 7;
+                display: block;
+                color: #fff;
+            }
+
+            .mobile-test-tools summary {
+                width: max-content;
+                padding: 8px 12px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 999px;
+                background: rgba(17, 19, 19, 0.78);
+                font-size: 0.68rem;
+                font-weight: 700;
+                list-style: none;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+            }
+
+            .mobile-test-tools summary::-webkit-details-marker {
+                display: none;
+            }
+
+            .mobile-test-actions {
+                display: grid;
+                gap: 6px;
+                width: 150px;
+                margin-bottom: 6px;
+                padding: 7px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+                background: rgba(17, 19, 19, 0.9);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+            }
+
+            .mobile-test-actions button {
+                min-height: 34px;
+                padding: 0 9px;
+                font-size: 0.66rem;
+            }
+
+            .workspace {
+                width: 100%;
+                height: 100%;
+                grid-template-columns: 1fr;
+                grid-template-rows: minmax(0, 1fr);
+                min-height: 0;
+                padding: 0;
+            }
+
+            .panel {
+                width: 100%;
+                height: 100%;
+                min-height: 0;
+                grid-template-rows: minmax(0, 1fr);
+                border: 0;
+                border-radius: 0;
+            }
+
+            .panel-head { display: none; }
+            .viewport { height: 100%; }
+            .phone-frame { width: 100%; }
+            .dooh-view { padding: 10px; }
+
+            body.mobile-participant .dooh-panel,
+            body.mobile-dooh .participant-panel {
+                display: none;
+            }
+
+            body.dooh-focus .workspace { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 1024px) and (orientation: portrait) {
+            body.mobile-dooh.orientation-ready .orientation-prompt { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <header class="toolbar">
+        <div class="title">
+            DOOH調査
+            <small>左で参加すると、右のDOOHへ反映されます</small>
+        </div>
+        <select id="participantType" aria-label="参加画面を選択">
+            <option value="men">参加画面：MEN</option>
+            <option value="women">参加画面：WOMEN</option>
+        </select>
+        <button id="reloadBtn" type="button">両画面を再読み込み</button>
+        <button class="team-test-only" id="nextDayTestBtn" type="button">翌日参加を再現</button>
+        <button class="team-test-only" id="crowdTestBtn" type="button">50人同時参加を再現</button>
+        <button class="team-test-only" id="resetDeviceBtn" type="button">端末履歴をリセット</button>
+        <button id="focusBtn" type="button" aria-pressed="false">DOOHを大きく</button>
+        <button class="survey-entry" id="surveyBtn" type="button" hidden>アンケート</button>
+    </header>
+
+    <nav class="mobile-switcher" aria-label="調査画面の切り替え">
+        <button id="participantTab" type="button" aria-selected="true">参加</button>
+        <button id="doohTab" type="button" aria-selected="false">DOOH</button>
+        <button class="survey-entry" id="surveyTab" type="button" aria-selected="false" hidden>アンケート</button>
+    </nav>
+    <section class="slack-browser-guide" id="slackBrowserGuide" role="dialog" aria-modal="true" aria-labelledby="slackBrowserGuideTitle" hidden>
+        <div class="slack-browser-guide-card">
+            <h2 id="slackBrowserGuideTitle">Slackから開かず、ブラウザから開いてください</h2>
+            <p>翌日の参加記録と前回の名前を引き継ぐため、SafariまたはChromeを使用してください。</p>
+            <p class="slack-browser-guide-note">共有ボタンやメニューから「ブラウザで開く」を選ぶか、下のリンクをコピーしてSafari・Chromeに貼り付けてください。</p>
+            <div class="slack-browser-guide-actions">
+                <button class="copy" id="copyBrowserUrlBtn" type="button">リンクをコピー</button>
+                <button class="continue" id="continueInSlackBtn" type="button">このまま試す</button>
+            </div>
+        </div>
+    </section>
+    <details class="mobile-test-tools team-test-only">
+        <summary>動作テスト</summary>
+        <div class="mobile-test-actions">
+            <button id="mobileNextDayTestBtn" type="button">翌日参加を再現</button>
+            <button id="mobileCrowdTestBtn" type="button">50人同時参加を再現</button>
+            <button id="mobileResetDeviceBtn" type="button">端末履歴をリセット</button>
+        </div>
+    </details>
+
+    <main class="workspace">
+        <section class="panel participant-panel">
+            <div class="panel-head">参加者のスマホ <span>ここで操作</span></div>
+            <div class="viewport">
+                <div class="phone-frame">
+                    <iframe id="participantFrame" title="参加者のスマホ画面"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel dooh-panel">
+            <div class="panel-head">新宿DOOH <span>参加結果を確認</span></div>
+            <div class="viewport dooh-view">
+                <div class="dooh-frame-shell" id="doohFrameShell">
+                    <iframe id="doohFrame" title="新宿DOOH画面"></iframe>
+                </div>
+                <p class="orientation-prompt">端末を横向きにしてご覧ください</p>
+            </div>
+        </section>
+    </main>
+
+    <div class="handoff" id="handoff" aria-hidden="true">
+        <div class="handoff-inner">
+            <span class="handoff-ring" aria-hidden="true"></span>
+            <span class="handoff-copy">
+                <strong id="handoffMessage">参加を受信しました</strong>
+                <small id="handoffStatus">DOOHへの反映を準備しています</small>
+            </span>
+        </div>
+    </div>
+    <div class="flow-guide" id="flowGuide" aria-live="polite" aria-hidden="true">
+        <strong id="flowGuideTitle"></strong>
+        <span id="flowGuideStatus"></span>
+    </div>
+
+    <script>
+        const local = ["localhost", "127.0.0.1"].includes(location.hostname);
+        const participantRoutes = local
+            ? {
+                men: "web/participant-flow-men.html",
+                women: "web/participant-flow-women.html",
+            }
+            : { men: "/men", women: "/women" };
+        const doohRoute = local ? "demo.html" : "/demo";
+        const SURVEY_URL = "https://forms.gle/xYiJasuYBkR6YnF78";
+        const TEAM_TEST_MODE =
+            /(^|\/)team-test\/?$/.test(location.pathname) ||
+            (local && new URLSearchParams(location.search).has("team-test"));
+        const PARTICIPATION_CHANNEL = TEAM_TEST_MODE ? "research" : "default";
+        const SLACK_SOURCE_MODE = new URLSearchParams(location.search).get("source") === "slack";
+        const PUBLIC_BROWSER_URL = "https://shinjuku-dooh-rs.web.app/";
+        let activeReturnTestDate = TEAM_TEST_MODE
+            ? new URLSearchParams(location.search).get("return-test-date")
+            : "";
+        document.body.classList.toggle("is-team-test", TEAM_TEST_MODE);
+
+        const participantFrame = document.getElementById("participantFrame");
+        const doohFrame = document.getElementById("doohFrame");
+        const doohFrameShell = document.getElementById("doohFrameShell");
+        const participantType = document.getElementById("participantType");
+        const reloadBtn = document.getElementById("reloadBtn");
+        const nextDayTestBtn = document.getElementById("nextDayTestBtn");
+        const crowdTestBtn = document.getElementById("crowdTestBtn");
+        const resetDeviceBtn = document.getElementById("resetDeviceBtn");
+        const mobileNextDayTestBtn = document.getElementById("mobileNextDayTestBtn");
+        const mobileCrowdTestBtn = document.getElementById("mobileCrowdTestBtn");
+        const mobileResetDeviceBtn = document.getElementById("mobileResetDeviceBtn");
+        const focusBtn = document.getElementById("focusBtn");
+        const participantTab = document.getElementById("participantTab");
+        const doohTab = document.getElementById("doohTab");
+        const surveyBtn = document.getElementById("surveyBtn");
+        const surveyTab = document.getElementById("surveyTab");
+        const handoff = document.getElementById("handoff");
+        const handoffMessage = document.getElementById("handoffMessage");
+        const handoffStatus = document.getElementById("handoffStatus");
+        const flowGuide = document.getElementById("flowGuide");
+        const flowGuideTitle = document.getElementById("flowGuideTitle");
+        const flowGuideStatus = document.getElementById("flowGuideStatus");
+        const slackBrowserGuide = document.getElementById("slackBrowserGuide");
+        const copyBrowserUrlBtn = document.getElementById("copyBrowserUrlBtn");
+        const continueInSlackBtn = document.getElementById("continueInSlackBtn");
+        const analyticsQueue = [];
+        let handoffTimer = null;
+        let handoffStatusTimer = null;
+        let orientationPromptTimer = null;
+        let doohReplayTimer = null;
+        let flowGuideTimer = null;
+        let returnToNameTimer = null;
+        let surveyAutoOpenTimer = null;
+        let activeSurveyUrl = SURVEY_URL;
+        const HANDOFF_DELAY_MS = 2000;
+        const ORIENTATION_PROMPT_DELAY_MS = 3500;
+        const RETURN_TO_NAME_DELAY_MS = 7000;
+        let hourlyParticipantTimer = null;
+
+        function pickParticipantType(now = new Date()) {
+            return now.getHours() % 2 === 0 ? "men" : "women";
+        }
+
+        function applyHourlyParticipantType({ reload = false } = {}) {
+            const nextType = pickParticipantType();
+            const didChange = participantType.value !== nextType;
+            participantType.value = nextType;
+
+            if (reload && didChange) {
+                loadParticipant();
+                trackResearchEvent("participant_variant_hourly_change", {
+                    participant_variant: nextType,
+                });
+            }
+        }
+
+        function scheduleNextHourlyParticipantType() {
+            window.clearTimeout(hourlyParticipantTimer);
+            const now = new Date();
+            const next = new Date(now);
+            next.setHours(now.getHours() + 1, 0, 0, 50);
+            hourlyParticipantTimer = window.setTimeout(() => {
+                applyHourlyParticipantType({ reload: true });
+                scheduleNextHourlyParticipantType();
+            }, next.getTime() - now.getTime());
+        }
+
+        function formatLocalDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        }
+
+        function getNextTestDate() {
+            const baseDate = /^\d{4}-\d{2}-\d{2}$/.test(activeReturnTestDate || "")
+                ? new Date(`${activeReturnTestDate}T12:00:00`)
+                : new Date();
+            baseDate.setDate(baseDate.getDate() + 1);
+            return formatLocalDate(baseDate);
+        }
+
+        function trackResearchEvent(name, parameters = {}) {
+            if (typeof window.__logResearchEvent === "function") {
+                window.__logResearchEvent(name, parameters);
+                return;
+            }
+            analyticsQueue.push({ name, parameters });
+        }
+
+        window.__flushResearchAnalytics = (logger) => {
+            window.__logResearchEvent = logger;
+            analyticsQueue.splice(0).forEach(({ name, parameters }) => logger(name, parameters));
+        };
+
+        function loadParticipant() {
+            const participantUrl = new URL(participantRoutes[participantType.value], location.href);
+            participantUrl.searchParams.set("rs-load", Date.now());
+            if (new URLSearchParams(location.search).get("source") === "slack") {
+                participantUrl.searchParams.set("source", "slack");
+            }
+            if (TEAM_TEST_MODE) {
+                participantUrl.searchParams.set("channel", PARTICIPATION_CHANNEL);
+                participantUrl.searchParams.set("team-test", "1");
+            }
+            if (/^\d{4}-\d{2}-\d{2}$/.test(activeReturnTestDate || "")) {
+                participantUrl.searchParams.set("return-test-date", activeReturnTestDate);
+            }
+            participantFrame.src = participantUrl.href;
+        }
+
+        if (SLACK_SOURCE_MODE) {
+            slackBrowserGuide.hidden = false;
+            copyBrowserUrlBtn.addEventListener("click", async () => {
+                try {
+                    await navigator.clipboard.writeText(PUBLIC_BROWSER_URL);
+                    copyBrowserUrlBtn.textContent = "コピーしました";
+                } catch {
+                    copyBrowserUrlBtn.textContent = PUBLIC_BROWSER_URL;
+                }
+            });
+            continueInSlackBtn.addEventListener("click", () => {
+                slackBrowserGuide.hidden = true;
+            });
+        }
+
+        function reloadFrames({ track = false } = {}) {
+            window.clearTimeout(surveyAutoOpenTimer);
+            surveyBtn.hidden = true;
+            surveyTab.hidden = true;
+            activeSurveyUrl = SURVEY_URL;
+            loadParticipant();
+            const doohUrl = new URL(doohRoute, location.href);
+            doohUrl.searchParams.set("research", "1");
+            doohUrl.searchParams.set("t", Date.now());
+            if (TEAM_TEST_MODE) {
+                doohUrl.searchParams.set("channel", PARTICIPATION_CHANNEL);
+                doohUrl.searchParams.set("team-test", "1");
+            }
+            doohFrame.src = doohUrl.href;
+            if (track) {
+                trackResearchEvent("research_reload", {
+                    participant_variant: participantType.value,
+                });
+            }
+        }
+
+        function showMobilePanel(panel) {
+            const showDooh = panel === "dooh";
+            window.clearTimeout(returnToNameTimer);
+            window.clearTimeout(orientationPromptTimer);
+            window.clearTimeout(flowGuideTimer);
+            flowGuide.classList.remove("is-active");
+            flowGuide.setAttribute("aria-hidden", "true");
+            document.body.classList.remove("orientation-ready");
+            document.body.classList.toggle("mobile-dooh", showDooh);
+            document.body.classList.toggle("mobile-participant", !showDooh);
+            participantTab.setAttribute("aria-selected", String(!showDooh));
+            doohTab.setAttribute("aria-selected", String(showDooh));
+            surveyTab.setAttribute("aria-selected", "false");
+            if (matchMedia("(max-width: 1024px)").matches) {
+                trackResearchEvent("research_panel_view", {
+                    panel,
+                    layout: "mobile",
+                });
+            }
+            if (showDooh) {
+                requestAnimationFrame(() => {
+                    updateDoohPreview();
+                    doohFrame.contentWindow?.__inkDemo?.resumeDonorTicker?.();
+                });
+                window.setTimeout(() => {
+                    doohFrame.contentWindow?.__inkDemo?.resumeDonorTicker?.();
+                }, 300);
+            }
+        }
+
+        function scheduleOrientationPrompt(delay = ORIENTATION_PROMPT_DELAY_MS) {
+            window.clearTimeout(orientationPromptTimer);
+            orientationPromptTimer = window.setTimeout(() => {
+                document.body.classList.add("orientation-ready");
+                updateDoohPreview();
+            }, delay);
+        }
+
+        function showFlowGuide(title, status, delay = 0) {
+            window.clearTimeout(flowGuideTimer);
+            flowGuideTimer = window.setTimeout(() => {
+                flowGuideTitle.textContent = title;
+                flowGuideStatus.textContent = status;
+                flowGuide.classList.add("is-active");
+                flowGuide.setAttribute("aria-hidden", "false");
+            }, delay);
+        }
+
+        function replayDoohParticipation(participantCount) {
+            const count = Number(participantCount);
+            const inkDemo = doohFrame.contentWindow?.__inkDemo;
+            if (!Number.isFinite(count) || !inkDemo?.applyLiveCount) {
+                return;
+            }
+
+            window.clearTimeout(doohReplayTimer);
+            inkDemo.applyLiveCount(Math.max(0, count - 1));
+            doohReplayTimer = window.setTimeout(() => {
+                doohFrame.contentWindow?.__inkDemo?.applyLiveCount(count);
+            }, 500);
+        }
+
+        function returnToNameInput() {
+            showMobilePanel("participant");
+            participantFrame.contentWindow?.postMessage({
+                type: "dooh-research-open-name-step",
+            }, location.origin);
+            trackResearchEvent("research_return_to_name", {
+                layout: "mobile",
+            });
+        }
+
+        function scheduleReturnToNameInput() {
+            if (!matchMedia("(max-width: 1024px)").matches) {
+                return;
+            }
+
+            window.clearTimeout(returnToNameTimer);
+            returnToNameTimer = window.setTimeout(returnToNameInput, RETURN_TO_NAME_DELAY_MS);
+        }
+
+        function enableSurveyEntry(surveyUrl) {
+            if (!/^https:\/\/forms\.gle\//.test(surveyUrl || "")) {
+                return;
+            }
+
+            activeSurveyUrl = surveyUrl;
+            surveyBtn.hidden = false;
+            surveyTab.hidden = false;
+            window.clearTimeout(surveyAutoOpenTimer);
+            surveyAutoOpenTimer = window.setTimeout(openSurvey, 7000);
+        }
+
+        function openSurvey() {
+            window.clearTimeout(surveyAutoOpenTimer);
+            trackResearchEvent("research_survey_open", {
+                layout: matchMedia("(max-width: 1024px)").matches ? "mobile" : "desktop",
+            });
+            window.location.href = activeSurveyUrl;
+        }
+
+        function updateDoohPreview() {
+            const viewport = doohFrameShell.parentElement;
+            const note = viewport.querySelector(".orientation-prompt");
+            const noteHeight = note && getComputedStyle(note).display !== "none"
+                ? note.getBoundingClientRect().height + 16
+                : 0;
+            const availableWidth = Math.max(1, viewport.clientWidth - 20);
+            const availableHeight = Math.max(1, viewport.clientHeight - 20 - noteHeight);
+            const scale = Math.min(availableWidth / 1280, availableHeight / 720);
+
+            doohFrameShell.style.width = `${1280 * scale}px`;
+            doohFrameShell.style.height = `${720 * scale}px`;
+            doohFrame.style.transform = `scale(${scale})`;
+        }
+
+        function showDoohAfterParticipation(participantCount, {
+            returnToName = false,
+            replayChange = false,
+            handoffTitle = "参加を受信しました",
+            handoffDescription = "DOOHへの反映を準備しています",
+            guideTitle = "",
+            guideStatus = "",
+            surveyUrl = "",
+        } = {}) {
+            if (!matchMedia("(max-width: 1024px)").matches) {
+                trackResearchEvent("research_auto_handoff", {
+                    layout: "desktop",
+                    participant_count: Number(participantCount) || 0,
+                });
+                return;
+            }
+
+            window.clearTimeout(handoffTimer);
+            window.clearTimeout(handoffStatusTimer);
+            handoffMessage.textContent = handoffTitle;
+            handoffStatus.textContent = handoffDescription;
+            handoff.classList.add("is-active");
+            handoff.setAttribute("aria-hidden", "false");
+            trackResearchEvent("research_auto_handoff", {
+                layout: "mobile",
+                participant_count: Number(participantCount) || 0,
+            });
+
+            handoffStatusTimer = window.setTimeout(() => {
+                handoffMessage.textContent = replayChange ? "DOOHへ反映しています" : "参加証をDOOHへ反映しています";
+                handoffStatus.textContent = "まもなく画面が切り替わります";
+            }, 900);
+
+            handoffTimer = window.setTimeout(() => {
+                showMobilePanel("dooh");
+                handoff.classList.remove("is-active");
+                handoff.setAttribute("aria-hidden", "true");
+                if (replayChange) {
+                    replayDoohParticipation(participantCount);
+                }
+                if (guideTitle) {
+                    showFlowGuide(guideTitle, guideStatus, replayChange ? 3500 : 900);
+                }
+                if (returnToName) {
+                    scheduleReturnToNameInput();
+                } else {
+                    scheduleOrientationPrompt(2600);
+                    enableSurveyEntry(surveyUrl);
+                }
+            }, HANDOFF_DELAY_MS);
+        }
+
+        participantType.addEventListener("change", () => {
+            loadParticipant();
+            trackResearchEvent("participant_variant_select", {
+                participant_variant: participantType.value,
+            });
+        });
+        reloadBtn.addEventListener("click", () => reloadFrames({ track: true }));
+        function simulateNextDay() {
+            activeReturnTestDate = getNextTestDate();
+            showMobilePanel("participant");
+            loadParticipant();
+            showFlowGuide(
+                `${activeReturnTestDate} の参加を再現します`,
+                "前回名の再利用と継続日数カラーを確認できます"
+            );
+        }
+
+        function resetDeviceHistory() {
+            participantFrame.contentWindow?.postMessage({
+                type: "dooh-research-reset-device",
+            }, location.origin);
+        }
+
+        function simulateCrowdTest() {
+            showMobilePanel("dooh");
+            doohFrame.contentWindow?.__inkDemo?.simulateCrowd?.(50);
+            showFlowGuide(
+                "50人同時参加を再現しています",
+                "積み上げ通知と連結テロップを確認してください"
+            );
+        }
+
+        nextDayTestBtn.addEventListener("click", simulateNextDay);
+        mobileNextDayTestBtn.addEventListener("click", simulateNextDay);
+        crowdTestBtn.addEventListener("click", simulateCrowdTest);
+        mobileCrowdTestBtn.addEventListener("click", simulateCrowdTest);
+        resetDeviceBtn.addEventListener("click", resetDeviceHistory);
+        mobileResetDeviceBtn.addEventListener("click", resetDeviceHistory);
+        participantTab.addEventListener("click", () => showMobilePanel("participant"));
+        doohTab.addEventListener("click", () => {
+            showMobilePanel("dooh");
+            scheduleOrientationPrompt(1200);
+        });
+        surveyBtn.addEventListener("click", openSurvey);
+        surveyTab.addEventListener("click", openSurvey);
+        focusBtn.addEventListener("click", () => {
+            const focused = document.body.classList.toggle("dooh-focus");
+            focusBtn.setAttribute("aria-pressed", String(focused));
+            focusBtn.textContent = focused ? "左右を同じ幅に戻す" : "DOOHを大きく";
+            trackResearchEvent("research_dooh_focus", {
+                enabled: focused ? 1 : 0,
+            });
+        });
+        window.addEventListener("message", (event) => {
+            if (event.origin !== location.origin || event.source !== participantFrame.contentWindow) {
+                return;
+            }
+
+            if (event.data?.type === "dooh-research-participation-complete") {
+                showDoohAfterParticipation(event.data.participantCount, {
+                    returnToName: true,
+                    replayChange: true,
+                    guideTitle: "変化がDOOHに反映されました",
+                    guideStatus: "次は参加証を作ります。まもなく入力画面へ戻ります",
+                });
+            }
+            if (event.data?.type === "dooh-research-already-participated") {
+                showMobilePanel("participant");
+                showFlowGuide(
+                    "本日はすでに参加済みです",
+                    "カウントと名前表示は増えません。また明日ご参加ください"
+                );
+            }
+            if (event.data?.type === "dooh-research-card-complete") {
+                showDoohAfterParticipation(event.data.participantCount, {
+                    handoffTitle: "参加証を作成しました",
+                    handoffDescription: "DOOHへ名前を反映しています",
+                    guideTitle: event.data.hasDisplayName
+                        ? "参加証の名前がDOOHに表示されました"
+                        : "参加証が作成されました",
+                    guideStatus: "7秒後にアンケートへ移動します。上のタブから今すぐ回答もできます",
+                    surveyUrl: event.data.surveyUrl || SURVEY_URL,
+                });
+            }
+            if (event.data?.type === "dooh-research-support-choice") {
+                trackResearchEvent("research_support_choice", {
+                    support_choice: event.data.supportChoice || "unknown",
+                });
+            }
+            if (event.data?.type === "dooh-research-device-reset") {
+                activeReturnTestDate = "";
+                showMobilePanel("participant");
+                loadParticipant();
+                showFlowGuide(
+                    "端末履歴をリセットしました",
+                    "初回参加者として動作確認できます"
+                );
+            }
+        });
+        window.addEventListener("resize", updateDoohPreview);
+
+        applyHourlyParticipantType();
+        scheduleNextHourlyParticipantType();
+        showMobilePanel("participant");
+        reloadFrames();
+        updateDoohPreview();
+    </script>
+    <script type="module">
+        try {
+            const analyticsDebug = new URLSearchParams(location.search).has("analytics_debug");
+            const isLocalHost = ["localhost", "127.0.0.1"].includes(location.hostname);
+            if (isLocalHost && !analyticsDebug) {
+                throw new Error("disabled on localhost");
+            }
+
+            const [{ initializeApp }, { getAnalytics, isSupported, logEvent }] = await Promise.all([
+                import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"),
+                import("https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js"),
+            ]);
+            const response = await fetch("config/firebase-config.json", { cache: "no-cache" });
+            const config = await response.json();
+
+            if (config.measurementId && await isSupported()) {
+                const analytics = getAnalytics(initializeApp(config, "research-analytics"));
+                const logger = (name, parameters = {}) => logEvent(analytics, name, {
+                    ...parameters,
+                    research_source: "initial_feedback",
+                    ...(analyticsDebug ? { debug_mode: true } : {}),
+                });
+                window.__flushResearchAnalytics?.(logger);
+                logger("research_page_open", {
+                    layout: matchMedia("(max-width: 1024px)").matches ? "mobile" : "desktop",
+                    participant_variant: document.getElementById("participantType")?.value || "unknown",
+                });
+            }
+        } catch (error) {
+            console.info("[research] analytics unavailable:", error);
+        }
+    </script>
+</body>
+</html>

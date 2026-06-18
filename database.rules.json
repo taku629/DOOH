@@ -13,6 +13,18 @@
           ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
         }
       },
+      "dailyParticipants": {
+        "$date": {
+          "$visitorId": {
+            ".validate": "newData.isNumber() && newData.val() >= 1"
+          }
+        }
+      },
+      "participantHistory": {
+        "$visitorId": {
+          ".validate": "newData.hasChildren(['lastParticipationDate', 'streakDays']) && newData.child('lastParticipationDate').isString() && newData.child('streakDays').isNumber() && newData.child('streakDays').val() >= 1"
+        }
+      },
       "$other": {
         ".validate": false
       }
@@ -26,6 +38,18 @@
       "swipes": {
         "$eventId": {
           ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
+        }
+      },
+      "dailyParticipants": {
+        "$date": {
+          "$visitorId": {
+            ".validate": "newData.isNumber() && newData.val() >= 1"
+          }
+        }
+      },
+      "participantHistory": {
+        "$visitorId": {
+          ".validate": "newData.hasChildren(['lastParticipationDate', 'streakDays']) && newData.child('lastParticipationDate').isString() && newData.child('streakDays').isNumber() && newData.child('streakDays').val() >= 1"
         }
       },
       "$other": {
@@ -43,6 +67,45 @@
           ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
         }
       },
+      "dailyParticipants": {
+        "$date": {
+          "$visitorId": {
+            ".validate": "newData.isNumber() && newData.val() >= 1"
+          }
+        }
+      },
+      "participantHistory": {
+        "$visitorId": {
+          ".validate": "newData.hasChildren(['lastParticipationDate', 'streakDays']) && newData.child('lastParticipationDate').isString() && newData.child('streakDays').isNumber() && newData.child('streakDays').val() >= 1"
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "participationResearch": {
+      ".read": true,
+      ".write": "auth != null || (newData.child('participantCount').isNumber() && newData.child('participantCount').val() === (data.child('participantCount').exists() ? data.child('participantCount').val() + 1 : 1))",
+      "participantCount": {
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "swipes": {
+        "$eventId": {
+          ".validate": "data.exists() || (newData.hasChildren(['type', 'createdAt', 'count']) && newData.child('type').val() === 'swipe-completed' && newData.child('count').isNumber() && newData.child('count').val() === newData.parent().parent().child('participantCount').val())"
+        }
+      },
+      "dailyParticipants": {
+        "$date": {
+          "$visitorId": {
+            ".validate": "newData.isNumber() && newData.val() >= 1"
+          }
+        }
+      },
+      "participantHistory": {
+        "$visitorId": {
+          ".validate": "newData.hasChildren(['lastParticipationDate', 'streakDays']) && newData.child('lastParticipationDate').isString() && newData.child('streakDays').isNumber() && newData.child('streakDays').val() >= 1"
+        }
+      },
       "$other": {
         ".validate": false
       }
@@ -50,8 +113,9 @@
     "nameShouts": {
       "$channel": {
         ".read": true,
+        ".indexOn": ["visitorId"],
         "$eventId": {
-          ".write": "!data.exists() && ($channel === 'default' || $channel === 'v2' || $channel === 'morning')",
+          ".write": "!data.exists() && ($channel === 'default' || $channel === 'v2' || $channel === 'morning' || $channel === 'research')",
           ".validate": "newData.hasChildren(['type', 'createdAt']) && newData.child('type').val() === 'name-announced' && (!newData.child('name').exists() || newData.child('name').val() === null || (newData.child('name').isString() && newData.child('name').val().length <= 24))",
           "$other": {
             ".validate": "newData.isString() || newData.isNumber() || newData.isBoolean()"

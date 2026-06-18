@@ -163,6 +163,10 @@ button {
   -webkit-user-select: none;
 }
 
+.viewport.is-participation-step {
+  touch-action: pan-y;
+}
+
 .viewport::before {
   position: absolute;
   inset: auto -10% -60% -10%;
@@ -191,6 +195,36 @@ button {
   transition: none;
 }
 
+/*
+ * iOS Safari can leave large blank compositing layers when a text input lives
+ * inside the vertically translated track. After participation, render only
+ * the active step normally instead of moving the stacked track.
+ */
+.app.is-post-participation .track {
+  height: auto;
+  transform: none !important;
+  will-change: auto;
+}
+
+.app.is-post-participation .viewport {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  touch-action: pan-y;
+  user-select: auto;
+  -webkit-user-select: auto;
+}
+
+.app.is-post-participation .step {
+  display: none;
+}
+
+.app.is-post-participation .step.is-current {
+  display: flex;
+  min-height: 0;
+  overflow: visible;
+}
+
 /* Step card ----------------------------------------------------------- */
 
 .step {
@@ -205,7 +239,10 @@ button {
 }
 
 .step[data-step="0"] {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 14px 20px 12px;
 }
 
@@ -270,6 +307,10 @@ label {
   font-size: 0.82rem;
   font-weight: 400;
   line-height: 1.6;
+}
+
+.hint:empty {
+  display: none;
 }
 
 label {
@@ -495,6 +536,103 @@ label {
   flex-direction: column;
 }
 
+.saved-name-choice {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 4px;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-sm);
+}
+
+.saved-name-choice p {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.saved-name-choice strong {
+  color: var(--ink);
+}
+
+.saved-name-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.saved-name-actions .primary,
+.saved-name-actions .ghost {
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+
+.external-browser-guide {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(10, 12, 12, 0.76);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.external-browser-guide[hidden] {
+  display: none;
+}
+
+.external-browser-guide-card {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 430px);
+  padding: 22px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+}
+
+.external-browser-guide-card h2,
+.external-browser-guide-card p {
+  margin: 0;
+}
+
+.external-browser-guide-card h2 {
+  font-size: 1.28rem;
+}
+
+.external-browser-guide-card p {
+  color: var(--ink-secondary);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.external-browser-guide-note {
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  font-weight: 700;
+}
+
+.external-browser-guide-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.external-browser-guide-actions button {
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+}
+
 .ghost.share-line {
   border-color: rgba(6, 199, 85, 0.42);
   color: #06c755;
@@ -577,6 +715,28 @@ input[type="text"]:focus {
   user-select: none;
   cursor: grab;
   transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.slider-wrap.is-pointer-active {
+  outline: 3px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 3px;
+  transform: scale(0.985);
+}
+
+.step.is-participation-locked .slider-wrap {
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.step.is-participation-locked .slider-wrap::after {
+  animation: none;
+}
+
+.step.is-participation-locked .donation-preview,
+.step.is-participation-locked .swipe-stage {
+  opacity: 0.48;
 }
 
 .step[data-step="0"] .slider-wrap {
@@ -1076,6 +1236,109 @@ input[type="text"]:focus {
   .actions {
     flex-direction: column;
   }
+}
+
+.support-choice {
+  display: grid;
+  gap: 12px;
+  margin: 4px 0 22px;
+  padding: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.support-choice-kicker,
+.support-choice-lead,
+.support-choice-note {
+  margin: 0;
+}
+
+.support-choice-kicker {
+  color: var(--ink-secondary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.support-choice h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.4;
+}
+
+.support-choice-lead,
+.support-choice-note {
+  color: var(--ink-secondary);
+  font-size: 0.74rem;
+  line-height: 1.65;
+}
+
+.support-choice-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.support-choice-option {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 5px 9px;
+  border: 1px solid var(--hairline);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+}
+
+.support-choice-option .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.support-choice-option span:not(.material-symbols-outlined) {
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.support-choice-option small {
+  color: var(--ink-secondary);
+  font-size: 0.58rem;
+}
+
+.support-choice-option[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
+.support-choice-option[aria-pressed="true"] small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.support-choice-detail {
+  padding: 13px 14px;
+  border-radius: 13px;
+  background: rgba(21, 25, 25, 0.07);
+}
+
+.support-choice-detail h4,
+.support-choice-detail p {
+  margin: 0;
+}
+
+.support-choice-detail h4 {
+  margin-bottom: 6px;
+  font-size: 0.86rem;
+}
+
+.support-choice-detail p {
+  color: var(--ink-secondary);
+  font-size: 0.72rem;
+  line-height: 1.65;
 }
 
 /* Animations ---------------------------------------------------------- */

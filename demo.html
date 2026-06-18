@@ -211,6 +211,30 @@
 
         .live { position: relative; min-width: 0; color: #fff; }
 
+        .live > .label,
+        .live > .value,
+        .cta,
+        .thanks {
+            transition: opacity 900ms ease, transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 完成映像の切替中は、固定情報を残しつつ映像へ視線を譲る。 */
+        body.is-scene-focus .live > .label,
+        body.is-scene-focus .live > .value {
+            opacity: 0.28;
+            transform: translateY(8px);
+        }
+
+        body.is-scene-focus .cta {
+            opacity: 0.42;
+            transform: translateY(8px) scale(0.96);
+        }
+
+        body.is-scene-focus .thanks {
+            opacity: 0.08;
+            transform: translateY(-4px);
+        }
+
         /* 複数の寄付者名を連結して右から左へ流し続ける放送テロップ。 */
         .thanks {
             position: fixed;
@@ -222,9 +246,9 @@
             overflow: hidden;
             font-family: var(--font-sans);
             font-weight: 700;
-            font-size: clamp(1.05rem, 1.9vw, 1.8rem);
-            color: #fff;
-            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+            font-size: clamp(0.72rem, 1.05vw, 1rem);
+            color: rgba(255, 255, 255, 0.82);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.42);
             pointer-events: none;
         }
 
@@ -238,30 +262,46 @@
         .thanks-group {
             display: flex;
             align-items: center;
-            gap: 1.2em;
+            gap: 0.85em;
             flex: none;
             min-width: 100vw;
             box-sizing: border-box;
-            padding: clamp(10px, 1vw, 16px) clamp(30px, 4vw, 70px);
-            border-block: 1px solid rgba(255, 255, 255, 0.24);
-            background: rgba(15, 18, 18, 0.72);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+            padding: clamp(6px, 0.55vw, 9px) clamp(22px, 3vw, 52px);
+            border-block: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(15, 18, 18, 0.38);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
             white-space: nowrap;
         }
 
         .ticker-name {
-            color: #fff;
+            color: rgba(255, 255, 255, 0.82);
         }
 
         .ticker-name.is-returning {
-            color: #ffc16b;
-            text-shadow: 0 0 14px rgba(255, 139, 39, 0.72);
+            color: var(--returning-color, #ffc56d);
+            text-shadow: 0 0 10px color-mix(in srgb, var(--returning-color, #ffc56d) 58%, transparent);
         }
 
+        .ticker-name.is-latest {
+            padding: 3px 9px;
+            border: 1px solid rgba(255, 255, 255, 0.52);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
+        }
+
+        .streak-2 { --returning-color: #ffc56d; }
+        .streak-3 { --returning-color: #ff8a80; }
+        .streak-4 { --returning-color: #f48fb1; }
+        .streak-5 { --returning-color: #c5a3ff; }
+        .streak-6 { --returning-color: #80d8ff; }
+        .streak-7 { --returning-color: #7ee2b8; }
+
         .ticker-separator {
-            color: rgba(255, 255, 255, 0.92);
+            color: rgba(255, 255, 255, 0.62);
         }
 
         @keyframes donor-ticker {
@@ -275,31 +315,64 @@
             bottom: calc(100% + 4px);
             left: 0;
             margin: 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: clamp(5px, 0.55vw, 9px);
+            width: min(58vw, 720px);
             color: #fff;
             font-family: var(--font-serif);
-            font-size: clamp(1rem, 1.6vw, 1.5rem);
-            font-weight: 600;
-            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
-            opacity: 0;
             pointer-events: none;
         }
 
-        .participation-thanks::before {
+        .participation-thanks-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 100%;
+            padding: clamp(5px, 0.5vw, 8px) clamp(10px, 1vw, 16px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            background: rgba(15, 18, 18, 0.54);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: clamp(0.78rem, 1.18vw, 1.12rem);
+            font-weight: 600;
+            line-height: 1.25;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+            white-space: nowrap;
+            animation: participation-stack-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .participation-thanks-item::before {
             content: "";
             width: 8px;
             height: 8px;
+            flex: none;
             border-radius: 999px;
             background: currentColor;
             box-shadow: 0 0 10px currentColor;
         }
 
-        .participation-thanks.is-returning {
-            color: #ffc16b;
-            text-shadow: 0 2px 16px rgba(117, 51, 0, 0.7);
+        .participation-thanks-item.is-returning {
+            color: var(--returning-color, #ffc56d);
+            text-shadow: 0 2px 16px color-mix(in srgb, var(--returning-color, #ffc56d) 48%, #000);
+        }
+
+        .participation-thanks-item.is-leaving {
+            animation: participation-stack-out 460ms ease-in both;
+        }
+
+        @keyframes participation-stack-in {
+            from { opacity: 0; transform: translateY(18px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes participation-stack-out {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-16px); }
         }
 
         .stage.is-returning-pulse::before {
@@ -309,8 +382,8 @@
             z-index: 4;
             pointer-events: none;
             background:
-                radial-gradient(circle at 30% 70%, rgba(255, 150, 54, 0.34), transparent 38%),
-                radial-gradient(circle at 70% 30%, rgba(255, 207, 125, 0.2), transparent 46%);
+                radial-gradient(circle at 30% 70%, color-mix(in srgb, var(--returning-color, #ffc56d) 34%, transparent), transparent 38%),
+                radial-gradient(circle at 70% 30%, color-mix(in srgb, var(--returning-color, #ffc56d) 20%, transparent), transparent 46%);
             mix-blend-mode: screen;
             animation: returningPulse 2600ms ease-out both;
         }
@@ -522,10 +595,10 @@
     <div class="hint" id="hint">画面クリック / スペースキー で参加者 +1</div>
     <div class="dock">
         <div class="live">
-            <p class="participation-thanks" id="participationThanks" aria-live="polite">ご参加ありがとうございます</p>
+            <div class="participation-thanks" id="participationThanks" aria-live="polite"></div>
             <p class="thanks" id="thanks" aria-hidden="true"></p>
-            <span class="label">累計参加者</span>
-            <span class="value"><span class="num" id="countNum">0</span><span class="unit">人</span></span>
+            <span class="label">合計金額</span>
+            <span class="value"><span class="unit">¥</span><span class="num" id="countNum">0</span></span>
             <div class="progress-wrap">
                 <span class="challenge-label" id="challengeLabel">第1回 点灯チャレンジ</span>
                 <p class="progress-text" id="progressText">あと9人で取り組みが見えてくる</p>
@@ -536,8 +609,8 @@
 
         <aside class="cta" aria-label="スマホ参加QR案内">
             <div class="cta-copy">
-                <strong>スマホで参加</strong>
-                <small id="qrCaption">参加アクションで取り組みを可視化</small>
+                <strong>スマホで無料寄付に参加</strong>
+                <small id="qrCaption">街への応援寄付に参加</small>
             </div>
             <div class="qr-code" id="qrCode" aria-hidden="true">QR</div>
         </aside>
@@ -550,7 +623,8 @@
         <button id="completeBtn" type="button" hidden>達成まで進める</button>
         <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
         <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
-        <button id="returningParticipantTestBtn" type="button" hidden>翌日の継続参加を再現</button>
+        <button id="returningParticipantTestBtn" type="button" hidden>通算2〜7日参加を再現</button>
+        <button id="crowdTestBtn" type="button" hidden>50人同時参加を再現</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -559,6 +633,7 @@
         const TOTAL = 9;
         // ?dev で開くと、Firebase連動中でも手動ツールで動作確認できる（QR不要）
         const params = new URLSearchParams(location.search);
+        const DONATION_PER_PERSON_YEN = 100; // 1参加あたりのデモ募金額（publishSwipeComplete の donationAmountYen と一致）
         const DEV = params.has("dev");
         const DEMO_MODE = params.has("demo");
         const MANUAL_MODE = DEV || DEMO_MODE;
@@ -577,11 +652,13 @@
         const skipSceneBtn = document.getElementById("skipSceneBtn");
         const newParticipantTestBtn = document.getElementById("newParticipantTestBtn");
         const returningParticipantTestBtn = document.getElementById("returningParticipantTestBtn");
+        const crowdTestBtn = document.getElementById("crowdTestBtn");
         const urlNote = document.getElementById("urlNote");
 
         urlNote?.classList.toggle("is-dev-visible", DEV);
         newParticipantTestBtn.hidden = !MANUAL_MODE;
         returningParticipantTestBtn.hidden = !MANUAL_MODE;
+        crowdTestBtn.hidden = !MANUAL_MODE;
         if (DEMO_MODE) {
             completeBtn.hidden = false;
             skipSceneBtn.hidden = false;
@@ -625,10 +702,11 @@
         let celebrationStartedAt = 0;
         let activeChallengeNumber = 0;
         let liveCountInitialized = false;
+        let visualizedLiveCount = 0;
+        let liveVisualTimer = null;
         let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
-        const CLEAN_SCENE_MS = (DEMO_MODE ? 8_000 : 20_000) * SCENE_TIME_SCALE;
-        const WARM_SCENE_MS = (DEMO_MODE ? 12_000 : 60_000) * SCENE_TIME_SCALE;
+        const CLEAN_SCENE_MS = 7_000 * SCENE_TIME_SCALE;
 
         // インクが飛び散る「ポップ」アニメーション
         function splat(el) {
@@ -644,7 +722,7 @@
         }
 
         function updateHud() {
-            countNum.textContent = count.toLocaleString("ja-JP");
+            countNum.textContent = (count * DONATION_PER_PERSON_YEN).toLocaleString("ja-JP");
             const remaining = Math.max(0, TOTAL - revealed);
             const done = revealed >= TOTAL || celebrationActive;
             if (challengeLabel) {
@@ -660,7 +738,7 @@
                 ? "みんなの関心が、新宿への応援として重なりました"
                 : done
                 ? "新宿で続く取り組みが見えてきました"
-                : `あと${remaining}人で取り組みが見えてくる`;
+                : `あと${remaining}スワイプで彩が戻ってくる`;
         }
 
         function updateTransitionCountdown() {
@@ -670,16 +748,11 @@
             }
 
             const elapsed = Date.now() - celebrationStartedAt;
-            const isWarmScene = elapsed >= CLEAN_SCENE_MS;
-            const remainingMs = isWarmScene
-                ? CLEAN_SCENE_MS + WARM_SCENE_MS - elapsed
-                : CLEAN_SCENE_MS - elapsed;
+            const remainingMs = CLEAN_SCENE_MS - elapsed;
             const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
             const nextChallenge = activeChallengeNumber + 1;
 
-            transitionCountdown.textContent = isWarmScene
-                ? `第${nextChallenge}回チャレンジへ あと${remainingSeconds}秒`
-                : `応援の光へ あと${remainingSeconds}秒`;
+            transitionCountdown.textContent = `第${nextChallenge}回チャレンジへ あと${remainingSeconds}秒`;
         }
 
         function startCountdownTimer() {
@@ -698,20 +771,27 @@
             if (transitionCountdown) transitionCountdown.textContent = "";
         }
 
+        function setSceneFocus(active) {
+            document.body.classList.toggle("is-scene-focus", active);
+        }
+
         function finishCelebration() {
             clearCelebrationTimers();
             celebrationActive = false;
+            setSceneFocus(false);
             celebrationStartedAt = 0;
             activeChallengeNumber = 0;
             warmLayer.classList.remove("is-revealed");
             finalLayer.classList.remove("is-revealed");
-            rebuildReveal(count % TOTAL);
+            // 達成演出中に参加が重なっても、次の回は荒廃状態から始める。
+            rebuildReveal(0);
             updateHud();
         }
 
         function startCelebration() {
             clearCelebrationTimers();
             celebrationActive = true;
+            setSceneFocus(true);
             celebrationStartedAt = Date.now();
             activeChallengeNumber = Math.max(1, Math.floor((count - revealed) / TOTAL) + 1);
             finalLayer.classList.add("is-revealed");
@@ -719,28 +799,11 @@
             updateHud();
             startCountdownTimer();
 
-            celebrationTimer = setTimeout(() => {
-                warmLayer.classList.add("is-revealed");
-                updateHud();
-                updateTransitionCountdown();
-            }, CLEAN_SCENE_MS);
-
-            warmTimer = setTimeout(finishCelebration, CLEAN_SCENE_MS + WARM_SCENE_MS);
+            celebrationTimer = setTimeout(finishCelebration, CLEAN_SCENE_MS);
         }
 
         function skipScene() {
             if (!celebrationActive) {
-                return;
-            }
-
-            const elapsed = Date.now() - celebrationStartedAt;
-            if (elapsed < CLEAN_SCENE_MS) {
-                clearCelebrationTimers();
-                celebrationStartedAt = Date.now() - CLEAN_SCENE_MS;
-                warmLayer.classList.add("is-revealed");
-                updateHud();
-                startCountdownTimer();
-                warmTimer = setTimeout(finishCelebration, WARM_SCENE_MS);
                 return;
             }
 
@@ -752,30 +815,68 @@
         // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
         const AUTO_NAME_RE = /^サポーター#/;
         const PLACEHOLDER_NAMES = new Set(["匿名サポーター", "匿名", "Guest", "参加者"]);
-
         function isRealName(raw) {
             return raw.length > 0 && !AUTO_NAME_RE.test(raw) && !PLACEHOLDER_NAMES.has(raw);
         }
 
         const donorNameRotation = [];
+        const STREAK_CLASS_NAMES = ["streak-2", "streak-3", "streak-4", "streak-5", "streak-6", "streak-7"];
+        const NAME_NOTIFICATION_MS = 3400;
+        const PARTICIPATION_STACK_VISIBLE_MS = 7000;
+        const PARTICIPATION_STACK_MAX_VISIBLE = 6;
+        const PARTICIPATION_STACK_ARRIVAL_MS = 380;
+        let latestDonorEntry = null;
+        const nameNotificationQueue = [];
+        let nameNotificationTimer = null;
+        const participationStackQueue = [];
+        let participationStackTimer = null;
+
+        function getStreakClass(options = {}) {
+            // 色は「連続日数」ではなく「通算参加日数」で決める。連続でなくても日数が増えれば色が進む。
+            // 旧イベント（totalDays 未保持）は streakDays で補完する。
+            const totalDays = Math.max(1, Number(options.totalDays) || Number(options.streakDays) || 1);
+            if (totalDays < 2) return "";
+            return `streak-${Math.min(7, totalDays)}`;
+        }
+
+        function applyStreakClass(element, options = {}) {
+            element.classList.remove(...STREAK_CLASS_NAMES);
+            const streakClass = getStreakClass(options);
+            if (streakClass) element.classList.add(streakClass);
+        }
 
         function addToDonorNameRotation(name, options = {}) {
             const entry = {
                 name,
+                visitorId: typeof options.visitorId === "string" ? options.visitorId : "",
                 isReturning: options.isReturning === true,
                 streakDays: Math.max(1, Number(options.streakDays) || 1),
+                totalDays: Math.max(1, Number(options.totalDays) || Number(options.streakDays) || 1),
+                createdAt: Number(options.createdAt) || 0,
             };
-            const existingIndex = donorNameRotation.findIndex((item) => item.name === name);
-            if (existingIndex >= 0) donorNameRotation.splice(existingIndex, 1);
+            const dedupeKey = entry.visitorId ? `visitor:${entry.visitorId}` : `name:${entry.name}`;
+            const existingIndex = donorNameRotation.findIndex((current) => {
+                const currentKey = current.visitorId ? `visitor:${current.visitorId}` : `name:${current.name}`;
+                return currentKey === dedupeKey;
+            });
+            if (existingIndex >= 0) {
+                donorNameRotation.splice(existingIndex, 1);
+            }
             donorNameRotation.push(entry);
-            if (donorNameRotation.length > 30) donorNameRotation.shift();
+            donorNameRotation.sort((a, b) =>
+                b.totalDays - a.totalDays ||
+                b.createdAt - a.createdAt
+            );
+            return entry;
         }
 
-        function appendTickerItems(group, entries) {
+        function appendTickerItems(group, entries, priorityEntry = null) {
             entries.forEach((entry) => {
                 const name = document.createElement("span");
                 name.className = "ticker-name";
                 name.classList.toggle("is-returning", entry.isReturning);
+                name.classList.toggle("is-latest", entry === priorityEntry);
+                applyStreakClass(name, entry);
                 name.textContent = `${entry.name}さん`;
                 group.appendChild(name);
 
@@ -786,73 +887,127 @@
             });
         }
 
-        function renderDonorTicker() {
+        function renderDonorTicker(priorityEntry = null) {
             if (!thanks || donorNameRotation.length === 0) {
                 thanks?.replaceChildren();
                 return;
             }
 
+            const orderedEntries = priorityEntry
+                ? [priorityEntry, ...donorNameRotation.filter((entry) => entry !== priorityEntry)]
+                : donorNameRotation;
             const entries = [];
-            while (entries.length < Math.max(12, donorNameRotation.length)) {
-                entries.push(...donorNameRotation);
+            while (entries.length < Math.max(12, orderedEntries.length)) {
+                entries.push(...orderedEntries);
             }
             const track = document.createElement("span");
             track.className = "thanks-track";
-            track.style.setProperty("--ticker-duration", `${Math.max(28, entries.length * 3.2)}s`);
+            track.style.setProperty("--ticker-duration", `${Math.max(24, entries.length * 2.1)}s`);
 
             for (let i = 0; i < 2; i += 1) {
                 const group = document.createElement("span");
                 group.className = "thanks-group";
-                appendTickerItems(group, entries);
+                appendTickerItems(group, entries, priorityEntry);
                 track.appendChild(group);
             }
             thanks.replaceChildren(track);
         }
 
+        function resumeDonorTicker() {
+            if (donorNameRotation.length === 0) return;
+            renderDonorTicker();
+        }
+
+        function processNameNotificationQueue() {
+            if (nameNotificationTimer || nameNotificationQueue.length === 0) return;
+            const next = nameNotificationQueue.shift();
+            latestDonorEntry = next;
+            renderDonorTicker(latestDonorEntry);
+            nameNotificationTimer = window.setTimeout(() => {
+                nameNotificationTimer = null;
+                latestDonorEntry = null;
+                renderDonorTicker();
+                processNameNotificationQueue();
+            }, NAME_NOTIFICATION_MS);
+        }
+
         function showThanks(name, options = {}) {
             const raw = String(name ?? "").trim().slice(0, 24);
             if (!isRealName(raw)) return;
-            addToDonorNameRotation(raw, options);
-            renderDonorTicker();
-            showParticipationThanks(raw, options);
+            const entry = addToDonorNameRotation(raw, options);
+            nameNotificationQueue.push(entry);
+            if (nameNotificationQueue.length > 120) {
+                nameNotificationQueue.splice(0, nameNotificationQueue.length - 120);
+            }
+            renderDonorTicker(latestDonorEntry);
+            showParticipationThanks(raw, entry);
+            processNameNotificationQueue();
         }
 
         function setDonorNameRotation(names) {
             donorNameRotation.length = 0;
-            [...names].reverse().forEach((entry) => {
+            latestDonorEntry = null;
+            window.clearTimeout(nameNotificationTimer);
+            nameNotificationTimer = null;
+            nameNotificationQueue.length = 0;
+            names.forEach((entry) => {
                 const raw = String(entry?.name ?? entry ?? "").trim().slice(0, 24);
                 if (isRealName(raw)) addToDonorNameRotation(raw, entry);
             });
-            donorNameRotation.reverse();
             renderDonorTicker();
         }
 
-        function showParticipationThanks(name, options = {}) {
+        function removeParticipationThanksItem(item) {
+            if (!item?.isConnected || item.classList.contains("is-leaving")) return;
+            item.classList.add("is-leaving");
+            window.setTimeout(() => item.remove(), 480);
+        }
+
+        function renderParticipationThanks(name, options = {}) {
             if (!participationThanks) return;
             const raw = String(name ?? "").trim().slice(0, 24);
             const isReturning = options.isReturning === true;
-            participationThanks.classList.toggle("is-returning", isReturning);
-            participationThanks.textContent = isReturning
+            const item = document.createElement("div");
+            item.className = "participation-thanks-item";
+            item.classList.toggle("is-returning", isReturning);
+            applyStreakClass(item, options);
+            applyStreakClass(stage, options);
+            item.textContent = isReturning
                 ? `${isRealName(raw) ? `おかえりなさい、${raw}さん` : "おかえりなさい"}`
                 : isRealName(raw)
-                    ? `ありがとう、${raw}さん`
+                    ? `${raw}さん、ご参加ありがとうございます`
                     : "ご参加ありがとうございます";
+            participationThanks.appendChild(item);
+            const visibleItems = [...participationThanks.children]
+                .filter((child) => !child.classList.contains("is-leaving"));
+            if (visibleItems.length > PARTICIPATION_STACK_MAX_VISIBLE) {
+                removeParticipationThanksItem(visibleItems[0]);
+            }
             stage.classList.remove("is-returning-pulse");
             if (isReturning) {
                 void stage.offsetWidth;
                 stage.classList.add("is-returning-pulse");
                 window.setTimeout(() => stage.classList.remove("is-returning-pulse"), 2700);
             }
-            participationThanks.getAnimations().forEach((animation) => animation.cancel());
-            participationThanks.animate(
-                [
-                    { opacity: 0, transform: "translateY(10px)" },
-                    { opacity: 1, transform: "translateY(0)", offset: 0.12 },
-                    { opacity: 1, transform: "translateY(0)", offset: 0.8 },
-                    { opacity: 0, transform: "translateY(-6px)" },
-                ],
-                { duration: 3200, easing: "ease" }
-            );
+            window.setTimeout(() => removeParticipationThanksItem(item), PARTICIPATION_STACK_VISIBLE_MS);
+        }
+
+        function processParticipationStackQueue() {
+            if (participationStackTimer || participationStackQueue.length === 0) return;
+            const next = participationStackQueue.shift();
+            renderParticipationThanks(next.name, next.options);
+            participationStackTimer = window.setTimeout(() => {
+                participationStackTimer = null;
+                processParticipationStackQueue();
+            }, PARTICIPATION_STACK_ARRIVAL_MS);
+        }
+
+        function showParticipationThanks(name, options = {}) {
+            participationStackQueue.push({ name, options });
+            if (participationStackQueue.length > 120) {
+                participationStackQueue.splice(0, participationStackQueue.length - 120);
+            }
+            processParticipationStackQueue();
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -933,8 +1088,10 @@
             if (!liveCountInitialized) {
                 liveCountInitialized = true;
                 count = n;
+                visualizedLiveCount = n;
                 clearCelebrationTimers();
                 celebrationActive = false;
+                setSceneFocus(false);
                 celebrationStartedAt = 0;
                 activeChallengeNumber = 0;
                 warmLayer.classList.remove("is-revealed");
@@ -947,14 +1104,32 @@
             count = n;
 
             if (delta > 0) {
-                const bursts = Math.min(delta, TOTAL);
-                for (let i = 0; i < bursts; i++) {
-                    setTimeout(triggerSplat, i * 200);
-                }
                 pulseCount();
+                if (!liveVisualTimer) {
+                    liveVisualTimer = window.setInterval(() => {
+                        if (visualizedLiveCount >= count) {
+                            window.clearInterval(liveVisualTimer);
+                            liveVisualTimer = null;
+                            if (hint && !DEV) hint.textContent = "● LIVE — 参加証投影中";
+                            return;
+                        }
+                        visualizedLiveCount += 1;
+                        triggerSplat();
+                        if (hint && !DEV) {
+                            const pending = Math.max(0, count - visualizedLiveCount);
+                            hint.textContent = pending > 0
+                                ? `● LIVE — あと${pending}人の参加を順番に反映中`
+                                : "● LIVE — 参加証投影中";
+                        }
+                    }, 260);
+                }
             } else if (delta < 0) {
+                if (liveVisualTimer) window.clearInterval(liveVisualTimer);
+                liveVisualTimer = null;
+                visualizedLiveCount = n;
                 clearCelebrationTimers();
                 celebrationActive = false;
+                setSceneFocus(false);
                 celebrationStartedAt = 0;
                 activeChallengeNumber = 0;
                 warmLayer.classList.remove("is-revealed");
@@ -974,7 +1149,7 @@
             if (hint) {
                 hint.textContent = DEV
                     ? "● LIVE（DEV：手動 / 📡本番+1 で確認）"
-                    : "● LIVE — スマホ参加に連動中";
+                    : "● LIVE — 参加証投影中";
                 hint.style.opacity = "1";
             }
         }
@@ -984,9 +1159,13 @@
             revealed = 0;
             clearCelebrationTimers();
             celebrationActive = false;
+            setSceneFocus(false);
             celebrationStartedAt = 0;
             activeChallengeNumber = 0;
             liveCountInitialized = false;
+            visualizedLiveCount = 0;
+            if (liveVisualTimer) window.clearInterval(liveVisualTimer);
+            liveVisualTimer = null;
             layers.forEach((el) => {
                 el.getAnimations().forEach((a) => a.cancel());
                 el.classList.remove("is-revealed");
@@ -1021,12 +1200,41 @@
         newParticipantTestBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             const testNames = ["さくら", "タクヤ", "ミナ", "新宿サポーター"];
-            showThanks(testNames[donorNameTestIndex % testNames.length], { isReturning: false, streakDays: 1 });
+            showThanks(testNames[donorNameTestIndex % testNames.length], { isReturning: false, streakDays: 1, totalDays: 1 });
             donorNameTestIndex += 1;
         });
+        let returningParticipantTestDay = 2;
         returningParticipantTestBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            showThanks("さくら", { isReturning: true, isConsecutiveReturn: true, streakDays: 2 });
+            showThanks("さくら", {
+                isReturning: true,
+                // 連続ではなく通算日数で色が進むことを確認するため streak はリセット相当にする。
+                isConsecutiveReturn: false,
+                streakDays: 1,
+                totalDays: returningParticipantTestDay,
+            });
+            returningParticipantTestDay = returningParticipantTestDay >= 7
+                ? 2
+                : returningParticipantTestDay + 1;
+        });
+        function simulateCrowd(size = 50) {
+            const safeSize = Math.max(1, Math.min(100, Math.floor(Number(size) || 50)));
+            if (!liveCountInitialized) {
+                applyLiveCount(count);
+            }
+            applyLiveCount(count + safeSize);
+            for (let index = 1; index <= safeSize; index += 1) {
+                showThanks(`テスト${String(index).padStart(2, "0")}`, {
+                    isReturning: index % 5 === 0,
+                    streakDays: index % 5 === 0 ? 2 : 1,
+                    totalDays: index % 5 === 0 ? 2 : 1,
+                    createdAt: Date.now() + index,
+                });
+            }
+        }
+        crowdTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            simulateCrowd(50);
         });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
@@ -1045,19 +1253,20 @@
         updateHud();
 
         // Firebase連動スクリプト（module）から呼べるように公開
-        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, skipScene, completeCurrentChallenge };
+        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, resumeDonorTicker, simulateCrowd, skipScene, completeCurrentChallenge };
     </script>
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js";
+        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260614-daily-1";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
         const theme = resolveTheme({ defaultTheme: "day" });
-        const channel = getChannelForTheme(theme, "default");
-
         const searchParams = new URLSearchParams(location.search);
+        const channel = searchParams.get("channel") === "research" && searchParams.get("team-test") === "1"
+            ? "research"
+            : getChannelForTheme(theme, "default");
         const isDevMode = searchParams.has("dev");
         const isDemoMode = searchParams.has("demo");
 
@@ -1088,7 +1297,7 @@
 
         }
 
-        getRecentNameAnnouncements({ channel, limit: 30 })
+        getRecentNameAnnouncements({ channel, all: true })
             .then((events) => {
                 const validEvents = events
                     .map((event) => ({ ...event, name: String(event?.name ?? "").trim() }))
