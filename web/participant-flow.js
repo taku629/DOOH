@@ -738,14 +738,14 @@ function getCertificateContent() {
       : "SHINJUKU COLOR SUPPORTER";
 
   const description = activeTheme === "morning"
-    ? `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、朝の新宿を応援する意思を示すデモ表示です。`
+    ? `この参加は無料です。集まったお金から、朝の新宿を応援する支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`
     : isAllExperience
-      ? `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、誰もが過ごしやすい新宿を応援する意思を示すデモ表示です。`
+      ? `この参加は無料です。集まったお金から、誰もが過ごしやすい新宿を支える支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`
     : isMenExperience
-      ? `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、新宿を応援する意思を示すデモ表示です。`
+      ? `この参加は無料です。集まったお金から、新宿を応援する支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`
     : isSparkleExperience
-      ? `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、新宿を応援する意思を示すデモ表示です。`
-      : `¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}は、新宿を応援する意思を示すデモ表示です。`;
+      ? `この参加は無料です。集まったお金から、新宿を応援する支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`
+      : `この参加は無料です。集まったお金から、新宿を応援する支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`;
 
   return { label, name, description };
 }

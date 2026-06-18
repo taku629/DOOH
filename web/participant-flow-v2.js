@@ -658,7 +658,7 @@ function applyThemeCopy() {
   if (previewLabel) {
     previewLabel.textContent = "SHINJUKU MORNING SUPPORTER";
   }
-  setText("swipeTitle", "上にスワイプして100円を届ける");
+  setText("swipeTitle", "新宿を応援しよう");
   setText("swipeActionLabel", "この画面を上にスワイプする");
   setText("swipeHint", "この画面を上にスワイプしてください。");
   setText("thanksTitle", "参加が朝の新宿に反映されました。");
