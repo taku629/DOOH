@@ -1,12 +1,14 @@
-import { publishParticipationEvent } from "./participation-bridge.js";
 import { buildParticipationTransactionValue } from "./participation-transaction.mjs";
+import { isInappropriateName } from "./name-filter.js";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
 const PARTICIPATION_PATH = "participation";
 const PARTICIPATION_V2_PATH = "participationV2";
 const PARTICIPATION_MORNING_PATH = "participationMorning";
+const PARTICIPATION_RESEARCH_PATH = "participationResearch";
 const DISPLAY_CONFIG_PATH = "displayConfig";
 const NAME_SHOUTS_PATH = "nameShouts";
+const WRITE_RETRY_DELAYS_MS = [0, 400, 1000];
 
 let configPromise;
 let firebaseSdkPromise;
@@ -14,7 +16,9 @@ let appPromise;
 let databasePromise;
 
 function normalizeChannel(channel = "default") {
-    return channel === "v2" || channel === "morning" ? channel : "default";
+    return channel === "v2" || channel === "morning" || channel === "research"
+        ? channel
+        : "default";
 }
 
 function getParticipationPath(channel = "default") {
@@ -26,6 +30,10 @@ function getParticipationPath(channel = "default") {
 
     if (normalizedChannel === "morning") {
         return PARTICIPATION_MORNING_PATH;
+    }
+
+    if (normalizedChannel === "research") {
+        return PARTICIPATION_RESEARCH_PATH;
     }
 
     return PARTICIPATION_PATH;
@@ -137,71 +145,87 @@ async function ensureDatabase() {
     return databasePromise;
 }
 
-function publishLocalSwipeComplete(payload = {}) {
-    const channel = normalizeChannel(payload.channel);
-    const event = publishParticipationEvent({
-        ...payload,
-        channel,
-        source: payload.source ?? channel,
-        type: "swipe-completed",
-    });
-
+function createFailedSwipeResult(error) {
     return {
         count: null,
-        event,
+        event: null,
         eventRef: null,
-        fallback: true,
+        accepted: false,
+        failed: true,
+        retryable: true,
+        error,
     };
+}
+
+function wait(delayMs) {
+    return new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
 export async function publishSwipeComplete(payload = {}) {
     const database = await ensureDatabase();
     if (!database) {
-        return publishLocalSwipeComplete(payload);
+        return createFailedSwipeResult(new Error("Firebase database is unavailable."));
     }
     const sdk = await loadFirebaseSdk();
     if (!sdk) {
-        return publishLocalSwipeComplete(payload);
+        return createFailedSwipeResult(new Error("Firebase SDK is unavailable."));
     }
 
     const channel = normalizeChannel(payload.channel);
-
-    try {
-        const eventRef = sdk.push(sdk.ref(database, getSwipesPath(channel)));
-        if (!eventRef.key) {
-            throw new Error("Swipe event key could not be generated.");
-        }
-        const event = {
-            key: eventRef.key,
-            createdAt: sdk.serverTimestamp(),
-            source: payload.source ?? channel,
-            name: payload.name ?? null,
-            donationAmountYen: Number(payload.donationAmountYen) || null,
-            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-            participationDate: payload.participationDate ?? null,
-            isReturning: payload.isReturning === true,
-            isConsecutiveReturn: payload.isConsecutiveReturn === true,
-            streakDays: Math.max(1, Number(payload.streakDays) || 1),
-        };
-
-        const participationRef = sdk.ref(database, getParticipationPath(channel));
-        const result = await sdk.runTransaction(participationRef, (currentValue) => {
-            return buildParticipationTransactionValue(currentValue, event);
-        });
-        if (!result.committed) {
-            throw new Error("Participation transaction was not committed.");
-        }
-        const committedData = result.snapshot.val() || {};
-        const participantCount = Number(committedData.participantCount) || 0;
-
-        return {
-            count: participantCount,
-            eventRef,
-        };
-    } catch (error) {
-        console.warn("[firebase] swipe publish failed; local fallback enabled:", error);
-        return publishLocalSwipeComplete(payload);
+    const candidateName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : null;
+    const eventRef = sdk.push(sdk.ref(database, getSwipesPath(channel)));
+    if (!eventRef.key) {
+        return createFailedSwipeResult(new Error("Swipe event key could not be generated."));
     }
+    const event = {
+        key: eventRef.key,
+        createdAt: sdk.serverTimestamp(),
+        source: payload.source ?? channel,
+        name: candidateName && !isInappropriateName(candidateName) ? candidateName : null,
+        donationAmountYen: Number(payload.donationAmountYen) || null,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        visitorId: payload.visitorId ?? null,
+        participationDate: payload.participationDate ?? null,
+        isReturning: payload.isReturning === true,
+        isConsecutiveReturn: payload.isConsecutiveReturn === true,
+        streakDays: Math.max(1, Number(payload.streakDays) || 1),
+        totalDays: Math.max(1, Number(payload.totalDays) || 1),
+    };
+    const participationRef = sdk.ref(database, getParticipationPath(channel));
+    let lastError = null;
+
+    for (const delayMs of WRITE_RETRY_DELAYS_MS) {
+        if (delayMs > 0) {
+            await wait(delayMs);
+        }
+
+        try {
+            const result = await sdk.runTransaction(
+                participationRef,
+                (currentValue) => buildParticipationTransactionValue(currentValue, event),
+                { applyLocally: false }
+            );
+            if (!result.committed) {
+                throw new Error("Participation transaction was not committed.");
+            }
+            const committedData = result.snapshot.val() || {};
+            const participantCount = Number(committedData.participantCount) || 0;
+            const committedEvent = committedData.swipes?.[eventRef.key] ?? null;
+
+            return {
+                count: participantCount,
+                eventRef,
+                event: committedEvent,
+                accepted: Boolean(committedEvent),
+                failed: false,
+            };
+        } catch (error) {
+            lastError = error;
+            console.warn("[firebase] swipe publish attempt failed:", error);
+        }
+    }
+
+    return createFailedSwipeResult(lastError);
 }
 
 export async function getParticipantCount(options = {}) {
@@ -271,7 +295,11 @@ export async function subscribeToSwipeCompletes(callback, options = {}) {
             return;
         }
 
-        callback({ id: snap.key, ...data });
+        callback({
+            id: snap.key,
+            ...data,
+            name: isInappropriateName(data.name) ? null : data.name,
+        });
     });
 }
 
@@ -287,24 +315,41 @@ export async function publishNameAnnouncement(payload = {}) {
     }
 
     const channel = normalizeChannel(payload.channel);
-    const rawName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : null;
+    const candidateName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : null;
+    const rawName = candidateName && !isInappropriateName(candidateName) ? candidateName : null;
 
-    try {
-        const ref = sdk.push(sdk.ref(database, getNameShoutsPath(channel)));
-        await sdk.set(ref, {
-            type: "name-announced",
-            createdAt: sdk.serverTimestamp(),
-            name: rawName || null,
-            source: payload.source ?? channel,
-            isReturning: payload.isReturning === true,
-            isConsecutiveReturn: payload.isConsecutiveReturn === true,
-            streakDays: Math.max(1, Number(payload.streakDays) || 1),
-        });
-        return { key: ref.key };
-    } catch (error) {
-        console.warn("[firebase] name announcement failed:", error);
-        return { fallback: true };
+    if (!rawName) {
+        return { blocked: true };
     }
+
+    const ref = sdk.push(sdk.ref(database, getNameShoutsPath(channel)));
+    const announcement = {
+        type: "name-announced",
+        createdAt: sdk.serverTimestamp(),
+        name: rawName || null,
+        source: payload.source ?? channel,
+        visitorId: payload.visitorId ?? null,
+        isReturning: payload.isReturning === true,
+        isConsecutiveReturn: payload.isConsecutiveReturn === true,
+        streakDays: Math.max(1, Number(payload.streakDays) || 1),
+        totalDays: Math.max(1, Number(payload.totalDays) || 1),
+    };
+    let lastError = null;
+
+    for (const delayMs of WRITE_RETRY_DELAYS_MS) {
+        if (delayMs > 0) {
+            await wait(delayMs);
+        }
+        try {
+            await sdk.set(ref, announcement);
+            return { key: ref.key };
+        } catch (error) {
+            lastError = error;
+            console.warn("[firebase] name announcement attempt failed:", error);
+        }
+    }
+
+    return { failed: true, retryable: true, error: lastError };
 }
 
 export async function subscribeToNameAnnouncements(callback, options = {}) {
@@ -339,7 +384,7 @@ export async function subscribeToNameAnnouncements(callback, options = {}) {
         knownIds.add(snap.key);
 
         const data = snap.val();
-        if (!data || data.type !== "name-announced") {
+        if (!data || data.type !== "name-announced" || isInappropriateName(data.name)) {
             return;
         }
 
@@ -358,23 +403,60 @@ export async function getRecentNameAnnouncements(options = {}) {
     }
 
     const channel = normalizeChannel(options.channel);
+    const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
     const requestedLimit = Math.floor(Number(options.limit) || 30);
-    const limit = Math.max(1, Math.min(requestedLimit, 100));
+    const query = options.all === true
+        ? shoutsRef
+        : sdk.query(shoutsRef, sdk.limitToLast(Math.max(1, Math.min(requestedLimit, 100))));
+    const snapshot = await sdk.get(query);
+    const announcements = [];
+
+    snapshot.forEach((child) => {
+        const data = child.val();
+        if (data?.type === "name-announced" && !isInappropriateName(data.name)) {
+            announcements.push({ id: child.key, ...data });
+        }
+    });
+
+    return announcements;
+}
+
+export async function getLatestNameAnnouncementForVisitor(visitorId, options = {}) {
+    if (typeof visitorId !== "string" || !visitorId) {
+        return null;
+    }
+
+    const database = await ensureDatabase();
+    if (!database) {
+        return null;
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return null;
+    }
+
+    const channel = normalizeChannel(options.channel);
+    const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
     const query = sdk.query(
-        sdk.ref(database, getNameShoutsPath(channel)),
-        sdk.limitToLast(limit)
+        shoutsRef,
+        sdk.orderByChild("visitorId"),
+        sdk.equalTo(visitorId)
     );
     const snapshot = await sdk.get(query);
     const announcements = [];
 
     snapshot.forEach((child) => {
         const data = child.val();
-        if (data?.type === "name-announced") {
+        if (data?.type === "name-announced" && !isInappropriateName(data.name)) {
             announcements.push({ id: child.key, ...data });
         }
     });
 
-    return announcements;
+    announcements.sort((a, b) =>
+        (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0) ||
+        String(b.id).localeCompare(String(a.id))
+    );
+    return announcements[0] ?? null;
 }
 
 export async function subscribeToDisplayConfig(callback, options = {}) {

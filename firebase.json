@@ -38,6 +38,14 @@
         "destination": "/demo.html"
       },
       {
+        "source": "/research",
+        "destination": "/research-preview.html"
+      },
+      {
+        "source": "/team-test",
+        "destination": "/research-preview.html"
+      },
+      {
         "source": "/v3",
         "destination": "/index.html"
       },

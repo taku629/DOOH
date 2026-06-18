@@ -40,7 +40,15 @@ export function buildParticipationVisit(previous = {}, today = formatLocalDate()
     const previousStreak = Math.max(1, Number(previous.streakDays) || 1);
     const isReturning = dayDifference !== null && dayDifference >= 1;
     const isConsecutiveReturn = dayDifference === 1;
+    const alreadyParticipatedToday = dayDifference === 0;
     const streakDays = isConsecutiveReturn ? previousStreak + 1 : 1;
+    // streakDays（連続）とは別に、連続でなくても通算した参加日数を数える。
+    // 既存の保存データに totalDays が無ければ streakDays から補完する。
+    const previousTotalDays = lastParticipationDate
+        ? Math.max(Number(previous.totalDays) || 0, previousStreak)
+        : 0;
+    const isNewParticipationDay = dayDifference === null || dayDifference >= 1;
+    const totalDays = isNewParticipationDay ? previousTotalDays + 1 : previousTotalDays;
 
     return {
         visitorId:
@@ -51,17 +59,20 @@ export function buildParticipationVisit(previous = {}, today = formatLocalDate()
         lastParticipationDate: today,
         isReturning,
         isConsecutiveReturn,
+        alreadyParticipatedToday,
         streakDays,
+        totalDays,
     };
 }
 
 export function getParticipationVisit(options = {}) {
     const storage = options.storage ?? globalThis.localStorage;
+    const storageKey = options.storageKey ?? STORAGE_KEY;
     const today = options.today ?? formatLocalDate();
     let previous = {};
 
     try {
-        previous = JSON.parse(storage?.getItem(STORAGE_KEY) || "{}");
+        previous = JSON.parse(storage?.getItem(storageKey) || "{}");
     } catch {
         previous = {};
     }
@@ -71,11 +82,19 @@ export function getParticipationVisit(options = {}) {
 
 export function saveParticipationVisit(visit, options = {}) {
     const storage = options.storage ?? globalThis.localStorage;
-    storage?.setItem(STORAGE_KEY, JSON.stringify({
+    const storageKey = options.storageKey ?? STORAGE_KEY;
+    storage?.setItem(storageKey, JSON.stringify({
         visitorId: visit.visitorId,
         lastParticipationDate: visit.participationDate,
         streakDays: visit.streakDays,
+        totalDays: visit.totalDays,
     }));
+}
+
+export function clearParticipationVisit(options = {}) {
+    const storage = options.storage ?? globalThis.localStorage;
+    const storageKey = options.storageKey ?? STORAGE_KEY;
+    storage?.removeItem(storageKey);
 }
 
 export { STORAGE_KEY, formatLocalDate };

@@ -2,7 +2,9 @@ const CHANNEL_NAME = "dooh-participation";
 const STORAGE_KEY = "dooh:participation-event";
 
 function normalizeChannel(channel = "default") {
-    return channel === "v2" || channel === "morning" ? channel : "default";
+    return channel === "v2" || channel === "morning" || channel === "research"
+        ? channel
+        : "default";
 }
 
 function createFallbackId() {
