@@ -189,6 +189,7 @@ export async function publishSwipeComplete(payload = {}) {
         isReturning: payload.isReturning === true,
         isConsecutiveReturn: payload.isConsecutiveReturn === true,
         streakDays: Math.max(1, Number(payload.streakDays) || 1),
+        totalDays: Math.max(1, Number(payload.totalDays) || 1),
     };
     const participationRef = sdk.ref(database, getParticipationPath(channel));
     let lastError = null;
@@ -331,6 +332,7 @@ export async function publishNameAnnouncement(payload = {}) {
         isReturning: payload.isReturning === true,
         isConsecutiveReturn: payload.isConsecutiveReturn === true,
         streakDays: Math.max(1, Number(payload.streakDays) || 1),
+        totalDays: Math.max(1, Number(payload.totalDays) || 1),
     };
     let lastError = null;
 

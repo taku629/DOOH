@@ -74,6 +74,45 @@ test("existing swipe history migrates into server participant history", () => {
     assert.equal(nextDay.participantHistory["existing-device"].streakDays, 4);
 });
 
+test("total participation days accumulate across non-consecutive visits", () => {
+    // 6/14 → 6/16 と1日空けて参加。streak は途切れても通算日数は 1 → 2 に積み上がる。
+    const first = buildParticipationTransactionValue({}, {
+        key: "event-1",
+        visitorId: "anonymous-device",
+        participationDate: "2026-06-14",
+    });
+    const laterDay = buildParticipationTransactionValue(first, {
+        key: "event-2",
+        visitorId: "anonymous-device",
+        participationDate: "2026-06-16",
+    });
+
+    assert.equal(laterDay.swipes["event-2"].isConsecutiveReturn, false);
+    assert.equal(laterDay.swipes["event-2"].streakDays, 1);
+    assert.equal(laterDay.swipes["event-2"].totalDays, 2);
+    assert.equal(laterDay.participantHistory["anonymous-device"].totalDays, 2);
+});
+
+test("total days fall back to legacy streak history when missing", () => {
+    const nextDay = buildParticipationTransactionValue({
+        participantCount: 1,
+        swipes: {
+            "event-1": {
+                visitorId: "existing-device",
+                participationDate: "2026-06-14",
+                streakDays: 3,
+            },
+        },
+    }, {
+        key: "event-2",
+        visitorId: "existing-device",
+        participationDate: "2026-06-16",
+    });
+
+    assert.equal(nextDay.swipes["event-2"].streakDays, 1);
+    assert.equal(nextDay.swipes["event-2"].totalDays, 4);
+});
+
 test("thirty distinct simultaneous-style events are all counted once", () => {
     let data = {};
 

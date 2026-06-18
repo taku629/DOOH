@@ -597,8 +597,8 @@
         <div class="live">
             <div class="participation-thanks" id="participationThanks" aria-live="polite"></div>
             <p class="thanks" id="thanks" aria-hidden="true"></p>
-            <span class="label">累計参加者</span>
-            <span class="value"><span class="num" id="countNum">0</span><span class="unit">人</span></span>
+            <span class="label">合計金額</span>
+            <span class="value"><span class="unit">¥</span><span class="num" id="countNum">0</span></span>
             <div class="progress-wrap">
                 <span class="challenge-label" id="challengeLabel">第1回 点灯チャレンジ</span>
                 <p class="progress-text" id="progressText">あと9人で取り組みが見えてくる</p>
@@ -609,8 +609,8 @@
 
         <aside class="cta" aria-label="スマホ参加QR案内">
             <div class="cta-copy">
-                <strong>スマホで参加</strong>
-                <small id="qrCaption">参加アクションで取り組みを可視化</small>
+                <strong>スマホで無料寄付に参加</strong>
+                <small id="qrCaption">街への応援寄付に参加</small>
             </div>
             <div class="qr-code" id="qrCode" aria-hidden="true">QR</div>
         </aside>
@@ -623,7 +623,7 @@
         <button id="completeBtn" type="button" hidden>達成まで進める</button>
         <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
         <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
-        <button id="returningParticipantTestBtn" type="button" hidden>2〜7日目の継続参加を再現</button>
+        <button id="returningParticipantTestBtn" type="button" hidden>通算2〜7日参加を再現</button>
         <button id="crowdTestBtn" type="button" hidden>50人同時参加を再現</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
@@ -633,6 +633,7 @@
         const TOTAL = 9;
         // ?dev で開くと、Firebase連動中でも手動ツールで動作確認できる（QR不要）
         const params = new URLSearchParams(location.search);
+        const DONATION_PER_PERSON_YEN = 100; // 1参加あたりのデモ募金額（publishSwipeComplete の donationAmountYen と一致）
         const DEV = params.has("dev");
         const DEMO_MODE = params.has("demo");
         const MANUAL_MODE = DEV || DEMO_MODE;
@@ -721,7 +722,7 @@
         }
 
         function updateHud() {
-            countNum.textContent = count.toLocaleString("ja-JP");
+            countNum.textContent = (count * DONATION_PER_PERSON_YEN).toLocaleString("ja-JP");
             const remaining = Math.max(0, TOTAL - revealed);
             const done = revealed >= TOTAL || celebrationActive;
             if (challengeLabel) {
@@ -737,7 +738,7 @@
                 ? "みんなの関心が、新宿への応援として重なりました"
                 : done
                 ? "新宿で続く取り組みが見えてきました"
-                : `あと${remaining}人で取り組みが見えてくる`;
+                : `あと${remaining}スワイプで彩が戻ってくる`;
         }
 
         function updateTransitionCountdown() {
@@ -831,9 +832,11 @@
         let participationStackTimer = null;
 
         function getStreakClass(options = {}) {
-            if (options.isReturning !== true) return "";
-            const streakDays = Math.min(7, Math.max(2, Number(options.streakDays) || 2));
-            return `streak-${streakDays}`;
+            // 色は「連続日数」ではなく「通算参加日数」で決める。連続でなくても日数が増えれば色が進む。
+            // 旧イベント（totalDays 未保持）は streakDays で補完する。
+            const totalDays = Math.max(1, Number(options.totalDays) || Number(options.streakDays) || 1);
+            if (totalDays < 2) return "";
+            return `streak-${Math.min(7, totalDays)}`;
         }
 
         function applyStreakClass(element, options = {}) {
@@ -848,6 +851,7 @@
                 visitorId: typeof options.visitorId === "string" ? options.visitorId : "",
                 isReturning: options.isReturning === true,
                 streakDays: Math.max(1, Number(options.streakDays) || 1),
+                totalDays: Math.max(1, Number(options.totalDays) || Number(options.streakDays) || 1),
                 createdAt: Number(options.createdAt) || 0,
             };
             const dedupeKey = entry.visitorId ? `visitor:${entry.visitorId}` : `name:${entry.name}`;
@@ -860,7 +864,7 @@
             }
             donorNameRotation.push(entry);
             donorNameRotation.sort((a, b) =>
-                b.streakDays - a.streakDays ||
+                b.totalDays - a.totalDays ||
                 b.createdAt - a.createdAt
             );
             return entry;
@@ -1106,7 +1110,7 @@
                         if (visualizedLiveCount >= count) {
                             window.clearInterval(liveVisualTimer);
                             liveVisualTimer = null;
-                            if (hint && !DEV) hint.textContent = "● LIVE — スマホ参加に連動中";
+                            if (hint && !DEV) hint.textContent = "● LIVE — 参加証投影中";
                             return;
                         }
                         visualizedLiveCount += 1;
@@ -1115,7 +1119,7 @@
                             const pending = Math.max(0, count - visualizedLiveCount);
                             hint.textContent = pending > 0
                                 ? `● LIVE — あと${pending}人の参加を順番に反映中`
-                                : "● LIVE — スマホ参加に連動中";
+                                : "● LIVE — 参加証投影中";
                         }
                     }, 260);
                 }
@@ -1145,7 +1149,7 @@
             if (hint) {
                 hint.textContent = DEV
                     ? "● LIVE（DEV：手動 / 📡本番+1 で確認）"
-                    : "● LIVE — スマホ参加に連動中";
+                    : "● LIVE — 参加証投影中";
                 hint.style.opacity = "1";
             }
         }
@@ -1196,7 +1200,7 @@
         newParticipantTestBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             const testNames = ["さくら", "タクヤ", "ミナ", "新宿サポーター"];
-            showThanks(testNames[donorNameTestIndex % testNames.length], { isReturning: false, streakDays: 1 });
+            showThanks(testNames[donorNameTestIndex % testNames.length], { isReturning: false, streakDays: 1, totalDays: 1 });
             donorNameTestIndex += 1;
         });
         let returningParticipantTestDay = 2;
@@ -1204,8 +1208,10 @@
             e.stopPropagation();
             showThanks("さくら", {
                 isReturning: true,
-                isConsecutiveReturn: true,
-                streakDays: returningParticipantTestDay,
+                // 連続ではなく通算日数で色が進むことを確認するため streak はリセット相当にする。
+                isConsecutiveReturn: false,
+                streakDays: 1,
+                totalDays: returningParticipantTestDay,
             });
             returningParticipantTestDay = returningParticipantTestDay >= 7
                 ? 2
@@ -1221,6 +1227,7 @@
                 showThanks(`テスト${String(index).padStart(2, "0")}`, {
                     isReturning: index % 5 === 0,
                     streakDays: index % 5 === 0 ? 2 : 1,
+                    totalDays: index % 5 === 0 ? 2 : 1,
                     createdAt: Date.now() + index,
                 });
             }

@@ -76,6 +76,17 @@ const pendingParticipationVisit = getParticipationVisit({
   today: participationDateOverride,
   storageKey: participationStorageOptions.storageKey,
 });
+// ===== debug（host/ローカルで文言調整するための繰り返しスワイプ） =====
+// ?dev / ?debug を付けたとき、または localhost / file:// で開いたとき（＝自分のホストで
+// 確認しているとき）は「1回きり」ロックを外し、何度でもスワイプを試せるようにする。
+const isLocalHost =
+  /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(location.hostname) ||
+  location.protocol === "file:";
+const isDebugReplay =
+  participationSearchParams.has("dev") ||
+  participationSearchParams.has("debug") ||
+  isLocalHost;
+
 const DEMO_DONATION_YEN = 100;
 const PLAYLIST_PATH = new URL("../config/playlist.json", import.meta.url).href;
 const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
@@ -474,6 +485,14 @@ function scheduleFormRedirect() {
   if (window.parent !== window) {
     return;
   }
+  // debug: 外部アンケートに飛ばさず、最初のスワイプ画面に戻して文言を見直せるようにする。
+  if (isDebugReplay) {
+    formRedirectTimer = window.setTimeout(() => {
+      formRedirectTimer = null;
+      resetFlowForDebug();
+    }, 4000);
+    return;
+  }
   const formUrl = (document.body?.dataset?.postFlowForm || "").trim();
   if (!formUrl) {
     return; // URL未設定（対象外フロー）→ 遷移しない
@@ -501,6 +520,70 @@ function redirectToForm(formUrl) {
   window.clearTimeout(formRedirectTimer);
   window.clearTimeout(outroSceneTimer);
   window.location.href = formUrl;
+}
+
+// debug: 全ての「1回きり」ガードを解除して、最初のスワイプ画面に戻す。
+// host/ローカルで文言を直しながら何度でもスワイプを試せるようにするための機能。
+function resetFlowForDebug() {
+  window.clearTimeout(formRedirectTimer);
+  window.clearTimeout(outroSceneTimer);
+  window.clearTimeout(storyCardDismissTimer);
+  formRedirectTimer = null;
+  outroSceneTimer = null;
+  storyCardDismissTimer = null;
+
+  closeOutro();
+  storyCardOverlay?.classList.remove("is-active");
+  storyCardOverlay?.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("is-story-card-open");
+
+  hasCountedParticipation = false;
+  hasAcceptedParticipation = false;
+  hasAnimatedCounter = false;
+  isAutoCompletingSwipe = false;
+  isRegisteringParticipation = false;
+  hasShownSwipeReadyEffect = false;
+  swipeCardShown = false;
+  swipeCardDone = false;
+  outroStarted = false;
+
+  swipeStep?.classList.remove("is-participation-locked");
+  swipeControl?.removeAttribute("aria-disabled");
+
+  updateSwipeCharge(0);
+  if (swipeHint) {
+    swipeHint.textContent = "";
+  }
+  showStep(0);
+}
+
+// debug 時だけ、いつでもスワイプ画面に戻せる小さなボタンを出す。
+function mountDebugReplayButton() {
+  if (!isDebugReplay) {
+    return;
+  }
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "↺ もう一度スワイプ (debug)";
+  button.setAttribute("aria-label", "デバッグ用：最初のスワイプ画面に戻る");
+  Object.assign(button.style, {
+    position: "fixed",
+    left: "50%",
+    bottom: "12px",
+    transform: "translateX(-50%)",
+    zIndex: "9999",
+    padding: "8px 14px",
+    fontSize: "12px",
+    lineHeight: "1",
+    borderRadius: "999px",
+    border: "1px solid rgba(255,255,255,0.4)",
+    background: "rgba(0,0,0,0.6)",
+    color: "#fff",
+    cursor: "pointer",
+    backdropFilter: "blur(4px)",
+  });
+  button.addEventListener("click", resetFlowForDebug);
+  document.body.appendChild(button);
 }
 
 // thanks-proto 風カードの共通開閉
@@ -784,6 +867,11 @@ function announceDonorName() {
   if (hasAnnouncedName || !hasAcceptedParticipation) {
     return;
   }
+  // debug（host/ローカル）では本番DOOHへ名前を送らない。
+  if (isDebugReplay) {
+    hasAnnouncedName = true;
+    return;
+  }
 
   const typed = nickname.value.trim();
   if (!typed || isInappropriateName(typed)) {
@@ -800,6 +888,7 @@ function announceDonorName() {
     isReturning: completedParticipationVisit?.isReturning === true,
     isConsecutiveReturn: completedParticipationVisit?.isConsecutiveReturn === true,
     streakDays: completedParticipationVisit?.streakDays ?? 1,
+    totalDays: completedParticipationVisit?.totalDays ?? 1,
   };
   if (isAllExperience) {
     payload.source = "participant-flow-all";
@@ -840,6 +929,20 @@ async function registerParticipation() {
   if (isRegisteringParticipation) {
     return false;
   }
+
+  if (isDebugReplay) {
+    // debug: Firebase 送信も「今日は参加済み」ロックもせず、ローカルだけで完了扱いにする。
+    participantCount += 1;
+    if (counterParticipants) {
+      counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
+    }
+    updateMilestonePreview(participantCount);
+    hasCountedParticipation = true;
+    hasAcceptedParticipation = true;
+    hasAnimatedCounter = false;
+    return true;
+  }
+
   isRegisteringParticipation = true;
 
   try {
@@ -859,6 +962,7 @@ async function registerParticipation() {
       isReturning: visit.isReturning,
       isConsecutiveReturn: visit.isConsecutiveReturn,
       streakDays: visit.streakDays,
+      totalDays: visit.totalDays,
     };
 
     if (isAllExperience) {
@@ -890,6 +994,7 @@ async function registerParticipation() {
       isReturning: result?.event?.isReturning === true,
       isConsecutiveReturn: result?.event?.isConsecutiveReturn === true,
       streakDays: Math.max(1, Number(result?.event?.streakDays) || 1),
+      totalDays: Math.max(1, Number(result?.event?.totalDays) || visit.totalDays || 1),
     };
     saveParticipationVisit(committedVisit, { storageKey: participationStorageOptions.storageKey });
     completedParticipationVisit = committedVisit;
@@ -1433,7 +1538,7 @@ function setSwipeFill(value) {
 
 function canAdvanceFrom(index) {
   if (index === 0) {
-    return !pendingParticipationVisit.alreadyParticipatedToday && swipeChargeValue >= 100;
+    return (isDebugReplay || !pendingParticipationVisit.alreadyParticipatedToday) && swipeChargeValue >= 100;
   }
   return true;
 }
@@ -1506,7 +1611,7 @@ function startPointer(event) {
   if (activePointerId !== null) {
     return;
   }
-  if (pendingParticipationVisit.alreadyParticipatedToday || hasCountedParticipation) {
+  if ((!isDebugReplay && pendingParticipationVisit.alreadyParticipatedToday) || hasCountedParticipation) {
     return;
   }
   if (currentStep !== 0) {
@@ -1837,9 +1942,11 @@ window.addEventListener("resize", () => {
 
 updateSwipeCharge(0);
 applyThemeCopy();
-if (pendingParticipationVisit.alreadyParticipatedToday) {
+// debug（host/ローカル）では「今日は参加済み」ロックを無視して、毎回スワイプから試せるようにする。
+if (!isDebugReplay && pendingParticipationVisit.alreadyParticipatedToday) {
   markAlreadyParticipatedToday(pendingParticipationVisit);
 }
+mountDebugReplayButton();
 showStep(0);
 updateMilestonePreview(participantCount);
 loadRelightPlaylist();

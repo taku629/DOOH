@@ -16,6 +16,7 @@ function findLatestVisitorSwipe(swipes, visitorId) {
             return {
                 lastParticipationDate: swipe.participationDate,
                 streakDays: Math.max(1, Number(swipe.streakDays) || 1),
+                totalDays: Math.max(0, Number(swipe.totalDays) || 0),
             };
         }
         return latest;
@@ -65,6 +66,15 @@ export function buildParticipationTransactionValue(currentValue, event) {
     const streakDays = isConsecutiveReturn
         ? Math.max(1, Number(previousVisit?.streakDays) || 1) + 1
         : 1;
+    // 連続でなくても通算した参加日数。色はこの値で決める。
+    // 既存データに totalDays が無い場合は streakDays から補完する。
+    const previousTotalDays = previousVisit
+        ? Math.max(Number(previousVisit.totalDays) || 0, Number(previousVisit.streakDays) || 0)
+        : 0;
+    const isNewParticipationDay = dayDifference === null || dayDifference >= 1;
+    const totalDays = previousVisit && !isNewParticipationDay
+        ? previousTotalDays
+        : previousTotalDays + 1;
     const currentCount = Number(currentData.participantCount);
     const participantCount = (Number.isFinite(currentCount) ? currentCount : 0) + 1;
 
@@ -86,6 +96,7 @@ export function buildParticipationTransactionValue(currentValue, event) {
                 isReturning,
                 isConsecutiveReturn,
                 streakDays,
+                totalDays,
             },
         },
         dailyParticipants: participationDate && visitorId
@@ -103,6 +114,7 @@ export function buildParticipationTransactionValue(currentValue, event) {
                 [visitorId]: {
                     lastParticipationDate: participationDate,
                     streakDays,
+                    totalDays,
                 },
             }
             : participantHistory,

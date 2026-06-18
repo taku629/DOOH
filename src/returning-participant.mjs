@@ -42,6 +42,13 @@ export function buildParticipationVisit(previous = {}, today = formatLocalDate()
     const isConsecutiveReturn = dayDifference === 1;
     const alreadyParticipatedToday = dayDifference === 0;
     const streakDays = isConsecutiveReturn ? previousStreak + 1 : 1;
+    // streakDays（連続）とは別に、連続でなくても通算した参加日数を数える。
+    // 既存の保存データに totalDays が無ければ streakDays から補完する。
+    const previousTotalDays = lastParticipationDate
+        ? Math.max(Number(previous.totalDays) || 0, previousStreak)
+        : 0;
+    const isNewParticipationDay = dayDifference === null || dayDifference >= 1;
+    const totalDays = isNewParticipationDay ? previousTotalDays + 1 : previousTotalDays;
 
     return {
         visitorId:
@@ -54,6 +61,7 @@ export function buildParticipationVisit(previous = {}, today = formatLocalDate()
         isConsecutiveReturn,
         alreadyParticipatedToday,
         streakDays,
+        totalDays,
     };
 }
 
@@ -79,6 +87,7 @@ export function saveParticipationVisit(visit, options = {}) {
         visitorId: visit.visitorId,
         lastParticipationDate: visit.participationDate,
         streakDays: visit.streakDays,
+        totalDays: visit.totalDays,
     }));
 }
 

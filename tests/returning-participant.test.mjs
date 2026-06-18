@@ -93,6 +93,49 @@ test("a skipped day resets the streak but remains returning", () => {
     assert.equal(visit.streakDays, 1);
 });
 
+test("total participation days keep increasing even when the streak breaks", () => {
+    // 連続が途切れて streak は 1 に戻っても、通算参加日数は積み上がる（色はこちらで決まる）。
+    const visit = buildParticipationVisit({
+        visitorId: "anonymous-device",
+        lastParticipationDate: "2026-06-10",
+        streakDays: 1,
+        totalDays: 3,
+    }, "2026-06-12");
+
+    assert.equal(visit.streakDays, 1);
+    assert.equal(visit.totalDays, 4);
+});
+
+test("first participation starts the total at one", () => {
+    const visit = buildParticipationVisit({ visitorId: "anonymous-device" }, "2026-06-12");
+
+    assert.equal(visit.streakDays, 1);
+    assert.equal(visit.totalDays, 1);
+});
+
+test("total days are not double counted on the same day", () => {
+    const visit = buildParticipationVisit({
+        visitorId: "anonymous-device",
+        lastParticipationDate: "2026-06-12",
+        streakDays: 2,
+        totalDays: 2,
+    }, "2026-06-12");
+
+    assert.equal(visit.alreadyParticipatedToday, true);
+    assert.equal(visit.totalDays, 2);
+});
+
+test("total days fall back to the streak for legacy saved data", () => {
+    // totalDays を保存していなかった既存ユーザーは streakDays から補完する。
+    const visit = buildParticipationVisit({
+        visitorId: "anonymous-device",
+        lastParticipationDate: "2026-06-11",
+        streakDays: 3,
+    }, "2026-06-12");
+
+    assert.equal(visit.totalDays, 4);
+});
+
 test("saved local participation can be read on the next visit", () => {
     const storage = createStorage();
     const firstVisit = getParticipationVisit({ storage, today: "2026-06-11" });
