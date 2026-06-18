@@ -704,9 +704,12 @@
         let liveCountInitialized = false;
         let visualizedLiveCount = 0;
         let liveVisualTimer = null;
+        let queuedRevealCount = 0;
+        let queuedReplayTimer = null;
         let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = 7_000 * SCENE_TIME_SCALE;
+        const LIVE_REVEAL_INTERVAL_MS = 260;
 
         // インクが飛び散る「ポップ」アニメーション
         function splat(el) {
@@ -775,6 +778,31 @@
             document.body.classList.toggle("is-scene-focus", active);
         }
 
+        function clearQueuedReplayTimer() {
+            if (queuedReplayTimer) window.clearInterval(queuedReplayTimer);
+            queuedReplayTimer = null;
+        }
+
+        function replayQueuedReveals() {
+            if (queuedRevealCount <= 0 || queuedReplayTimer) {
+                return;
+            }
+
+            queuedReplayTimer = window.setInterval(() => {
+                if (celebrationActive) {
+                    return;
+                }
+
+                if (queuedRevealCount <= 0) {
+                    clearQueuedReplayTimer();
+                    return;
+                }
+
+                queuedRevealCount -= 1;
+                triggerSplat();
+            }, LIVE_REVEAL_INTERVAL_MS);
+        }
+
         function finishCelebration() {
             clearCelebrationTimers();
             celebrationActive = false;
@@ -786,6 +814,7 @@
             // 達成演出中に参加が重なっても、次の回は荒廃状態から始める。
             rebuildReveal(0);
             updateHud();
+            replayQueuedReveals();
         }
 
         function startCelebration() {
@@ -1024,6 +1053,12 @@
 
         // 飛沫を1つ飛ばす（人数カウントとは独立）
         function triggerSplat() {
+            if (celebrationActive) {
+                queuedRevealCount += 1;
+                splat(finalLayer);
+                return;
+            }
+
             if (revealed < TOTAL) {
                 // 次の飛沫を飛び散らせて新しい範囲を出す
                 const el = layers[revealed];
@@ -1121,12 +1156,14 @@
                                 ? `● LIVE — あと${pending}人の参加を順番に反映中`
                                 : "● LIVE — 参加証投影中";
                         }
-                    }, 260);
+                    }, LIVE_REVEAL_INTERVAL_MS);
                 }
             } else if (delta < 0) {
                 if (liveVisualTimer) window.clearInterval(liveVisualTimer);
                 liveVisualTimer = null;
                 visualizedLiveCount = n;
+                queuedRevealCount = 0;
+                clearQueuedReplayTimer();
                 clearCelebrationTimers();
                 celebrationActive = false;
                 setSceneFocus(false);
@@ -1164,8 +1201,10 @@
             activeChallengeNumber = 0;
             liveCountInitialized = false;
             visualizedLiveCount = 0;
+            queuedRevealCount = 0;
             if (liveVisualTimer) window.clearInterval(liveVisualTimer);
             liveVisualTimer = null;
+            clearQueuedReplayTimer();
             layers.forEach((el) => {
                 el.getAnimations().forEach((a) => a.cancel());
                 el.classList.remove("is-revealed");
