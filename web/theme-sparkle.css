@@ -444,7 +444,7 @@ html:not([data-theme="morning"]) .slider-wrap::after {
   overflow: visible;
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 12px 22px rgba(21, 25, 25, 0.24));
+  filter: invert(1) brightness(1.08) drop-shadow(0 12px 22px rgba(255, 255, 255, 0.24));
   transform-origin: center 82%;
   animation: fingerSwipeMotion 1.55s ease-in-out infinite;
 }
