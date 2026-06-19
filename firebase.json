@@ -16,6 +16,7 @@
       "**/node_modules/**",
       "README.md",
       "docs/**",
+      "shinjuku-dooh-demo/**",
       "scripts/**",
       "database.rules.json",
       "package.json",
