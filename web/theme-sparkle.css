@@ -439,7 +439,7 @@ html:not([data-theme="morning"]) .slider-wrap::after {
 }
 
 .swipe-gesture-icon {
-  width: clamp(6.4rem, 29vw, 8.6rem);
+  width: clamp(5.4rem, 24vw, 7.2rem);
   height: auto;
   overflow: visible;
   display: block;
@@ -1375,15 +1375,15 @@ html[data-theme="morning"] .story-card-overlay {
   0%,
   100% {
     opacity: 1;
-    transform: translate3d(0, 10px, 0) scale(1);
+    transform: rotate(-9deg) translate3d(0, 10px, 0) scale(1);
   }
   44% {
     opacity: 1;
-    transform: translate3d(0, -22px, 0) scale(1.04);
+    transform: rotate(-15deg) translate3d(-8px, -22px, 0) scale(1.04);
   }
   68% {
     opacity: 1;
-    transform: translate3d(0, -10px, 0) scale(1.01);
+    transform: rotate(-11deg) translate3d(-3px, -10px, 0) scale(1.01);
   }
 }
 
