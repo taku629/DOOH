@@ -450,11 +450,12 @@ html:not([data-theme="morning"]) .slider-wrap::after {
 }
 
 .swipe-gesture-icon .swipe-arrow {
-  stroke-width: 9;
+  opacity: 0.88;
+  stroke-width: 8;
 }
 
 .swipe-gesture-icon .swipe-finger {
-  stroke-width: 8;
+  stroke-width: 9;
 }
 
 .swipe-gesture-wrap::after {
