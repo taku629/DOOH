@@ -442,22 +442,9 @@ html:not([data-theme="morning"]) .slider-wrap::after {
   width: clamp(6.4rem, 29vw, 8.6rem);
   height: auto;
   overflow: visible;
-  fill: currentColor;
-  stroke: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  display: block;
+  object-fit: contain;
   filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.62));
-}
-
-.swipe-gesture-icon .swipe-finger {
-  fill: currentColor;
-}
-
-.swipe-gesture-icon .swipe-finger-gap {
-  fill: none;
-  stroke: rgba(15, 20, 18, 0.92);
-  stroke-linecap: round;
-  stroke-width: 10;
 }
 
 .swipe-gesture-wrap::after {
