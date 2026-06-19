@@ -1209,11 +1209,11 @@ html[data-theme="morning"] .story-card-overlay {
   }
   44% {
     opacity: 1;
-    transform: rotate(-15deg) translate3d(-8px, -22px, 0) scale(1.04);
+    transform: rotate(-9deg) translate3d(0, -22px, 0) scale(1.04);
   }
   68% {
     opacity: 1;
-    transform: rotate(-11deg) translate3d(-3px, -10px, 0) scale(1.01);
+    transform: rotate(-9deg) translate3d(0, -10px, 0) scale(1.01);
   }
 }
 
