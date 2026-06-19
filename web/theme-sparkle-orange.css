@@ -444,11 +444,27 @@ html:not([data-theme="morning"]) .slider-wrap::after {
   overflow: visible;
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.62));
+  filter: drop-shadow(0 12px 22px rgba(146, 58, 9, 0.18));
+  transform-origin: 42% 82%;
+  animation: fingerSwipeMotion 1.55s ease-in-out infinite;
 }
 
 .swipe-gesture-wrap::after {
   content: none !important;
+}
+
+html:not([data-theme="morning"]) .step[data-step="0"] .swipe-gesture-wrap,
+html[data-experience="sparkle"]:not([data-theme="morning"]) .step[data-step="0"] .swipe-gesture-wrap {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html:not([data-theme="morning"]) .step[data-step="0"] .swipe-gesture-wrap::before,
+html[data-experience="sparkle"]:not([data-theme="morning"]) .step[data-step="0"] .swipe-gesture-wrap::before {
+  background:
+    linear-gradient(0deg, rgba(255, 138, 61, 0.18), rgba(255, 255, 255, 0.04)) 0 100% / 100% var(--swipe-fill, 0%) no-repeat !important;
+  opacity: 0.5;
 }
 
 .heart-shine {
@@ -1182,6 +1198,22 @@ html[data-theme="morning"] .story-card-overlay {
   }
 }
 
+@keyframes fingerSwipeMotion {
+  0%,
+  100% {
+    opacity: 0.92;
+    transform: rotate(-7deg) translate3d(0, 8px, 0) scale(1);
+  }
+  44% {
+    opacity: 1;
+    transform: rotate(-13deg) translate3d(-10px, -18px, 0) scale(1.04);
+  }
+  68% {
+    opacity: 0.98;
+    transform: rotate(-9deg) translate3d(-5px, -8px, 0) scale(1.01);
+  }
+}
+
 @media (max-width: 380px) {
   html:not([data-theme="morning"]) .app {
     width: min(100% - 22px, 430px);
@@ -1203,7 +1235,8 @@ html[data-theme="morning"] .story-card-overlay {
 
 @media (prefers-reduced-motion: reduce) {
   .sparkle-particles span,
-  .heart-shine {
+  .heart-shine,
+  .swipe-gesture-icon {
     animation: none !important;
   }
 
