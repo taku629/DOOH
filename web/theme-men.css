@@ -586,3 +586,13 @@ html[data-experience="men"]:not([data-theme="morning"]) .story-card-body {
     radial-gradient(ellipse at 22% 12%, rgba(255, 255, 255, 0.9), transparent 40%),
     linear-gradient(180deg, #fbfbfb 0%, #ececec 100%);
 }
+
+html[data-experience="men"]:not([data-theme="morning"]) .field-helper[data-status="checking"] {
+  color: var(--ink-secondary);
+  font-weight: 700;
+}
+
+html[data-experience="men"]:not([data-theme="morning"]) .field-helper[data-status="error"] {
+  color: #b3261e;
+  font-weight: 800;
+}

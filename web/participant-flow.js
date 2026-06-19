@@ -2,6 +2,7 @@ import { getDonationMilestoneGoal } from "../src/condition-manager.js";
 import { getLatestNameAnnouncementForVisitor, getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260619-history-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
+import { moderateDisplayName } from "../src/name-moderation.js?v=20260619-ai-1";
 import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-4";
 import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-2";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
@@ -14,6 +15,7 @@ const counterValue = document.getElementById("counterValue");
 const counterBox = document.getElementById("counterBox");
 const counterParticipants = document.getElementById("counterParticipants");
 const nickname = document.getElementById("nickname");
+const nicknameHelp = document.getElementById("nicknameHelp");
 const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
 const shareStatus = document.getElementById("shareStatus");
@@ -28,6 +30,11 @@ const celebration = document.getElementById("celebration");
 const swipeStep = steps[0];
 const supportChoiceButtons = [...document.querySelectorAll("[data-support-choice]")];
 const supportChoiceDetail = document.getElementById("supportChoiceDetail");
+const createCardButton = document.getElementById("createCard");
+const skipNameButton = document.getElementById("skipName");
+const defaultNicknameHelpText = nicknameHelp?.textContent ?? "";
+const NAME_CHECKING_MESSAGE = "\u8868\u793a\u540d\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
+const NAME_BLOCKED_MESSAGE = "\u3053\u306e\u8868\u793a\u540d\u306f\u516c\u958b\u3067\u304d\u307e\u305b\u3093\u3002\u5225\u306e\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u306b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
 
 // 体験アウトロ（サンクス＋アンケート予告）。men / women のみ存在。
 const outroOverlay = document.getElementById("outroOverlay");
@@ -273,6 +280,50 @@ function getDisplayName() {
     return RANDOM_GUEST_NAME;
   }
   return input;
+}
+
+function setNicknameHelp(message, status = "") {
+  if (!nicknameHelp) {
+    return;
+  }
+  nicknameHelp.textContent = message || defaultNicknameHelpText;
+  nicknameHelp.dataset.status = status;
+  nicknameHelp.setAttribute("aria-live", status ? "polite" : "off");
+}
+
+function restoreNicknameHelp() {
+  setNicknameHelp(defaultNicknameHelpText, "");
+}
+
+function setNameChecking(isChecking) {
+  if (createCardButton) {
+    createCardButton.disabled = isChecking;
+    createCardButton.setAttribute("aria-busy", String(isChecking));
+  }
+  if (skipNameButton) {
+    skipNameButton.disabled = isChecking;
+  }
+}
+
+async function validateTypedDisplayName() {
+  const typed = nickname.value.trim();
+  if (!typed) {
+    restoreNicknameHelp();
+    return { ok: true, name: "" };
+  }
+
+  setNicknameHelp(NAME_CHECKING_MESSAGE, "checking");
+  const result = await moderateDisplayName(typed);
+  if (!result.allowed) {
+    setNicknameHelp(NAME_BLOCKED_MESSAGE, "error");
+    nickname.setAttribute("aria-invalid", "true");
+    nickname.focus();
+    return { ok: false, reason: result.reason ?? "blocked" };
+  }
+
+  nickname.removeAttribute("aria-invalid");
+  restoreNicknameHelp();
+  return { ok: true, name: typed };
 }
 
 function getDemoDonationTotal(count = participantCount) {
@@ -863,19 +914,26 @@ function finalizeCard() {
 // 寄付デモ完了後、公開に同意して入力された表示名だけをDOOHへ一度通知する。
 let hasAnnouncedName = false;
 let completedParticipationVisit = null;
-function announceDonorName() {
+async function announceDonorName() {
   if (hasAnnouncedName || !hasAcceptedParticipation) {
-    return;
-  }
-  // debug（host/ローカル）では本番DOOHへ名前を送らない。
-  if (isDebugReplay) {
-    hasAnnouncedName = true;
-    return;
+    return true;
   }
 
-  const typed = nickname.value.trim();
-  if (!typed || isInappropriateName(typed)) {
-    return;
+  const validation = await validateTypedDisplayName();
+  if (!validation.ok) {
+    return false;
+  }
+
+  const typed = validation.name;
+  if (!typed) {
+    return true;
+  }
+
+  // In debug/local replay, keep the saved name locally and avoid publishing to the live DOOH.
+  if (isDebugReplay) {
+    saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
+    hasAnnouncedName = true;
+    return true;
   }
 
   saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
@@ -899,6 +957,7 @@ function announceDonorName() {
   }
 
   publishNameAnnouncement(payload).catch(() => {});
+  return true;
 }
 
 function markAlreadyParticipatedToday(visit) {
@@ -1769,6 +1828,14 @@ document.querySelectorAll("[data-next]").forEach((button) => {
 // input だけでなく composition 系イベントも拾う（一部の端末は input が確定まで走らないため）。
 const syncPreviewName = () => {
   previewName.textContent = getDisplayName();
+  const typed = nickname.value.trim();
+  if (typed && isInappropriateName(typed)) {
+    setNicknameHelp(NAME_BLOCKED_MESSAGE, "error");
+    nickname.setAttribute("aria-invalid", "true");
+    return;
+  }
+  nickname.removeAttribute("aria-invalid");
+  restoreNicknameHelp();
 };
 nickname.addEventListener("input", syncPreviewName);
 nickname.addEventListener("compositionupdate", syncPreviewName);
@@ -1849,11 +1916,19 @@ async function setupSavedNameChoice() {
 
 setupSavedNameChoice();
 
-document.getElementById("createCard").addEventListener("click", () => {
-  announceDonorName();
-  finalizeCard();
+createCardButton?.addEventListener("click", async () => {
+  setNameChecking(true);
+  try {
+    const canCreate = await announceDonorName();
+    if (!canCreate) {
+      return;
+    }
+    finalizeCard();
+  } finally {
+    setNameChecking(false);
+  }
 });
-document.getElementById("skipName").addEventListener("click", () => {
+skipNameButton?.addEventListener("click", () => {
   finalizeCard();
 });
 

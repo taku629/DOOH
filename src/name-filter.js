@@ -52,6 +52,28 @@ const NG_WORDS = [
     "faggot",
 ];
 
+const EXTRA_NG_WORDS = [
+    "\u63f4\u4ea4",
+    "\u58f2\u6625",
+    "\u8cb7\u6625",
+    "\u30d1\u30d1\u6d3b",
+    "\u30c7\u30ea\u30d8\u30eb",
+    "\u30bd\u30fc\u30d7",
+    "\u98a8\u4fd7",
+    "\u88f8",
+    "\u30cc\u30fc\u30c9",
+    "\u30ec\u30a4\u30d7",
+    "\u30d6\u30b9",
+    "\u30c7\u30d6",
+    "\u30b4\u30df",
+    "\u30ab\u30b9",
+    "\u3057\u3053\u3057\u3053",
+    "\u30aa\u30ca\u30cb\u30fc",
+    "\u9670\u830e",
+    "\u9670\u90e8",
+    "\u6027\u5668",
+];
+
 const IMPERSONATION_WORDS = [
     "新宿区公式",
     "新宿公式",
@@ -61,6 +83,15 @@ const IMPERSONATION_WORDS = [
     "管理者",
     "administrator",
     "officialadmin",
+    "\u65b0\u5bbf\u533a\u5f79\u6240",
+    "\u65b0\u5bbf\u533a\u8077\u54e1",
+    "\u8b66\u8996\u5e81",
+    "\u8b66\u5bdf",
+    "\u4eac\u738b\u516c\u5f0f",
+    "\u4eac\u738b\u30a8\u30fc\u30b8\u30a7\u30f3\u30b7\u30fc\u516c\u5f0f",
+    "\u5927\u5b66\u516c\u5f0f",
+    "\u5b66\u6821\u516c\u5f0f",
+    "\u7ba1\u7406\u90e8\u516c\u5f0f",
 ];
 
 const URL_PATTERNS = [
@@ -76,6 +107,13 @@ const CONTACT_PATTERNS = [
     /(?:line|instagram|insta|twitter|discord|telegram|tiktok)[\s:：＠@_-]+[\w.-]{3,}/i,
     /\bx[\s:：＠@_-]+[\w.-]{3,}/i,
 ];
+
+const PERSONAL_INFO_PATTERNS = [
+    /\b\d{3}[-\s]?\d{4}\b/,
+    /(?:\u4f4f\u6240|\u672c\u540d|\u5b66\u7c4d\u756a\u53f7|\u5b66\u751f\u756a\u53f7|\u30de\u30a4\u30ca\u30f3\u30d0\u30fc)/u,
+];
+
+const OFFICIAL_ROLE_PATTERN = /(?:\u516c\u5f0f|official|admin|administrator|\u7ba1\u7406\u8005|\u904b\u55b6|\u8077\u54e1|\u6559\u54e1|\u5148\u751f|\u8b66\u5bdf|\u5f79\u6240)/iu;
 
 const SPAM_PATTERNS = [
     /(.)\1{4,}/u,
@@ -98,36 +136,61 @@ function normalizeForModeration(value) {
         .replace(/[\s\u3000\-‐‑‒–—―ー_＿・･.。,，、/／\\]+/gu, "");
 }
 
-export function isInappropriateName(name) {
+export function getNameModerationReason(name) {
     if (!name) {
-        return false;
+        return null;
     }
     const raw = String(name);
+    const trimmed = raw.trim();
     const normalized = normalizeForModeration(raw);
 
-    if (INVISIBLE_OR_CONTROL_PATTERN.test(raw)) {
-        return true;
+    if (!trimmed) {
+        return null;
     }
 
-    for (const word of [...NG_WORDS, ...IMPERSONATION_WORDS]) {
+    if (INVISIBLE_OR_CONTROL_PATTERN.test(raw)) {
+        return "control_character";
+    }
+
+    for (const word of [...NG_WORDS, ...EXTRA_NG_WORDS]) {
         if (normalized.includes(normalizeForModeration(word))) {
-            return true;
+            return "unsafe_word";
         }
     }
+
+    for (const word of IMPERSONATION_WORDS) {
+        if (normalized.includes(normalizeForModeration(word))) {
+            return "impersonation";
+        }
+    }
+
+    if (OFFICIAL_ROLE_PATTERN.test(raw) && /(?:\u65b0\u5bbf|\u533a|\u4eac\u738b|\u5927\u5b66|\u5b66\u6821|\u8b66\u5bdf|\u904b\u55b6|\u7ba1\u7406)/u.test(raw)) {
+        return "impersonation";
+    }
+
     for (const pattern of URL_PATTERNS) {
         if (pattern.test(raw) || pattern.test(normalized)) {
-            return true;
+            return "link";
         }
     }
     for (const pattern of CONTACT_PATTERNS) {
         if (pattern.test(raw)) {
-            return true;
+            return "contact";
+        }
+    }
+    for (const pattern of PERSONAL_INFO_PATTERNS) {
+        if (pattern.test(raw)) {
+            return "personal_info";
         }
     }
     for (const pattern of SPAM_PATTERNS) {
         if (pattern.test(raw) || pattern.test(normalized)) {
-            return true;
+            return "spam";
         }
     }
-    return false;
+    return null;
+}
+
+export function isInappropriateName(name) {
+    return Boolean(getNameModerationReason(name));
 }
