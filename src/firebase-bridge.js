@@ -47,6 +47,10 @@ function getSwipesPath(channel) {
     return `${getParticipationPath(channel)}/swipes`;
 }
 
+function getParticipantHistoryPath(channel) {
+    return `${getParticipationPath(channel)}/participantHistory`;
+}
+
 function getDisplayConfigPath(channel) {
     return `${DISPLAY_CONFIG_PATH}/${normalizeChannel(channel)}`;
 }
@@ -143,6 +147,39 @@ async function ensureDatabase() {
     })();
 
     return databasePromise;
+}
+
+function normalizePositiveDayCount(...values) {
+    for (const value of values) {
+        const number = Number(value);
+        if (Number.isFinite(number) && number > 0) {
+            return Math.max(1, Math.floor(number));
+        }
+    }
+    return 1;
+}
+
+function enrichAnnouncementWithParticipantHistory(announcement, participantHistory = {}) {
+    const visitorId = typeof announcement?.visitorId === "string" ? announcement.visitorId : "";
+    const history = visitorId ? participantHistory[visitorId] : null;
+    if (!history || typeof history !== "object") {
+        return announcement;
+    }
+
+    const announcementTotalDays = normalizePositiveDayCount(announcement.totalDays, announcement.streakDays);
+    const historyTotalDays = normalizePositiveDayCount(history.totalDays, history.streakDays);
+    const totalDays = Math.max(announcementTotalDays, historyTotalDays);
+    const streakDays = Math.max(
+        normalizePositiveDayCount(announcement.streakDays),
+        normalizePositiveDayCount(history.streakDays)
+    );
+
+    return {
+        ...announcement,
+        isReturning: announcement.isReturning === true || totalDays >= 2,
+        streakDays,
+        totalDays,
+    };
 }
 
 function createFailedSwipeResult(error) {
@@ -404,17 +441,22 @@ export async function getRecentNameAnnouncements(options = {}) {
 
     const channel = normalizeChannel(options.channel);
     const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
+    const participantHistoryRef = sdk.ref(database, getParticipantHistoryPath(channel));
     const requestedLimit = Math.floor(Number(options.limit) || 30);
     const query = options.all === true
         ? shoutsRef
         : sdk.query(shoutsRef, sdk.limitToLast(Math.max(1, Math.min(requestedLimit, 100))));
-    const snapshot = await sdk.get(query);
+    const [snapshot, participantHistorySnapshot] = await Promise.all([
+        sdk.get(query),
+        sdk.get(participantHistoryRef).catch(() => null),
+    ]);
+    const participantHistory = participantHistorySnapshot?.val?.() || {};
     const announcements = [];
 
     snapshot.forEach((child) => {
         const data = child.val();
         if (data?.type === "name-announced" && !isInappropriateName(data.name)) {
-            announcements.push({ id: child.key, ...data });
+            announcements.push(enrichAnnouncementWithParticipantHistory({ id: child.key, ...data }, participantHistory));
         }
     });
 
