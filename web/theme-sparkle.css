@@ -445,7 +445,7 @@ html:not([data-theme="morning"]) .slider-wrap::after {
   display: block;
   object-fit: contain;
   filter: drop-shadow(0 12px 22px rgba(21, 25, 25, 0.24));
-  transform-origin: 42% 82%;
+  transform-origin: center 82%;
   animation: fingerSwipeMotion 1.55s ease-in-out infinite;
 }
 
@@ -1375,15 +1375,15 @@ html[data-theme="morning"] .story-card-overlay {
   0%,
   100% {
     opacity: 1;
-    transform: rotate(-7deg) translate3d(0, 8px, 0) scale(1);
+    transform: translate3d(0, 10px, 0) scale(1);
   }
   44% {
     opacity: 1;
-    transform: rotate(-13deg) translate3d(-10px, -18px, 0) scale(1.04);
+    transform: translate3d(0, -22px, 0) scale(1.04);
   }
   68% {
     opacity: 1;
-    transform: rotate(-9deg) translate3d(-5px, -8px, 0) scale(1.01);
+    transform: translate3d(0, -10px, 0) scale(1.01);
   }
 }
 
