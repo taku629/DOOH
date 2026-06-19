@@ -438,6 +438,25 @@ html:not([data-theme="morning"]) .slider-wrap::after {
   font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 0, "opsz" 48;
 }
 
+.swipe-gesture-icon {
+  width: clamp(6.2rem, 28vw, 8.2rem);
+  height: auto;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.62));
+}
+
+.swipe-gesture-icon .swipe-arrow {
+  stroke-width: 9;
+}
+
+.swipe-gesture-icon .swipe-finger {
+  stroke-width: 8;
+}
+
 .heart-shine {
   position: absolute;
   top: 18%;
