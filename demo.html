@@ -279,7 +279,12 @@
             color: rgba(255, 255, 255, 0.82);
         }
 
-        .ticker-name.is-returning {
+        .ticker-name.is-returning.streak-2,
+        .ticker-name.is-returning.streak-3,
+        .ticker-name.is-returning.streak-4,
+        .ticker-name.is-returning.streak-5,
+        .ticker-name.is-returning.streak-6,
+        .ticker-name.is-returning.streak-7 {
             color: var(--returning-color, #ffc56d);
             text-shadow: 0 0 10px color-mix(in srgb, var(--returning-color, #ffc56d) 58%, transparent);
         }
@@ -356,7 +361,12 @@
             box-shadow: 0 0 10px currentColor;
         }
 
-        .participation-thanks-item.is-returning {
+        .participation-thanks-item.is-returning.streak-2,
+        .participation-thanks-item.is-returning.streak-3,
+        .participation-thanks-item.is-returning.streak-4,
+        .participation-thanks-item.is-returning.streak-5,
+        .participation-thanks-item.is-returning.streak-6,
+        .participation-thanks-item.is-returning.streak-7 {
             color: var(--returning-color, #ffc56d);
             text-shadow: 0 2px 16px color-mix(in srgb, var(--returning-color, #ffc56d) 48%, #000);
         }
@@ -868,6 +878,10 @@
             return `streak-${Math.min(7, totalDays)}`;
         }
 
+        function hasStreakColor(options = {}) {
+            return getStreakClass(options) !== "";
+        }
+
         function applyStreakClass(element, options = {}) {
             element.classList.remove(...STREAK_CLASS_NAMES);
             const streakClass = getStreakClass(options);
@@ -903,7 +917,7 @@
             entries.forEach((entry) => {
                 const name = document.createElement("span");
                 name.className = "ticker-name";
-                name.classList.toggle("is-returning", entry.isReturning);
+                name.classList.toggle("is-returning", entry.isReturning && hasStreakColor(entry));
                 name.classList.toggle("is-latest", entry === priorityEntry);
                 applyStreakClass(name, entry);
                 name.textContent = `${entry.name}さん`;
@@ -996,9 +1010,10 @@
             if (!participationThanks) return;
             const raw = String(name ?? "").trim().slice(0, 24);
             const isReturning = options.isReturning === true;
+            const shouldColorReturning = isReturning && hasStreakColor(options);
             const item = document.createElement("div");
             item.className = "participation-thanks-item";
-            item.classList.toggle("is-returning", isReturning);
+            item.classList.toggle("is-returning", shouldColorReturning);
             applyStreakClass(item, options);
             applyStreakClass(stage, options);
             item.textContent = isReturning
@@ -1013,7 +1028,7 @@
                 removeParticipationThanksItem(visibleItems[0]);
             }
             stage.classList.remove("is-returning-pulse");
-            if (isReturning) {
+            if (shouldColorReturning) {
                 void stage.offsetWidth;
                 stage.classList.add("is-returning-pulse");
                 window.setTimeout(() => stage.classList.remove("is-returning-pulse"), 2700);
