@@ -439,23 +439,25 @@ html:not([data-theme="morning"]) .slider-wrap::after {
 }
 
 .swipe-gesture-icon {
-  width: clamp(6.2rem, 28vw, 8.2rem);
+  width: clamp(6.4rem, 29vw, 8.6rem);
   height: auto;
   overflow: visible;
-  fill: none;
-  stroke: currentColor;
+  fill: currentColor;
+  stroke: none;
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.62));
 }
 
-.swipe-gesture-icon .swipe-arrow {
-  opacity: 0.88;
-  stroke-width: 8;
+.swipe-gesture-icon .swipe-finger {
+  fill: currentColor;
 }
 
-.swipe-gesture-icon .swipe-finger {
-  stroke-width: 9;
+.swipe-gesture-icon .swipe-finger-gap {
+  fill: none;
+  stroke: rgba(15, 20, 18, 0.92);
+  stroke-linecap: round;
+  stroke-width: 10;
 }
 
 .swipe-gesture-wrap::after {
