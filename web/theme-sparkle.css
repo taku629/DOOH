@@ -457,6 +457,10 @@ html:not([data-theme="morning"]) .slider-wrap::after {
   stroke-width: 8;
 }
 
+.swipe-gesture-wrap::after {
+  content: none !important;
+}
+
 .heart-shine {
   position: absolute;
   top: 18%;
