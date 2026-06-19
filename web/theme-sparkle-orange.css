@@ -1283,3 +1283,18 @@ html[data-theme="morning"] .story-card-overlay {
     animation: none !important;
   }
 }
+
+html:not([data-theme="morning"]) .field-helper[data-status="checking"] {
+  color: rgba(79, 68, 70, 0.86);
+  font-weight: 700;
+}
+
+html:not([data-theme="morning"]) .field-helper[data-status="error"] {
+  color: #b3261e;
+  font-weight: 800;
+}
+
+html:not([data-theme="morning"]) .sparkle-name-field:has(input[aria-invalid="true"]) {
+  border-color: rgba(179, 38, 30, 0.75);
+  box-shadow: 0 0 0 5px rgba(179, 38, 30, 0.1);
+}

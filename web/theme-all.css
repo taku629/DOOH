@@ -508,3 +508,13 @@ html[data-experience="all"]:not([data-theme="morning"]) .story-card-body p:last-
     transform: translateY(-6px) scale(1.1);
   }
 }
+
+html[data-experience="all"]:not([data-theme="morning"]) .field-helper[data-status="checking"] {
+  color: rgba(63, 76, 71, 0.82);
+  font-weight: 700;
+}
+
+html[data-experience="all"]:not([data-theme="morning"]) .field-helper[data-status="error"] {
+  color: #b3261e;
+  font-weight: 800;
+}
