@@ -1623,7 +1623,7 @@ function startPointer(event) {
   if (isInteractiveTarget(event.target)) {
     return;
   }
-  if (!event.target.closest(".slider-wrap")) {
+  if (!event.target.closest("[data-swipe-control]")) {
     return;
   }
 
