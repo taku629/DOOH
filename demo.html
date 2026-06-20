@@ -236,8 +236,10 @@
         }
 
         body.is-scene-focus .supporter-comment-wall {
-            opacity: 0.34;
-            transform: translateY(8px);
+            opacity: 0.96;
+            transform: translateY(0) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.28);
+            box-shadow: 0 18px 52px rgba(0, 0, 0, 0.3), 0 0 24px rgba(255, 255, 255, 0.08);
         }
 
         /* 複数の寄付者名を連結して右から左へ流し続ける放送テロップ。 */
@@ -392,18 +394,19 @@
 
         .supporter-comment-wall {
             position: fixed;
-            left: clamp(26px, 3.4vw, 68px);
-            bottom: clamp(148px, 15vh, 210px);
+            top: clamp(122px, 17vh, 210px);
+            right: clamp(26px, 3.4vw, 68px);
             z-index: 6;
-            width: min(56vw, 760px);
-            padding: clamp(12px, 1.2vw, 18px) clamp(16px, 1.8vw, 28px);
+            width: min(31vw, 430px);
+            min-width: 280px;
+            padding: clamp(10px, 1vw, 15px) clamp(14px, 1.35vw, 22px);
             border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: clamp(18px, 1.8vw, 28px);
-            background: linear-gradient(135deg, rgba(15, 18, 18, 0.68), rgba(15, 18, 18, 0.38));
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            border-radius: clamp(16px, 1.45vw, 24px);
+            background: linear-gradient(135deg, rgba(15, 18, 18, 0.7), rgba(15, 18, 18, 0.46));
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             color: #fff;
-            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+            box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
             pointer-events: none;
             transition: opacity 900ms ease, transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -418,8 +421,8 @@
 
         .supporter-comment-kicker {
             display: block;
-            margin-bottom: 6px;
-            font-size: clamp(0.62rem, 0.82vw, 0.82rem);
+            margin-bottom: 5px;
+            font-size: clamp(0.58rem, 0.72vw, 0.76rem);
             font-weight: 700;
             letter-spacing: 0.16em;
             color: rgba(255, 255, 255, 0.64);
@@ -428,16 +431,16 @@
         .supporter-comment-text {
             margin: 0;
             font-family: var(--font-serif);
-            font-size: clamp(1rem, 1.6vw, 1.55rem);
+            font-size: clamp(0.94rem, 1.22vw, 1.3rem);
             font-weight: 600;
-            line-height: 1.35;
+            line-height: 1.32;
             text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
         }
 
         .supporter-comment-name {
             display: block;
-            margin-top: 8px;
-            font-size: clamp(0.68rem, 0.9vw, 0.9rem);
+            margin-top: 7px;
+            font-size: clamp(0.62rem, 0.78vw, 0.82rem);
             font-weight: 700;
             color: rgba(255, 255, 255, 0.72);
         }
@@ -445,6 +448,15 @@
         @keyframes supporter-comment-in {
             from { opacity: 0; transform: translateY(14px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 900px) {
+            .supporter-comment-wall {
+                top: clamp(110px, 14vh, 150px);
+                right: clamp(18px, 3vw, 28px);
+                width: min(42vw, 360px);
+                min-width: 240px;
+            }
         }
 
         .stage.is-returning-pulse::before {
