@@ -235,6 +235,11 @@
             transform: translateY(-4px);
         }
 
+        body.is-scene-focus .supporter-comment-wall {
+            opacity: 0.34;
+            transform: translateY(8px);
+        }
+
         /* 複数の寄付者名を連結して右から左へ流し続ける放送テロップ。 */
         .thanks {
             position: fixed;
@@ -383,6 +388,63 @@
         @keyframes participation-stack-out {
             from { opacity: 1; transform: translateY(0); }
             to { opacity: 0; transform: translateY(-16px); }
+        }
+
+        .supporter-comment-wall {
+            position: fixed;
+            left: clamp(26px, 3.4vw, 68px);
+            bottom: clamp(148px, 15vh, 210px);
+            z-index: 6;
+            width: min(56vw, 760px);
+            padding: clamp(12px, 1.2vw, 18px) clamp(16px, 1.8vw, 28px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: clamp(18px, 1.8vw, 28px);
+            background: linear-gradient(135deg, rgba(15, 18, 18, 0.68), rgba(15, 18, 18, 0.38));
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            color: #fff;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+            pointer-events: none;
+            transition: opacity 900ms ease, transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .supporter-comment-wall[hidden] {
+            display: none;
+        }
+
+        .supporter-comment-wall.is-switching {
+            animation: supporter-comment-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .supporter-comment-kicker {
+            display: block;
+            margin-bottom: 6px;
+            font-size: clamp(0.62rem, 0.82vw, 0.82rem);
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            color: rgba(255, 255, 255, 0.64);
+        }
+
+        .supporter-comment-text {
+            margin: 0;
+            font-family: var(--font-serif);
+            font-size: clamp(1rem, 1.6vw, 1.55rem);
+            font-weight: 600;
+            line-height: 1.35;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+        }
+
+        .supporter-comment-name {
+            display: block;
+            margin-top: 8px;
+            font-size: clamp(0.68rem, 0.9vw, 0.9rem);
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        @keyframes supporter-comment-in {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .stage.is-returning-pulse::before {
@@ -607,6 +669,11 @@
         <div class="live">
             <div class="participation-thanks" id="participationThanks" aria-live="polite"></div>
             <p class="thanks" id="thanks" aria-hidden="true"></p>
+            <section class="supporter-comment-wall" id="supporterCommentWall" aria-live="polite" hidden>
+                <span class="supporter-comment-kicker">クラファン支援者からのメッセージ</span>
+                <p class="supporter-comment-text" id="supporterCommentText"></p>
+                <small class="supporter-comment-name" id="supporterCommentName"></small>
+            </section>
             <span class="label">合計金額</span>
             <span class="value"><span class="unit">¥</span><span class="num" id="countNum">0</span></span>
             <div class="progress-wrap">
@@ -850,6 +917,9 @@
         }
 
         const thanks = document.getElementById("thanks");
+        const supporterCommentWall = document.getElementById("supporterCommentWall");
+        const supporterCommentText = document.getElementById("supporterCommentText");
+        const supporterCommentName = document.getElementById("supporterCommentName");
 
         // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
         const AUTO_NAME_RE = /^サポーター#/;
@@ -869,6 +939,10 @@
         let nameNotificationTimer = null;
         const participationStackQueue = [];
         let participationStackTimer = null;
+        const SUPPORTER_COMMENT_ROTATION_MS = 6500;
+        const supporterCommentRotation = [];
+        let supporterCommentIndex = 0;
+        let supporterCommentTimer = null;
 
         function getStreakClass(options = {}) {
             // 色は「連続日数」ではなく「通算参加日数」で決める。連続でなくても日数が増えれば色が進む。
@@ -1052,6 +1126,65 @@
                 participationStackQueue.splice(0, participationStackQueue.length - 120);
             }
             processParticipationStackQueue();
+        }
+
+        function normalizeSupporterCommentForDisplay(entry = {}) {
+            const comment = String(entry?.comment ?? "").trim().slice(0, 60);
+            const name = String(entry?.name ?? "").trim().slice(0, 24);
+            if (!comment) {
+                return null;
+            }
+            return {
+                comment,
+                name: isRealName(name) ? name : "",
+                createdAt: Number(entry?.createdAt) || 0,
+                id: String(entry?.id ?? entry?.codeHash ?? comment),
+            };
+        }
+
+        function renderSupporterComment() {
+            if (!supporterCommentWall || !supporterCommentText || supporterCommentRotation.length === 0) {
+                if (supporterCommentWall) supporterCommentWall.hidden = true;
+                return;
+            }
+
+            const entry = supporterCommentRotation[supporterCommentIndex % supporterCommentRotation.length];
+            supporterCommentText.textContent = entry.comment;
+            supporterCommentName.textContent = entry.name ? `${entry.name}さんより` : "";
+            supporterCommentWall.hidden = false;
+            supporterCommentWall.classList.remove("is-switching");
+            void supporterCommentWall.offsetWidth;
+            supporterCommentWall.classList.add("is-switching");
+        }
+
+        function startSupporterCommentTicker() {
+            if (supporterCommentTimer) {
+                window.clearInterval(supporterCommentTimer);
+                supporterCommentTimer = null;
+            }
+            if (supporterCommentRotation.length === 0) {
+                if (supporterCommentWall) supporterCommentWall.hidden = true;
+                return;
+            }
+            supporterCommentIndex = Math.min(supporterCommentIndex, supporterCommentRotation.length - 1);
+            renderSupporterComment();
+            if (supporterCommentRotation.length > 1) {
+                supporterCommentTimer = window.setInterval(() => {
+                    supporterCommentIndex = (supporterCommentIndex + 1) % supporterCommentRotation.length;
+                    renderSupporterComment();
+                }, SUPPORTER_COMMENT_ROTATION_MS);
+            }
+        }
+
+        function setSupporterComments(comments = []) {
+            supporterCommentRotation.length = 0;
+            const normalized = comments
+                .map(normalizeSupporterCommentForDisplay)
+                .filter(Boolean)
+                .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
+            supporterCommentRotation.push(...normalized);
+            supporterCommentIndex = 0;
+            startSupporterCommentTicker();
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -1307,12 +1440,12 @@
         updateHud();
 
         // Firebase連動スクリプト（module）から呼べるように公開
-        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, resumeDonorTicker, simulateCrowd, skipScene, completeCurrentChallenge };
+        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, resumeDonorTicker, setSupporterComments, simulateCrowd, skipScene, completeCurrentChallenge };
     </script>
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260619-history-1";
+        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260620-supporter-comment-1";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
@@ -1369,6 +1502,16 @@
             }
         }, { channel }).catch((error) => {
             console.info("[demo] name feed disabled (offline/manual):", error);
+        });
+
+        subscribeToSupporterComments((comments) => {
+            const validComments = comments.filter((event) =>
+                !isInappropriateName(String(event?.comment ?? "")) &&
+                !isInappropriateName(String(event?.name ?? ""))
+            );
+            window.__inkDemo?.setSupporterComments(validComments);
+        }, { channel }).catch((error) => {
+            console.info("[demo] supporter comment feed disabled (offline/manual):", error);
         });
 
         if (!isDemoMode) {

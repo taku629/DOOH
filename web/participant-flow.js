@@ -1,8 +1,9 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, publishNameAnnouncement, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260619-history-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260620-supporter-comment-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
 import { moderateDisplayName } from "../src/name-moderation.js?v=20260619-ai-1";
+import { verifySupporterPasscode } from "../src/supporter-passcodes.js?v=20260620-supporter-comment-1";
 import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-4";
 import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-2";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
@@ -32,9 +33,17 @@ const supportChoiceButtons = [...document.querySelectorAll("[data-support-choice
 const supportChoiceDetail = document.getElementById("supportChoiceDetail");
 const createCardButton = document.getElementById("createCard");
 const skipNameButton = document.getElementById("skipName");
+const supporterPasscode = document.getElementById("supporterPasscode");
+const supporterComment = document.getElementById("supporterComment");
+const supporterCommentHelp = document.getElementById("supporterCommentHelp");
 const defaultNicknameHelpText = nicknameHelp?.textContent ?? "";
+const defaultSupporterCommentHelpText = supporterCommentHelp?.textContent ?? "";
 const NAME_CHECKING_MESSAGE = "\u8868\u793a\u540d\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const NAME_BLOCKED_MESSAGE = "\u3053\u306e\u8868\u793a\u540d\u306f\u516c\u958b\u3067\u304d\u307e\u305b\u3093\u3002\u5225\u306e\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u306b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
+const SUPPORTER_CHECKING_MESSAGE = "\u30af\u30e9\u30d5\u30a1\u30f3\u652f\u63f4\u8005\u30b3\u30e1\u30f3\u30c8\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
+const SUPPORTER_PASSCODE_ERROR = "4\u6841\u306e\u30d1\u30b9\u30b3\u30fc\u30c9\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
+const SUPPORTER_COMMENT_ERROR = "\u3053\u306e\u30b3\u30e1\u30f3\u30c8\u306f\u8868\u793a\u3067\u304d\u307e\u305b\u3093\u3002\u8868\u73fe\u3092\u5909\u3048\u3066\u304f\u3060\u3055\u3044\u3002";
+const SUPPORTER_COMMENT_SAVED = "\u30b3\u30e1\u30f3\u30c8\u3092DOOH\u306b\u5c4a\u3051\u307e\u3057\u305f\u3002";
 
 // 体験アウトロ（サンクス＋アンケート予告）。men / women のみ存在。
 const outroOverlay = document.getElementById("outroOverlay");
@@ -303,6 +312,86 @@ function setNameChecking(isChecking) {
   if (skipNameButton) {
     skipNameButton.disabled = isChecking;
   }
+}
+
+function setSupporterCommentHelp(message, status = "") {
+  if (!supporterCommentHelp) {
+    return;
+  }
+  supporterCommentHelp.textContent = message || defaultSupporterCommentHelpText;
+  supporterCommentHelp.dataset.status = status;
+  supporterCommentHelp.setAttribute("aria-live", status ? "polite" : "off");
+}
+
+function restoreSupporterCommentHelp() {
+  setSupporterCommentHelp(defaultSupporterCommentHelpText, "");
+}
+
+function getSupporterCommentInput() {
+  return {
+    code: String(supporterPasscode?.value ?? "").replace(/\D/g, "").slice(0, 4),
+    comment: String(supporterComment?.value ?? "").trim().slice(0, 40),
+  };
+}
+
+async function publishOptionalSupporterComment(displayName = "") {
+  if (!supporterPasscode || !supporterComment) {
+    return true;
+  }
+
+  const input = getSupporterCommentInput();
+  const hasAnyInput = Boolean(input.code || input.comment);
+  if (!hasAnyInput) {
+    restoreSupporterCommentHelp();
+    return true;
+  }
+
+  if (!/^\d{4}$/.test(input.code)) {
+    setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
+    supporterPasscode.focus();
+    return false;
+  }
+  if (!input.comment || isInappropriateName(input.comment)) {
+    setSupporterCommentHelp(SUPPORTER_COMMENT_ERROR, "error");
+    supporterComment.focus();
+    return false;
+  }
+
+  setSupporterCommentHelp(SUPPORTER_CHECKING_MESSAGE, "checking");
+  const verification = await verifySupporterPasscode(input.code);
+  if (!verification.ok) {
+    setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
+    supporterPasscode.focus();
+    return false;
+  }
+
+  if (isDebugReplay) {
+    setSupporterCommentHelp(SUPPORTER_COMMENT_SAVED, "success");
+    return true;
+  }
+
+  const payload = {
+    channel: PARTICIPATION_CHANNEL,
+    codeHash: verification.codeHash,
+    comment: input.comment,
+    name: displayName,
+    visitorId: completedParticipationVisit?.visitorId ?? null,
+    source: isAllExperience
+      ? "participant-flow-all"
+      : isMenExperience
+        ? "participant-flow-men"
+        : isSparkleExperience
+          ? "participant-flow-women"
+          : "participant-flow",
+  };
+  const result = await publishSupporterComment(payload);
+  if (result?.blocked || result?.failed) {
+    setSupporterCommentHelp(SUPPORTER_COMMENT_ERROR, "error");
+    return false;
+  }
+
+  setSupporterCommentHelp(SUPPORTER_COMMENT_SAVED, "success");
+  return true;
 }
 
 async function validateTypedDisplayName() {
@@ -926,7 +1015,12 @@ async function announceDonorName() {
 
   const typed = validation.name;
   if (!typed) {
-    return true;
+    return publishOptionalSupporterComment("");
+  }
+
+  const didPublishSupporterComment = await publishOptionalSupporterComment(typed);
+  if (!didPublishSupporterComment) {
+    return false;
   }
 
   // In debug/local replay, keep the saved name locally and avoid publishing to the live DOOH.
@@ -1837,9 +1931,29 @@ const syncPreviewName = () => {
   nickname.removeAttribute("aria-invalid");
   restoreNicknameHelp();
 };
+
+function syncSupporterCommentInput() {
+  if (!supporterPasscode || !supporterComment) {
+    return;
+  }
+  const input = getSupporterCommentInput();
+  if (supporterPasscode.value !== input.code) {
+    supporterPasscode.value = input.code;
+  }
+  if (!input.code && !input.comment) {
+    restoreSupporterCommentHelp();
+  } else if (input.comment && isInappropriateName(input.comment)) {
+    setSupporterCommentHelp(SUPPORTER_COMMENT_ERROR, "error");
+  } else {
+    restoreSupporterCommentHelp();
+  }
+}
+
 nickname.addEventListener("input", syncPreviewName);
 nickname.addEventListener("compositionupdate", syncPreviewName);
 nickname.addEventListener("compositionend", syncPreviewName);
+supporterPasscode?.addEventListener("input", syncSupporterCommentInput);
+supporterComment?.addEventListener("input", syncSupporterCommentInput);
 
 async function resolveSavedNameChoice() {
   const localSavedName = getSavedDisplayName({
