@@ -1,16 +1,16 @@
 {
   "enabled": true,
   "codes": {
-    "d9a5223b761c375d1263e6e57ebec42d3e0fe3f6f283488d2eb204fb6ff17ee5": {
+    "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4": {
       "label": "supporter-01"
     },
-    "a1fb4e703a9ef1fa4936801721ff285a97ac85330856674412e054892afe6972": {
+    "f8638b979b2f4f793ddb6dbd197e0ee25a7a6ea32b0ae22f5e3c5d119d839e75": {
       "label": "supporter-02"
     },
-    "9cd129f891c52ec5e398bb70d3289954935a42d882e9739eb01e925d51980c4a": {
+    "8cce10345c5e1de90d277b9869465f5972b828afbbbfd7ef08b1d835eedee993": {
       "label": "supporter-03"
     },
-    "a597ab82b14cc40d3ae69402302449ab6b2824fbe250007488813aa6609f04a4": {
+    "ceaa28bba4caba687dc31b1bbe79eca3c70c33f871f1ce8f528cf9ab5cfd76dd": {
       "label": "supporter-04"
     }
   }

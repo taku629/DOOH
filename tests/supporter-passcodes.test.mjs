@@ -6,28 +6,28 @@ import { verifySupporterPasscode } from "../src/supporter-passcodes.js";
 const validConfig = {
   enabled: true,
   codes: {
-    d9a5223b761c375d1263e6e57ebec42d3e0fe3f6f283488d2eb204fb6ff17ee5: {
+    "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4": {
       label: "supporter-01",
     },
   },
 };
 
 test("accepts a configured 4-digit supporter passcode", async () => {
-  const result = await verifySupporterPasscode("1029", { config: validConfig });
+  const result = await verifySupporterPasscode("1234", { config: validConfig });
 
   assert.equal(result.ok, true);
   assert.equal(result.label, "supporter-01");
-  assert.equal(result.codeHash, "d9a5223b761c375d1263e6e57ebec42d3e0fe3f6f283488d2eb204fb6ff17ee5");
+  assert.equal(result.codeHash, "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4");
 });
 
 test("normalizes non-digit characters before verification", async () => {
-  const result = await verifySupporterPasscode("10-29", { config: validConfig });
+  const result = await verifySupporterPasscode("12-34", { config: validConfig });
 
   assert.equal(result.ok, true);
 });
 
 test("rejects disabled or unknown supporter passcodes", async () => {
-  const disabled = await verifySupporterPasscode("1029", {
+  const disabled = await verifySupporterPasscode("1234", {
     config: { enabled: false, codes: validConfig.codes },
   });
   const unknown = await verifySupporterPasscode("9999", { config: validConfig });
