@@ -1468,3 +1468,91 @@ html:not([data-theme="morning"]) .sparkle-name-field:has(input[aria-invalid="tru
   border-color: rgba(179, 38, 30, 0.75);
   box-shadow: 0 0 0 5px rgba(179, 38, 30, 0.1);
 }
+
+html:not([data-theme="morning"]) .supporter-comment-entry {
+  margin: 18px 0 18px;
+  padding: clamp(16px, 4vw, 22px);
+  border: 1px solid rgba(21, 25, 25, 0.12);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.44);
+}
+
+html:not([data-theme="morning"]) .supporter-comment-kicker {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(79, 68, 70, 0.64);
+}
+
+html:not([data-theme="morning"]) .supporter-comment-entry h3 {
+  margin: 0 0 8px;
+  font-size: clamp(1rem, 4.2vw, 1.25rem);
+  line-height: 1.35;
+}
+
+html:not([data-theme="morning"]) .supporter-comment-lead {
+  margin: 0 0 14px;
+  color: rgba(79, 68, 70, 0.76);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+html:not([data-theme="morning"]) .supporter-comment-fields {
+  display: grid;
+  gap: 12px;
+}
+
+html:not([data-theme="morning"]) .supporter-passcode-field,
+html:not([data-theme="morning"]) .supporter-comment-field {
+  display: grid;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: rgba(79, 68, 70, 0.7);
+}
+
+html:not([data-theme="morning"]) .supporter-passcode-field input,
+html:not([data-theme="morning"]) .supporter-comment-field textarea {
+  width: 100%;
+  border: 1px solid rgba(21, 25, 25, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink, #151919);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.52);
+}
+
+html:not([data-theme="morning"]) .supporter-passcode-field input {
+  max-width: 128px;
+  padding: 12px 14px;
+  letter-spacing: 0.16em;
+  text-align: center;
+}
+
+html:not([data-theme="morning"]) .supporter-comment-field textarea {
+  min-height: 72px;
+  padding: 12px 14px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+html:not([data-theme="morning"]) .supporter-comment-help[data-status="checking"] {
+  color: rgba(79, 68, 70, 0.86);
+  font-weight: 800;
+}
+
+html:not([data-theme="morning"]) .supporter-comment-help[data-status="success"] {
+  color: #217a43;
+  font-weight: 800;
+}
+
+html:not([data-theme="morning"]) .supporter-comment-help[data-status="error"] {
+  color: #b3261e;
+  font-weight: 800;
+}

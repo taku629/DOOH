@@ -114,6 +114,23 @@
             <input id="nickname" type="text" maxlength="20" placeholder="例：さくら" autocomplete="nickname" aria-describedby="nicknameHelp" />
           </div>
           <p class="field-helper" id="nicknameHelp">入力した名前は参加証とDOOHに数秒間表示されます。本名ではなくニックネームを入力してください。未入力でも進めます。</p>
+
+          <section class="supporter-comment-entry" id="supporterCommentEntry" aria-labelledby="supporterCommentTitle">
+            <p class="supporter-comment-kicker">クラファン支援者の方へ</p>
+            <h3 id="supporterCommentTitle">DOOHに一言コメントを表示</h3>
+            <p class="supporter-comment-lead">4桁のパスコードを入力すると、新宿への応援コメントを画面に残せます。</p>
+            <div class="supporter-comment-fields">
+              <label class="supporter-passcode-field" for="supporterPasscode">
+                <span>パスコード</span>
+                <input id="supporterPasscode" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" autocomplete="one-time-code" aria-describedby="supporterCommentHelp" />
+              </label>
+              <label class="supporter-comment-field" for="supporterComment">
+                <span>一言コメント</span>
+                <textarea id="supporterComment" maxlength="40" rows="2" placeholder="例：新宿が、誰かの居場所であり続けますように" aria-describedby="supporterCommentHelp"></textarea>
+              </label>
+            </div>
+            <p class="field-helper supporter-comment-help" id="supporterCommentHelp">入力は任意です。URLや個人情報は表示できません。</p>
+          </section>
           <article class="card" id="certificatePreview" aria-live="polite">
             <p>新宿ときめき参加証</p>
             <h3 id="previewName">匿名サポーター</h3>

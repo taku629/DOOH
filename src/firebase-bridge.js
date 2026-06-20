@@ -8,6 +8,7 @@ const PARTICIPATION_MORNING_PATH = "participationMorning";
 const PARTICIPATION_RESEARCH_PATH = "participationResearch";
 const DISPLAY_CONFIG_PATH = "displayConfig";
 const NAME_SHOUTS_PATH = "nameShouts";
+const SUPPORTER_COMMENTS_PATH = "supporterComments";
 const WRITE_RETRY_DELAYS_MS = [0, 400, 1000];
 
 let configPromise;
@@ -57,6 +58,10 @@ function getDisplayConfigPath(channel) {
 
 function getNameShoutsPath(channel) {
     return `${NAME_SHOUTS_PATH}/${normalizeChannel(channel)}`;
+}
+
+function getSupporterCommentsPath(channel) {
+    return `${SUPPORTER_COMMENTS_PATH}/${normalizeChannel(channel)}`;
 }
 
 async function loadConfig() {
@@ -499,6 +504,128 @@ export async function getLatestNameAnnouncementForVisitor(visitorId, options = {
         String(b.id).localeCompare(String(a.id))
     );
     return announcements[0] ?? null;
+}
+
+function sanitizeSupporterComment(payload = {}) {
+    const codeHash = typeof payload.codeHash === "string" ? payload.codeHash.trim().toLowerCase() : "";
+    const comment = typeof payload.comment === "string" ? payload.comment.trim().slice(0, 60) : "";
+    const candidateName = typeof payload.name === "string" ? payload.name.trim().slice(0, 24) : "";
+    const name = candidateName && !isInappropriateName(candidateName) ? candidateName : null;
+
+    if (!/^[a-f0-9]{64}$/.test(codeHash) || !comment || isInappropriateName(comment)) {
+        return null;
+    }
+
+    return { codeHash, comment, name };
+}
+
+function normalizeSupporterCommentRecord(id, data) {
+    if (!data || data.type !== "supporter-comment") {
+        return null;
+    }
+    const comment = typeof data.comment === "string" ? data.comment.trim().slice(0, 60) : "";
+    const name = typeof data.name === "string" ? data.name.trim().slice(0, 24) : "";
+    if (!comment || isInappropriateName(comment) || (name && isInappropriateName(name))) {
+        return null;
+    }
+    return {
+        id,
+        ...data,
+        comment,
+        name: name || null,
+        createdAt: Number(data.createdAt) || 0,
+    };
+}
+
+export async function publishSupporterComment(payload = {}) {
+    const sanitized = sanitizeSupporterComment(payload);
+    if (!sanitized) {
+        return { blocked: true };
+    }
+
+    const database = await ensureDatabase();
+    if (!database) {
+        return { fallback: true };
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return { fallback: true };
+    }
+
+    const channel = normalizeChannel(payload.channel);
+    const ref = sdk.ref(database, `${getSupporterCommentsPath(channel)}/${sanitized.codeHash}`);
+    const record = {
+        type: "supporter-comment",
+        createdAt: sdk.serverTimestamp(),
+        codeHash: sanitized.codeHash,
+        comment: sanitized.comment,
+        name: sanitized.name,
+        source: payload.source ?? channel,
+        visitorId: payload.visitorId ?? null,
+    };
+    let lastError = null;
+
+    for (const delayMs of WRITE_RETRY_DELAYS_MS) {
+        if (delayMs > 0) {
+            await wait(delayMs);
+        }
+        try {
+            await sdk.set(ref, record);
+            return { key: sanitized.codeHash };
+        } catch (error) {
+            lastError = error;
+            console.warn("[firebase] supporter comment publish attempt failed:", error);
+        }
+    }
+
+    return { failed: true, retryable: true, error: lastError };
+}
+
+export async function getSupporterComments(options = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return [];
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return [];
+    }
+
+    const channel = normalizeChannel(options.channel);
+    const snapshot = await sdk.get(sdk.ref(database, getSupporterCommentsPath(channel)));
+    const comments = [];
+    snapshot.forEach((child) => {
+        const record = normalizeSupporterCommentRecord(child.key, child.val());
+        if (record) {
+            comments.push(record);
+        }
+    });
+    comments.sort((a, b) => b.createdAt - a.createdAt || String(b.id).localeCompare(String(a.id)));
+    return comments;
+}
+
+export async function subscribeToSupporterComments(callback, options = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return () => {};
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return () => {};
+    }
+
+    const channel = normalizeChannel(options.channel);
+    return sdk.onValue(sdk.ref(database, getSupporterCommentsPath(channel)), (snapshot) => {
+        const comments = [];
+        snapshot.forEach((child) => {
+            const record = normalizeSupporterCommentRecord(child.key, child.val());
+            if (record) {
+                comments.push(record);
+            }
+        });
+        comments.sort((a, b) => b.createdAt - a.createdAt || String(b.id).localeCompare(String(a.id)));
+        callback(comments);
+    });
 }
 
 export async function subscribeToDisplayConfig(callback, options = {}) {
