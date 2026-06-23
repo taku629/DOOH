@@ -381,8 +381,9 @@ async function chooseAvailableDemoSupporterCode(button) {
       return;
     }
 
-    const selected = verifiedCodes.find((candidate) => !usedHashes.has(candidate.codeHash)) ??
-      verifiedCodes[Math.floor(Math.random() * verifiedCodes.length)];
+    const availableCodes = verifiedCodes.filter((candidate) => !usedHashes.has(candidate.codeHash));
+    const selectedPool = availableCodes.length ? availableCodes : verifiedCodes;
+    const selected = selectedPool[Math.floor(Math.random() * selectedPool.length)];
     const wasFallback = usedHashes.has(selected.codeHash);
     supporterPasscode.value = selected.code;
     supporterPasscode.dispatchEvent(new Event("input", { bubbles: true }));
