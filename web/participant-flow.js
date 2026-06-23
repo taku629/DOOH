@@ -1,9 +1,9 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260620-supporter-comment-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260620-supporter-comment-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
 import { moderateDisplayName } from "../src/name-moderation.js?v=20260619-ai-1";
-import { verifySupporterPasscode } from "../src/supporter-passcodes.js?v=20260620-supporter-comment-1";
+import { getDemoSupporterPasscodes, verifySupporterPasscode } from "../src/supporter-passcodes.js?v=20260623-demo-code-1";
 import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-4";
 import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-2";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
@@ -44,6 +44,9 @@ const SUPPORTER_CHECKING_MESSAGE = "\u30af\u30e9\u30d5\u30a1\u30f3\u652f\u63f4\u
 const SUPPORTER_PASSCODE_ERROR = "4\u6841\u306e\u30d1\u30b9\u30b3\u30fc\u30c9\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
 const SUPPORTER_COMMENT_ERROR = "\u3053\u306e\u30b3\u30e1\u30f3\u30c8\u306f\u8868\u793a\u3067\u304d\u307e\u305b\u3093\u3002\u8868\u73fe\u3092\u5909\u3048\u3066\u304f\u3060\u3055\u3044\u3002";
 const SUPPORTER_COMMENT_SAVED = "\u30b3\u30e1\u30f3\u30c8\u3092DOOH\u306b\u5c4a\u3051\u307e\u3057\u305f\u3002";
+const SUPPORTER_DEMO_CODE_CHECKING = "\u672a\u4f7f\u7528\u306e\u30c7\u30e2\u7528\u30b3\u30fc\u30c9\u3092\u63a2\u3057\u3066\u3044\u307e\u3059...";
+const SUPPORTER_DEMO_CODE_READY = "\u30c7\u30e2\u7528\u30b3\u30fc\u30c9\u3092\u81ea\u52d5\u5165\u529b\u3057\u307e\u3057\u305f\u3002\u4e00\u8a00\u30b3\u30e1\u30f3\u30c8\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
+const SUPPORTER_DEMO_CODE_FULL = "\u30c7\u30e2\u7528\u30b3\u30fc\u30c9\u304c\u3059\u3079\u3066\u4f7f\u7528\u6e08\u307f\u306e\u305f\u3081\u3001\u5225\u306e\u30b3\u30fc\u30c9\u3092\u81ea\u52d5\u5165\u529b\u3057\u307e\u3057\u305f\u3002";
 
 // 体験アウトロ（サンクス＋アンケート予告）。men / women のみ存在。
 const outroOverlay = document.getElementById("outroOverlay");
@@ -325,6 +328,95 @@ function setSupporterCommentHelp(message, status = "") {
 
 function restoreSupporterCommentHelp() {
   setSupporterCommentHelp(defaultSupporterCommentHelpText, "");
+}
+
+function setSupporterAutoCodeButtonState(button, isChecking) {
+  if (!button) {
+    return;
+  }
+  button.disabled = isChecking;
+  button.setAttribute("aria-busy", String(isChecking));
+  button.textContent = isChecking ? "コード確認中..." : "デモ用コードを自動入力";
+}
+
+async function chooseAvailableDemoSupporterCode(button) {
+  if (!supporterPasscode) {
+    return;
+  }
+
+  setSupporterAutoCodeButtonState(button, true);
+  setSupporterCommentHelp(SUPPORTER_DEMO_CODE_CHECKING, "checking");
+
+  try {
+    const demoCodes = await getDemoSupporterPasscodes();
+    if (!demoCodes.length) {
+      setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
+      return;
+    }
+
+    let usedHashes = new Set();
+    if (!isDebugReplay) {
+      try {
+        const comments = await getSupporterComments({ channel: PARTICIPATION_CHANNEL });
+        usedHashes = new Set(
+          comments
+            .map((comment) => String(comment.codeHash ?? "").toLowerCase())
+            .filter((codeHash) => /^[a-f0-9]{64}$/.test(codeHash))
+        );
+      } catch (error) {
+        console.info("[supporter-passcode] could not check used demo codes:", error);
+      }
+    }
+
+    const verifiedCodes = [];
+    for (const code of demoCodes) {
+      const verification = await verifySupporterPasscode(code);
+      if (verification.ok) {
+        verifiedCodes.push({ code, codeHash: verification.codeHash });
+      }
+    }
+
+    if (!verifiedCodes.length) {
+      setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
+      return;
+    }
+
+    const availableCodes = verifiedCodes.filter((candidate) => !usedHashes.has(candidate.codeHash));
+    const selectedPool = availableCodes.length ? availableCodes : verifiedCodes;
+    const selected = selectedPool[Math.floor(Math.random() * selectedPool.length)];
+    const wasFallback = usedHashes.has(selected.codeHash);
+    supporterPasscode.value = selected.code;
+    supporterPasscode.dispatchEvent(new Event("input", { bubbles: true }));
+    setSupporterCommentHelp(wasFallback ? SUPPORTER_DEMO_CODE_FULL : SUPPORTER_DEMO_CODE_READY, wasFallback ? "checking" : "success");
+    if (supporterComment && !supporterComment.value.trim()) {
+      supporterComment.focus();
+    }
+  } catch (error) {
+    console.info("[supporter-passcode] demo code allocation failed:", error);
+    setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
+  } finally {
+    setSupporterAutoCodeButtonState(button, false);
+  }
+}
+
+function setupSupporterDemoCodeButton() {
+  if (!supporterPasscode) {
+    return;
+  }
+  const field = supporterPasscode.closest(".supporter-passcode-field");
+  if (!field || field.querySelector("[data-supporter-demo-code]")) {
+    return;
+  }
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "supporter-demo-code-button";
+  button.dataset.supporterDemoCode = "1";
+  button.textContent = "デモ用コードを自動入力";
+  button.addEventListener("click", () => {
+    chooseAvailableDemoSupporterCode(button);
+  });
+  field.appendChild(button);
 }
 
 function getSupporterCommentInput() {
@@ -1952,6 +2044,7 @@ function syncSupporterCommentInput() {
 nickname.addEventListener("input", syncPreviewName);
 nickname.addEventListener("compositionupdate", syncPreviewName);
 nickname.addEventListener("compositionend", syncPreviewName);
+setupSupporterDemoCodeButton();
 supporterPasscode?.addEventListener("input", syncSupporterCommentInput);
 supporterComment?.addEventListener("input", syncSupporterCommentInput);
 

@@ -1,5 +1,47 @@
 {
   "enabled": true,
+  "demoCodes": [
+    "1234",
+    "5678",
+    "9012",
+    "3456",
+    "1122",
+    "2233",
+    "3344",
+    "4455",
+    "5566",
+    "6677",
+    "7788",
+    "8899",
+    "1212",
+    "2323",
+    "3434",
+    "4545",
+    "1010",
+    "2020",
+    "3030",
+    "4040",
+    "5050",
+    "6060",
+    "7070",
+    "8080",
+    "9090",
+    "0101",
+    "0202",
+    "0303",
+    "0404",
+    "0505",
+    "0606",
+    "0707",
+    "1357",
+    "2468",
+    "1470",
+    "2580",
+    "3690",
+    "7890",
+    "0987",
+    "4321"
+  ],
   "codes": {
     "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4": {
       "label": "supporter-01"
@@ -48,6 +90,78 @@
     },
     "a994696540befd55c96017a162c7ae2685f2010a7fd3224c0ada25241913933b": {
       "label": "supporter-16"
+    },
+    "7a5df5ffa0dec2228d90b8d0a0f1b0767b748b0a41314c123075b8289e4e053f": {
+      "label": "supporter-17"
+    },
+    "73a2af8864fc500fa49048bf3003776c19938f360e56bd03663866fb3087884a": {
+      "label": "supporter-18"
+    },
+    "b74b7e3fcb623d805dacf98db27530f845760c47e3b0faa702b84e9ff3902c37": {
+      "label": "supporter-19"
+    },
+    "b411746bdf09bde7f1fe70ddc8fa57241a0cb79d14d6e9c27e598635ca7dae4d": {
+      "label": "supporter-20"
+    },
+    "3f95b1b8a32c2c0251dfdbc3c8a30aab6d6e680cf0ef03e8af84a65dff0c4a85": {
+      "label": "supporter-21"
+    },
+    "060e33205a731400c2eb92bc12cf921a4e44cf1851d216f144337dd6ec5350a7": {
+      "label": "supporter-22"
+    },
+    "7a3ed03b12b784c2581ae5308e31f2a80248b481d8b0d369ee2193dcc3c1c4c5": {
+      "label": "supporter-23"
+    },
+    "6c237681e70921603a306be9a1a5d9833fce5c1e268f52b1650970eaad0dce21": {
+      "label": "supporter-24"
+    },
+    "c4876de490dcf38b74d6c0d4f120cf01126c3d6a3a49b93ec81caae38ea1497e": {
+      "label": "supporter-25"
+    },
+    "07334386287751ba02a4588c1a0875dbd074a61bd9e6ab7c48d244eacd0c99e0": {
+      "label": "supporter-26"
+    },
+    "3472adbbcb9677d1b45365d37d96d1c33217d745567577fd9bd5c2766a258320": {
+      "label": "supporter-27"
+    },
+    "1a1024939ae1a1395ad5675ee62113f77267b55f46a805b15ccc0bbe7773aacb": {
+      "label": "supporter-28"
+    },
+    "12d9634a066ef75f5c94fc8b7cc77250f4fbf254b79fe7252e36dc22d0b6d40c": {
+      "label": "supporter-29"
+    },
+    "131e27b7715c43825f14696b907812d34fb86a529dd8c98fedbf87016f5d9149": {
+      "label": "supporter-30"
+    },
+    "f39c31383ad312d96660bbce50a04e40a0a933308ef330290ecf93711344976d": {
+      "label": "supporter-31"
+    },
+    "6c25c8f454fea8dd5cd0b201b4f739993aebfc454de7b410ee9457c553699a85": {
+      "label": "supporter-32"
+    },
+    "f3e055913a0b1eb0f07317896f9a1bc466b9a50db85a7f882f3ffde9ffb23aca": {
+      "label": "supporter-33"
+    },
+    "a1fb4e703a9ef1fa4936801721ff285a97ac85330856674412e054892afe6972": {
+      "label": "supporter-34"
+    },
+    "57fb0303e4a6845cd7a1484ee9773c218975e9c9a763114e668259498cad2f30": {
+      "label": "supporter-35"
+    },
+    "ed946f65d2c785d90e827c5ffd879ce3b49c68d4c88013074176a7e73bc58bcf": {
+      "label": "supporter-36"
+    },
+    "7768e375a15e957a64adf43f42e9c54666a035ab58596e198a4a497bb17d65e8": {
+      "label": "supporter-37"
+    },
+    "6a95bbab63d587b596398c4bd7e91a132f24032d2007d107e5ea71967724b092": {
+      "label": "supporter-38"
+    },
+    "1ea2f89d934cb4a2af0b486736609cf9cb4bdafdc6e946e79aecb02b9d9dceb4": {
+      "label": "supporter-39"
+    },
+    "fe2592b42a727e977f055947385b709cc82b16b9a87f88c6abf3900d65d0cdc3": {
+      "label": "supporter-40"
     }
   }
 }
