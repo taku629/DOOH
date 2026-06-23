@@ -23,7 +23,7 @@
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700&family=Hanken+Grotesk:wght@400;600;700&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="web/local-material-symbols.css?v=20260615-1" />
   <link rel="stylesheet" href="web/theme.css" />
-  <link rel="stylesheet" href="web/participant-flow.css?v=20260614-4" />
+  <link rel="stylesheet" href="web/participant-flow.css?v=20260624-support-choice-1" />
   <link rel="stylesheet" href="web/theme-sparkle.css?v=20260623-demo-code-1" />
   <link rel="stylesheet" href="web/theme-morning.css" />
   <link rel="stylesheet" href="web/outro.css?v=20260608-2" />
@@ -113,14 +113,14 @@
           <section class="support-choice" aria-labelledby="supportChoiceTitle">
             <p class="support-choice-kicker">何に使われているの？</p>
             <h3 id="supportChoiceTitle">応援したい取り組みを見る</h3>
-            <p class="support-choice-lead">気になる取り組みを選ぶと、活動内容を確認できます。選択はいつでも変更できます。</p>
+            <p class="support-choice-lead">タップで使い道を確認できます。</p>
             <div class="support-choice-options" role="group" aria-label="応援したい取り組み">
-              <button type="button" class="support-choice-option" data-support-choice="patrol" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">shield</span><span>夜間の見守り</span><small>詳しく見る</small></button>
-              <button type="button" class="support-choice-option" data-support-choice="graffiti" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">cleaning_services</span><span>街の環境整備</span><small>詳しく見る</small></button>
-              <button type="button" class="support-choice-option" data-support-choice="outreach" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span><span>若者への支援</span><small>詳しく見る</small></button>
+              <button type="button" class="support-choice-option" data-support-choice="patrol" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">shield</span><span>夜間の見守り</span><small>見る</small></button>
+              <button type="button" class="support-choice-option" data-support-choice="graffiti" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">cleaning_services</span><span>街の環境整備</span><small>見る</small></button>
+              <button type="button" class="support-choice-option" data-support-choice="outreach" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span><span>若者への支援</span><small>見る</small></button>
             </div>
             <div class="support-choice-detail" id="supportChoiceDetail" hidden aria-live="polite"></div>
-            <p class="support-choice-note">このデモでは寄付は実行されません。実運用では、寄付先・使途・運営者を確認してから選択できる設計を想定しています。</p>
+            <p class="support-choice-note">※このデモでは寄付は実行されません。</p>
           </section>
           <label class="sparkle-field-label" for="nickname">表示名（任意）</label>
           <div class="sparkle-name-field">
@@ -313,6 +313,6 @@
     </div>
   </div>
 
-  <script type="module" src="web/participant-flow.js?v=20260623-demo-code-1"></script>
+  <script type="module" src="web/participant-flow.js?v=20260624-support-choice-1"></script>
 </body>
 </html>
