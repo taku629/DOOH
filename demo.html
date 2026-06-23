@@ -795,10 +795,13 @@
         let liveVisualTimer = null;
         let queuedRevealCount = 0;
         let queuedReplayTimer = null;
+        let queuedReplayHoldTimer = null;
         let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = 7_000 * SCENE_TIME_SCALE;
         const LIVE_REVEAL_INTERVAL_MS = 260;
+        const QUEUED_REPLAY_HOLD_MS = 5_000 * SCENE_TIME_SCALE;
+        const QUEUED_REPLAY_INTERVAL_MS = 700 * SCENE_TIME_SCALE;
 
         // インクが飛び散る「ポップ」アニメーション
         function splat(el) {
@@ -826,7 +829,9 @@
             progressBar.style.width = `${(revealed / TOTAL) * 100}%`;
             progressText.classList.toggle("is-complete", done);
             stage.classList.toggle("is-complete", done);
-            progressText.textContent = warmLayer.classList.contains("is-revealed")
+            progressText.textContent = queuedReplayHoldTimer && queuedRevealCount > 0 && !celebrationActive
+                ? "次の参加をまもなく反映します"
+                : warmLayer.classList.contains("is-revealed")
                 ? "みんなの関心が、新宿への応援として重なりました"
                 : done
                 ? "新宿で続く取り組みが見えてきました"
@@ -869,11 +874,13 @@
 
         function clearQueuedReplayTimer() {
             if (queuedReplayTimer) window.clearInterval(queuedReplayTimer);
+            if (queuedReplayHoldTimer) window.clearTimeout(queuedReplayHoldTimer);
             queuedReplayTimer = null;
+            queuedReplayHoldTimer = null;
         }
 
         function replayQueuedReveals() {
-            if (queuedRevealCount <= 0 || queuedReplayTimer) {
+            if (queuedRevealCount <= 0 || queuedReplayTimer || queuedReplayHoldTimer) {
                 return;
             }
 
@@ -888,8 +895,26 @@
                 }
 
                 queuedRevealCount -= 1;
-                triggerSplat();
-            }, LIVE_REVEAL_INTERVAL_MS);
+                triggerSplat({ force: true });
+            }, QUEUED_REPLAY_INTERVAL_MS);
+        }
+
+        function holdThenReplayQueuedReveals() {
+            if (queuedRevealCount <= 0 || queuedReplayHoldTimer || queuedReplayTimer) {
+                return;
+            }
+
+            if (progressText) {
+                progressText.textContent = "次の参加をまもなく反映します";
+            }
+            if (transitionCountdown) {
+                transitionCountdown.textContent = "荒廃した新宿に戻してから反映中";
+            }
+            queuedReplayHoldTimer = window.setTimeout(() => {
+                queuedReplayHoldTimer = null;
+                if (transitionCountdown) transitionCountdown.textContent = "";
+                replayQueuedReveals();
+            }, QUEUED_REPLAY_HOLD_MS);
         }
 
         function finishCelebration() {
@@ -903,11 +928,13 @@
             // 達成演出中に参加が重なっても、次の回は荒廃状態から始める。
             rebuildReveal(0);
             updateHud();
-            replayQueuedReveals();
+            holdThenReplayQueuedReveals();
         }
 
         function startCelebration() {
             clearCelebrationTimers();
+            // キュー再生中に達成した場合も、次の回は必ず荒廃状態を数秒見せてから再開する。
+            clearQueuedReplayTimer();
             celebrationActive = true;
             setSceneFocus(true);
             celebrationStartedAt = Date.now();
@@ -1212,10 +1239,14 @@
         }
 
         // 飛沫を1つ飛ばす（人数カウントとは独立）
-        function triggerSplat() {
-            if (celebrationActive) {
+        function triggerSplat(options = {}) {
+            if (!options.force && celebrationActive) {
                 queuedRevealCount += 1;
                 splat(finalLayer);
+                return;
+            }
+            if (!options.force && queuedReplayHoldTimer) {
+                queuedRevealCount += 1;
                 return;
             }
 
