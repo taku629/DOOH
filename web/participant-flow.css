@@ -1381,6 +1381,88 @@ input[type="text"]:focus {
   line-height: 1.45;
 }
 
+.support-trend {
+  display: grid;
+  gap: 10px;
+  margin: -8px 0 22px;
+  padding: 14px;
+  border: 1px solid rgba(21, 25, 25, 0.1);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(21, 25, 25, 0.045), rgba(255, 255, 255, 0.72)),
+    rgba(255, 255, 255, 0.62);
+}
+
+.support-trend-kicker,
+.support-trend h3,
+.support-trend p {
+  margin: 0;
+}
+
+.support-trend-kicker {
+  color: var(--ink-secondary);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.support-trend h3 {
+  margin-top: 3px;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.support-trend p {
+  color: var(--ink-secondary);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.support-trend-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 118px;
+  overflow: visible;
+}
+
+.support-trend-grid {
+  fill: none;
+  stroke: rgba(21, 25, 25, 0.08);
+  stroke-width: 1;
+}
+
+.support-trend-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-dasharray: 230;
+  stroke-dashoffset: 230;
+  stroke-linecap: round;
+  stroke-width: 5;
+  animation: supportTrendDraw 980ms ease-out 180ms both;
+}
+
+.support-trend-dot {
+  fill: rgba(21, 25, 25, 0.72);
+}
+
+.support-trend-dot.is-now {
+  fill: var(--ink);
+  filter: drop-shadow(0 5px 8px rgba(21, 25, 25, 0.18));
+  transform-origin: 198px 24px;
+  animation: supportTrendPulse 1300ms ease-in-out infinite;
+}
+
+.support-trend-chart text {
+  fill: rgba(79, 68, 70, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.support-trend-note {
+  font-size: 0.64rem !important;
+}
+
 /* Animations ---------------------------------------------------------- */
 
 @keyframes supportDetailIn {
@@ -1400,6 +1482,22 @@ input[type="text"]:focus {
   }
   100% {
     transform: translateX(380%) skewX(-18deg);
+  }
+}
+
+@keyframes supportTrendDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes supportTrendPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.22);
   }
 }
 
