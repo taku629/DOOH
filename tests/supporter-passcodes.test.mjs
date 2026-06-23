@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 
 import { verifySupporterPasscode } from "../src/supporter-passcodes.js";
@@ -36,4 +37,30 @@ test("rejects disabled or unknown supporter passcodes", async () => {
   assert.equal(disabled.reason, "disabled");
   assert.equal(unknown.ok, false);
   assert.equal(unknown.reason, "not_found");
+});
+
+test("accepts all configured demo supporter passcodes", async () => {
+  const config = JSON.parse(fs.readFileSync(new URL("../config/supporter-passcodes.json", import.meta.url), "utf8"));
+  const demoCodes = [
+    "1234",
+    "5678",
+    "9012",
+    "3456",
+    "1122",
+    "2233",
+    "3344",
+    "4455",
+    "5566",
+    "6677",
+    "7788",
+    "8899",
+    "1212",
+    "2323",
+    "3434",
+    "4545",
+  ];
+
+  const results = await Promise.all(demoCodes.map((code) => verifySupporterPasscode(code, { config })));
+
+  assert.deepEqual(results.map((result) => result.ok), demoCodes.map(() => true));
 });
