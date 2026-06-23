@@ -205,15 +205,15 @@ const THANKS_STORIES = [
 const SUPPORT_CHOICE_DETAILS = {
   patrol: {
     title: "夜間の見守り活動",
-    description: "夜間パトロールや声かけなど、街を見守る活動です。実運用では、実施団体・活動地域・費用の使途を確認できるようにします。",
+    description: "夜の街でのパトロールや声かけを支えます。",
   },
   graffiti: {
     title: "街の環境整備",
-    description: "落書き消去や清掃など、街の環境を整える活動です。実運用では、作業内容・実施主体・活動報告を確認できるようにします。",
+    description: "落書き消去や清掃など、不安を感じにくい街並みづくりを支えます。",
   },
   outreach: {
     title: "若者への相談支援",
-    description: "若者への声かけや相談窓口につなぐ活動です。実運用では、支援団体・支援内容・寄付金の用途を確認できるようにします。",
+    description: "困難を抱える若者が相談先につながる活動を支えます。",
   },
 };
 const storyCardOverlay = document.getElementById("storyCardOverlay");
@@ -2154,8 +2154,12 @@ supportChoiceButtons.forEach((button) => {
     title.textContent = detail.title;
     const description = document.createElement("p");
     description.textContent = detail.description;
+    supportChoiceDetail.classList.remove("is-visible");
     supportChoiceDetail.append(title, description);
     supportChoiceDetail.hidden = false;
+    requestAnimationFrame(() => {
+      supportChoiceDetail.classList.add("is-visible");
+    });
     if (window.parent !== window) {
       window.parent.postMessage({
         type: "dooh-research-support-choice",

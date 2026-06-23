@@ -1249,9 +1249,9 @@ input[type="text"]:focus {
 
 .support-choice {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   margin: 4px 0 22px;
-  padding: 16px;
+  padding: 14px;
   border: 1px solid var(--hairline);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.56);
@@ -1272,15 +1272,15 @@ input[type="text"]:focus {
 
 .support-choice h3 {
   margin: 0;
-  font-size: 1.08rem;
-  line-height: 1.4;
+  font-size: 1rem;
+  line-height: 1.32;
 }
 
 .support-choice-lead,
 .support-choice-note {
   color: var(--ink-secondary);
-  font-size: 0.74rem;
-  line-height: 1.65;
+  font-size: 0.7rem;
+  line-height: 1.45;
 }
 
 .support-choice-options {
@@ -1292,36 +1292,45 @@ input[type="text"]:focus {
 .support-choice-option {
   display: grid;
   justify-items: center;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
-  padding: 11px 5px 9px;
+  padding: 10px 4px 8px;
   border: 1px solid var(--hairline);
   border-radius: 13px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--ink);
+  cursor: pointer;
   font: inherit;
   text-align: center;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 .support-choice-option .material-symbols-outlined {
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .support-choice-option span:not(.material-symbols-outlined) {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 800;
   line-height: 1.35;
 }
 
 .support-choice-option small {
   color: var(--ink-secondary);
-  font-size: 0.58rem;
+  font-size: 0.56rem;
 }
 
 .support-choice-option[aria-pressed="true"] {
   border-color: var(--ink);
   background: var(--ink);
   color: #fff;
+  box-shadow: 0 10px 22px rgba(21, 25, 25, 0.16);
+  transform: translateY(-1px);
 }
 
 .support-choice-option[aria-pressed="true"] small {
@@ -1329,9 +1338,31 @@ input[type="text"]:focus {
 }
 
 .support-choice-detail {
-  padding: 13px 14px;
+  position: relative;
+  overflow: hidden;
+  padding: 12px 14px;
   border-radius: 13px;
-  background: rgba(21, 25, 25, 0.07);
+  background:
+    linear-gradient(135deg, rgba(21, 25, 25, 0.1), rgba(21, 25, 25, 0.045));
+  opacity: 0;
+  transform: translateY(8px) scale(0.985);
+}
+
+.support-choice-detail::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -44%;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+  transform: skewX(-18deg);
+}
+
+.support-choice-detail.is-visible {
+  animation: supportDetailIn 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.support-choice-detail.is-visible::before {
+  animation: supportDetailSweep 620ms ease-out both;
 }
 
 .support-choice-detail h4,
@@ -1340,17 +1371,37 @@ input[type="text"]:focus {
 }
 
 .support-choice-detail h4 {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-size: 0.86rem;
 }
 
 .support-choice-detail p {
   color: var(--ink-secondary);
   font-size: 0.72rem;
-  line-height: 1.65;
+  line-height: 1.45;
 }
 
 /* Animations ---------------------------------------------------------- */
+
+@keyframes supportDetailIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes supportDetailSweep {
+  0% {
+    transform: translateX(0) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(380%) skewX(-18deg);
+  }
+}
 
 @keyframes sweepLight {
   from {
