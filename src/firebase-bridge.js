@@ -553,7 +553,7 @@ export async function publishSupporterComment(payload = {}) {
     }
 
     const channel = normalizeChannel(payload.channel);
-    const ref = sdk.ref(database, `${getSupporterCommentsPath(channel)}/${sanitized.codeHash}`);
+    const listRef = sdk.ref(database, getSupporterCommentsPath(channel));
     const record = {
         type: "supporter-comment",
         createdAt: sdk.serverTimestamp(),
@@ -570,8 +570,9 @@ export async function publishSupporterComment(payload = {}) {
             await wait(delayMs);
         }
         try {
-            await sdk.set(ref, record);
-            return { key: sanitized.codeHash };
+            const entryRef = sdk.push(listRef);
+            await sdk.set(entryRef, record);
+            return { key: entryRef.key };
         } catch (error) {
             lastError = error;
             console.warn("[firebase] supporter comment publish attempt failed:", error);
