@@ -30,9 +30,15 @@ async function loadSupporterPasscodeConfig(fetchImpl = globalThis.fetch) {
             }
             const data = await response.json();
             const codes = data?.codes && typeof data.codes === "object" ? data.codes : {};
+            const demoCodes = Array.isArray(data?.demoCodes)
+                ? data.demoCodes
+                    .map((code) => String(code ?? "").replace(/\D/g, "").slice(0, 4))
+                    .filter((code, index, list) => /^\d{4}$/.test(code) && list.indexOf(code) === index)
+                : [];
             return {
                 enabled: data?.enabled === true,
                 codes,
+                demoCodes,
             };
         } catch (error) {
             console.info("[supporter-passcode] config unavailable:", error);
@@ -64,4 +70,13 @@ export async function verifySupporterPasscode(code, options = {}) {
         codeHash,
         label: config.codes[codeHash]?.label ?? "supporter",
     };
+}
+
+export async function getDemoSupporterPasscodes(options = {}) {
+    const config = options.config ?? await loadSupporterPasscodeConfig(options.fetchImpl);
+    if (!config?.enabled || !Array.isArray(config.demoCodes)) {
+        return [];
+    }
+
+    return config.demoCodes.filter((code) => /^\d{4}$/.test(code));
 }

@@ -1365,6 +1365,25 @@ html:not([data-theme="morning"]) .supporter-passcode-field input {
   text-align: center;
 }
 
+html:not([data-theme="morning"]) .supporter-demo-code-button {
+  width: fit-content;
+  border: 1px solid rgba(21, 25, 25, 0.14);
+  border-radius: 999px;
+  background: rgba(21, 25, 25, 0.9);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  padding: 10px 14px;
+  box-shadow: 0 10px 22px rgba(21, 25, 25, 0.14);
+}
+
+html:not([data-theme="morning"]) .supporter-demo-code-button:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
 html:not([data-theme="morning"]) .supporter-comment-field textarea {
   min-height: 72px;
   padding: 12px 14px;
