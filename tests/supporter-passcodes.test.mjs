@@ -41,48 +41,7 @@ test("rejects disabled or unknown supporter passcodes", async () => {
 
 test("accepts all configured demo supporter passcodes", async () => {
   const config = JSON.parse(fs.readFileSync(new URL("../config/supporter-passcodes.json", import.meta.url), "utf8"));
-  const demoCodes = [
-    "1234",
-    "5678",
-    "9012",
-    "3456",
-    "1122",
-    "2233",
-    "3344",
-    "4455",
-    "5566",
-    "6677",
-    "7788",
-    "8899",
-    "1212",
-    "2323",
-    "3434",
-    "4545",
-    "1010",
-    "2020",
-    "3030",
-    "4040",
-    "5050",
-    "6060",
-    "7070",
-    "8080",
-    "9090",
-    "0101",
-    "0202",
-    "0303",
-    "0404",
-    "0505",
-    "0606",
-    "0707",
-    "1357",
-    "2468",
-    "1470",
-    "2580",
-    "3690",
-    "7890",
-    "0987",
-    "4321",
-  ];
+  const demoCodes = config.demoCodes;
 
   const results = await Promise.all(demoCodes.map((code) => verifySupporterPasscode(code, { config })));
 
@@ -93,7 +52,7 @@ test("returns configured demo supporter passcodes for auto allocation", async ()
   const config = JSON.parse(fs.readFileSync(new URL("../config/supporter-passcodes.json", import.meta.url), "utf8"));
   const demoCodes = await getDemoSupporterPasscodes({ config });
 
-  assert.equal(demoCodes.length, 40);
-  assert.equal(new Set(demoCodes).size, 40);
+  assert.equal(demoCodes.length, 100);
+  assert.equal(new Set(demoCodes).size, 100);
   assert.equal(demoCodes[0], "1234");
 });
