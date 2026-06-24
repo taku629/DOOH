@@ -895,6 +895,8 @@ input[type="text"]:focus {
 
 .counter-box {
   position: relative;
+  display: flex;
+  flex-direction: column;
   margin: 8px 0 22px;
   padding: 24px 22px;
   border-radius: var(--radius-lg);
@@ -923,6 +925,7 @@ input[type="text"]:focus {
 }
 
 .counter-box > span {
+  order: 1;
   display: block;
   color: var(--ink-tertiary);
   font-size: 0.78rem;
@@ -931,6 +934,7 @@ input[type="text"]:focus {
 }
 
 .counter-box strong {
+  order: 2;
   display: flex;
   align-items: baseline;
   gap: 0.1em;
@@ -940,8 +944,9 @@ input[type="text"]:focus {
 }
 
 .counter-box small {
+  order: 4;
   display: block;
-  margin-top: 30px;
+  margin-top: 16px;
   color: var(--ink-secondary);
   font-size: 0.9rem;
   font-weight: 500;
@@ -976,9 +981,9 @@ input[type="text"]:focus {
 }
 
 .counter-box em {
-  position: absolute;
-  right: 22px;
-  top: clamp(88px, 23.5vw, 112px);
+  order: 3;
+  align-self: flex-end;
+  margin-top: 8px;
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--accent);
