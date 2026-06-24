@@ -2082,7 +2082,7 @@ async function setupSavedNameChoice() {
   const savedName = await resolveSavedNameChoice();
   const nameField = nickname.closest(".sparkle-name-field") ?? nickname;
   const nameStep = nickname.closest(".step");
-  if (!savedName || !pendingParticipationVisit.isReturning || !nameStep) {
+  if (!savedName || !nameStep) {
     return;
   }
 
