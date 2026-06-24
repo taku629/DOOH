@@ -941,7 +941,7 @@ input[type="text"]:focus {
 
 .counter-box small {
   display: block;
-  margin-top: 12px;
+  margin-top: 34px;
   color: var(--ink-secondary);
   font-size: 0.9rem;
   font-weight: 500;
@@ -978,7 +978,7 @@ input[type="text"]:focus {
 .counter-box em {
   position: absolute;
   right: 22px;
-  top: 24px;
+  top: clamp(92px, 25vw, 120px);
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--accent);
@@ -988,7 +988,7 @@ input[type="text"]:focus {
   font-weight: 600;
   letter-spacing: 0.04em;
   opacity: 0;
-  transform: translateY(-4px) scale(0.9);
+  transform: translateY(-2px) scale(0.9);
   transition: opacity 0.3s var(--ease-out), transform 0.3s var(--ease-out);
 }
 
