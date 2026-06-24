@@ -941,7 +941,7 @@ input[type="text"]:focus {
 
 .counter-box small {
   display: block;
-  margin-top: 26px;
+  margin-top: 30px;
   color: var(--ink-secondary);
   font-size: 0.9rem;
   font-weight: 500;
@@ -978,7 +978,7 @@ input[type="text"]:focus {
 .counter-box em {
   position: absolute;
   right: 22px;
-  top: clamp(82px, 22vw, 104px);
+  top: clamp(88px, 23.5vw, 112px);
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--accent);
