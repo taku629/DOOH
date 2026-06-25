@@ -81,6 +81,10 @@ const totalSteps = steps.length;
 const FALLBACK_COUNTER_TARGET = 0;
 const activeTheme = resolveTheme({ defaultTheme: "day" });
 const participationSearchParams = new URLSearchParams(location.search);
+const PARTICIPATION_MODE = participationSearchParams.get("mode");
+const isYouTubeParticipation = PARTICIPATION_MODE === "youtube";
+const YOUTUBE_PARTICIPATION_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+const YOUTUBE_PARTICIPATION_STORAGE_KEY = "shinjuku-dooh-participation-youtube";
 const requestedParticipationChannel = participationSearchParams.get("channel");
 const isExplicitTeamTest = participationSearchParams.get("team-test") === "1";
 const PARTICIPATION_CHANNEL = requestedParticipationChannel === "research" && isExplicitTeamTest
@@ -289,6 +293,53 @@ function generateRandomGuestName() {
     suffix += chars[Math.floor(Math.random() * chars.length)];
   }
   return `サポーター#${suffix}`;
+}
+
+function getOrCreateYouTubeVisitorId(record = {}) {
+  if (typeof record.visitorId === "string" && record.visitorId) {
+    return record.visitorId;
+  }
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `youtube-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function readYouTubeParticipationRecord() {
+  try {
+    return JSON.parse(localStorage.getItem(YOUTUBE_PARTICIPATION_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function getYouTubeCooldownState(now = Date.now()) {
+  const record = readYouTubeParticipationRecord();
+  const lastCompletedAt = Number(record.lastCompletedAt) || 0;
+  const elapsed = lastCompletedAt > 0 ? now - lastCompletedAt : Infinity;
+  const remainingMs = Math.max(YOUTUBE_PARTICIPATION_COOLDOWN_MS - elapsed, 0);
+  return {
+    blocked: remainingMs > 0,
+    remainingMs,
+    visitorId: getOrCreateYouTubeVisitorId(record),
+  };
+}
+
+function saveYouTubeParticipation(visitorId) {
+  localStorage.setItem(YOUTUBE_PARTICIPATION_STORAGE_KEY, JSON.stringify({
+    visitorId,
+    lastCompletedAt: Date.now(),
+  }));
+}
+
+function formatCooldownTime(ms) {
+  const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours <= 0) {
+    return `${minutes}分`;
+  }
+  return minutes > 0 ? `${hours}時間${minutes}分` : `${hours}時間`;
 }
 
 const RANDOM_GUEST_NAME = generateRandomGuestName();
@@ -1207,6 +1258,73 @@ function markAlreadyParticipatedToday(visit) {
   }
 }
 
+function applyYouTubeParticipationCopy() {
+  if (!isYouTubeParticipation) {
+    return;
+  }
+
+  document.body.classList.add("is-youtube-participation");
+  document.body.removeAttribute("data-post-flow-form");
+
+  const eyebrow = document.querySelector(".eyebrow");
+  const lead = document.querySelector(".lead");
+  const title = document.querySelector("#campaignTitle");
+  const firstStepCopy = steps[0]?.querySelector("p");
+  const stepCount = steps[0]?.querySelector(".step-count");
+
+  if (eyebrow) eyebrow.textContent = "YouTube Live";
+  if (title) title.innerHTML = "応援アクションを<br><span class=\"no-break\">送る</span>";
+  if (lead) {
+    lead.textContent = "QRを読み取ってスワイプすると、ライブ中のDOOH画面に匿名で反映されます。";
+  }
+  if (firstStepCopy) {
+    firstStepCopy.textContent = "この操作は無料です。名前やコメントは表示されません。";
+  }
+  if (stepCount) {
+    stepCount.textContent = "LIVE";
+  }
+  if (swipeHint) {
+    swipeHint.textContent = "指のエリアを上にスワイプしてください。";
+  }
+}
+
+function markYouTubeCooldown(state = getYouTubeCooldownState()) {
+  const remaining = formatCooldownTime(state.remainingMs);
+  swipeStep?.classList.add("is-participation-locked");
+  swipeControl?.setAttribute("aria-disabled", "true");
+  document.body.classList.add("is-youtube-locked");
+
+  const title = document.querySelector("#campaignTitle");
+  const firstStepCopy = steps[0]?.querySelector("p");
+  if (title) {
+    title.innerHTML = "すでに<br><span class=\"no-break\">送信済みです</span>";
+  }
+  if (firstStepCopy) {
+    firstStepCopy.textContent = `次の応援アクションは約${remaining}後に送れます。`;
+  }
+  if (swipeHint) {
+    swipeHint.textContent = `送信済みです。約${remaining}後にもう一度参加できます。`;
+  }
+}
+
+function showYouTubeCompletion() {
+  document.body.classList.add("is-youtube-complete");
+  swipeStep?.classList.add("is-participation-locked");
+  swipeControl?.setAttribute("aria-disabled", "true");
+
+  const title = document.querySelector("#campaignTitle");
+  const firstStepCopy = steps[0]?.querySelector("p");
+  if (title) {
+    title.innerHTML = "送信しました";
+  }
+  if (firstStepCopy) {
+    firstStepCopy.textContent = "応援アクションがDOOH画面に反映されます。ライブ画面をご確認ください。";
+  }
+  if (swipeHint) {
+    swipeHint.textContent = "DOOH画面をご確認ください。次は3時間後に参加できます。";
+  }
+}
+
 async function registerParticipation() {
   if (hasCountedParticipation) {
     return true;
@@ -1229,6 +1347,50 @@ async function registerParticipation() {
   isRegisteringParticipation = true;
 
   try {
+    if (isYouTubeParticipation) {
+      const cooldown = getYouTubeCooldownState();
+      if (cooldown.blocked) {
+        markYouTubeCooldown(cooldown);
+        return false;
+      }
+
+      const payload = {
+        name: RANDOM_GUEST_NAME,
+        donationAmountYen: DEMO_DONATION_YEN,
+        visitorId: cooldown.visitorId,
+        participationDate: new Date().toISOString().slice(0, 10),
+        isReturning: false,
+        isConsecutiveReturn: false,
+        streakDays: 1,
+        totalDays: 1,
+        source: "participant-flow-youtube",
+      };
+
+      if (PARTICIPATION_CHANNEL !== "default") {
+        payload.channel = PARTICIPATION_CHANNEL;
+      }
+
+      const result = await publishSwipeComplete(payload);
+      if (result?.failed === true || result?.accepted === false) {
+        if (swipeHint) {
+          swipeHint.textContent = "通信が混み合っています。少し時間をおいてもう一度お試しください。";
+        }
+        return false;
+      }
+
+      saveYouTubeParticipation(cooldown.visitorId);
+      const committedCount = Number(result?.count);
+      participantCount = Number.isFinite(committedCount)
+        ? committedCount
+        : participantCount + 1;
+      updateCounterGoalProgress(participantCount);
+      updateMilestonePreview(participantCount);
+      hasCountedParticipation = true;
+      hasAcceptedParticipation = true;
+      hasAnimatedCounter = false;
+      return true;
+    }
+
     const visit = getParticipationVisit({
       today: participationDateOverride,
       storageKey: participationStorageOptions.storageKey,
@@ -1311,6 +1473,10 @@ async function registerParticipation() {
 async function markParticipationComplete() {
   const didComplete = await registerParticipation();
   if (didComplete) {
+    if (isYouTubeParticipation) {
+      showYouTubeCompletion();
+      return true;
+    }
     if (!showStoryThanksCard()) {
       nextStep();
     }
@@ -1819,6 +1985,9 @@ function setSwipeFill(value) {
 
 function canAdvanceFrom(index) {
   if (index === 0) {
+    if (isYouTubeParticipation) {
+      return (isDebugReplay || !getYouTubeCooldownState().blocked) && swipeChargeValue >= 100;
+    }
     return (isDebugReplay || !pendingParticipationVisit.alreadyParticipatedToday) && swipeChargeValue >= 100;
   }
   return true;
@@ -1892,7 +2061,10 @@ function startPointer(event) {
   if (activePointerId !== null) {
     return;
   }
-  if ((!isDebugReplay && pendingParticipationVisit.alreadyParticipatedToday) || hasCountedParticipation) {
+  const isParticipationBlocked = isYouTubeParticipation
+    ? getYouTubeCooldownState().blocked
+    : pendingParticipationVisit.alreadyParticipatedToday;
+  if ((!isDebugReplay && isParticipationBlocked) || hasCountedParticipation) {
     return;
   }
   if (currentStep !== 0) {
@@ -2157,7 +2329,9 @@ async function setupSavedNameChoice() {
   });
 }
 
-setupSavedNameChoice();
+if (!isYouTubeParticipation) {
+  setupSavedNameChoice();
+}
 
 createCardButton?.addEventListener("click", async () => {
   setNameChecking(true);
@@ -2264,8 +2438,11 @@ window.addEventListener("resize", () => {
 
 updateSwipeCharge(0);
 applyThemeCopy();
+applyYouTubeParticipationCopy();
 // debug（host/ローカル）では「今日は参加済み」ロックを無視して、毎回スワイプから試せるようにする。
-if (!isDebugReplay && pendingParticipationVisit.alreadyParticipatedToday) {
+if (!isDebugReplay && isYouTubeParticipation && getYouTubeCooldownState().blocked) {
+  markYouTubeCooldown();
+} else if (!isDebugReplay && !isYouTubeParticipation && pendingParticipationVisit.alreadyParticipatedToday) {
   markAlreadyParticipatedToday(pendingParticipationVisit);
 }
 mountDebugReplayButton();
