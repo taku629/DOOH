@@ -15,6 +15,10 @@ const progressElement = document.querySelector(".bar");
 const counterValue = document.getElementById("counterValue");
 const counterBox = document.getElementById("counterBox");
 const counterParticipants = document.getElementById("counterParticipants");
+const counterLabel = counterBox?.firstElementChild;
+const counterUnit = counterBox?.querySelector(".unit");
+const counterBadge = counterBox?.querySelector("em");
+const counterDetail = counterParticipants?.closest("small") || counterBox?.querySelector("small");
 const nickname = document.getElementById("nickname");
 const nicknameHelp = document.getElementById("nicknameHelp");
 const previewName = document.getElementById("previewName");
@@ -107,6 +111,7 @@ const isDebugReplay =
   isLocalHost;
 
 const DEMO_DONATION_YEN = 100;
+const MONTHLY_PARTICIPANT_GOAL = 3000;
 const PLAYLIST_PATH = new URL("../config/playlist.json", import.meta.url).href;
 const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
 const SWIPE_COMPLETE_SNAP_THRESHOLD = 96;
@@ -245,6 +250,7 @@ let counterAnimationFrame = null;
 let storyCardDismissTimer = null;
 let copyFeedbackTimer = null;
 let relightPlaylist = null;
+updateCounterGoalProgress(participantCount);
 const milestonePreview = buildMilestonePreview();
 const milestonePrimary = milestonePreview?.querySelector("[data-milestone-primary]");
 const milestoneSecondary = milestonePreview?.querySelector("[data-milestone-secondary]");
@@ -264,7 +270,8 @@ function handleReducedMotionChange(event) {
 
   cancelAnimationFrame(counterAnimationFrame);
   counterAnimationFrame = null;
-  counterValue.textContent = getDemoDonationTotal().toLocaleString("ja-JP");
+  counterValue.textContent = participantCount.toLocaleString("ja-JP");
+  updateCounterGoalProgress(participantCount);
   counterBox.classList.remove("is-counting");
   counterBox.classList.add("is-counted");
 }
@@ -511,6 +518,38 @@ function getDemoDonationTotal(count = participantCount) {
   return count * DEMO_DONATION_YEN;
 }
 
+function getParticipantGoalStatus(count = participantCount) {
+  const current = Math.max(0, Math.floor(Number(count) || 0));
+  const remaining = Math.max(MONTHLY_PARTICIPANT_GOAL - current, 0);
+  const progress = Math.min((current / MONTHLY_PARTICIPANT_GOAL) * 100, 100);
+  return { current, remaining, progress, reached: remaining === 0 };
+}
+
+function updateCounterGoalProgress(count = participantCount) {
+  if (!counterBox) {
+    return;
+  }
+
+  const status = getParticipantGoalStatus(count);
+  counterBox.classList.add("is-participant-goal");
+  counterBox.style.setProperty("--counter-goal-progress", `${status.progress}%`);
+
+  if (counterLabel) {
+    counterLabel.textContent = "現在の参加人数";
+  }
+  if (counterUnit) {
+    counterUnit.textContent = "人";
+  }
+  if (counterBadge) {
+    counterBadge.textContent = `目標 ${MONTHLY_PARTICIPANT_GOAL.toLocaleString("ja-JP")}人`;
+  }
+  if (counterDetail) {
+    counterDetail.textContent = status.reached
+      ? `${MONTHLY_PARTICIPANT_GOAL.toLocaleString("ja-JP")}人達成しました`
+      : `あと${status.remaining.toLocaleString("ja-JP")}人で達成`;
+  }
+}
+
 function buildMilestonePreview() {
   if (!swipeStep) {
     return null;
@@ -595,8 +634,8 @@ function syncParticipantCount(count, options = {}) {
     ? Math.max(participantCount, safeCount)
     : safeCount;
 
-  if (counterParticipants && (options.forceCounter || hasCountedParticipation || currentStep === 1)) {
-    counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
+  if (options.forceCounter || hasCountedParticipation || currentStep === 1) {
+    updateCounterGoalProgress(participantCount);
   }
 
   updateMilestonePreview(participantCount);
@@ -697,10 +736,8 @@ function showStep(index) {
   if (index === 1 && hasCountedParticipation && !hasAnimatedCounter) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
-    if (counterParticipants) {
-      counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
-    }
-    window.setTimeout(() => animateCounter(getDemoDonationTotal()), delay);
+    updateCounterGoalProgress(participantCount);
+    window.setTimeout(() => animateCounter(participantCount), delay);
   }
 }
 
@@ -919,6 +956,7 @@ function animateCounter(target) {
 
   if (prefersReducedMotion) {
     counterValue.textContent = target.toLocaleString("ja-JP");
+    updateCounterGoalProgress(target);
     counterBox.classList.remove("is-counting");
     counterBox.classList.add("is-counted");
     return;
@@ -936,6 +974,7 @@ function animateCounter(target) {
     const eased = 1 - Math.pow(1 - progress, 4);
     const value = Math.floor(startValue + (target - startValue) * eased);
     counterValue.textContent = value.toLocaleString("ja-JP");
+    updateCounterGoalProgress(value);
 
     if (progress < 1) {
       counterAnimationFrame = requestAnimationFrame(tick);
@@ -944,6 +983,7 @@ function animateCounter(target) {
 
     counterAnimationFrame = null;
     counterValue.textContent = target.toLocaleString("ja-JP");
+    updateCounterGoalProgress(target);
     counterBox.classList.remove("is-counting");
     counterBox.classList.add("is-counted");
   }
@@ -1178,9 +1218,7 @@ async function registerParticipation() {
   if (isDebugReplay) {
     // debug: Firebase 送信も「今日は参加済み」ロックもせず、ローカルだけで完了扱いにする。
     participantCount += 1;
-    if (counterParticipants) {
-      counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
-    }
+    updateCounterGoalProgress(participantCount);
     updateMilestonePreview(participantCount);
     hasCountedParticipation = true;
     hasAcceptedParticipation = true;
@@ -1247,9 +1285,7 @@ async function registerParticipation() {
     participantCount = Number.isFinite(committedCount)
       ? committedCount
       : participantCount + 1;
-    if (counterParticipants) {
-      counterParticipants.textContent = participantCount.toLocaleString("ja-JP");
-    }
+    updateCounterGoalProgress(participantCount);
     updateMilestonePreview(participantCount);
     hasCountedParticipation = true;
     hasAcceptedParticipation = true;
