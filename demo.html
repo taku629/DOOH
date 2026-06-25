@@ -1621,13 +1621,21 @@
         // 時間で参加ページのQRを切替：偶数時=男性 / 奇数時=女性
         const MEN_URL = "https://dooh-ca9c2.web.app/men";
         const WOMEN_URL = "https://dooh-ca9c2.web.app/women";
+        const qrSearchParams = new URLSearchParams(location.search);
+        const QR_YOUTUBE_MODE = qrSearchParams.has("youtube") || qrSearchParams.has("live") || qrSearchParams.has("broadcast");
         const qrCode = document.getElementById("qrCode");
         const urlNote = document.getElementById("urlNote");
 
         const { default: QRCode } = await import("https://cdn.skypack.dev/qrcode@1.5.3");
 
         function pickParticipantUrl(now = new Date()) {
-            return now.getHours() % 2 === 0 ? MEN_URL : WOMEN_URL;
+            const baseUrl = now.getHours() % 2 === 0 ? MEN_URL : WOMEN_URL;
+            if (!QR_YOUTUBE_MODE) {
+                return baseUrl;
+            }
+            const url = new URL(baseUrl);
+            url.searchParams.set("mode", "youtube");
+            return url.toString();
         }
 
         async function renderQr() {

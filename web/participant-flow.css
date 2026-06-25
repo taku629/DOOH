@@ -1021,6 +1021,34 @@ input[type="text"]:focus {
   animation: counterBadgePulse 0.6s var(--ease-out) 0.05s 1;
 }
 
+body.is-youtube-participation .progress {
+  display: none;
+}
+
+body.is-youtube-participation .app-hero {
+  margin-bottom: 14px;
+}
+
+body.is-youtube-participation .step-count {
+  color: var(--accent);
+  letter-spacing: 0.08em;
+}
+
+body.is-youtube-participation .funding-note {
+  margin-bottom: 20px;
+}
+
+body.is-youtube-complete .slider-wrap,
+body.is-youtube-locked .slider-wrap {
+  opacity: 0.52;
+  pointer-events: none;
+}
+
+body.is-youtube-complete .slider-thumb,
+body.is-youtube-locked .slider-thumb {
+  box-shadow: none;
+}
+
 /* Certificate card ---------------------------------------------------- */
 
 .card {
