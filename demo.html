@@ -480,6 +480,20 @@
 
         .live .value span.num { display: inline-block; }
 
+        body.is-live-broadcast .thanks,
+        body.is-live-broadcast .supporter-comment-wall {
+            display: none !important;
+        }
+
+        body.is-live-broadcast .participation-thanks {
+            left: clamp(26px, 3.4vw, 68px);
+            bottom: clamp(200px, 19vw, 330px);
+        }
+
+        body.is-live-broadcast .cta-copy strong {
+            font-size: clamp(1rem, 1.6vw, 1.55rem);
+        }
+
         .live .label {
             display: block;
             font-size: clamp(0.7rem, 1vw, 0.95rem);
@@ -725,7 +739,9 @@
         const DONATION_PER_PERSON_YEN = 100; // 1参加あたりのデモ募金額（publishSwipeComplete の donationAmountYen と一致）
         const DEV = params.has("dev");
         const DEMO_MODE = params.has("demo");
+        const LIVE_BROADCAST_MODE = params.has("live") || params.has("youtube") || params.has("broadcast");
         const MANUAL_MODE = DEV || DEMO_MODE;
+        document.body.classList.toggle("is-live-broadcast", LIVE_BROADCAST_MODE);
         const stage = document.getElementById("stage");
         const countNum = document.getElementById("countNum");
         const progressText = document.getElementById("progressText");
@@ -734,6 +750,10 @@
         const transitionCountdown = document.getElementById("transitionCountdown");
         const hint = document.getElementById("hint");
         const participationThanks = document.getElementById("participationThanks");
+        const liveLabel = document.querySelector(".live > .label");
+        const liveUnit = document.querySelector(".live > .value .unit");
+        const ctaTitle = document.querySelector(".cta-copy strong");
+        const qrCaption = document.getElementById("qrCaption");
         const addBtn = document.getElementById("addBtn");
         const autoBtn = document.getElementById("autoBtn");
         const resetBtn = document.getElementById("resetBtn");
@@ -817,7 +837,9 @@
         }
 
         function updateHud() {
-            countNum.textContent = (count * DONATION_PER_PERSON_YEN).toLocaleString("ja-JP");
+            countNum.textContent = LIVE_BROADCAST_MODE
+                ? `${count.toLocaleString("ja-JP")}人`
+                : (count * DONATION_PER_PERSON_YEN).toLocaleString("ja-JP");
             const remaining = Math.max(0, TOTAL - revealed);
             const done = revealed >= TOTAL || celebrationActive;
             if (challengeLabel) {
@@ -960,6 +982,14 @@
         const supporterCommentText = document.getElementById("supporterCommentText");
         const supporterCommentName = document.getElementById("supporterCommentName");
 
+        if (LIVE_BROADCAST_MODE) {
+            if (liveLabel) liveLabel.textContent = "累計参加者";
+            if (liveUnit) liveUnit.textContent = "";
+            if (ctaTitle) ctaTitle.textContent = "スマホで参加";
+            if (qrCaption) qrCaption.textContent = "応援アクションを送る";
+            if (hint) hint.textContent = "LIVE配信中：スマホの応援アクションで画面が変化します";
+        }
+
         // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
         const AUTO_NAME_RE = /^サポーター#/;
         const PLACEHOLDER_NAMES = new Set(["匿名サポーター", "匿名", "Guest", "参加者"]);
@@ -1088,6 +1118,10 @@
         }
 
         function showThanks(name, options = {}) {
+            if (LIVE_BROADCAST_MODE) {
+                showParticipationThanks("", options);
+                return;
+            }
             const raw = String(name ?? "").trim().slice(0, 24);
             if (!isRealName(raw)) return;
             const entry = addToDonorNameRotation(raw, options);
@@ -1106,6 +1140,10 @@
             window.clearTimeout(nameNotificationTimer);
             nameNotificationTimer = null;
             nameNotificationQueue.length = 0;
+            if (LIVE_BROADCAST_MODE) {
+                thanks?.replaceChildren();
+                return;
+            }
             names.forEach((entry) => {
                 const raw = String(entry?.name ?? entry ?? "").trim().slice(0, 24);
                 if (isRealName(raw)) addToDonorNameRotation(raw, entry);
@@ -1122,6 +1160,7 @@
         function renderParticipationThanks(name, options = {}) {
             if (!participationThanks) return;
             const raw = String(name ?? "").trim().slice(0, 24);
+            const liveBroadcastText = "応援アクションが届きました";
             const isReturning = options.isReturning === true;
             const shouldColorReturning = isReturning && hasStreakColor(options);
             const item = document.createElement("div");
@@ -1129,7 +1168,9 @@
             item.classList.toggle("is-returning", shouldColorReturning);
             applyStreakClass(item, options);
             applyStreakClass(stage, options);
-            item.textContent = isReturning
+            item.textContent = LIVE_BROADCAST_MODE
+                ? liveBroadcastText
+                : isReturning
                 ? `${isRealName(raw) ? `おかえりなさい、${raw}さん` : "おかえりなさい"}`
                 : isRealName(raw)
                     ? `${raw}さん、ご参加ありがとうございます`
@@ -1217,6 +1258,11 @@
 
         function setSupporterComments(comments = []) {
             supporterCommentRotation.length = 0;
+            if (LIVE_BROADCAST_MODE) {
+                supporterCommentIndex = 0;
+                if (supporterCommentWall) supporterCommentWall.hidden = true;
+                return;
+            }
             const normalized = comments
                 .map(normalizeSupporterCommentForDisplay)
                 .filter(Boolean)
@@ -1371,8 +1417,10 @@
         function activateLive() {
             if (liveActive) return;
             liveActive = true;
-            if (!DEV && autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-            // DEVモードでは手動ツールを隠さず、動作確認に使えるようにする
+            if (!DEV && autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = null;
+            }
             if (!DEV) document.querySelector(".tools")?.style.setProperty("display", "none");
             if (hint) {
                 hint.textContent = DEV
@@ -1499,6 +1547,7 @@
             : getChannelForTheme(theme, "default");
         const isDevMode = searchParams.has("dev");
         const isDemoMode = searchParams.has("demo");
+        const isLiveBroadcastMode = searchParams.has("live") || searchParams.has("youtube") || searchParams.has("broadcast");
 
         // ?dev のときだけ「本番+1」ボタンを出す：QRと同じFirebaseイベントを1件送って連動確認できる
         if (isDevMode) {
@@ -1527,35 +1576,37 @@
 
         }
 
-        getRecentNameAnnouncements({ channel, all: true })
-            .then((events) => {
-                const validEvents = events
-                    .map((event) => ({ ...event, name: String(event?.name ?? "").trim() }))
-                    .filter((event) => event.name && !isInappropriateName(event.name));
-                window.__inkDemo?.setDonorNameRotation(validEvents);
-            })
-            .catch((error) => {
-                console.info("[demo] donor history disabled (offline/manual):", error);
+        if (!isLiveBroadcastMode) {
+            getRecentNameAnnouncements({ channel, all: true })
+                .then((events) => {
+                    const validEvents = events
+                        .map((event) => ({ ...event, name: String(event?.name ?? "").trim() }))
+                        .filter((event) => event.name && !isInappropriateName(event.name));
+                    window.__inkDemo?.setDonorNameRotation(validEvents);
+                })
+                .catch((error) => {
+                    console.info("[demo] donor history disabled (offline/manual):", error);
+                });
+
+            // 新しい寄付者名は巡回表示より優先し、以後の巡回リストにも追加する。
+            subscribeToNameAnnouncements((event) => {
+                if (!isInappropriateName(String(event?.name ?? ""))) {
+                    window.__inkDemo?.showThanks(event?.name, event);
+                }
+            }, { channel }).catch((error) => {
+                console.info("[demo] name feed disabled (offline/manual):", error);
             });
 
-        // 新しい寄付者名は巡回表示より優先し、以後の巡回リストにも追加する。
-        subscribeToNameAnnouncements((event) => {
-            if (!isInappropriateName(String(event?.name ?? ""))) {
-                window.__inkDemo?.showThanks(event?.name, event);
-            }
-        }, { channel }).catch((error) => {
-            console.info("[demo] name feed disabled (offline/manual):", error);
-        });
-
-        subscribeToSupporterComments((comments) => {
-            const validComments = comments.filter((event) =>
-                !isInappropriateName(String(event?.comment ?? "")) &&
-                !isInappropriateName(String(event?.name ?? ""))
-            );
-            window.__inkDemo?.setSupporterComments(validComments);
-        }, { channel }).catch((error) => {
-            console.info("[demo] supporter comment feed disabled (offline/manual):", error);
-        });
+            subscribeToSupporterComments((comments) => {
+                const validComments = comments.filter((event) =>
+                    !isInappropriateName(String(event?.comment ?? "")) &&
+                    !isInappropriateName(String(event?.name ?? ""))
+                );
+                window.__inkDemo?.setSupporterComments(validComments);
+            }, { channel }).catch((error) => {
+                console.info("[demo] supporter comment feed disabled (offline/manual):", error);
+            });
+        }
 
         if (!isDemoMode) {
             subscribeToSwipeCompletes((event) => {
