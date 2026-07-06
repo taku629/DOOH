@@ -6,10 +6,16 @@ const PARTICIPATION_PATH = "participation";
 const PARTICIPATION_V2_PATH = "participationV2";
 const PARTICIPATION_MORNING_PATH = "participationMorning";
 const PARTICIPATION_RESEARCH_PATH = "participationResearch";
+const PARTICIPATION_YOUTUBE_PATH = "participationYouTube";
 const DISPLAY_CONFIG_PATH = "displayConfig";
 const NAME_SHOUTS_PATH = "nameShouts";
 const SUPPORTER_COMMENTS_PATH = "supporterComments";
 const WRITE_RETRY_DELAYS_MS = [0, 400, 1000];
+const TICKER_FONT_IDS = new Set(["noto", "rounded", "mincho", "dot", "yusei"]);
+
+function normalizeTickerFont(value) {
+    return TICKER_FONT_IDS.has(value) ? value : "noto";
+}
 
 let configPromise;
 let firebaseSdkPromise;
@@ -17,7 +23,7 @@ let appPromise;
 let databasePromise;
 
 function normalizeChannel(channel = "default") {
-    return channel === "v2" || channel === "morning" || channel === "research"
+    return channel === "v2" || channel === "morning" || channel === "research" || channel === "youtube"
         ? channel
         : "default";
 }
@@ -35,6 +41,10 @@ function getParticipationPath(channel = "default") {
 
     if (normalizedChannel === "research") {
         return PARTICIPATION_RESEARCH_PATH;
+    }
+
+    if (normalizedChannel === "youtube") {
+        return PARTICIPATION_YOUTUBE_PATH;
     }
 
     return PARTICIPATION_PATH;
@@ -232,6 +242,7 @@ export async function publishSwipeComplete(payload = {}) {
         isConsecutiveReturn: payload.isConsecutiveReturn === true,
         streakDays: Math.max(1, Number(payload.streakDays) || 1),
         totalDays: Math.max(1, Number(payload.totalDays) || 1),
+        tickerFont: normalizeTickerFont(payload.tickerFont),
     };
     const participationRef = sdk.ref(database, getParticipationPath(channel));
     let lastError = null;
@@ -283,6 +294,42 @@ export async function getParticipantCount(options = {}) {
     const channel = normalizeChannel(options.channel);
     const snapshot = await sdk.get(sdk.ref(database, getParticipantCountPath(channel)));
     return Number(snapshot.val()) || 0;
+}
+
+export async function getLatestSwipeComplete(options = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return null;
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return null;
+    }
+
+    const channel = normalizeChannel(options.channel);
+    const snapshot = await sdk.get(sdk.ref(database, getSwipesPath(channel)));
+    let latest = null;
+
+    snapshot.forEach((child) => {
+        const data = child.val();
+        if (!data || data.type !== "swipe-completed") {
+            return;
+        }
+        const candidate = { id: child.key, ...data };
+        const candidateCount = Number(candidate.count) || 0;
+        const latestCount = Number(latest?.count) || 0;
+        const candidateCreatedAt = Number(candidate.createdAt) || 0;
+        const latestCreatedAt = Number(latest?.createdAt) || 0;
+        if (
+            !latest ||
+            candidateCount > latestCount ||
+            (candidateCount === latestCount && candidateCreatedAt > latestCreatedAt)
+        ) {
+            latest = candidate;
+        }
+    });
+
+    return latest;
 }
 
 export async function subscribeToParticipantCount(callback, options = {}) {
@@ -375,6 +422,7 @@ export async function publishNameAnnouncement(payload = {}) {
         isConsecutiveReturn: payload.isConsecutiveReturn === true,
         streakDays: Math.max(1, Number(payload.streakDays) || 1),
         totalDays: Math.max(1, Number(payload.totalDays) || 1),
+        tickerFont: normalizeTickerFont(payload.tickerFont),
     };
     let lastError = null;
 

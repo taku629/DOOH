@@ -26,6 +26,7 @@ const baseParticipationChannel = displayShell?.dataset.participationChannel || "
 const participationChannel = getChannelForTheme(displayTheme, baseParticipationChannel);
 const playlistPath = "./config/playlist.json";
 const DEMO_DONATION_YEN = 100;
+const TOTAL_PARTICIPANT_GOAL = 3000;
 
 document.documentElement.dataset.theme = displayTheme;
 
@@ -51,20 +52,18 @@ function formatDonationTotal(count) {
 function updateRelightGoal(count) {
     const goal = getDonationMilestoneGoal(playlist, count, DEMO_DONATION_YEN);
     const formattedCount = Math.max(0, Number(count) || 0).toLocaleString("ja-JP");
-    const formattedTarget = goal.targetCount.toLocaleString("ja-JP");
+    const formattedTotalGoal = TOTAL_PARTICIPANT_GOAL.toLocaleString("ja-JP");
 
     relightGoal?.classList.toggle("is-reached", goal.reached);
 
     if (relightRemaining) {
         relightRemaining.textContent = goal.reached
-            ? "新宿が点灯しました"
-            : `あと${goal.remainingCount.toLocaleString("ja-JP")}人で新宿が点灯`;
+            ? "新宿の映像が切り替わります"
+            : `次の映像変化まであと${goal.remainingCount.toLocaleString("ja-JP")}人`;
     }
 
     if (relightProgressText) {
-        relightProgressText.textContent = goal.reached
-            ? `現在 ${formattedCount}人参加 / ${formattedTarget}人達成`
-            : `現在 ${formattedCount}人 / ${formattedTarget}人で点灯`;
+        relightProgressText.textContent = `累計 ${formattedCount}人 / 目標 ${formattedTotalGoal}人`;
     }
 
     if (relightProgressBar) {

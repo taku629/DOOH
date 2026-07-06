@@ -1,5 +1,5 @@
-const NG_WORDS = [
-    // Threats, violence, and self-harm.
+const UNSAFE_WORDS = [
+    // Violence, threats, and self-harm.
     "死ね",
     "しね",
     "シネ",
@@ -11,7 +11,6 @@ const NG_WORDS = [
     "爆破",
     "放火",
     "刺す",
-    "犯す",
     "自殺",
     "fuck",
     "fck",
@@ -19,8 +18,9 @@ const NG_WORDS = [
     "murder",
     "rape",
     "suicide",
+    "kys",
 
-    // Sexual, abusive, and discriminatory language.
+    // Sexual, abusive, discriminatory, or degrading language.
     "うんこ",
     "うんち",
     "ちんこ",
@@ -29,14 +29,34 @@ const NG_WORDS = [
     "セックス",
     "せっくす",
     "エロ",
-    "アホ",
+    "アダルト",
     "バカ",
+    "ばか",
     "クソ",
     "くそ",
     "ガイジ",
     "キチガイ",
     "池沼",
-    "死刑",
+    "死ね",
+    "援交",
+    "売春",
+    "買春",
+    "パパ活",
+    "デリヘル",
+    "ソープ",
+    "風俗",
+    "裸",
+    "ヌード",
+    "レイプ",
+    "ブス",
+    "デブ",
+    "ゴミ",
+    "カス",
+    "しこしこ",
+    "オナニー",
+    "陰茎",
+    "陰部",
+    "性器",
     "shit",
     "bitch",
     "asshole",
@@ -45,6 +65,8 @@ const NG_WORDS = [
     "pussy",
     "porn",
     "sex",
+    "slut",
+    "whore",
     "nazi",
     "hitler",
     "nigger",
@@ -52,94 +74,103 @@ const NG_WORDS = [
     "faggot",
 ];
 
-const EXTRA_NG_WORDS = [
-    "\u63f4\u4ea4",
-    "\u58f2\u6625",
-    "\u8cb7\u6625",
-    "\u30d1\u30d1\u6d3b",
-    "\u30c7\u30ea\u30d8\u30eb",
-    "\u30bd\u30fc\u30d7",
-    "\u98a8\u4fd7",
-    "\u88f8",
-    "\u30cc\u30fc\u30c9",
-    "\u30ec\u30a4\u30d7",
-    "\u30d6\u30b9",
-    "\u30c7\u30d6",
-    "\u30b4\u30df",
-    "\u30ab\u30b9",
-    "\u3057\u3053\u3057\u3053",
-    "\u30aa\u30ca\u30cb\u30fc",
-    "\u9670\u830e",
-    "\u9670\u90e8",
-    "\u6027\u5668",
-];
-
 const IMPERSONATION_WORDS = [
     "新宿区公式",
     "新宿公式",
+    "新宿区役所",
+    "新宿区職員",
+    "警視庁公式",
     "警察公式",
     "運営公式",
-    "公式運営",
     "管理者",
-    "administrator",
+    "管理部公式",
+    "京王公式",
+    "京王エージェンシー公式",
+    "大学公式",
+    "学校公式",
     "officialadmin",
-    "\u65b0\u5bbf\u533a\u5f79\u6240",
-    "\u65b0\u5bbf\u533a\u8077\u54e1",
-    "\u8b66\u8996\u5e81",
-    "\u8b66\u5bdf",
-    "\u4eac\u738b\u516c\u5f0f",
-    "\u4eac\u738b\u30a8\u30fc\u30b8\u30a7\u30f3\u30b7\u30fc\u516c\u5f0f",
-    "\u5927\u5b66\u516c\u5f0f",
-    "\u5b66\u6821\u516c\u5f0f",
-    "\u7ba1\u7406\u90e8\u516c\u5f0f",
+    "administrator",
 ];
 
 const URL_PATTERNS = [
     /https?:\/\//i,
     /www\./i,
     /\.(com|net|org|jp|co|io|biz|info|me|tv|tk|ml|ga|cf|xyz|link)\b/i,
-    /(t\.co|bit\.ly|tinyurl|lin\.ee)/i,
+    /(t\.co|bit\.ly|tinyurl|lin\.ee|forms\.gle|x\.gd|is\.gd)/i,
 ];
 
 const CONTACT_PATTERNS = [
     /[\w.+-]+@[\w.-]+\.[a-z]{2,}/i,
-    /(?:\+?81[-ー－\s]?)?0\d{1,4}[-ー－\s]?\d{1,4}[-ー－\s]?\d{3,4}/,
-    /(?:line|instagram|insta|twitter|discord|telegram|tiktok)[\s:：＠@_-]+[\w.-]{3,}/i,
-    /\bx[\s:：＠@_-]+[\w.-]{3,}/i,
+    /(?:\+?81[-ー\s]?)?0\d{1,4}[-ー\s]?\d{1,4}[-ー\s]?\d{3,4}/,
+    /(?:line|instagram|insta|twitter|discord|telegram|tiktok|snapchat)[\s:：@_-]+[\w.-]{3,}/i,
+    /\b(?:x|旧twitter)[\s:：@_-]+[\w.-]{3,}/i,
 ];
 
 const PERSONAL_INFO_PATTERNS = [
     /\b\d{3}[-\s]?\d{4}\b/,
-    /(?:\u4f4f\u6240|\u672c\u540d|\u5b66\u7c4d\u756a\u53f7|\u5b66\u751f\u756a\u53f7|\u30de\u30a4\u30ca\u30f3\u30d0\u30fc)/u,
+    /(?:住所|本名|実名|学籍番号|学生番号|電話番号|携帯番号|マイナンバー)/u,
 ];
 
-const OFFICIAL_ROLE_PATTERN = /(?:\u516c\u5f0f|official|admin|administrator|\u7ba1\u7406\u8005|\u904b\u55b6|\u8077\u54e1|\u6559\u54e1|\u5148\u751f|\u8b66\u5bdf|\u5f79\u6240)/iu;
+const OFFICIAL_ROLE_PATTERN = /(?:公式|official|admin|administrator|管理者|運営|職員|教員|先生|警察|役所)/iu;
+const PUBLIC_ENTITY_PATTERN = /(?:新宿|区|京王|大学|学校|警察|運営|管理)/u;
 
 const SPAM_PATTERNS = [
     /(.)\1{4,}/u,
-    /[A-Za-z0-9]{12,}/,
-    /[!?！？]{5,}/,
+    /[A-Za-z0-9]{18,}/,
+    /[!?！？wｗ笑]{6,}/u,
+    /(?:無料|副業|稼げる|投資|出会い|登録|プレゼント).*(?:http|www|\.com|\.jp)/iu,
 ];
 
 const INVISIBLE_OR_CONTROL_PATTERN = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/u;
+const SEPARATOR_PATTERN = /[\s\u3000\-‐‑‒–—―ーｰ_~〜～・･.,，、。/\\|:：;；'’"“”`´^ˆ¨!！?？()[\]{}<>＜＞「」『』【】★☆◇◆○●◎♪♫#＃@＠+＋=*＝￥$＄%％&＆]+/gu;
+
+function katakanaToHiragana(value) {
+    return value.replace(/[\u30a1-\u30f6]/g, (char) =>
+        String.fromCharCode(char.charCodeAt(0) - 0x60),
+    );
+}
+
+function normalizeLeetspeak(value) {
+    return value
+        .replace(/[0ｏοо○〇]/g, "o")
+        .replace(/[1!！ｌｉ|｜]/g, "i")
+        .replace(/[3ｅ]/g, "e")
+        .replace(/[4@＠ａ]/g, "a")
+        .replace(/[5$＄ｓ]/g, "s")
+        .replace(/[7＋+ｔ]/g, "t")
+        .replace(/[8ｂ]/g, "b");
+}
 
 function normalizeForModeration(value) {
-    return String(value)
-        .normalize("NFKC")
-        .toLowerCase()
-        .replace(/[0０]/g, "o")
-        .replace(/[1１!！|｜]/g, "i")
-        .replace(/[3３]/g, "e")
-        .replace(/[4４@＠]/g, "a")
-        .replace(/[5５$＄]/g, "s")
-        .replace(/[7７]/g, "t")
-        .replace(/[\s\u3000\-‐‑‒–—―ー_＿・･.。,，、/／\\]+/gu, "");
+    return normalizeLeetspeak(katakanaToHiragana(String(value).normalize("NFKC").toLowerCase()))
+        .replace(SEPARATOR_PATTERN, "");
+}
+
+function includesUnsafeWord(normalizedText) {
+    for (const word of UNSAFE_WORDS) {
+        const normalizedWord = normalizeForModeration(word);
+        if (normalizedWord && normalizedText.includes(normalizedWord)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function includesImpersonationWord(normalizedText) {
+    for (const word of IMPERSONATION_WORDS) {
+        const normalizedWord = normalizeForModeration(word);
+        if (normalizedWord && normalizedText.includes(normalizedWord)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export function getNameModerationReason(name) {
     if (!name) {
         return null;
     }
+
     const raw = String(name);
     const trimmed = raw.trim();
     const normalized = normalizeForModeration(raw);
@@ -152,19 +183,15 @@ export function getNameModerationReason(name) {
         return "control_character";
     }
 
-    for (const word of [...NG_WORDS, ...EXTRA_NG_WORDS]) {
-        if (normalized.includes(normalizeForModeration(word))) {
-            return "unsafe_word";
-        }
+    if (includesUnsafeWord(normalized)) {
+        return "unsafe_word";
     }
 
-    for (const word of IMPERSONATION_WORDS) {
-        if (normalized.includes(normalizeForModeration(word))) {
-            return "impersonation";
-        }
+    if (includesImpersonationWord(normalized)) {
+        return "impersonation";
     }
 
-    if (OFFICIAL_ROLE_PATTERN.test(raw) && /(?:\u65b0\u5bbf|\u533a|\u4eac\u738b|\u5927\u5b66|\u5b66\u6821|\u8b66\u5bdf|\u904b\u55b6|\u7ba1\u7406)/u.test(raw)) {
+    if (OFFICIAL_ROLE_PATTERN.test(raw) && PUBLIC_ENTITY_PATTERN.test(raw)) {
         return "impersonation";
     }
 
@@ -173,21 +200,25 @@ export function getNameModerationReason(name) {
             return "link";
         }
     }
+
     for (const pattern of CONTACT_PATTERNS) {
         if (pattern.test(raw)) {
             return "contact";
         }
     }
+
     for (const pattern of PERSONAL_INFO_PATTERNS) {
         if (pattern.test(raw)) {
             return "personal_info";
         }
     }
+
     for (const pattern of SPAM_PATTERNS) {
         if (pattern.test(raw) || pattern.test(normalized)) {
             return "spam";
         }
     }
+
     return null;
 }
 

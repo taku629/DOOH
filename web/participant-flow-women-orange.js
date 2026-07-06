@@ -1,4 +1,3 @@
-import { getDonationMilestoneGoal } from "../src/condition-manager.js";
 import { getParticipantCount, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -29,6 +28,8 @@ const FALLBACK_COUNTER_TARGET = 0;
 const activeTheme = resolveTheme({ defaultTheme: "day" });
 const PARTICIPATION_CHANNEL = getChannelForTheme(activeTheme, "default");
 const DEMO_DONATION_YEN = 100;
+const TOTAL_PARTICIPANT_GOAL = 3000;
+const VISUAL_CHANGE_INTERVAL = 9;
 const PLAYLIST_PATH = new URL("../config/playlist.json", import.meta.url).href;
 const SWIPE_CHARGE_DISTANCE_RATIO = 0.34;
 const SWIPE_COMPLETE_SNAP_THRESHOLD = 96;
@@ -153,15 +154,15 @@ function buildMilestonePreview() {
   preview.setAttribute("aria-live", "polite");
 
   const kicker = document.createElement("span");
-  kicker.textContent = "点灯チャレンジ";
+  kicker.textContent = "3000人の彩プロジェクト";
 
   const primary = document.createElement("strong");
   primary.dataset.milestonePrimary = "";
-  primary.textContent = "あと9人で新宿が点灯";
+  primary.textContent = "次の映像変化まであと9人";
 
   const secondary = document.createElement("small");
   secondary.dataset.milestoneSecondary = "";
-  secondary.textContent = "現在 0人 / 9人で点灯";
+  secondary.textContent = "累計 0人 / 目標 3,000人";
 
   const progress = document.createElement("div");
   progress.className = "milestone-progress";
@@ -191,27 +192,32 @@ function updateMilestonePreview(count = participantCount) {
   }
 
   const safeCount = Math.max(0, Number(count) || 0);
-  const goal = getDonationMilestoneGoal(relightPlaylist, safeCount, DEMO_DONATION_YEN);
   const formattedCount = safeCount.toLocaleString("ja-JP");
-  const formattedTarget = goal.targetCount.toLocaleString("ja-JP");
+  const formattedTotalGoal = TOTAL_PARTICIPANT_GOAL.toLocaleString("ja-JP");
+  const roundPosition = safeCount % VISUAL_CHANGE_INTERVAL;
+  const remainingToNextVisual = roundPosition === 0 && safeCount > 0
+    ? 0
+    : VISUAL_CHANGE_INTERVAL - roundPosition;
+  const progressToNextVisual = remainingToNextVisual === 0
+    ? 100
+    : (roundPosition / VISUAL_CHANGE_INTERVAL) * 100;
+  const justReachedVisualShift = remainingToNextVisual === 0 && safeCount > 0;
 
-  milestonePreview.classList.toggle("is-reached", goal.reached);
-  milestonePreview.style.setProperty("--milestone-progress", `${goal.progress}%`);
+  milestonePreview.classList.toggle("is-reached", justReachedVisualShift);
+  milestonePreview.style.setProperty("--milestone-progress", `${progressToNextVisual}%`);
 
   if (milestonePrimary) {
-    milestonePrimary.textContent = goal.reached
-      ? "新宿が点灯しました"
-      : `あと${goal.remainingCount.toLocaleString("ja-JP")}人で新宿が点灯`;
+    milestonePrimary.textContent = justReachedVisualShift
+      ? "新宿の映像が切り替わります"
+      : `次の映像変化まであと${remainingToNextVisual.toLocaleString("ja-JP")}人`;
   }
 
   if (milestoneSecondary) {
-    milestoneSecondary.textContent = goal.reached
-      ? `現在 ${formattedCount}人参加 / ${formattedTarget}人達成`
-      : `現在 ${formattedCount}人 / ${formattedTarget}人で点灯`;
+    milestoneSecondary.textContent = `累計 ${formattedCount}人 / 目標 ${formattedTotalGoal}人`;
   }
 
   if (milestoneProgressBar) {
-    milestoneProgressBar.style.width = `${goal.progress}%`;
+    milestoneProgressBar.style.width = `${progressToNextVisual}%`;
   }
 }
 

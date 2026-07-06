@@ -586,18 +586,18 @@
         const local = ["localhost", "127.0.0.1"].includes(location.hostname);
         const participantRoutes = local
             ? {
-                men: "web/participant-flow-men.html",
-                women: "web/participant-flow-women.html",
+                men: "web/participant-flow-shared.html?exp=men",
+                women: "web/participant-flow-shared.html?exp=women",
             }
             : { men: "/men", women: "/women" };
         const doohRoute = local ? "demo.html" : "/demo";
-        const SURVEY_URL = "https://forms.gle/jtr2h4kjobo1R4BUA";
+        const SURVEY_URL = "https://forms.gle/wjinG48Eg5UJf1wa7";
         const TEAM_TEST_MODE =
             /(^|\/)team-test\/?$/.test(location.pathname) ||
             (local && new URLSearchParams(location.search).has("team-test"));
         const PARTICIPATION_CHANNEL = TEAM_TEST_MODE ? "research" : "default";
         const SLACK_SOURCE_MODE = new URLSearchParams(location.search).get("source") === "slack";
-        const PUBLIC_BROWSER_URL = "https://shinjuku-dooh-rs.web.app/";
+        const PUBLIC_BROWSER_URL = `${location.origin}${location.pathname}`.replace(/\/$/, "") || location.origin;
         let activeReturnTestDate = TEAM_TEST_MODE
             ? new URLSearchParams(location.search).get("return-test-date")
             : "";
