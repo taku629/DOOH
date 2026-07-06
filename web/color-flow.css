@@ -1,0 +1,955 @@
+/* Smartphone color layer: keep the first swipe monochrome, then let color appear. */
+
+body {
+  --flow-accent: #c94d3f;
+  --flow-accent-2: #d78948;
+  --flow-accent-3: #5d748f;
+  --flow-soft: rgba(201, 77, 63, 0.055);
+  --flow-soft-2: rgba(215, 137, 72, 0.05);
+  --flow-ink-on-color: #ffffff;
+  --flow-muted-line: color-mix(in srgb, var(--flow-accent) 18%, rgba(21, 25, 25, 0.16));
+}
+
+body[data-support-color="patrol"] {
+  --flow-accent: #416f9c;
+  --flow-accent-2: #6f93aa;
+  --flow-accent-3: #8ba6b8;
+  --flow-soft: rgba(65, 111, 156, 0.055);
+  --flow-soft-2: rgba(111, 147, 170, 0.05);
+}
+
+body[data-support-color="graffiti"] {
+  --flow-accent: #4d7b60;
+  --flow-accent-2: #879c62;
+  --flow-accent-3: #9aa884;
+  --flow-soft: rgba(77, 123, 96, 0.055);
+  --flow-soft-2: rgba(135, 156, 98, 0.05);
+}
+
+body[data-support-color="outreach"] {
+  --flow-accent: #c94d3f;
+  --flow-accent-2: #d78948;
+  --flow-accent-3: #d6a861;
+  --flow-soft: rgba(201, 77, 63, 0.055);
+  --flow-soft-2: rgba(215, 137, 72, 0.05);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation {
+  background:
+    linear-gradient(180deg, var(--flow-soft), transparent 18rem),
+    var(--bg) !important;
+  transition: background 640ms var(--ease-out);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .sparkle-pattern {
+  opacity: 0.42;
+  background-image:
+    linear-gradient(115deg, transparent 0 48%, color-mix(in srgb, var(--flow-accent) 9%, transparent) 48.5%, transparent 49.2% 100%);
+  background-size: 220px 220px;
+  background-position: 0 0;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .sparkle-brand .material-symbols-outlined {
+  color: var(--flow-accent);
+  filter: none;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation #progressBar {
+  background: var(--flow-accent) !important;
+  box-shadow: none;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .viewport {
+  border-color: var(--flow-muted-line);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px color-mix(in srgb, var(--flow-accent) 6%, transparent);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step-count {
+  background: color-mix(in srgb, var(--flow-accent) 12%, #fff);
+  color: color-mix(in srgb, var(--flow-accent) 76%, #151919);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--flow-accent) 16%, transparent);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box {
+  background:
+    linear-gradient(180deg, #fff, color-mix(in srgb, var(--flow-accent) 3%, #fff)),
+    #fff;
+  box-shadow:
+    var(--shadow-md),
+    inset 0 0 0 1px var(--flow-muted-line);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box strong,
+html:not([data-theme="morning"]) body.has-color-participation .counter-box em {
+  color: color-mix(in srgb, var(--flow-accent) 72%, #151919);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box em {
+  padding: 0.42rem 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--flow-accent) 82%, #171a1b);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), color-mix(in srgb, var(--flow-accent) 8%, #fff));
+  border: 1px solid color-mix(in srgb, var(--flow-accent) 34%, rgba(21, 25, 25, 0.16));
+  box-shadow:
+    0 8px 18px rgba(21, 25, 25, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), color-mix(in srgb, var(--flow-accent) 2.5%, rgba(255, 255, 255, 0.9)));
+  border-color: var(--flow-muted-line);
+  box-shadow: var(--shadow-sm);
+}
+
+.support-choice-option[data-support-choice="patrol"] {
+  --choice-accent: #2f6fed;
+  --choice-accent-2: #4fc3ff;
+}
+
+.support-choice-option[data-support-choice="graffiti"] {
+  --choice-accent: #13a36f;
+  --choice-accent-2: #82c95f;
+}
+
+.support-choice-option[data-support-choice="outreach"] {
+  --choice-accent: #e64b3c;
+  --choice-accent-2: #ff8a3d;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 4%, #fff), #fff),
+    #fff;
+  border-color: color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 18%, rgba(21, 25, 25, 0.16));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option .support-choice-icon,
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option .material-symbols-outlined {
+  color: color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 78%, #151919);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[aria-pressed="true"] {
+  color: var(--flow-ink-on-color);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 92%, #1a1d1f), color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 72%, #111));
+  border-color: transparent;
+  box-shadow:
+    0 12px 24px color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 16%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[aria-pressed="true"] small,
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[aria-pressed="true"] .support-choice-icon {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-detail {
+  border-color: var(--flow-muted-line);
+  background:
+    linear-gradient(180deg, #fff, color-mix(in srgb, var(--flow-accent) 3%, #fff));
+  box-shadow: var(--shadow-sm);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-detail::before,
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-complete-note {
+  background: var(--flow-accent);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-complete-note {
+  border-left: 0;
+  color: #fff !important;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation input[type="text"]:focus {
+  box-shadow:
+    inset 0 0 0 1px var(--flow-accent),
+    0 0 0 4px color-mix(in srgb, var(--flow-accent) 15%, transparent);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .ticker-font-option.is-selected,
+html:not([data-theme="morning"]) body.has-color-participation .ticker-font-option[aria-pressed="true"] {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--flow-accent), var(--flow-accent-2));
+  color: #fff;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--flow-accent) 8%, #ffffff), rgba(255, 255, 255, 0.92)),
+    radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--flow-accent-2) 18%, transparent), transparent 8rem),
+    #fff;
+  box-shadow:
+    0 22px 54px rgba(20, 20, 30, 0.13),
+    inset 0 0 0 1px color-mix(in srgb, var(--flow-accent) 18%, rgba(21, 25, 25, 0.12));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card::before {
+  background: radial-gradient(circle, color-mix(in srgb, var(--flow-accent-2) 16%, transparent), transparent 62%);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .official-follow-up {
+  border-color: color-mix(in srgb, var(--flow-accent) 64%, #151919);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--flow-accent) 42%, #151919), #151919);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .official-follow-up a,
+html:not([data-theme="morning"]) body.has-color-participation .primary {
+  background: var(--flow-accent);
+  color: #fff;
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--flow-accent) 16%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme="morning"]) body.has-color-participation .viewport {
+    animation: colorArrival 720ms var(--ease-out) both;
+  }
+
+  html:not([data-theme="morning"]) body.has-color-participation .card {
+    animation: certificateGlow 1600ms ease-out both;
+  }
+}
+
+@keyframes colorArrival {
+  from {
+    filter: saturate(0.15);
+  }
+  to {
+    filter: saturate(1);
+  }
+}
+
+@keyframes certificateGlow {
+  0% {
+    transform: translateY(10px);
+    filter: saturate(0.35) brightness(0.98);
+  }
+  55% {
+    filter: saturate(1.02) brightness(1.01);
+  }
+  100% {
+    transform: translateY(0);
+    filter: saturate(1) brightness(1);
+  }
+}
+
+/* Option B: irodori layer. Add visible color as pieces, ribbons, and cards,
+   not only as a theme tint. */
+html:not([data-theme="morning"]) body.has-color-participation {
+  --irodori-red: #d84d44;
+  --irodori-orange: #df9748;
+  --irodori-green: #78a66b;
+  --irodori-blue: #4d7fa6;
+  --irodori-violet: #7b6fa8;
+  --irodori-paper: rgba(255, 255, 255, 0.92);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .viewport {
+  position: relative;
+  overflow: hidden;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .viewport::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      var(--irodori-red) 0 18%,
+      var(--irodori-orange) 18% 36%,
+      var(--irodori-green) 36% 56%,
+      var(--irodori-blue) 56% 78%,
+      var(--irodori-violet) 78% 100%
+    );
+  opacity: 0.86;
+  transform-origin: top;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, var(--irodori-paper), rgba(255, 255, 255, 0.78)),
+    radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--flow-accent-2) 20%, transparent), transparent 8rem),
+    #fff;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background:
+    linear-gradient(
+      90deg,
+      var(--irodori-red),
+      var(--irodori-orange),
+      var(--irodori-green),
+      var(--irodori-blue)
+    );
+  opacity: 0.92;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice {
+  position: relative;
+  overflow: hidden;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice::after {
+  content: "";
+  position: absolute;
+  right: 1.1rem;
+  top: 1.1rem;
+  width: 5.2rem;
+  height: 5.2rem;
+  pointer-events: none;
+  border-radius: 999px;
+  background:
+    conic-gradient(
+      from 20deg,
+      color-mix(in srgb, var(--irodori-red) 28%, transparent),
+      color-mix(in srgb, var(--irodori-orange) 22%, transparent),
+      color-mix(in srgb, var(--irodori-green) 20%, transparent),
+      color-mix(in srgb, var(--irodori-blue) 24%, transparent),
+      color-mix(in srgb, var(--irodori-red) 28%, transparent)
+    );
+  filter: blur(0.2px);
+  opacity: 0.62;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option {
+  position: relative;
+  overflow: hidden;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 5px;
+  background: var(--choice-accent, var(--flow-accent));
+  opacity: 0.82;
+  transform: scaleX(0.34);
+  transform-origin: left;
+  transition:
+    transform 260ms var(--ease-out),
+    opacity 260ms var(--ease-out);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[aria-pressed="true"]::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[data-support-choice="patrol"]::after {
+  background: linear-gradient(90deg, #416f9c, #74a8c8);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[data-support-choice="graffiti"]::after {
+  background: linear-gradient(90deg, #4d7b60, #a0b56f);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[data-support-choice="outreach"]::after {
+  background: linear-gradient(90deg, #c94d3f, #df9748);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-detail {
+  position: relative;
+  overflow: hidden;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-detail::after {
+  content: "";
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  width: 4.8rem;
+  height: 4.8rem;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 28%, var(--irodori-red) 0 6px, transparent 7px),
+    radial-gradient(circle at 70% 24%, var(--irodori-orange) 0 5px, transparent 6px),
+    radial-gradient(circle at 48% 72%, var(--irodori-blue) 0 5px, transparent 6px);
+  opacity: 0.2;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card {
+  position: relative;
+  overflow: hidden;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 9px;
+  background:
+    linear-gradient(
+      90deg,
+      var(--irodori-red) 0 20%,
+      var(--irodori-orange) 20% 40%,
+      var(--irodori-green) 40% 60%,
+      var(--irodori-blue) 60% 80%,
+      var(--irodori-violet) 80% 100%
+    );
+  opacity: 0.94;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card h3 {
+  color: #151919;
+  text-shadow: none;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card p,
+html:not([data-theme="morning"]) body.has-color-participation .card small {
+  color: rgba(21, 25, 25, 0.62);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .ticker-font-option.is-selected,
+html:not([data-theme="morning"]) body.has-color-participation .ticker-font-option[aria-pressed="true"] {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--flow-accent) 88%, #171a1b), color-mix(in srgb, var(--flow-accent-2) 76%, #171a1b));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme="morning"]) body.has-color-participation .viewport::after {
+    animation: irodoriRailIn 740ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  html:not([data-theme="morning"]) body.has-color-participation .support-choice::after {
+    animation: irodoriHalo 4200ms ease-in-out infinite;
+  }
+
+  html:not([data-theme="morning"]) body.has-color-participation .counter-box::before,
+  html:not([data-theme="morning"]) body.has-color-participation .card::after {
+    animation: irodoriSweep 780ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@keyframes irodoriRailIn {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes irodoriSweep {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes irodoriHalo {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(-0.5rem, 0.35rem, 0) rotate(24deg);
+    opacity: 0.72;
+  }
+}
+
+/* Stronger local preview: make the color change readable at a glance. */
+html:not([data-theme="morning"]) body.has-color-participation {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(216, 77, 68, 0.2), transparent 15rem),
+    radial-gradient(circle at 4% 42%, rgba(77, 127, 166, 0.14), transparent 13rem),
+    linear-gradient(180deg, rgba(223, 151, 72, 0.12), transparent 20rem),
+    var(--bg) !important;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .progress {
+  position: relative;
+  padding-block: 0.9rem;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .progress::before {
+  content: "彩が入りました";
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 0.7rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background:
+    linear-gradient(90deg, var(--irodori-red), var(--irodori-orange), var(--irodori-blue));
+  box-shadow: 0 10px 24px rgba(216, 77, 68, 0.18);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation #progressBar {
+  background:
+    linear-gradient(
+      90deg,
+      var(--irodori-red) 0 24%,
+      var(--irodori-orange) 24% 48%,
+      var(--irodori-green) 48% 72%,
+      var(--irodori-blue) 72% 100%
+    ) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 8px 18px rgba(216, 77, 68, 0.18);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .viewport {
+  border-color: rgba(216, 77, 68, 0.32);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.86)),
+    linear-gradient(135deg, rgba(216, 77, 68, 0.12), rgba(77, 127, 166, 0.1));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step.is-current {
+  background:
+    radial-gradient(circle at 94% 12%, rgba(216, 77, 68, 0.12), transparent 8rem),
+    radial-gradient(circle at 8% 92%, rgba(77, 127, 166, 0.1), transparent 9rem);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step-count {
+  color: color-mix(in srgb, var(--flow-accent) 72%, #151919);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), color-mix(in srgb, var(--flow-accent) 10%, #fff));
+  box-shadow:
+    0 10px 22px rgba(21, 25, 25, 0.08),
+    inset 0 0 0 1px color-mix(in srgb, var(--flow-accent) 32%, rgba(21, 25, 25, 0.12));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option {
+  box-shadow:
+    0 10px 24px rgba(21, 25, 25, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[aria-pressed="true"] {
+  transform: translateY(-2px);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-detail {
+  border-color: color-mix(in srgb, var(--flow-accent) 38%, rgba(21, 25, 25, 0.14));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.84)),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flow-accent-2) 22%, transparent), transparent 8rem);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card {
+  background:
+    radial-gradient(circle at 86% 18%, rgba(223, 151, 72, 0.2), transparent 7rem),
+    radial-gradient(circle at 10% 86%, rgba(77, 127, 166, 0.16), transparent 7rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--flow-accent) 7%, #fff), rgba(255, 255, 255, 0.95));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card::after {
+  height: 14px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme="morning"]) body.has-color-participation .progress::before {
+    animation: colorBadgeIn 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  html:not([data-theme="morning"]) body.has-color-participation .step-count {
+    animation: colorPop 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@keyframes colorBadgeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.55rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes colorPop {
+  0% {
+    transform: scale(0.92);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* UX pass: color travels through the whole smartphone flow. */
+html:not([data-theme="morning"]) body.has-color-participation .progress::before {
+  content: "\5FDC\63F4\304C\753B\9762\306B\53CD\6620\3055\308C\307E\3057\305F";
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step {
+  position: relative;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step.is-current {
+  --stage-a: var(--irodori-red);
+  --stage-b: var(--irodori-orange);
+  --stage-c: var(--irodori-blue);
+  isolation: isolate;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step[data-step="1"].is-current {
+  --stage-a: var(--irodori-red);
+  --stage-b: var(--irodori-orange);
+  --stage-c: var(--irodori-green);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step[data-step="2"].is-current {
+  --stage-a: var(--irodori-blue);
+  --stage-b: var(--irodori-green);
+  --stage-c: var(--irodori-orange);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step[data-step="3"].is-current {
+  --stage-a: var(--irodori-violet);
+  --stage-b: var(--irodori-blue);
+  --stage-c: var(--irodori-red);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step.is-current::after {
+  content: "";
+  position: absolute;
+  top: 1.1rem;
+  right: 1rem;
+  z-index: -1;
+  width: 0.82rem;
+  height: 0.82rem;
+  border-radius: 999px;
+  pointer-events: none;
+  background: var(--stage-a);
+  box-shadow:
+    -1.45rem 1.4rem 0 -0.08rem var(--stage-b),
+    0.25rem 3.05rem 0 -0.14rem var(--stage-c),
+    -2.65rem 3.35rem 0 -0.18rem color-mix(in srgb, var(--stage-a) 72%, #fff),
+    -0.85rem 4.8rem 0 -0.22rem color-mix(in srgb, var(--stage-b) 72%, #fff);
+  opacity: 0.48;
+  filter: blur(0.1px);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step.is-current > h2 {
+  position: relative;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .step.is-current > h2::after {
+  content: "";
+  display: block;
+  width: min(7.5rem, 44%);
+  height: 0.42rem;
+  margin-top: 0.58rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, var(--stage-a), var(--stage-b), var(--stage-c));
+  opacity: 0.9;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box,
+html:not([data-theme="morning"]) body.has-color-participation .support-choice,
+html:not([data-theme="morning"]) body.has-color-participation .support-trend,
+html:not([data-theme="morning"]) body.has-color-participation .card {
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box {
+  border-color: color-mix(in srgb, var(--irodori-red) 28%, rgba(21, 25, 25, 0.12));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend {
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--irodori-blue) 30%, rgba(21, 25, 25, 0.13));
+  background:
+    radial-gradient(circle at 92% 12%, rgba(77, 127, 166, 0.18), transparent 8rem),
+    radial-gradient(circle at 8% 88%, rgba(120, 166, 107, 0.14), transparent 8rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86));
+  box-shadow:
+    0 18px 38px rgba(21, 25, 25, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background:
+    linear-gradient(90deg, var(--irodori-blue), var(--irodori-green), var(--irodori-orange));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-line {
+  stroke: color-mix(in srgb, var(--irodori-blue) 78%, #151919);
+  filter: drop-shadow(0 8px 12px rgba(77, 127, 166, 0.18));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-dot {
+  fill: var(--irodori-blue);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-dot.is-now {
+  fill: var(--irodori-red);
+  animation: none;
+  transform: none;
+  transform-origin: 198px 68px;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-chart text {
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.86);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-value {
+  fill: color-mix(in srgb, var(--irodori-blue) 78%, #151919) !important;
+  stroke-width: 2px;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-value.is-now {
+  fill: var(--irodori-red) !important;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-label-now {
+  transform: translateY(2px);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-stat {
+  background:
+    linear-gradient(90deg, rgba(77, 127, 166, 0.12), rgba(224, 79, 73, 0.1)),
+    rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.68);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-source {
+  border-color: color-mix(in srgb, var(--irodori-blue) 26%, rgba(21, 25, 25, 0.12));
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.84));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .primary {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--stage-a, var(--flow-accent)) 86%, #171a1b), color-mix(in srgb, var(--stage-b, var(--flow-accent-2)) 72%, #171a1b));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(105deg, transparent 0 36%, rgba(255, 255, 255, 0.34) 48%, transparent 60% 100%);
+  transform: translateX(-120%);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card {
+  border-color: color-mix(in srgb, var(--irodori-violet) 24%, rgba(21, 25, 25, 0.12));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card::before {
+  inset: -26% -8% auto auto;
+  width: 54%;
+  opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme="morning"]) body.has-color-participation .step.is-current::after {
+    animation: colorChipsFloat 4.8s ease-in-out infinite;
+  }
+
+  html:not([data-theme="morning"]) body.has-color-participation .step.is-current > h2::after {
+    animation: irodoriSweep 760ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  html:not([data-theme="morning"]) body.has-color-participation .primary::after {
+    animation: buttonSheen 3.8s ease-in-out infinite;
+  }
+}
+
+@keyframes colorChipsFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-0.35rem, 0.48rem, 0) rotate(18deg);
+  }
+}
+
+@keyframes buttonSheen {
+  0%,
+  42% {
+    transform: translateX(-120%);
+  }
+  72%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+/* Rich color pass: mesh gradient, bento-like surfaces, and subtle motion. */
+html:not([data-theme="morning"]) body.has-color-participation {
+  background:
+    radial-gradient(circle at 86% 6%, rgba(216, 77, 68, 0.34), transparent 14rem),
+    radial-gradient(circle at 6% 30%, rgba(77, 127, 166, 0.24), transparent 13rem),
+    radial-gradient(circle at 78% 72%, rgba(120, 166, 107, 0.24), transparent 14rem),
+    linear-gradient(180deg, rgba(223, 151, 72, 0.16), rgba(255, 255, 255, 0) 26rem),
+    var(--bg) !important;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .sparkle-pattern {
+  opacity: 0.66;
+  background-image:
+    radial-gradient(circle at 18px 18px, rgba(216, 77, 68, 0.18) 0 4px, transparent 5px),
+    radial-gradient(circle at 42px 36px, rgba(77, 127, 166, 0.16) 0 3px, transparent 4px),
+    linear-gradient(115deg, transparent 0 48%, rgba(120, 166, 107, 0.12) 48.5%, transparent 49.2% 100%);
+  background-size: 86px 86px, 112px 112px, 220px 220px;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .viewport {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.7)),
+    radial-gradient(circle at 100% 0%, rgba(216, 77, 68, 0.16), transparent 13rem),
+    radial-gradient(circle at 0% 100%, rgba(77, 127, 166, 0.16), transparent 13rem);
+  border-color: rgba(216, 77, 68, 0.36);
+  box-shadow:
+    0 24px 70px rgba(21, 25, 25, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.72),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.62);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .viewport::before {
+  opacity: 0.52;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.94), transparent 18rem),
+    linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.42));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .progress::before {
+  color: #151919;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.76)),
+    linear-gradient(90deg, rgba(216, 77, 68, 0.22), rgba(223, 151, 72, 0.18), rgba(77, 127, 166, 0.2));
+  border: 1px solid rgba(216, 77, 68, 0.2);
+  box-shadow:
+    0 14px 26px rgba(21, 25, 25, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(216, 77, 68, 0.24), transparent 8.5rem),
+    radial-gradient(circle at 0% 100%, rgba(223, 151, 72, 0.2), transparent 8rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.93), rgba(255, 255, 255, 0.78));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .counter-box strong {
+  color: #151919;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(77, 127, 166, 0.2), transparent 10rem),
+    radial-gradient(circle at 4% 96%, rgba(120, 166, 107, 0.16), transparent 8rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.76));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 16%, transparent), transparent 5.5rem),
+    rgba(255, 255, 255, 0.86);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-option[aria-pressed="true"] {
+  color: #fff;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 94%, #151919), color-mix(in srgb, var(--choice-accent-2, var(--flow-accent-2)) 82%, #151919));
+  box-shadow:
+    0 18px 36px color-mix(in srgb, var(--choice-accent, var(--flow-accent)) 24%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-choice-detail {
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--flow-accent-2) 28%, transparent), transparent 9rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.8));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .support-trend-chart {
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.16)),
+    radial-gradient(circle at 76% 12%, rgba(216, 77, 68, 0.18), transparent 8rem);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card {
+  background:
+    radial-gradient(circle at 78% 14%, rgba(223, 151, 72, 0.32), transparent 8rem),
+    radial-gradient(circle at 12% 84%, rgba(123, 111, 168, 0.2), transparent 8rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.78));
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card::before {
+  background:
+    conic-gradient(
+      from 30deg,
+      rgba(216, 77, 68, 0.24),
+      rgba(223, 151, 72, 0.2),
+      rgba(77, 127, 166, 0.18),
+      rgba(123, 111, 168, 0.2),
+      rgba(216, 77, 68, 0.24)
+    );
+  filter: blur(1px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-theme="morning"]) body.has-color-participation .sparkle-pattern {
+    animation: meshDrift 12s ease-in-out infinite alternate;
+  }
+
+  html:not([data-theme="morning"]) body.has-color-participation .counter-box,
+  html:not([data-theme="morning"]) body.has-color-participation .support-choice,
+  html:not([data-theme="morning"]) body.has-color-participation .support-trend,
+  html:not([data-theme="morning"]) body.has-color-participation .card {
+    animation: cardLiftIn 680ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@keyframes meshDrift {
+  from {
+    background-position: 0 0, 22px 18px, 0 0;
+  }
+  to {
+    background-position: 26px 18px, -12px 36px, 32px 0;
+  }
+}
+
+@keyframes cardLiftIn {
+  from {
+    opacity: 0.82;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -9,8 +9,14 @@ test("allows ordinary display names", () => {
     }
 });
 
-test("blocks abusive words and common obfuscation", () => {
-    for (const name of ["死ね", "し ね", "ク・ソ", "f.u.c.k", "n a z i", "k1ll"]) {
+test("blocks Japanese abusive words and common obfuscation", () => {
+    for (const name of ["死ね", "し ね", "シ・ネ", "クソ", "くーーそ", "援交", "パパ活"]) {
+        assert.equal(isInappropriateName(name), true, name);
+    }
+});
+
+test("blocks English abusive words and common obfuscation", () => {
+    for (const name of ["f.u.c.k", "n a z i", "k1ll", "p0rn", "s e x", "a$s.hole", "k y s"]) {
         assert.equal(isInappropriateName(name), true, name);
     }
 });
@@ -21,6 +27,7 @@ test("blocks links, contact details, and spam", () => {
         "test@example.com",
         "090-1234-5678",
         "Instagram: example_user",
+        "LINE: sample_id",
         "!!!!!!!!",
         "aaaaaaaaaa",
     ]) {
@@ -29,18 +36,17 @@ test("blocks links, contact details, and spam", () => {
 });
 
 test("blocks official impersonation and invisible controls", () => {
-    for (const name of ["新宿区 公式", "運営・公式", "administrator", "さく\u200bら"]) {
+    for (const name of ["新宿区 公式", "運営・公式", "administrator", "さくら\u200b"]) {
         assert.equal(isInappropriateName(name), true, name);
     }
 });
 
-
 test("blocks high-risk public impersonation and personal info", () => {
     const cases = [
-        ["\u4eac\u738b\u516c\u5f0f", "impersonation"],
-        ["\u65b0\u5bbf\u533a\u8077\u54e1", "impersonation"],
-        ["\u5927\u5b66\u516c\u5f0f", "impersonation"],
-        ["\u5b66\u7c4d\u756a\u53f7 123456", "personal_info"],
+        ["京王公式", "impersonation"],
+        ["新宿区職員", "impersonation"],
+        ["大学公式", "impersonation"],
+        ["学籍番号 123456", "personal_info"],
     ];
 
     for (const [name, reason] of cases) {
@@ -50,7 +56,7 @@ test("blocks high-risk public impersonation and personal info", () => {
 });
 
 test("does not block ordinary affiliation-like names", () => {
-    for (const name of ["\u7ba1\u7406\u90e8\u306e\u5c71\u5d0e", "\u4eac\u738b\u597d\u304d", "\u5148\u751f\u3042\u308a\u304c\u3068\u3046"]) {
+    for (const name of ["管理部の山崎", "京王好き", "先生ありがとう"]) {
         assert.equal(isInappropriateName(name), false, name);
     }
 });

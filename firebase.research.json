@@ -44,11 +44,11 @@
       },
       {
         "source": "/men",
-        "destination": "/web/participant-flow-men.html"
+        "destination": "/web/participant-flow-shared.html"
       },
       {
         "source": "/women",
-        "destination": "/web/participant-flow-women.html"
+        "destination": "/web/participant-flow-shared.html"
       }
     ]
   }

@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdn.skypack.dev" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700&family=Hanken+Grotesk:wght@400;600;700&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=EB+Garamond:wght@500;600;700&family=Hanken+Grotesk:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@500;700&family=Noto+Sans+JP:wght@500;700&family=Shippori+Mincho:wght@600;700&family=Yusei+Magic&display=swap" rel="stylesheet" />
     <style>
         /* モノクロ大理石テーマ（theme-men.css / SHINJUKU GIVE に準拠） */
         :root {
@@ -62,7 +62,7 @@
             isolation: isolate;
         }
 
-        /* 待機画面：いま入れた新宿の写真をそのまま全画面表示 */
+        /* 待機画面：荒廃した新宿動画をそのまま全画面表示 */
         .base-layer {
             position: absolute;
             inset: 0;
@@ -71,6 +71,10 @@
             object-fit: cover;
             z-index: 0;
             pointer-events: none;
+        }
+
+        .base-video {
+            filter: brightness(0.82) contrast(1.06) saturate(0.92);
         }
 
         .ink-layer {
@@ -100,13 +104,30 @@
             z-index: 3;
             opacity: 0;
             mix-blend-mode: normal;
-            filter: sepia(0.2) saturate(1.18) brightness(1.06);
+            filter: sepia(0.08) saturate(1.08) brightness(0.96) contrast(1.02);
             transition: opacity 1800ms ease, filter 1800ms ease;
         }
 
         .warm-layer.is-revealed {
             opacity: 1;
-            filter: sepia(0.32) saturate(1.3) brightness(1.1);
+            filter: sepia(0.12) saturate(1.12) brightness(1.02) contrast(1.04);
+        }
+
+        .idle-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 4;
+            pointer-events: none;
+            opacity: 0;
+            filter: saturate(1.04) brightness(0.98) contrast(1.01);
+            transition: opacity 900ms ease;
+        }
+
+        .idle-layer.is-visible {
+            opacity: 1;
         }
 
         /* 全点灯時に画面全体をふわっと持ち上げる（白〜銀のモノクロ光） */
@@ -156,18 +177,19 @@
             z-index: 5;
             display: inline-flex;
             align-items: center;
-            gap: 12px;
+            gap: clamp(12px, 1vw, 20px);
             font-family: var(--font-serif);
             font-weight: 600;
             letter-spacing: 0.06em;
-            font-size: clamp(1rem, 1.5vw, 1.5rem);
+            font-size: clamp(1.35rem, 2.2vw, 2.25rem);
             color: #fff;
             text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
         }
 
         .brandbar::before {
             content: "";
-            width: 11px; height: 11px;
+            width: clamp(13px, 1.1vw, 20px);
+            height: clamp(13px, 1.1vw, 20px);
             border-radius: 999px;
             background: #fff;
             box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.16), 0 0 16px rgba(255, 255, 255, 0.6);
@@ -185,7 +207,7 @@
             top: clamp(56px, 5.4vw, 96px);
             left: clamp(22px, 2.8vw, 52px);
             z-index: 5;
-            font-size: clamp(0.72rem, 1vw, 0.92rem);
+            font-size: clamp(0.9rem, 1.25vw, 1.15rem);
             font-weight: 700;
             letter-spacing: 0.04em;
             color: rgba(255, 255, 255, 0.72);
@@ -253,7 +275,7 @@
             overflow: hidden;
             font-family: var(--font-sans);
             font-weight: 700;
-            font-size: clamp(0.72rem, 1.05vw, 1rem);
+            font-size: clamp(1rem, 1.55vw, 1.55rem);
             color: rgba(255, 255, 255, 0.82);
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.42);
             pointer-events: none;
@@ -269,11 +291,11 @@
         .thanks-group {
             display: flex;
             align-items: center;
-            gap: 0.85em;
+            gap: 1em;
             flex: none;
             min-width: 100vw;
             box-sizing: border-box;
-            padding: clamp(6px, 0.55vw, 9px) clamp(22px, 3vw, 52px);
+            padding: clamp(9px, 0.8vw, 14px) clamp(28px, 3.4vw, 64px);
             border-block: 1px solid rgba(255, 255, 255, 0.12);
             background: rgba(15, 18, 18, 0.38);
             backdrop-filter: blur(8px);
@@ -284,6 +306,36 @@
 
         .ticker-name {
             color: rgba(255, 255, 255, 0.82);
+            font-feature-settings: "palt" 1;
+            font-synthesis: none;
+            line-height: 1.25;
+        }
+
+        .ticker-font-noto {
+            font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+        }
+
+        .ticker-font-rounded {
+            font-family: "M PLUS Rounded 1c", "Noto Sans JP", sans-serif;
+            font-size: 0.98em;
+        }
+
+        .ticker-font-mincho {
+            font-family: "Shippori Mincho", "Noto Serif JP", serif;
+            font-size: 1.04em;
+            font-weight: 700;
+        }
+
+        .ticker-font-dot {
+            font-family: "DotGothic16", "Noto Sans JP", monospace;
+            font-size: 0.9em;
+            letter-spacing: 0.035em;
+        }
+
+        .ticker-font-yusei {
+            font-family: "Yusei Magic", "Noto Sans JP", sans-serif;
+            font-size: 0.98em;
+            letter-spacing: 0.02em;
         }
 
         .ticker-name.is-returning.streak-2,
@@ -330,8 +382,8 @@
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: clamp(5px, 0.55vw, 9px);
-            width: min(58vw, 720px);
+            gap: clamp(7px, 0.7vw, 12px);
+            width: min(64vw, 900px);
             color: #fff;
             font-family: var(--font-serif);
             pointer-events: none;
@@ -340,16 +392,16 @@
         .participation-thanks-item {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: clamp(10px, 0.9vw, 16px);
             max-width: 100%;
-            padding: clamp(5px, 0.5vw, 8px) clamp(10px, 1vw, 16px);
+            padding: clamp(8px, 0.8vw, 13px) clamp(14px, 1.35vw, 24px);
             border: 1px solid rgba(255, 255, 255, 0.16);
             border-radius: 999px;
             background: rgba(15, 18, 18, 0.54);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             color: #fff;
-            font-size: clamp(0.78rem, 1.18vw, 1.12rem);
+            font-size: clamp(1rem, 1.55vw, 1.55rem);
             font-weight: 600;
             line-height: 1.25;
             text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
@@ -360,8 +412,8 @@
 
         .participation-thanks-item::before {
             content: "";
-            width: 8px;
-            height: 8px;
+            width: clamp(9px, 0.8vw, 14px);
+            height: clamp(9px, 0.8vw, 14px);
             flex: none;
             border-radius: 999px;
             background: currentColor;
@@ -397,9 +449,9 @@
             top: clamp(122px, 17vh, 210px);
             right: clamp(26px, 3.4vw, 68px);
             z-index: 6;
-            width: min(31vw, 430px);
-            min-width: 280px;
-            padding: clamp(10px, 1vw, 15px) clamp(14px, 1.35vw, 22px);
+            width: min(38vw, 620px);
+            min-width: 360px;
+            padding: clamp(15px, 1.35vw, 24px) clamp(20px, 1.8vw, 34px);
             border: 1px solid rgba(255, 255, 255, 0.18);
             border-radius: clamp(16px, 1.45vw, 24px);
             background: linear-gradient(135deg, rgba(15, 18, 18, 0.7), rgba(15, 18, 18, 0.46));
@@ -422,7 +474,7 @@
         .supporter-comment-kicker {
             display: block;
             margin-bottom: 5px;
-            font-size: clamp(0.58rem, 0.72vw, 0.76rem);
+            font-size: clamp(0.76rem, 1vw, 1rem);
             font-weight: 700;
             letter-spacing: 0.16em;
             color: rgba(255, 255, 255, 0.64);
@@ -431,7 +483,7 @@
         .supporter-comment-text {
             margin: 0;
             font-family: var(--font-serif);
-            font-size: clamp(0.94rem, 1.22vw, 1.3rem);
+            font-size: clamp(1.28rem, 1.85vw, 2rem);
             font-weight: 600;
             line-height: 1.32;
             text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
@@ -440,7 +492,7 @@
         .supporter-comment-name {
             display: block;
             margin-top: 7px;
-            font-size: clamp(0.62rem, 0.78vw, 0.82rem);
+            font-size: clamp(0.82rem, 1.08vw, 1.1rem);
             font-weight: 700;
             color: rgba(255, 255, 255, 0.72);
         }
@@ -491,12 +543,12 @@
         }
 
         body.is-live-broadcast .cta-copy strong {
-            font-size: clamp(1rem, 1.6vw, 1.55rem);
+            font-size: clamp(1.5rem, 2.55vw, 2.7rem);
         }
 
         .live .label {
             display: block;
-            font-size: clamp(0.7rem, 1vw, 0.95rem);
+            font-size: clamp(0.95rem, 1.35vw, 1.28rem);
             font-weight: 700;
             letter-spacing: 0.24em;
             text-transform: uppercase;
@@ -511,7 +563,7 @@
             margin: 2px 0 14px;
             font-family: var(--font-serif);
             font-weight: 600;
-            font-size: clamp(3rem, 8vw, 7rem);
+            font-size: clamp(4.2rem, 10.5vw, 9.5rem);
             line-height: 0.86;
             letter-spacing: -0.01em;
             font-variant-numeric: tabular-nums;
@@ -527,12 +579,12 @@
             color: rgba(255, 255, 255, 0.82);
         }
 
-        .progress-wrap { width: min(460px, 52vw); }
+        .progress-wrap { width: min(620px, 58vw); }
 
         .progress-text {
             margin: 0 0 10px;
             font-family: var(--font-serif);
-            font-size: clamp(1.05rem, 2vw, 1.7rem);
+            font-size: clamp(1.45rem, 2.7vw, 2.45rem);
             font-weight: 600;
             color: #fff;
             text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
@@ -543,7 +595,7 @@
         .transition-countdown {
             min-height: 1.4em;
             margin: -2px 0 10px;
-            font-size: clamp(0.72rem, 1vw, 0.94rem);
+            font-size: clamp(0.95rem, 1.35vw, 1.25rem);
             font-weight: 700;
             letter-spacing: 0.04em;
             color: rgba(255, 255, 255, 0.82);
@@ -557,14 +609,14 @@
         .challenge-label {
             display: block;
             margin-bottom: 6px;
-            font-size: clamp(0.66rem, 0.9vw, 0.82rem);
+            font-size: clamp(0.86rem, 1.18vw, 1.08rem);
             font-weight: 700;
             letter-spacing: 0.16em;
             color: rgba(255, 255, 255, 0.7);
         }
 
         .progress-bar {
-            height: 8px;
+            height: clamp(10px, 0.8vw, 15px);
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.18);
             overflow: hidden;
@@ -585,7 +637,7 @@
             flex: 0 0 auto;
             display: flex;
             align-items: center;
-            gap: clamp(14px, 1.4vw, 22px);
+            gap: clamp(18px, 1.8vw, 32px);
             pointer-events: auto;
         }
 
@@ -595,25 +647,33 @@
             display: block;
             font-family: var(--font-serif);
             font-weight: 600;
-            font-size: clamp(1.1rem, 1.8vw, 1.8rem);
+            font-size: clamp(1.65rem, 2.75vw, 2.9rem);
             line-height: 1.1;
             text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+            transition: opacity 360ms ease, transform 360ms ease;
         }
 
         .cta-copy small {
             display: block;
             margin-top: 8px;
-            font-size: clamp(0.74rem, 1vw, 0.95rem);
+            font-size: clamp(1.05rem, 1.45vw, 1.42rem);
             font-weight: 700;
             letter-spacing: 0.04em;
             color: rgba(255, 255, 255, 0.82);
             text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+            transition: opacity 360ms ease, transform 360ms ease;
+        }
+
+        .cta-copy.is-changing strong,
+        .cta-copy.is-changing small {
+            opacity: 0;
+            transform: translateY(4px);
         }
 
         .qr-code {
-            width: clamp(148px, 15vw, 220px);
-            padding: 12px;
-            border-radius: 14px;
+            width: clamp(190px, 18vw, 300px);
+            padding: clamp(13px, 1vw, 18px);
+            border-radius: 18px;
             background: #fff;
             box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
             line-height: 0;
@@ -634,7 +694,7 @@
             left: clamp(26px, 3.4vw, 68px);
             bottom: clamp(10px, 1.2vw, 18px);
             z-index: 5;
-            font-size: clamp(0.6rem, 0.82vw, 0.76rem);
+            font-size: clamp(0.8rem, 1.05vw, 1rem);
             letter-spacing: 0.02em;
             color: rgba(255, 255, 255, 0.5);
             pointer-events: none;
@@ -650,8 +710,15 @@
             top: clamp(16px, 2.4vw, 36px);
             right: clamp(16px, 2.4vw, 36px);
             z-index: 6;
-            display: flex;
+            display: none;
             gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            max-width: min(92vw, 820px);
+        }
+
+        body.is-manual-mode .tools {
+            display: flex;
         }
 
         .tools button {
@@ -679,11 +746,170 @@
             background: var(--ink);
             color: #fff;
         }
+
+        .tools button.is-danger {
+            border-color: rgba(190, 30, 30, 0.28);
+            background: rgba(190, 30, 30, 0.88);
+            color: #fff;
+        }
+
+        .tools button.is-running {
+            border-color: rgba(21, 25, 25, 0.4);
+            background: rgba(21, 25, 25, 0.88);
+            color: #fff;
+        }
+
+        body.is-live-broadcast .tools,
+        body.is-live-broadcast .hint,
+        body.is-live-broadcast .url-note {
+            display: none !important;
+        }
+
+        body.is-dooh-phone-preview {
+            background: #050606;
+        }
+
+        body.is-dooh-phone-preview::before {
+            content: "横向きにするとDOOH全体が見やすくなります";
+            position: fixed;
+            top: max(10px, env(safe-area-inset-top));
+            left: 50%;
+            z-index: 8;
+            display: none;
+            width: min(92vw, 420px);
+            padding: 9px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            background: rgba(5, 6, 6, 0.68);
+            color: rgba(255, 255, 255, 0.88);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            text-align: center;
+            transform: translateX(-50%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+            pointer-events: none;
+        }
+
+        body.is-dooh-phone-preview .hint {
+            display: none;
+        }
+
+        body.is-dooh-phone-preview .base-video {
+            filter: brightness(0.96) contrast(1.1) saturate(1.04);
+        }
+
+        body.is-dooh-phone-preview .brandbar,
+        body.is-dooh-phone-preview .cta,
+        body.is-dooh-phone-preview .thanks,
+        body.is-dooh-phone-preview .participation-thanks,
+        body.is-dooh-phone-preview .supporter-comment-wall,
+        body.is-dooh-phone-preview .progress-wrap,
+        body.is-dooh-phone-preview .scrim-top {
+            display: none !important;
+        }
+
+        body.is-dooh-phone-preview .scrim-bottom {
+            height: 24vh;
+            background: linear-gradient(to top, rgba(5, 6, 6, 0.78), rgba(5, 6, 6, 0));
+        }
+
+        body.is-dooh-phone-preview .dock {
+            justify-content: flex-start;
+            padding: clamp(14px, 3vw, 24px) clamp(16px, 3.6vw, 28px);
+        }
+
+        body.is-dooh-phone-preview .live {
+            padding: 12px 16px 13px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 18px;
+            background: rgba(5, 6, 6, 0.34);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        body.is-dooh-phone-preview .live > .label {
+            font-size: clamp(0.64rem, 1.8vw, 0.8rem);
+            letter-spacing: 0.18em;
+            color: rgba(255, 255, 255, 0.78);
+        }
+
+        body.is-dooh-phone-preview .live > .value {
+            margin: 4px 0 0;
+            font-size: clamp(2.1rem, 10vw, 4rem);
+        }
+
+        body.is-dooh-phone-preview .tools {
+            top: auto;
+            right: max(12px, env(safe-area-inset-right));
+            bottom: max(12px, env(safe-area-inset-bottom));
+            left: auto;
+            width: auto;
+            justify-content: flex-end;
+            gap: 0;
+            padding: 7px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            background: rgba(5, 6, 6, 0.58);
+            transform: none;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 16px 46px rgba(0, 0, 0, 0.35);
+        }
+
+        body.is-dooh-phone-preview .tools button {
+            min-width: auto;
+            padding: 10px 16px;
+            border-color: rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+        }
+
+        body.is-dooh-phone-preview .tools button:not(#addBtn) {
+            display: none !important;
+        }
+
+        @media (orientation: portrait) {
+            body.is-dooh-phone-preview::before {
+                display: block;
+            }
+
+            body.is-dooh-phone-preview .dock {
+                padding-bottom: max(72px, calc(env(safe-area-inset-bottom) + 68px));
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 540px) {
+            body.is-dooh-phone-preview .tools {
+                right: max(10px, env(safe-area-inset-right));
+                bottom: max(10px, env(safe-area-inset-bottom));
+                padding: 7px;
+                border-radius: 999px;
+            }
+
+            body.is-dooh-phone-preview .tools button {
+                padding: 9px 14px;
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
     <main class="stage" id="stage" aria-label="新宿インク演出デモ">
-        <img class="base-layer" src="assets/ink/Shinjuku_06_0-00-00-00_1.jpg" alt="" decoding="async" />
+        <video
+            class="base-layer base-video"
+            data-src-desktop="assets/video/karasu.mp4"
+            data-src-mobile="assets/video/karasu-mobile.mp4"
+            poster="assets/ink/Shinjuku_06_0-00-00-00_1.jpg"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="auto"
+            aria-hidden="true"
+        ></video>
     </main>
 
     <div class="scrim scrim-top" aria-hidden="true"></div>
@@ -703,7 +929,7 @@
             <span class="label">合計金額</span>
             <span class="value"><span class="unit">¥</span><span class="num" id="countNum">0</span></span>
             <div class="progress-wrap">
-                <span class="challenge-label" id="challengeLabel">第1回 点灯チャレンジ</span>
+                <span class="challenge-label" id="challengeLabel">第1回 彩リレー</span>
                 <p class="progress-text" id="progressText">あと9人で取り組みが見えてくる</p>
                 <p class="transition-countdown" id="transitionCountdown" aria-live="polite"></p>
                 <div class="progress-bar"><span id="progressBar"></span></div>
@@ -712,8 +938,8 @@
 
         <aside class="cta" aria-label="スマホ参加QR案内">
             <div class="cta-copy">
-                <strong>スマホで無料寄付に参加</strong>
-                <small id="qrCaption">街への応援寄付に参加</small>
+                <strong>スマホで応援に参加</strong>
+                <small id="qrCaption">無料の参加アクションで反映</small>
             </div>
             <div class="qr-code" id="qrCode" aria-hidden="true">QR</div>
         </aside>
@@ -728,6 +954,8 @@
         <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
         <button id="returningParticipantTestBtn" type="button" hidden>通算2〜7日参加を再現</button>
         <button id="crowdTestBtn" type="button" hidden>50人同時参加を再現</button>
+        <button id="resetCheckBtn" type="button" hidden>映像リセット確認</button>
+        <button id="emergencyStopBtn" class="is-danger" type="button" hidden>緊急停止</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -739,9 +967,18 @@
         const DONATION_PER_PERSON_YEN = 100; // 1参加あたりのデモ募金額（publishSwipeComplete の donationAmountYen と一致）
         const DEV = params.has("dev");
         const DEMO_MODE = params.has("demo");
+        const DOOH_PHONE_PREVIEW = params.has("phone") || params.has("phone-dooh") || params.has("mobile-dooh");
+        const MANUAL_ONLY_MODE = params.has("manual") || params.has("offline");
+        const MOBILE_VIDEO_MODE = DOOH_PHONE_PREVIEW
+            || window.matchMedia("(max-width: 900px)").matches
+            || window.matchMedia("(pointer: coarse) and (max-width: 1180px)").matches;
         const LIVE_BROADCAST_MODE = params.has("live") || params.has("youtube") || params.has("broadcast");
-        const MANUAL_MODE = DEV || DEMO_MODE;
+        const MANUAL_MODE = DEV || DEMO_MODE || DOOH_PHONE_PREVIEW;
+        const CONTROL_TOOLS_MODE = DEV || params.has("ops") || params.has("control") || DOOH_PHONE_PREVIEW;
+        document.body.classList.toggle("is-manual-mode", CONTROL_TOOLS_MODE);
         document.body.classList.toggle("is-live-broadcast", LIVE_BROADCAST_MODE);
+        document.body.classList.toggle("is-dooh-phone-preview", DOOH_PHONE_PREVIEW);
+        document.body.classList.toggle("is-mobile-video", MOBILE_VIDEO_MODE);
         const stage = document.getElementById("stage");
         const countNum = document.getElementById("countNum");
         const progressText = document.getElementById("progressText");
@@ -752,6 +989,14 @@
         const participationThanks = document.getElementById("participationThanks");
         const liveLabel = document.querySelector(".live > .label");
         const liveUnit = document.querySelector(".live > .value .unit");
+        const baseVideo = document.querySelector(".base-video");
+        if (baseVideo) {
+            baseVideo.src = MOBILE_VIDEO_MODE
+                ? baseVideo.dataset.srcMobile
+                : baseVideo.dataset.srcDesktop;
+            baseVideo.load();
+        }
+        const ctaCopy = document.querySelector(".cta-copy");
         const ctaTitle = document.querySelector(".cta-copy strong");
         const qrCaption = document.getElementById("qrCaption");
         const addBtn = document.getElementById("addBtn");
@@ -762,13 +1007,17 @@
         const newParticipantTestBtn = document.getElementById("newParticipantTestBtn");
         const returningParticipantTestBtn = document.getElementById("returningParticipantTestBtn");
         const crowdTestBtn = document.getElementById("crowdTestBtn");
+        const resetCheckBtn = document.getElementById("resetCheckBtn");
+        const emergencyStopBtn = document.getElementById("emergencyStopBtn");
         const urlNote = document.getElementById("urlNote");
 
         urlNote?.classList.toggle("is-dev-visible", DEV);
-        newParticipantTestBtn.hidden = !MANUAL_MODE;
-        returningParticipantTestBtn.hidden = !MANUAL_MODE;
-        crowdTestBtn.hidden = !MANUAL_MODE;
-        if (DEMO_MODE) {
+        newParticipantTestBtn.hidden = !CONTROL_TOOLS_MODE;
+        returningParticipantTestBtn.hidden = !CONTROL_TOOLS_MODE;
+        crowdTestBtn.hidden = !CONTROL_TOOLS_MODE;
+        resetCheckBtn.hidden = !CONTROL_TOOLS_MODE;
+        emergencyStopBtn.hidden = !CONTROL_TOOLS_MODE;
+        if (CONTROL_TOOLS_MODE) {
             completeBtn.hidden = false;
             skipSceneBtn.hidden = false;
         }
@@ -793,12 +1042,27 @@
         finalLayer.decoding = "async";
         stage.appendChild(finalLayer);
 
-        const warmLayer = document.createElement("img");
+        const warmLayer = document.createElement("video");
         warmLayer.className = "ink-layer warm-layer";
-        warmLayer.src = "assets/ink/Shinjuku_warm.jpg";
-        warmLayer.alt = "";
-        warmLayer.decoding = "async";
+        warmLayer.src = MOBILE_VIDEO_MODE
+            ? "assets/video/clean-shinjuku-mobile.mp4"
+            : "assets/video/clean-shinjuku.mp4";
+        warmLayer.muted = true;
+        warmLayer.loop = false;
+        warmLayer.playsInline = true;
+        warmLayer.preload = "auto";
+        warmLayer.setAttribute("aria-hidden", "true");
         stage.appendChild(warmLayer);
+
+        const idleLayer = document.createElement("video");
+        idleLayer.className = "idle-layer";
+        idleLayer.src = "assets/video/yellow-idle.mp4";
+        idleLayer.muted = true;
+        idleLayer.loop = false;
+        idleLayer.playsInline = true;
+        idleLayer.preload = "auto";
+        idleLayer.setAttribute("aria-hidden", "true");
+        stage.appendChild(idleLayer);
 
         let count = 0;          // 累計参加者
         let revealed = 0;       // 既に出ている飛沫レイヤー数
@@ -807,6 +1071,11 @@
         let celebrationTimer = null;
         let warmTimer = null;
         let countdownTimer = null;
+        let idleVideoTimer = null;
+        let idleVideoFinishTimer = null;
+        let warmPlayRetryTimer = null;
+        let celebrationWatchdogTimer = null;
+        let idleVideoActive = false;
         let celebrationActive = false;
         let celebrationStartedAt = 0;
         let activeChallengeNumber = 0;
@@ -816,12 +1085,193 @@
         let queuedRevealCount = 0;
         let queuedReplayTimer = null;
         let queuedReplayHoldTimer = null;
+        let resetCheckTimer = null;
+        let resetCheckAddTimer = null;
+        let crowdTestTimer = null;
         let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = 7_000 * SCENE_TIME_SCALE;
         const LIVE_REVEAL_INTERVAL_MS = 260;
         const QUEUED_REPLAY_HOLD_MS = 5_000 * SCENE_TIME_SCALE;
         const QUEUED_REPLAY_INTERVAL_MS = 700 * SCENE_TIME_SCALE;
+        const CLEAN_VIDEO_FALLBACK_MS = 10_000;
+        const CLEAN_VIDEO_MAX_MS = 11_000 * SCENE_TIME_SCALE;
+        const IDLE_VIDEO_DELAY_MS = params.has("fast") ? 6_000 : 60_000;
+        const IDLE_VIDEO_FALLBACK_MS = 6_500;
+        let activeCleanSceneMs = CLEAN_SCENE_MS;
+        const CTA_ROTATION_ITEMS = [
+            {
+                title: "スマホで応援に参加",
+                caption: "無料の参加アクションで反映",
+            },
+            {
+                title: "スマホをかざして参加",
+                caption: "あなたの1スワイプが画面に反映",
+            },
+            {
+                title: "スマホで参加",
+                caption: "新宿への応援を届ける",
+            },
+            {
+                title: "Scan to join",
+                caption: "Your swipe lights up Shinjuku",
+            },
+        ];
+        let ctaRotationIndex = 0;
+        let ctaRotationTimer = null;
+        const demoDebugLog = [];
+
+        function recordDemoEvent(type, detail = {}) {
+            const entry = {
+                type,
+                detail,
+                count,
+                revealed,
+                visualizedLiveCount,
+                queuedRevealCount,
+                celebrationActive,
+                idleVideoActive,
+                at: new Date().toISOString(),
+            };
+            demoDebugLog.push(entry);
+            if (demoDebugLog.length > 120) {
+                demoDebugLog.splice(0, demoDebugLog.length - 120);
+            }
+            if (params.has("debug") || params.has("log")) {
+                console.info("[demo]", type, entry);
+            }
+        }
+
+        function playVideoSafely(video, options = {}) {
+            if (!video || typeof video.play !== "function") return;
+            if (options.restartEnded && video.ended) {
+                try {
+                    video.currentTime = 0;
+                } catch {}
+            }
+            const promise = video.play();
+            if (promise?.catch) {
+                promise.catch((error) => {
+                    recordDemoEvent("video:play-rejected", {
+                        className: video.className,
+                        reason: error?.message ?? String(error),
+                    });
+                });
+            }
+        }
+
+        function playWarmLayerSafely(attempt = 0) {
+            warmLayer.muted = true;
+            warmLayer.playsInline = true;
+            playVideoSafely(warmLayer);
+            if (attempt >= 5) return;
+            if (warmPlayRetryTimer) clearTimeout(warmPlayRetryTimer);
+            warmPlayRetryTimer = setTimeout(() => {
+                warmPlayRetryTimer = null;
+                if (
+                    celebrationActive
+                    && warmLayer.classList.contains("is-revealed")
+                    && warmLayer.paused
+                ) {
+                    playWarmLayerSafely(attempt + 1);
+                }
+            }, 320 + attempt * 420);
+        }
+
+        function keepBaseVideoMoving() {
+            if (!baseVideo) return;
+            baseVideo.muted = true;
+            baseVideo.loop = true;
+            baseVideo.playsInline = true;
+            if (baseVideo.ended) {
+                try {
+                    baseVideo.currentTime = 0;
+                } catch {}
+            }
+            if (baseVideo.paused || baseVideo.readyState < 2 || baseVideo.ended) {
+                if (baseVideo.readyState < 2) {
+                    try {
+                        baseVideo.load();
+                    } catch {}
+                }
+                playVideoSafely(baseVideo, { restartEnded: true });
+            }
+        }
+
+        if (baseVideo) {
+            keepBaseVideoMoving();
+            ["pause", "ended", "stalled", "suspend", "waiting", "emptied"].forEach((eventName) => {
+                baseVideo.addEventListener(eventName, () => {
+                    window.setTimeout(keepBaseVideoMoving, 120);
+                });
+            });
+            window.addEventListener("pageshow", keepBaseVideoMoving);
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) keepBaseVideoMoving();
+            });
+            window.setInterval(keepBaseVideoMoving, LIVE_BROADCAST_MODE ? 1200 : 2400);
+        }
+
+        function clearIdleVideoTimers() {
+            if (idleVideoTimer) window.clearTimeout(idleVideoTimer);
+            if (idleVideoFinishTimer) window.clearTimeout(idleVideoFinishTimer);
+            idleVideoTimer = null;
+            idleVideoFinishTimer = null;
+        }
+
+        function finishIdleVideo() {
+            clearIdleVideoTimers();
+            idleVideoActive = false;
+            idleLayer.onended = null;
+            idleLayer.classList.remove("is-visible");
+            try {
+                idleLayer.pause();
+                idleLayer.currentTime = 0;
+            } catch {}
+            scheduleIdleVideo();
+        }
+
+        function playIdleVideo() {
+            idleVideoTimer = null;
+            if (celebrationActive || queuedReplayHoldTimer || queuedReplayTimer || liveVisualTimer) {
+                scheduleIdleVideo();
+                return;
+            }
+            idleVideoActive = true;
+            try {
+                idleLayer.currentTime = 0;
+            } catch {}
+            idleLayer.classList.add("is-visible");
+            idleLayer.onended = finishIdleVideo;
+            playVideoSafely(idleLayer, { restartEnded: true });
+            window.setTimeout(() => {
+                if (idleVideoActive && idleLayer.paused) {
+                    playVideoSafely(idleLayer, { restartEnded: true });
+                }
+            }, 320);
+            idleVideoFinishTimer = window.setTimeout(finishIdleVideo, IDLE_VIDEO_FALLBACK_MS);
+        }
+
+        function scheduleIdleVideo() {
+            if (idleVideoTimer) window.clearTimeout(idleVideoTimer);
+            idleVideoTimer = null;
+            if (idleVideoActive || celebrationActive) return;
+            idleVideoTimer = window.setTimeout(playIdleVideo, IDLE_VIDEO_DELAY_MS);
+        }
+
+        function noteParticipationActivity() {
+            if (idleVideoActive) {
+                clearIdleVideoTimers();
+                idleVideoActive = false;
+                idleLayer.onended = null;
+                idleLayer.classList.remove("is-visible");
+                try {
+                    idleLayer.pause();
+                    idleLayer.currentTime = 0;
+                } catch {}
+            }
+            scheduleIdleVideo();
+        }
 
         // インクが飛び散る「ポップ」アニメーション
         function splat(el) {
@@ -832,7 +1282,7 @@
                     { transform: "scale(0.97) rotate(-1deg)", filter: "blur(0px)", opacity: 1, offset: 0.78 },
                     { transform: "scale(1) rotate(0deg)", filter: "blur(0px)", opacity: 1, offset: 1 },
                 ],
-                { duration: 720, easing: "cubic-bezier(0.18, 1.25, 0.32, 1)", fill: "both" }
+                { duration: 720, easing: "cubic-bezier(0.18, 1.25, 0.32, 1)", fill: "none" }
             );
         }
 
@@ -845,8 +1295,8 @@
             if (challengeLabel) {
                 const challengeNumber = celebrationActive
                     ? activeChallengeNumber
-                    : Math.floor(count / TOTAL) + 1;
-                challengeLabel.textContent = `第${challengeNumber}回 点灯チャレンジ`;
+                    : Math.floor(getVisualParticipantCount() / TOTAL) + 1;
+                challengeLabel.textContent = `第${challengeNumber}回 彩リレー`;
             }
             progressBar.style.width = `${(revealed / TOTAL) * 100}%`;
             progressText.classList.toggle("is-complete", done);
@@ -861,32 +1311,37 @@
         }
 
         function updateTransitionCountdown() {
-            if (!celebrationActive || !transitionCountdown) {
-                if (transitionCountdown) transitionCountdown.textContent = "";
-                return;
+            if (transitionCountdown) transitionCountdown.textContent = "";
+        }
+
+        function getVisualParticipantCount() {
+            if (queuedRevealCount > 0) {
+                return Math.max(0, count - queuedRevealCount);
             }
-
-            const elapsed = Date.now() - celebrationStartedAt;
-            const remainingMs = CLEAN_SCENE_MS - elapsed;
-            const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-            const nextChallenge = activeChallengeNumber + 1;
-
-            transitionCountdown.textContent = `第${nextChallenge}回チャレンジへ あと${remainingSeconds}秒`;
+            if (liveCountInitialized) {
+                return Math.max(0, visualizedLiveCount);
+            }
+            return Math.max(0, count);
         }
 
         function startCountdownTimer() {
             if (countdownTimer) clearInterval(countdownTimer);
             updateTransitionCountdown();
-            countdownTimer = setInterval(updateTransitionCountdown, 250);
+            countdownTimer = null;
         }
 
         function clearCelebrationTimers() {
             if (celebrationTimer) clearTimeout(celebrationTimer);
             if (warmTimer) clearTimeout(warmTimer);
             if (countdownTimer) clearInterval(countdownTimer);
+            if (warmPlayRetryTimer) clearTimeout(warmPlayRetryTimer);
+            if (celebrationWatchdogTimer) clearInterval(celebrationWatchdogTimer);
             celebrationTimer = null;
             warmTimer = null;
             countdownTimer = null;
+            warmPlayRetryTimer = null;
+            celebrationWatchdogTimer = null;
+            warmLayer.onended = null;
             if (transitionCountdown) transitionCountdown.textContent = "";
         }
 
@@ -929,9 +1384,6 @@
             if (progressText) {
                 progressText.textContent = "次の参加をまもなく反映します";
             }
-            if (transitionCountdown) {
-                transitionCountdown.textContent = "荒廃した新宿に戻してから反映中";
-            }
             queuedReplayHoldTimer = window.setTimeout(() => {
                 queuedReplayHoldTimer = null;
                 if (transitionCountdown) transitionCountdown.textContent = "";
@@ -940,33 +1392,64 @@
         }
 
         function finishCelebration() {
+            recordDemoEvent("celebration:finish");
             clearCelebrationTimers();
+            warmLayer.onended = null;
             celebrationActive = false;
             setSceneFocus(false);
             celebrationStartedAt = 0;
             activeChallengeNumber = 0;
             warmLayer.classList.remove("is-revealed");
             finalLayer.classList.remove("is-revealed");
+            finalLayer.style.opacity = "0";
+            try {
+                warmLayer.pause();
+                warmLayer.currentTime = 0;
+            } catch {}
             // 達成演出中に参加が重なっても、次の回は荒廃状態から始める。
             rebuildReveal(0);
             updateHud();
             holdThenReplayQueuedReveals();
+            scheduleIdleVideo();
         }
 
         function startCelebration() {
+            recordDemoEvent("celebration:start");
             clearCelebrationTimers();
+            clearIdleVideoTimers();
+            noteParticipationActivity();
+            warmLayer.onended = null;
             // キュー再生中に達成した場合も、次の回は必ず荒廃状態を数秒見せてから再開する。
             clearQueuedReplayTimer();
             celebrationActive = true;
             setSceneFocus(true);
             celebrationStartedAt = Date.now();
-            activeChallengeNumber = Math.max(1, Math.floor((count - revealed) / TOTAL) + 1);
+            const videoDurationMs = Number.isFinite(warmLayer.duration) && warmLayer.duration > 0
+                ? warmLayer.duration * 1000
+                : CLEAN_VIDEO_FALLBACK_MS;
+            activeCleanSceneMs = Math.min(videoDurationMs, CLEAN_VIDEO_MAX_MS);
+            activeChallengeNumber = Math.max(1, Math.ceil(getVisualParticipantCount() / TOTAL));
+            finalLayer.style.opacity = "";
             finalLayer.classList.add("is-revealed");
             splat(finalLayer);
+            try {
+                warmLayer.currentTime = 0;
+            } catch {}
+            warmLayer.classList.add("is-revealed");
+            warmLayer.onended = finishCelebration;
+            playWarmLayerSafely();
             updateHud();
             startCountdownTimer();
 
-            celebrationTimer = setTimeout(finishCelebration, CLEAN_SCENE_MS);
+            celebrationTimer = setTimeout(finishCelebration, activeCleanSceneMs + 1200);
+            celebrationWatchdogTimer = setInterval(() => {
+                if (!celebrationActive) return;
+                const elapsed = Date.now() - celebrationStartedAt;
+                if (elapsed >= activeCleanSceneMs + 1500) {
+                    recordDemoEvent("celebration:watchdog-finish", { elapsed, activeCleanSceneMs });
+                    finishCelebration();
+                }
+            }, 800);
         }
 
         function skipScene() {
@@ -982,13 +1465,36 @@
         const supporterCommentText = document.getElementById("supporterCommentText");
         const supporterCommentName = document.getElementById("supporterCommentName");
 
+        function setCtaCopy(item, { animate = true } = {}) {
+            if (!ctaTitle || !qrCaption || !item) return;
+            if (!animate || !ctaCopy) {
+                ctaTitle.textContent = item.title;
+                qrCaption.textContent = item.caption;
+                return;
+            }
+            ctaCopy.classList.add("is-changing");
+            window.setTimeout(() => {
+                ctaTitle.textContent = item.title;
+                qrCaption.textContent = item.caption;
+                ctaCopy.classList.remove("is-changing");
+            }, 220);
+        }
+
+        function startCtaRotation() {
+            setCtaCopy(CTA_ROTATION_ITEMS[0], { animate: false });
+            if (ctaRotationTimer || CTA_ROTATION_ITEMS.length < 2) return;
+            ctaRotationTimer = window.setInterval(() => {
+                ctaRotationIndex = (ctaRotationIndex + 1) % CTA_ROTATION_ITEMS.length;
+                setCtaCopy(CTA_ROTATION_ITEMS[ctaRotationIndex]);
+            }, 6000);
+        }
+
         if (LIVE_BROADCAST_MODE) {
             if (liveLabel) liveLabel.textContent = "累計参加者";
             if (liveUnit) liveUnit.textContent = "";
-            if (ctaTitle) ctaTitle.textContent = "スマホで参加";
-            if (qrCaption) qrCaption.textContent = "応援アクションを送る";
             if (hint) hint.textContent = "LIVE配信中：スマホの応援アクションで画面が変化します";
         }
+        startCtaRotation();
 
         // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
         const AUTO_NAME_RE = /^サポーター#/;
@@ -1038,6 +1544,7 @@
                 isReturning: options.isReturning === true,
                 streakDays: Math.max(1, Number(options.streakDays) || 1),
                 totalDays: Math.max(1, Number(options.totalDays) || Number(options.streakDays) || 1),
+                tickerFont: typeof options.tickerFont === "string" ? options.tickerFont : "",
                 createdAt: Number(options.createdAt) || 0,
             };
             const dedupeKey = entry.visitorId ? `visitor:${entry.visitorId}` : `name:${entry.name}`;
@@ -1056,10 +1563,32 @@
             return entry;
         }
 
+        const TICKER_FONT_CLASSES = [
+            "ticker-font-noto",
+            "ticker-font-rounded",
+            "ticker-font-mincho",
+            "ticker-font-dot",
+            "ticker-font-yusei",
+        ];
+
+        function getTickerFontClass(entry) {
+            const requested = String(entry.tickerFont || "").trim();
+            const requestedClass = `ticker-font-${requested}`;
+            if (TICKER_FONT_CLASSES.includes(requestedClass)) {
+                return requestedClass;
+            }
+            const source = String(entry.visitorId || entry.name || "supporter");
+            let hash = 0;
+            for (let index = 0; index < source.length; index += 1) {
+                hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+            }
+            return TICKER_FONT_CLASSES[hash % TICKER_FONT_CLASSES.length];
+        }
+
         function appendTickerItems(group, entries, priorityEntry = null) {
             entries.forEach((entry) => {
                 const name = document.createElement("span");
-                name.className = "ticker-name";
+                name.className = `ticker-name ${getTickerFontClass(entry)}`;
                 name.classList.toggle("is-returning", entry.isReturning && hasStreakColor(entry));
                 name.classList.toggle("is-latest", entry === priorityEntry);
                 applyStreakClass(name, entry);
@@ -1316,6 +1845,7 @@
         // 手動トリガー（オフラインデモ用）。Firebase連動中は無効。
         function addParticipant() {
             if (liveActive && !MANUAL_MODE) return;
+            noteParticipationActivity();
             count += 1;
             triggerSplat();
             updateHud();
@@ -1329,6 +1859,7 @@
                 return;
             }
 
+            noteParticipationActivity();
             const remaining = Math.max(1, TOTAL - revealed);
             count += remaining;
             for (let i = 0; i < remaining; i += 1) {
@@ -1347,16 +1878,24 @@
             });
             finalLayer.getAnimations().forEach((a) => a.cancel());
             finalLayer.classList.toggle("is-revealed", revealed >= TOTAL || celebrationActive);
+            finalLayer.style.opacity = revealed >= TOTAL || celebrationActive ? "" : "0";
         }
 
         // Firebaseの実カウントを反映：増えた分だけ飛沫を飛ばす
-        function applyLiveCount(next) {
+        function applyLiveCount(next, options = {}) {
             const n = Math.max(0, Number(next) || 0);
             const delta = n - count;
+            recordDemoEvent("live-count", { next: n, delta });
             // DEVモードでは手動操作中の表示を、低い/同値のライブ値で巻き戻さない
             if (MANUAL_MODE && delta <= 0) return;
 
-            // 初回同期は過去の参加を再演せず、累計人数から現在の回と進捗を直接復元する。
+            if (delta > 0) {
+                noteParticipationActivity();
+            }
+
+            // 初回同期は基本的に過去の参加を再演せず、累計人数から現在の回と進捗を直接復元する。
+            // ただし「直近の参加でちょうど9人達成した」ケースは、DOOH側の接続遅れや再読み込みで
+            // 達成演出を取り逃がすため、一度だけ完成映像を再生する。
             if (!liveCountInitialized) {
                 liveCountInitialized = true;
                 count = n;
@@ -1370,6 +1909,13 @@
                 finalLayer.classList.remove("is-revealed");
                 rebuildReveal(n % TOTAL);
                 updateHud();
+                if (options.replayInitialCompletion === true && n > 0 && n % TOTAL === 0) {
+                    window.setTimeout(() => {
+                        if (!celebrationActive && count === n) {
+                            startCelebration();
+                        }
+                    }, 450);
+                }
                 return;
             }
 
@@ -1383,6 +1929,15 @@
                             window.clearInterval(liveVisualTimer);
                             liveVisualTimer = null;
                             if (hint && !DEV) hint.textContent = "● LIVE — 参加証投影中";
+                            return;
+                        }
+                        if (celebrationActive || queuedReplayHoldTimer) {
+                            if (hint && !DEV) {
+                                const pending = Math.max(0, count - visualizedLiveCount);
+                                hint.textContent = pending > 0
+                                    ? `● LIVE — あと${pending}人の参加を待機中`
+                                    : "● LIVE — 参加証投影中";
+                            }
                             return;
                         }
                         visualizedLiveCount += 1;
@@ -1407,6 +1962,10 @@
                 celebrationStartedAt = 0;
                 activeChallengeNumber = 0;
                 warmLayer.classList.remove("is-revealed");
+                try {
+                    warmLayer.pause();
+                    warmLayer.currentTime = 0;
+                } catch {}
                 rebuildReveal(n % TOTAL); // サーバ側でカウントがリセットされた場合
             }
 
@@ -1421,7 +1980,7 @@
                 clearInterval(autoTimer);
                 autoTimer = null;
             }
-            if (!DEV) document.querySelector(".tools")?.style.setProperty("display", "none");
+            if (!CONTROL_TOOLS_MODE) document.querySelector(".tools")?.style.setProperty("display", "none");
             if (hint) {
                 hint.textContent = DEV
                     ? "● LIVE（DEV：手動 / 📡本番+1 で確認）"
@@ -1430,29 +1989,77 @@
             }
         }
 
-        function reset() {
-            count = 0;
-            revealed = 0;
+        function clearOperationTimers() {
+            if (resetCheckTimer) window.clearTimeout(resetCheckTimer);
+            if (resetCheckAddTimer) window.clearInterval(resetCheckAddTimer);
+            if (crowdTestTimer) window.clearInterval(crowdTestTimer);
+            resetCheckTimer = null;
+            resetCheckAddTimer = null;
+            crowdTestTimer = null;
+        }
+
+        function setOperationStatus(message) {
+            if (!hint || !message) return;
+            hint.textContent = message;
+            hint.style.opacity = "1";
+        }
+
+        function returnVisualToWaitingState({
+            resetCount = false,
+            resetLiveState = false,
+            message = "映像を待機状態に戻しました",
+        } = {}) {
+            clearOperationTimers();
+            if (autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = null;
+                autoBtn.classList.remove("is-on");
+                autoBtn.textContent = "▶ 自動";
+            }
+            if (liveVisualTimer) window.clearInterval(liveVisualTimer);
+            liveVisualTimer = null;
+            clearQueuedReplayTimer();
             clearCelebrationTimers();
+            clearIdleVideoTimers();
+            if (resetCount) {
+                count = 0;
+            }
+            liveCountInitialized = resetLiveState ? false : liveCountInitialized;
+            visualizedLiveCount = count;
+            queuedRevealCount = 0;
+            idleVideoActive = false;
             celebrationActive = false;
             setSceneFocus(false);
             celebrationStartedAt = 0;
             activeChallengeNumber = 0;
-            liveCountInitialized = false;
-            visualizedLiveCount = 0;
-            queuedRevealCount = 0;
-            if (liveVisualTimer) window.clearInterval(liveVisualTimer);
-            liveVisualTimer = null;
-            clearQueuedReplayTimer();
             layers.forEach((el) => {
                 el.getAnimations().forEach((a) => a.cancel());
                 el.classList.remove("is-revealed");
             });
             finalLayer.getAnimations().forEach((a) => a.cancel());
             finalLayer.classList.remove("is-revealed");
+            finalLayer.style.opacity = "0";
             warmLayer.classList.remove("is-revealed");
-            if (hint) hint.style.opacity = "1";
+            idleLayer.classList.remove("is-visible");
+            try {
+                warmLayer.pause();
+                warmLayer.currentTime = 0;
+                idleLayer.pause();
+                idleLayer.currentTime = 0;
+            } catch {}
+            rebuildReveal(0);
+            keepBaseVideoMoving();
             updateHud();
+            scheduleIdleVideo();
+            setOperationStatus(message);
+        }
+
+        function reset() {
+            returnVisualToWaitingState({
+                resetCount: true,
+                resetLiveState: true,
+                message: "リセットしました。画面クリック / スペースキー で参加者 +1",
+            });
         }
 
         function toggleAuto() {
@@ -1469,8 +2076,10 @@
             autoTimer = setInterval(addParticipant, 1400);
         }
 
-        // 操作：ステージのどこでも参加 +1
-        stage.addEventListener("click", addParticipant);
+        // 操作：ステージのどこでも参加 +1。配信モードでは視聴用画面なので無効化する。
+        if (!LIVE_BROADCAST_MODE) {
+            stage.addEventListener("click", addParticipant);
+        }
 
         addBtn.addEventListener("click", (e) => { e.stopPropagation(); addParticipant(); });
         completeBtn.addEventListener("click", (e) => { e.stopPropagation(); completeCurrentChallenge(); });
@@ -1497,8 +2106,13 @@
         });
         function simulateCrowd(size = 50) {
             const safeSize = Math.max(1, Math.min(100, Math.floor(Number(size) || 50)));
+            clearOperationTimers();
+            crowdTestBtn.classList.add("is-running");
+            crowdTestBtn.disabled = true;
+            setOperationStatus(`${safeSize}人同時参加を再現中：順番に映像へ反映します`);
             if (!liveCountInitialized) {
-                applyLiveCount(count);
+                liveCountInitialized = true;
+                visualizedLiveCount = count;
             }
             applyLiveCount(count + safeSize);
             for (let index = 1; index <= safeSize; index += 1) {
@@ -1509,15 +2123,88 @@
                     createdAt: Date.now() + index,
                 });
             }
+            crowdTestTimer = window.setInterval(() => {
+                const pending = Math.max(0, count - visualizedLiveCount);
+                if (pending <= 0 && !celebrationActive && !queuedReplayHoldTimer && !queuedReplayTimer) {
+                    window.clearInterval(crowdTestTimer);
+                    crowdTestTimer = null;
+                    crowdTestBtn.classList.remove("is-running");
+                    crowdTestBtn.disabled = false;
+                    setOperationStatus(`${safeSize}人同時参加の再現完了：映像は待機状態へ戻りました`);
+                } else {
+                    setOperationStatus(`${safeSize}人同時参加を再現中：未反映 ${pending}人`);
+                }
+            }, 700);
         }
+
+        function runResetCycleCheck() {
+            resetCheckBtn.classList.add("is-running");
+            resetCheckBtn.disabled = true;
+            returnVisualToWaitingState({
+                resetCount: true,
+                resetLiveState: true,
+                message: "映像リセット確認中：9人達成演出を再生します",
+            });
+            let added = 0;
+            resetCheckAddTimer = window.setInterval(() => {
+                added += 1;
+                addParticipant();
+                if (added >= TOTAL) {
+                    window.clearInterval(resetCheckAddTimer);
+                    resetCheckAddTimer = null;
+                }
+            }, 120);
+            resetCheckTimer = window.setTimeout(() => {
+                const ok = !celebrationActive
+                    && revealed === 0
+                    && !warmLayer.classList.contains("is-revealed")
+                    && !finalLayer.classList.contains("is-revealed")
+                    && !queuedReplayHoldTimer
+                    && !queuedReplayTimer;
+                resetCheckBtn.classList.remove("is-running");
+                resetCheckBtn.disabled = false;
+                resetCheckTimer = null;
+                if (ok) {
+                    setOperationStatus("映像リセットOK：達成後に荒廃した新宿へ戻っています");
+                } else {
+                    returnVisualToWaitingState({
+                        message: "映像リセットNGを検知したため、待機状態へ復帰しました",
+                    });
+                }
+            }, (TOTAL * 140) + CLEAN_VIDEO_MAX_MS + 2600);
+        }
+
+        function emergencyStop() {
+            crowdTestBtn.classList.remove("is-running");
+            crowdTestBtn.disabled = false;
+            resetCheckBtn.classList.remove("is-running");
+            resetCheckBtn.disabled = false;
+            returnVisualToWaitingState({
+                resetCount: false,
+                resetLiveState: false,
+                message: "緊急停止：カウントは維持したまま待機画面へ戻しました",
+            });
+        }
+
         crowdTestBtn.addEventListener("click", (e) => {
             e.stopPropagation();
             simulateCrowd(50);
+        });
+        resetCheckBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            runResetCycleCheck();
+        });
+        emergencyStopBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            emergencyStop();
         });
         autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
         resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
 
         document.addEventListener("keydown", (e) => {
+            if (LIVE_BROADCAST_MODE) {
+                return;
+            }
             if (e.code === "Space" || e.code === "Enter" || e.code === "ArrowRight") {
                 e.preventDefault();
                 addParticipant();
@@ -1529,25 +2216,71 @@
         });
 
         updateHud();
+        scheduleIdleVideo();
 
         // Firebase連動スクリプト（module）から呼べるように公開
-        window.__inkDemo = { activateLive, applyLiveCount, showThanks, showParticipationThanks, setDonorNameRotation, resumeDonorTicker, setSupporterComments, simulateCrowd, skipScene, completeCurrentChallenge };
+        window.__inkDemo = {
+            activateLive,
+            applyLiveCount,
+            showThanks,
+            showParticipationThanks,
+            setDonorNameRotation,
+            resumeDonorTicker,
+            setSupporterComments,
+            simulateCrowd,
+            emergencyStop,
+            runResetCycleCheck,
+            skipScene,
+            completeCurrentChallenge,
+            getDebugLog: () => demoDebugLog.slice(),
+            getDebugState: () => ({
+                count,
+                revealed,
+                visualizedLiveCount,
+                queuedRevealCount,
+                celebrationActive,
+                idleVideoActive,
+            }),
+        };
     </script>
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260620-supporter-comment-1";
+        import { getLatestSwipeComplete, getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260703-replay-boundary-1";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
         const theme = resolveTheme({ defaultTheme: "day" });
         const searchParams = new URLSearchParams(location.search);
-        const channel = searchParams.get("channel") === "research" && searchParams.get("team-test") === "1"
-            ? "research"
-            : getChannelForTheme(theme, "default");
         const isDevMode = searchParams.has("dev");
-        const isDemoMode = searchParams.has("demo");
+        const isDoohPhonePreview = searchParams.has("phone") || searchParams.has("phone-dooh") || searchParams.has("mobile-dooh");
+        const isManualOnlyMode = searchParams.has("manual") || searchParams.has("offline");
         const isLiveBroadcastMode = searchParams.has("live") || searchParams.has("youtube") || searchParams.has("broadcast");
+        const channel = isLiveBroadcastMode
+            ? "youtube"
+            : searchParams.get("channel") === "research" && searchParams.get("team-test") === "1"
+                ? "research"
+                : getChannelForTheme(theme, "default");
+        const INITIAL_COMPLETION_REPLAY_WINDOW_MS = 60 * 60 * 1000;
+        let initialCountHandled = false;
+
+        async function shouldReplayInitialCompletion(liveCount) {
+            const count = Math.max(0, Number(liveCount) || 0);
+            if (count <= 0 || count % 9 !== 0) {
+                return false;
+            }
+            try {
+                const latestSwipe = await getLatestSwipeComplete({ channel });
+                const latestCount = Number(latestSwipe?.count) || 0;
+                const latestCreatedAt = Number(latestSwipe?.createdAt) || 0;
+                return latestCount === count
+                    && latestCreatedAt > 0
+                    && Date.now() - latestCreatedAt <= INITIAL_COMPLETION_REPLAY_WINDOW_MS;
+            } catch (error) {
+                console.info("[demo] latest swipe check skipped:", error);
+                return false;
+            }
+        }
 
         // ?dev のときだけ「本番+1」ボタンを出す：QRと同じFirebaseイベントを1件送って連動確認できる
         if (isDevMode) {
@@ -1564,12 +2297,17 @@
             tools?.appendChild(liveBtn);
         }
 
-        if (!isDemoMode) {
-            subscribeToParticipantCount((liveCount) => {
+        if (!isManualOnlyMode) {
+            subscribeToParticipantCount(async (liveCount) => {
                 // 最初のスナップショットが届いた＝Firebase接続済み → 連動モードへ
                 // カウント＋インクはスワイプ時に即反応
                 window.__inkDemo?.activateLive();
-                window.__inkDemo?.applyLiveCount(liveCount);
+                const isInitialCount = !initialCountHandled;
+                initialCountHandled = true;
+                const replayInitialCompletion = isInitialCount
+                    ? await shouldReplayInitialCompletion(liveCount)
+                    : false;
+                window.__inkDemo?.applyLiveCount(liveCount, { replayInitialCompletion });
             }, { channel }).catch((error) => {
                 console.info("[demo] live sync disabled (offline/manual):", error);
             });
@@ -1608,7 +2346,7 @@
             });
         }
 
-        if (!isDemoMode) {
+        if (!isManualOnlyMode) {
             subscribeToSwipeCompletes((event) => {
                 window.__inkDemo?.showParticipationThanks(event?.name, event);
             }, { channel }).catch((error) => {
@@ -1619,8 +2357,13 @@
 
     <script type="module">
         // 時間で参加ページのQRを切替：偶数時=男性 / 奇数時=女性
-        const MEN_URL = "https://dooh-ca9c2.web.app/men";
-        const WOMEN_URL = "https://dooh-ca9c2.web.app/women";
+        // 本番とRSでホストが混ざらないよう、DOOH画面を開いているホストに合わせる。
+        const PARTICIPANT_ORIGIN = /^https?:$/.test(location.protocol)
+            && /^(dooh-ca9c2|shinjuku-dooh-rs)\.web\.app$/.test(location.hostname)
+            ? location.origin
+            : "https://dooh-ca9c2.web.app";
+        const MEN_URL = `${PARTICIPANT_ORIGIN}/men`;
+        const WOMEN_URL = `${PARTICIPANT_ORIGIN}/women`;
         const qrSearchParams = new URLSearchParams(location.search);
         const QR_YOUTUBE_MODE = qrSearchParams.has("youtube") || qrSearchParams.has("live") || qrSearchParams.has("broadcast");
         const qrCode = document.getElementById("qrCode");

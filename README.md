@@ -55,7 +55,7 @@ Firebase 上に管理画面から公開した設定がある場合は、DOOH 表
 ### 2. スマートフォン参加フロー
 
 `web/participant-flow.html` は QR コードからアクセスする想定の参加ページです。
-v1 DOOH の QR は女性向けオレンジ復刻版の `web/participant-flow-women-orange.html`、v2 DOOH の QR は男性向けの `web/participant-flow-men.html` に遷移します。従来版は `web/participant-flow.html`、女性向け大理石版は `web/participant-flow-women.html`、みんな向けの参加UIは `web/participant-flow-all.html` として別URLで公開します。
+v1 DOOH の QR は女性向けオレンジ復刻版の `web/participant-flow-women-orange.html`、v2 DOOH の QR は男性向けページに遷移します。男性向け（`/men`）と女性向け大理石版（`/women`）は共通の `web/participant-flow-shared.html` から配信し、URL パスまたは `?exp=men` / `?exp=women` で体験を切り替えます。従来版は `web/participant-flow.html`、みんな向けの参加UIは `web/participant-flow-all.html` として別URLで公開します。
 
 参加ステップは以下の 5 段階です。
 
@@ -450,6 +450,12 @@ Firebase Realtime Database の `participation/participantCount` が未作成な�
 - `web/admin-dist/index.html` が `/admin` の rewrite で開けること
 - `assets/` と動画ファイルの相対パスが崩れないこと
 - DOOH 表示画面と参加フローを同じオリジンで配信すること
+
+### RS（調査用サイト）のデプロイ
+
+RS は `firebase-rs.json`（`site: shinjuku-dooh-rs`）から `firebase deploy --only hosting --config firebase-rs.json --project dooh-ca9c2` でデプロイします。
+
+`firebase-rs.json` は `public: "rs-public"` を指していますが、**`rs-public/` はデプロイ用の手動スナップショットであり、Git管理していません**（動画アセットを含み容量が大きいため）。クリーンな環境から RS を再デプロイする場合は、本リポジトリのルート直下の各ファイル（`index.html` / `demo.html` / `about.html` / `src/` / `web/` / `assets/` / `config/` など、`firebase.json` の `public: "."` が配信する範囲相当）を `rs-public/` にコピーしてから `firebase-rs.json` の `public` が向くディレクトリとして用意してください。
 
 ## ライセンス
 
