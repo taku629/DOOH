@@ -53,6 +53,15 @@ html:not([data-theme="morning"]) body.has-color-participation {
   --bg: #fdfdfc;
 }
 
+/* --- ブランドマーク（彩宿ロゴ・アプバー左上） -------------------------- */
+
+html:not([data-theme="morning"]) .sparkle-brand .brand-logo {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
 /* --- 見出し・本文の組み（方向非依存の品質改善） ------------------------ */
 
 html:not([data-theme="morning"]) .step > h2 {

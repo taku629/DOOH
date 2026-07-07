@@ -175,9 +175,10 @@
             top: clamp(20px, 2.6vw, 44px);
             left: clamp(22px, 2.8vw, 52px);
             z-index: 5;
-            display: inline-flex;
-            align-items: center;
-            gap: clamp(12px, 1vw, 20px);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: clamp(6px, 0.6vw, 10px);
             font-family: var(--font-serif);
             font-weight: 600;
             letter-spacing: 0.06em;
@@ -186,7 +187,13 @@
             text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
         }
 
-        .brandbar::before {
+        .brandbar-title {
+            display: inline-flex;
+            align-items: center;
+            gap: clamp(12px, 1vw, 20px);
+        }
+
+        .brandbar-title::before {
             content: "";
             width: clamp(13px, 1.1vw, 20px);
             height: clamp(13px, 1.1vw, 20px);
@@ -202,11 +209,9 @@
         }
 
         /* 操作ヒント／LIVE状態（ブランドの下） */
+        /* タイトルの下の行（LIVE — 参加証投影中） */
         .hint {
-            position: fixed;
-            top: clamp(56px, 5.4vw, 96px);
-            left: clamp(22px, 2.8vw, 52px);
-            z-index: 5;
+            font-family: var(--font-sans);
             font-size: clamp(0.9rem, 1.25vw, 1.15rem);
             font-weight: 700;
             letter-spacing: 0.04em;
@@ -264,10 +269,11 @@
             box-shadow: 0 18px 52px rgba(0, 0, 0, 0.3), 0 0 24px rgba(255, 255, 255, 0.08);
         }
 
-        /* 複数の寄付者名を連結して右から左へ流し続ける放送テロップ。 */
+        /* 複数の寄付者名を連結して右から左へ流し続ける放送テロップ。
+           左上が「タイトル＋LIVE行」の2段になったぶん開始位置を下げている。 */
         .thanks {
             position: fixed;
-            top: clamp(84px, 12vh, 150px);
+            top: clamp(126px, 15vh, 190px);
             left: 0;
             right: 0;
             z-index: 7;
@@ -446,7 +452,8 @@
 
         .supporter-comment-wall {
             position: fixed;
-            top: clamp(122px, 17vh, 210px);
+            /* 名前テロップ(top 15vh + 帯の高さ約64px)の下に必ず収まる位置 */
+            top: clamp(216px, 23vh, 290px);
             right: clamp(26px, 3.4vw, 68px);
             z-index: 6;
             width: min(38vw, 620px);
@@ -504,7 +511,7 @@
 
         @media (max-width: 900px) {
             .supporter-comment-wall {
-                top: clamp(110px, 14vh, 150px);
+                top: clamp(196px, 21vh, 240px);
                 right: clamp(18px, 3vw, 28px);
                 width: min(42vw, 360px);
                 min-width: 240px;
@@ -915,8 +922,10 @@
     <div class="scrim scrim-top" aria-hidden="true"></div>
     <div class="scrim scrim-bottom" aria-hidden="true"></div>
 
-    <div class="brandbar">SHINJUKU DOOH</div>
-    <div class="hint" id="hint">画面クリック / スペースキー で参加者 +1</div>
+    <div class="brandbar">
+        <div class="brandbar-title">彩宿 — 新宿を彩る</div>
+        <div class="hint" id="hint">画面クリック / スペースキー で参加者 +1</div>
+    </div>
     <div class="dock">
         <div class="live">
             <div class="participation-thanks" id="participationThanks" aria-live="polite"></div>
@@ -968,7 +977,8 @@
         const DEV = params.has("dev");
         const DEMO_MODE = params.has("demo");
         const DOOH_PHONE_PREVIEW = params.has("phone") || params.has("phone-dooh") || params.has("mobile-dooh");
-        const MANUAL_ONLY_MODE = params.has("manual") || params.has("offline");
+        const AUTO_COUNT_MODE = params.has("autoCount") || params.has("auto-count") || params.has("autoplay");
+        const MANUAL_ONLY_MODE = params.has("manual") || params.has("offline") || AUTO_COUNT_MODE;
         const MOBILE_VIDEO_MODE = DOOH_PHONE_PREVIEW
             || window.matchMedia("(max-width: 900px)").matches
             || window.matchMedia("(pointer: coarse) and (max-width: 1180px)").matches;
@@ -1098,6 +1108,14 @@
         const CLEAN_VIDEO_MAX_MS = 11_000 * SCENE_TIME_SCALE;
         const IDLE_VIDEO_DELAY_MS = params.has("fast") ? 6_000 : 60_000;
         const IDLE_VIDEO_FALLBACK_MS = 6_500;
+        const AUTO_COUNT_INTERVAL_MS = Math.max(
+            400,
+            Math.min(10_000, Number(params.get("autoInterval") || params.get("interval")) || 1400)
+        );
+        const AUTO_COUNT_START_DELAY_MS = Math.max(
+            0,
+            Math.min(30_000, Number(params.get("autoStartDelay") || params.get("startDelay")) || 900)
+        );
         let activeCleanSceneMs = CLEAN_SCENE_MS;
         const CTA_ROTATION_ITEMS = [
             {
@@ -2068,18 +2086,32 @@
             });
         }
 
-        function toggleAuto() {
-            if (autoTimer) {
-                clearInterval(autoTimer);
-                autoTimer = null;
-                autoBtn.classList.remove("is-on");
-                autoBtn.textContent = "▶ 自動";
-                return;
-            }
+        function stopAutoCountDemo() {
+            if (!autoTimer) return;
+            clearInterval(autoTimer);
+            autoTimer = null;
+            autoBtn.classList.remove("is-on");
+            autoBtn.textContent = "▶ 自動";
+        }
+
+        function startAutoCountDemo({ immediate = true } = {}) {
+            if (autoTimer) return;
             autoBtn.classList.add("is-on");
             autoBtn.textContent = "⏸ 停止";
-            addParticipant();
-            autoTimer = setInterval(addParticipant, 1400);
+            if (AUTO_COUNT_MODE && hint) {
+                hint.textContent = `● AUTO DEMO — ${Math.round(AUTO_COUNT_INTERVAL_MS / 100) / 10}秒ごとに自動参加`;
+                hint.style.opacity = "1";
+            }
+            if (immediate) addParticipant();
+            autoTimer = setInterval(addParticipant, AUTO_COUNT_INTERVAL_MS);
+        }
+
+        function toggleAuto() {
+            if (autoTimer) {
+                stopAutoCountDemo();
+                return;
+            }
+            startAutoCountDemo();
         }
 
         // 操作：ステージのどこでも参加 +1。配信モードでは視聴用画面なので無効化する。
@@ -2223,6 +2255,11 @@
 
         updateHud();
         scheduleIdleVideo();
+        if (AUTO_COUNT_MODE) {
+            window.setTimeout(() => {
+                startAutoCountDemo({ immediate: true });
+            }, AUTO_COUNT_START_DELAY_MS);
+        }
 
         // Firebase連動スクリプト（module）から呼べるように公開
         window.__inkDemo = {
@@ -2236,6 +2273,8 @@
             simulateCrowd,
             emergencyStop,
             runResetCycleCheck,
+            startAutoCountDemo,
+            stopAutoCountDemo,
             skipScene,
             completeCurrentChallenge,
             getDebugLog: () => demoDebugLog.slice(),
@@ -2260,7 +2299,8 @@
         const searchParams = new URLSearchParams(location.search);
         const isDevMode = searchParams.has("dev");
         const isDoohPhonePreview = searchParams.has("phone") || searchParams.has("phone-dooh") || searchParams.has("mobile-dooh");
-        const isManualOnlyMode = searchParams.has("manual") || searchParams.has("offline");
+        const isAutoCountMode = searchParams.has("autoCount") || searchParams.has("auto-count") || searchParams.has("autoplay");
+        const isManualOnlyMode = searchParams.has("manual") || searchParams.has("offline") || isAutoCountMode;
         const isLiveBroadcastMode = searchParams.has("live") || searchParams.has("youtube") || searchParams.has("broadcast");
         const channel = isLiveBroadcastMode
             ? "youtube"
