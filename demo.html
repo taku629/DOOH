@@ -1178,6 +1178,11 @@
             }, 320 + attempt * 420);
         }
 
+        // load()は読み込みを最初からやり直すため、監視のたびに発行すると
+        // pending中のplay()を中断し続けて再生開始をかえって妨げる。3秒に1回まで。
+        const BASE_VIDEO_LOAD_COOLDOWN_MS = 3_000;
+        let lastBaseVideoLoadAt = 0;
+
         function keepBaseVideoMoving() {
             if (!baseVideo) return;
             baseVideo.muted = true;
@@ -1189,7 +1194,8 @@
                 } catch {}
             }
             if (baseVideo.paused || baseVideo.readyState < 2 || baseVideo.ended) {
-                if (baseVideo.readyState < 2) {
+                if (baseVideo.readyState < 2 && Date.now() - lastBaseVideoLoadAt >= BASE_VIDEO_LOAD_COOLDOWN_MS) {
+                    lastBaseVideoLoadAt = Date.now();
                     try {
                         baseVideo.load();
                     } catch {}
