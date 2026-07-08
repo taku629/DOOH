@@ -939,7 +939,7 @@
             <span class="value"><span class="unit">¥</span><span class="num" id="countNum">0</span></span>
             <div class="progress-wrap">
                 <span class="challenge-label" id="challengeLabel">第1回 彩リレー</span>
-                <p class="progress-text" id="progressText">あと9人で取り組みが見えてくる</p>
+                <p class="progress-text" id="progressText">あと18人で取り組みが見えてくる</p>
                 <p class="transition-countdown" id="transitionCountdown" aria-live="polite"></p>
                 <div class="progress-bar"><span id="progressBar"></span></div>
             </div>
@@ -970,7 +970,8 @@
     </div>
 
     <script>
-        const TOTAL = 9;
+        // 1チャレンジ=18人。飛沫9種×2段階（芯で着弾→広がって完成）で18ステップを構成する
+        const TOTAL = 18;
         // ?dev で開くと、Firebase連動中でも手動ツールで動作確認できる（QR不要）
         const params = new URLSearchParams(location.search);
         const DONATION_PER_PERSON_YEN = 100; // 1参加あたりのデモ募金額（publishSwipeComplete の donationAmountYen と一致）
@@ -1032,19 +1033,22 @@
             skipSceneBtn.hidden = false;
         }
 
-        // 飛沫レイヤーを9枚生成（黒地は screen 合成で透過 → 明部だけ累積）
+        // 飛沫レイヤーを生成（黒地は screen 合成で透過 → 明部だけ累積）
+        // 偶数index=芯(XX-core.jpg)、奇数index=完成形(XX.jpg)。完成形が出たら芯は差し替えて消す
         const layers = [];
-        for (let i = 1; i <= TOTAL; i++) {
-            const img = document.createElement("img");
-            img.className = "ink-layer";
-            img.src = `assets/ink/${String(i).padStart(2, "0")}.jpg`;
-            img.alt = "";
-            img.decoding = "async";
-            stage.appendChild(img);
-            layers.push(img);
+        for (let i = 1; i <= TOTAL / 2; i++) {
+            for (const variant of ["-core", ""]) {
+                const img = document.createElement("img");
+                img.className = "ink-layer";
+                img.src = `assets/ink/${String(i).padStart(2, "0")}${variant}.jpg`;
+                img.alt = "";
+                img.decoding = "async";
+                stage.appendChild(img);
+                layers.push(img);
+            }
         }
 
-        // 9枚が出揃った最後に重ねる仕上げの一枚
+        // 全飛沫が出揃った最後に重ねる仕上げの一枚
         const finalLayer = document.createElement("img");
         finalLayer.className = "ink-layer final-layer";
         finalLayer.src = "assets/ink/Shinjuku_11.png";
@@ -1853,16 +1857,20 @@
                 // 次の飛沫を飛び散らせて新しい範囲を出す
                 const el = layers[revealed];
                 el.classList.add("is-revealed");
+                if (revealed % 2 === 1) {
+                    // 完成形が出たら同じ飛沫の芯は差し替えて消す（screen二重合成で白飛びするため）
+                    layers[revealed - 1].classList.remove("is-revealed");
+                }
                 splat(el);
                 revealed += 1;
                 if (revealed >= TOTAL) {
-                    // 9人ごとに、きれいな新宿 → 温かな新宿 → 次のチャレンジへ進む
+                    // 18人ごとに、きれいな新宿 → 温かな新宿 → 次のチャレンジへ進む
                     startCelebration();
                 }
                 updateHud(); // 進捗バー/テキストを飛沫ごとに更新（ライブ連動の連続表示にも対応）
             } else {
-                // 全点灯後も参加するたびに既存の飛沫を弾けさせて反応させる
-                splat(layers[Math.floor(Math.random() * TOTAL)]);
+                // 全点灯後も参加するたびに既存の飛沫（完成形）を弾けさせて反応させる
+                splat(layers[Math.floor(Math.random() * (TOTAL / 2)) * 2 + 1]);
             }
         }
 
@@ -1898,7 +1906,9 @@
             revealed = Math.max(0, Math.min(TOTAL, target));
             layers.forEach((el, i) => {
                 el.getAnimations().forEach((a) => a.cancel());
-                el.classList.toggle("is-revealed", i < revealed);
+                // 芯(偶数index)は「最新ステップのときだけ」表示。完成形(奇数index)は出たら残る
+                const visible = i % 2 === 0 ? i === revealed - 1 : i < revealed;
+                el.classList.toggle("is-revealed", visible);
             });
             finalLayer.getAnimations().forEach((a) => a.cancel());
             finalLayer.classList.toggle("is-revealed", revealed >= TOTAL || celebrationActive);
@@ -1918,7 +1928,7 @@
             }
 
             // 初回同期は基本的に過去の参加を再演せず、累計人数から現在の回と進捗を直接復元する。
-            // ただし「直近の参加でちょうど9人達成した」ケースは、DOOH側の接続遅れや再読み込みで
+            // ただし「直近の参加でちょうど18人達成した」ケースは、DOOH側の接続遅れや再読み込みで
             // 達成演出を取り逃がすため、一度だけ完成映像を再生する。
             if (!liveCountInitialized) {
                 liveCountInitialized = true;
@@ -2181,7 +2191,7 @@
             returnVisualToWaitingState({
                 resetCount: true,
                 resetLiveState: true,
-                message: "映像リセット確認中：9人達成演出を再生します",
+                message: "映像リセット確認中：18人達成演出を再生します",
             });
             let added = 0;
             resetCheckAddTimer = window.setInterval(() => {
@@ -2312,7 +2322,7 @@
 
         async function shouldReplayInitialCompletion(liveCount) {
             const count = Math.max(0, Number(liveCount) || 0);
-            if (count <= 0 || count % 9 !== 0) {
+            if (count <= 0 || count % 18 !== 0) {
                 return false;
             }
             try {
