@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260626-youtube-channel-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260708-increment-1";
 import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -107,7 +107,7 @@ const requiresSupportChoice = !isYouTubeParticipation;
 const YOUTUBE_PARTICIPATION_COOLDOWN_MS = 10 * 1000;
 const YOUTUBE_PARTICIPATION_STORAGE_KEY = "shinjuku-dooh-participation-youtube";
 const TOTAL_PARTICIPANT_GOAL = 3000;
-const VISUAL_CHANGE_INTERVAL = 9;
+const VISUAL_CHANGE_INTERVAL = 18;
 const requestedParticipationChannel = participationSearchParams.get("channel");
 const isExplicitTeamTest = participationSearchParams.get("team-test") === "1";
 const PARTICIPATION_CHANNEL = isYouTubeParticipation
@@ -415,7 +415,7 @@ const UI_TEXT = {
     youtubeLockedTitle: "すでに<br><span class=\"no-break\">送信済みです</span>",
     youtubeLockedCopy: "次の応援アクションは約{remaining}後に送れます。",
     youtubeLockedHint: "送信済みです。約{remaining}後にもう一度参加できます。",
-    sendFailed: "通信に失敗しました。もう一度上までスワイプしてください。",
+    sendFailed: "参加は1日1回までです。また明日の参加をお待ちしています。",
     sending: "応援アクションを反映しています。",
     busy: "通信が混み合っています。少し時間をおいてもう一度お試しください。",
     alreadyHint: "本日はすでに参加済みです。また明日の参加をお待ちしています。",
@@ -509,7 +509,7 @@ const UI_TEXT = {
     youtubeLockedTitle: "Already<br><span class=\"no-break\">sent</span>",
     youtubeLockedCopy: "You can send the next support action in about {remaining}.",
     youtubeLockedHint: "Already sent. You can join again in about {remaining}.",
-    sendFailed: "Connection failed. Please swipe all the way up again.",
+    sendFailed: "You can join once per day. See you again tomorrow!",
     sending: "Sending your support action…",
     busy: "The connection is busy. Please wait a moment and try again.",
     alreadyHint: "You have already joined today. Please come back tomorrow.",
@@ -1342,6 +1342,10 @@ function showStep(index) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
     updateCounterGoalProgress(participantCount);
+    if (counterValue && !prefersReducedMotion) {
+      // ロールアップ開始前のプレースホルダも0から（HTML初期値の名残の100を見せない）
+      counterValue.textContent = "0";
+    }
     window.setTimeout(() => animateCounter(participantCount), delay);
   }
 }
@@ -1568,7 +1572,6 @@ function animateCounter(target) {
     cancelAnimationFrame(counterAnimationFrame);
     counterAnimationFrame = null;
   }
-
   if (prefersReducedMotion) {
     counterValue.textContent = target.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
     updateCounterGoalProgress(target);
@@ -1579,6 +1582,8 @@ function animateCounter(target) {
 
   counterBox.classList.add("is-counting");
 
+  // 0から最終値までロールアップして「参加が積み上がってきた」動きを見せ、
+  // 最後に数字がポップして自分の1人が加わったことを示す
   const startValue = 0;
   const duration = 1900;
   const startTime = performance.now();
@@ -1587,7 +1592,7 @@ function animateCounter(target) {
     const elapsed = now - startTime;
     const progress = Math.min(elapsed / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 4);
-    const value = Math.floor(startValue + (target - startValue) * eased);
+    const value = Math.round(startValue + (target - startValue) * eased);
     counterValue.textContent = value.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
     updateCounterGoalProgress(value);
 
@@ -1601,6 +1606,14 @@ function animateCounter(target) {
     updateCounterGoalProgress(target);
     counterBox.classList.remove("is-counting");
     counterBox.classList.add("is-counted");
+    counterValue.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: "scale(1.16)", offset: 0.4 },
+        { transform: "scale(1)" },
+      ],
+      { duration: 480, easing: "cubic-bezier(0.22, 1.4, 0.36, 1)" }
+    );
   }
 
   counterAnimationFrame = requestAnimationFrame(tick);

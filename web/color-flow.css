@@ -953,3 +953,46 @@ html:not([data-theme="morning"]) body.has-color-participation .card::before {
     transform: translateY(0);
   }
 }
+
+/* --- 参加証カード(白地)の可読性 ----------------------------------------- */
+/* 注記(project-note-card)は黒カード用の白文字配色のままだと白地で見えず、
+   ただの巨大な余白に見えてしまう。白地用の配色に上書きする */
+
+html:not([data-theme="morning"]) body.has-color-participation .card p {
+  color: rgba(21, 25, 25, 0.55);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card .project-note-card {
+  margin-top: 14px;
+  border-color: rgba(21, 25, 25, 0.16);
+  background: rgba(21, 25, 25, 0.05);
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card .project-note-card span {
+  color: rgba(21, 25, 25, 0.62);
+  font-size: 0.66rem;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card .project-note-card p {
+  color: rgba(21, 25, 25, 0.82) !important;
+  font-size: 0.8rem !important;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card .project-note-card a {
+  background: #151919;
+  color: #fff;
+  font-size: 0.72rem;
+}
+
+/* 説明文と名前を一回り大きく、行間もゆったりに */
+html:not([data-theme="morning"]) body.has-color-participation .card.done p:last-of-type {
+  color: rgba(21, 25, 25, 0.8);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+html:not([data-theme="morning"]) body.has-color-participation .card.done h3 {
+  font-size: clamp(1.8rem, 7vw, 2.2rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
