@@ -1,4 +1,4 @@
-import { buildParticipationTransactionValue } from "./participation-transaction.mjs";
+import { computeVisitStats } from "./participation-transaction.mjs";
 import { isInappropriateName } from "./name-filter.js";
 
 const CONFIG_PATH = new URL("../config/firebase-config.json", import.meta.url).href;
@@ -229,52 +229,101 @@ export async function publishSwipeComplete(payload = {}) {
     if (!eventRef.key) {
         return createFailedSwipeResult(new Error("Swipe event key could not be generated."));
     }
+
+    const visitorId = typeof payload.visitorId === "string" && payload.visitorId ? payload.visitorId : null;
+    const participationDate =
+        typeof payload.participationDate === "string" && payload.participationDate
+            ? payload.participationDate
+            : null;
+    const dailyPath = visitorId && participationDate
+        ? `${getParticipationPath(channel)}/dailyParticipants/${participationDate}/${visitorId}`
+        : null;
+
+    const readParticipantCount = async () => {
+        try {
+            const snapshot = await sdk.get(sdk.ref(database, getParticipantCountPath(channel)));
+            return Number(snapshot.val()) || 0;
+        } catch {
+            return null;
+        }
+    };
+
+    // 訪問履歴と同日重複だけを先に読む（visitorId単位なので他の参加者と競合しない）
+    let previousVisit = null;
+    if (visitorId) {
+        try {
+            const [historySnapshot, dailySnapshot] = await Promise.all([
+                sdk.get(sdk.ref(database, `${getParticipantHistoryPath(channel)}/${visitorId}`)),
+                dailyPath ? sdk.get(sdk.ref(database, dailyPath)) : Promise.resolve(null),
+            ]);
+            if (dailySnapshot?.exists()) {
+                return { count: await readParticipantCount(), eventRef, event: null, accepted: false, failed: false };
+            }
+            previousVisit = historySnapshot.val();
+        } catch (error) {
+            console.warn("[firebase] participant history read failed:", error);
+        }
+    }
+
+    const stats = computeVisitStats(previousVisit, participationDate);
     const event = {
-        key: eventRef.key,
+        type: "swipe-completed",
         createdAt: sdk.serverTimestamp(),
         source: payload.source ?? channel,
         name: candidateName && !isInappropriateName(candidateName) ? candidateName : null,
         donationAmountYen: Number(payload.donationAmountYen) || null,
         userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-        visitorId: payload.visitorId ?? null,
-        participationDate: payload.participationDate ?? null,
-        isReturning: payload.isReturning === true,
-        isConsecutiveReturn: payload.isConsecutiveReturn === true,
-        streakDays: Math.max(1, Number(payload.streakDays) || 1),
-        totalDays: Math.max(1, Number(payload.totalDays) || 1),
+        visitorId,
+        participationDate,
+        isReturning: stats.isReturning,
+        isConsecutiveReturn: stats.isConsecutiveReturn,
+        streakDays: stats.streakDays,
+        totalDays: stats.totalDays,
         tickerFont: normalizeTickerFont(payload.tickerFont),
     };
-    const participationRef = sdk.ref(database, getParticipationPath(channel));
-    let lastError = null;
 
+    // participantCountはincrement(1)のサーバー側加算に任せ、swipe本体と同一の
+    // 多パスupdateで原子的に書く。親ノードtransactionと違い他参加者とのCAS競合が起きない。
+    const updates = {
+        [getParticipantCountPath(channel)]: sdk.increment(1),
+        [`${getSwipesPath(channel)}/${eventRef.key}`]: event,
+    };
+    if (dailyPath) {
+        updates[dailyPath] = sdk.serverTimestamp();
+        updates[`${getParticipantHistoryPath(channel)}/${visitorId}`] = {
+            lastParticipationDate: participationDate,
+            streakDays: stats.streakDays,
+            totalDays: stats.totalDays,
+        };
+    }
+
+    let lastError = null;
     for (const delayMs of WRITE_RETRY_DELAYS_MS) {
         if (delayMs > 0) {
             await wait(delayMs);
         }
 
         try {
-            const result = await sdk.runTransaction(
-                participationRef,
-                (currentValue) => buildParticipationTransactionValue(currentValue, event),
-                { applyLocally: false }
-            );
-            if (!result.committed) {
-                throw new Error("Participation transaction was not committed.");
-            }
-            const committedData = result.snapshot.val() || {};
-            const participantCount = Number(committedData.participantCount) || 0;
-            const committedEvent = committedData.swipes?.[eventRef.key] ?? null;
-
-            return {
-                count: participantCount,
-                eventRef,
-                event: committedEvent,
-                accepted: Boolean(committedEvent),
-                failed: false,
-            };
+            await sdk.update(sdk.ref(database), updates);
+            return { count: await readParticipantCount(), eventRef, event, accepted: true, failed: false };
         } catch (error) {
             lastError = error;
             console.warn("[firebase] swipe publish attempt failed:", error);
+            if (/permission.denied/i.test(String(error?.code ?? "") + String(error?.message ?? ""))) {
+                // rules拒否は再試行しても変わらない。同日重複がrulesで原子的に
+                // 弾かれた場合は「本日参加済み」として扱う。
+                if (dailyPath) {
+                    try {
+                        const dailySnapshot = await sdk.get(sdk.ref(database, dailyPath));
+                        if (dailySnapshot.exists()) {
+                            return { count: await readParticipantCount(), eventRef, event: null, accepted: false, failed: false };
+                        }
+                    } catch {
+                        // 読めなければ通常の失敗として返す
+                    }
+                }
+                break;
+            }
         }
     }
 
@@ -322,8 +371,8 @@ export async function getLatestSwipeComplete(options = {}) {
         const latestCreatedAt = Number(latest?.createdAt) || 0;
         if (
             !latest ||
-            candidateCount > latestCount ||
-            (candidateCount === latestCount && candidateCreatedAt > latestCreatedAt)
+            candidateCreatedAt > latestCreatedAt ||
+            (candidateCreatedAt === latestCreatedAt && candidateCount > latestCount)
         ) {
             latest = candidate;
         }
