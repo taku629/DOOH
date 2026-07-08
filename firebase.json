@@ -35,7 +35,12 @@
       "**/*.save",
       "artifacts/**",
       "rs-public/**",
-      "thanks-proto.html"
+      "thanks-proto.html",
+      ".venv/**",
+      "**/.venv/**",
+      "tests/**",
+      ".github/**",
+      "QRcode/**"
     ],
     "headers": [
       {
