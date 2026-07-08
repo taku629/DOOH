@@ -23,7 +23,15 @@
       "testmen.html",
       "vite.config.js",
       "web/admin-src/**",
-      "*.pptx"
+      "*.pptx",
+      "firebase-rs.json",
+      "**/*.py",
+      "**/__pycache__/**",
+      "**/*.log",
+      "**/*.save",
+      "artifacts/**",
+      "rs-public/**",
+      "thanks-proto.html"
     ],
     "rewrites": [
       {

@@ -26,7 +26,16 @@
       "testmen.html",
       "vite.config.js",
       "web/admin-src/**",
-      "*.pptx"
+      "*.pptx",
+      "firebase-rs.json",
+      "firebase.research.json",
+      "**/*.py",
+      "**/__pycache__/**",
+      "**/*.log",
+      "**/*.save",
+      "artifacts/**",
+      "rs-public/**",
+      "thanks-proto.html"
     ],
     "headers": [
       {
@@ -67,6 +76,24 @@
       },
       {
         "source": "/about",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/men",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/women",
         "headers": [
           {
             "key": "Cache-Control",

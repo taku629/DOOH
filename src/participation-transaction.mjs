@@ -23,6 +23,30 @@ function findLatestVisitorSwipe(swipes, visitorId) {
     }, null);
 }
 
+// 前回訪問(participantHistory)と参加日から streak/totalDays 等を計算する。
+// increment+多パスupdate方式(firebase-bridge.js)と旧transaction方式の両方が共有する。
+export function computeVisitStats(previousVisit, participationDate) {
+    const dayDifference = differenceInCalendarDays(
+        previousVisit?.lastParticipationDate,
+        participationDate
+    );
+    const isReturning = dayDifference !== null && dayDifference >= 1;
+    const isConsecutiveReturn = dayDifference === 1;
+    const streakDays = isConsecutiveReturn
+        ? Math.max(1, Number(previousVisit?.streakDays) || 1) + 1
+        : 1;
+    // 連続でなくても通算した参加日数。色はこの値で決める。
+    // 既存データに totalDays が無い場合は streakDays から補完する。
+    const previousTotalDays = previousVisit
+        ? Math.max(Number(previousVisit.totalDays) || 0, Number(previousVisit.streakDays) || 0)
+        : 0;
+    const isNewParticipationDay = dayDifference === null || dayDifference >= 1;
+    const totalDays = previousVisit && !isNewParticipationDay
+        ? previousTotalDays
+        : previousTotalDays + 1;
+    return { isReturning, isConsecutiveReturn, streakDays, totalDays };
+}
+
 export function buildParticipationTransactionValue(currentValue, event) {
     if (!event?.key) {
         throw new Error("Participation event key is required.");
@@ -57,24 +81,8 @@ export function buildParticipationTransactionValue(currentValue, event) {
     const previousVisit = visitorId
         ? participantHistory[visitorId] ?? findLatestVisitorSwipe(swipes, visitorId)
         : null;
-    const dayDifference = differenceInCalendarDays(
-        previousVisit?.lastParticipationDate,
-        participationDate
-    );
-    const isReturning = dayDifference !== null && dayDifference >= 1;
-    const isConsecutiveReturn = dayDifference === 1;
-    const streakDays = isConsecutiveReturn
-        ? Math.max(1, Number(previousVisit?.streakDays) || 1) + 1
-        : 1;
-    // 連続でなくても通算した参加日数。色はこの値で決める。
-    // 既存データに totalDays が無い場合は streakDays から補完する。
-    const previousTotalDays = previousVisit
-        ? Math.max(Number(previousVisit.totalDays) || 0, Number(previousVisit.streakDays) || 0)
-        : 0;
-    const isNewParticipationDay = dayDifference === null || dayDifference >= 1;
-    const totalDays = previousVisit && !isNewParticipationDay
-        ? previousTotalDays
-        : previousTotalDays + 1;
+    const { isReturning, isConsecutiveReturn, streakDays, totalDays } =
+        computeVisitStats(previousVisit, participationDate);
     const currentCount = Number(currentData.participantCount);
     const participantCount = (Number.isFinite(currentCount) ? currentCount : 0) + 1;
 

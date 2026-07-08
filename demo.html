@@ -935,8 +935,8 @@
                 <p class="supporter-comment-text" id="supporterCommentText"></p>
                 <small class="supporter-comment-name" id="supporterCommentName"></small>
             </section>
-            <span class="label">合計金額</span>
-            <span class="value"><span class="unit">¥</span><span class="num" id="countNum">0</span></span>
+            <span class="label">累計参加者</span>
+            <span class="value"><span class="unit"></span><span class="num" id="countNum">0人</span></span>
             <div class="progress-wrap">
                 <span class="challenge-label" id="challengeLabel">第1回 彩リレー</span>
                 <p class="progress-text" id="progressText">あと18人で取り組みが見えてくる</p>
@@ -1315,9 +1315,8 @@
         }
 
         function updateHud() {
-            countNum.textContent = LIVE_BROADCAST_MODE
-                ? `${count.toLocaleString("ja-JP")}人`
-                : (count * DONATION_PER_PERSON_YEN).toLocaleString("ja-JP");
+            // 金額(人数×¥100)ではなく人数をそのまま表示する
+            countNum.textContent = `${count.toLocaleString("ja-JP")}人`;
             const remaining = Math.max(0, TOTAL - revealed);
             const done = revealed >= TOTAL || celebrationActive;
             if (challengeLabel) {
@@ -2301,7 +2300,7 @@
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getLatestSwipeComplete, getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260703-replay-boundary-1";
+        import { getLatestSwipeComplete, getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260708-increment-1";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
@@ -2326,11 +2325,11 @@
                 return false;
             }
             try {
+                // swipeイベントは連番countを持たない(participantCountをincrementで採番)ため、
+                // 「直近1時間以内に最後のスワイプがあったか」だけで判定する
                 const latestSwipe = await getLatestSwipeComplete({ channel });
-                const latestCount = Number(latestSwipe?.count) || 0;
                 const latestCreatedAt = Number(latestSwipe?.createdAt) || 0;
-                return latestCount === count
-                    && latestCreatedAt > 0
+                return latestCreatedAt > 0
                     && Date.now() - latestCreatedAt <= INITIAL_COMPLETION_REPLAY_WINDOW_MS;
             } catch (error) {
                 console.info("[demo] latest swipe check skipped:", error);

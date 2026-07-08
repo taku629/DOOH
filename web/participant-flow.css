@@ -2127,3 +2127,10 @@ body.is-youtube-locked .slider-thumb {
     transition: none !important;
   }
 }
+
+/* カウントアップ着地時のポップ ----------------------------------------- */
+
+#counterValue {
+  display: inline-block;
+  transform-origin: 50% 70%;
+}
