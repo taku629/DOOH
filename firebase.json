@@ -29,6 +29,7 @@
       "*.pptx",
       "firebase-rs.json",
       "firebase.research.json",
+      "firebase.loadtest.json",
       "**/*.py",
       "**/__pycache__/**",
       "**/*.log",
@@ -54,6 +55,15 @@
       },
       {
         "source": "/demo",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/demo_v2",
         "headers": [
           {
             "key": "Cache-Control",
@@ -119,6 +129,10 @@
       {
         "source": "/demo",
         "destination": "/demo.html"
+      },
+      {
+        "source": "/demo_v2",
+        "destination": "/demo_v2.html"
       },
       {
         "source": "/research",
