@@ -133,10 +133,28 @@
             filter: sepia(0.08) saturate(1.08) brightness(0.96);
         }
 
-        /* 墨: 廃墟が暗いので、冷たいハローを付けて存在を見せる */
-        .ink-impact.is-ink {
-            background: radial-gradient(circle at 46% 42%, #2b3138 0%, #14171b 55%, #08090b 100%);
-            filter: drop-shadow(0 0 26px rgba(180, 205, 230, 0.38));
+        /* 白インク: 暗い廃墟の上でいちばん遠くまで届く */
+        .ink-impact.is-white {
+            background: radial-gradient(circle at 46% 42%, #ffffff 0%, #f1f3f5 55%, #d9dee3 100%);
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.32));
+        }
+
+        /* 映像: 色を付けず、窓の中身（回復した新宿）そのものが飛沫形で弾けて着地する */
+        .ink-impact.is-window video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* 窓（.reveal-video）と同じ発色に合わせ、フェード時の継ぎ目を消す */
+            filter: sepia(0.08) saturate(1.08) brightness(0.96) contrast(1.02);
+        }
+
+        /* 着弾で飛び散る小滴。transform/opacity だけで動かす＝映像の描画を乱さない */
+        .ink-droplet {
+            position: absolute;
+            z-index: 1;
+            border-radius: 50%;
+            pointer-events: none;
+            will-change: transform, opacity;
         }
 
         /* 参加者の名前は、着弾した飛沫のところに数秒だけ立つ */
@@ -295,12 +313,31 @@
             background-blend-mode: color;
         }
 
+        /* 白インクは blend だと沈むので、その人の色のグラデーションで直接塗る */
+        .ink-impact.is-white.is-streak {
+            background: radial-gradient(circle at 46% 42%,
+                color-mix(in srgb, var(--returning-color, #ffc56d) 72%, #fff) 0%,
+                var(--returning-color, #ffc56d) 55%,
+                color-mix(in srgb, var(--returning-color, #ffc56d) 60%, #000) 100%);
+            background-blend-mode: normal;
+            filter: drop-shadow(0 0 26px color-mix(in srgb, var(--returning-color, #ffc56d) 45%, transparent));
+        }
+
         /* 支援者の一撃は金。常連色より優先する */
         .ink-impact.is-supporter,
         .ink-impact.is-streak.is-supporter {
             background-color: #e7c877;
             background-blend-mode: color;
             box-shadow: 0 0 90px rgba(231, 200, 119, 0.35);
+        }
+
+        /* 白では支援者でもインクの色は変えない（金で塗るとインクの個性が消える）。
+           金は縁の光としてまとわせる。DEVは全員支援者になる暫定仕様なので、塗りだと確認もできない */
+        .ink-impact.is-white.is-supporter {
+            background-color: transparent;
+            background-blend-mode: normal;
+            box-shadow: none;
+            filter: drop-shadow(0 0 34px rgba(231, 200, 119, 0.62));
         }
 
         /* 常連参加者は名前が streak 色で立つ（従来ピル/ティッカーが担っていた表現） */
@@ -1191,6 +1228,8 @@
         <button id="crowdTestBtn" type="button" hidden>50人同時参加を再現</button>
         <button id="resetCheckBtn" type="button" hidden>映像リセット確認</button>
         <button id="emergencyStopBtn" class="is-danger" type="button" hidden>緊急停止</button>
+        <button class="impact-style-btn" data-impact="white" type="button" hidden>白</button>
+        <button class="impact-style-btn" data-impact="window" type="button" hidden>映像</button>
         <button id="autoBtn" type="button">▶ 自動</button>
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
@@ -1319,17 +1358,36 @@
 
         // ============================================================
         // 実行時配置エンジン
-        //   飛沫の形は shape-NN.png（切り詰めた透過PNG）。位置と大きさは毎回JSで決める。
+        //   飛沫の形は shape-NN.png（切断辺を修復済みの透過PNG）。位置と大きさは毎回JSで決める。
         //   窓の中身は「動いている clean 映像」を mask で覗かせる。
-        //   ?impact=plate（既定・現行の質感） / ?impact=ink（白いインクが弾ける）
         // ============================================================
-        // burst: 中間層なし。窓そのものが飛沫の形に裂けて開く（既定）
-        // ink  : 墨が落ちて、消えると窓が残る
-        // plate: 回復後の静止画が飛沫の形で一瞬出る（旧実装・比較用）
-        const IMPACT_STYLE = (() => {
+        // 着弾の見せ方（?impact= で切替。DEVパネルの 白/映像 でも切替可）。
+        // 窓のマスク（revealVideo側）は一切動かさず、上に重ねる層と小滴だけを
+        // transform/opacity で動かす＝窓の中の映像は乱れない。
+        // window: 窓のカラー映像そのものが飛沫形で弾けて着地する（既定）
+        // white : 白いインクが弾ける
+        // burst : 旧既定。窓のマスク自体が跳ねる（映像が歪む・比較用）
+        // plate : 回復後の静止画が一瞬出る（旧実装・比較用）
+        const IMPACT_STYLES = ["white", "window", "burst", "plate"];
+        let IMPACT_STYLE = (() => {
             const v = new URLSearchParams(location.search).get("impact");
-            return ["burst", "ink", "plate"].includes(v) ? v : "burst";
+            return IMPACT_STYLES.includes(v) ? v : "window";
         })();
+
+        // 着弾スタイルの試し切替（墨/白/映像）。選んだものは ?impact= にも同期する
+        const impactStyleBtns = [...document.querySelectorAll(".impact-style-btn")];
+        impactStyleBtns.forEach((b) => {
+            b.hidden = !CONTROL_TOOLS_MODE;
+            b.classList.toggle("is-on", b.dataset.impact === IMPACT_STYLE);
+            b.addEventListener("click", (e) => {
+                e.stopPropagation();
+                IMPACT_STYLE = b.dataset.impact;
+                impactStyleBtns.forEach((x) => x.classList.toggle("is-on", x.dataset.impact === IMPACT_STYLE));
+                const u = new URL(location.href);
+                u.searchParams.set("impact", IMPACT_STYLE);
+                history.replaceState(null, "", u);
+            });
+        });
         const BURST_MS = { core: 420, full: 620 };
         const TARGET_NEW = 0.045;   // 1人ぶん(芯+完成形)で新しく開く面積 / 画面比
         const MIN_DIST = 240;       // 狙い同士の最小距離(フレームpx)
@@ -1533,6 +1591,70 @@
                 position: entries.map((e) => { const r = rect(e); return `${r[0].toFixed(1)}px ${r[1].toFixed(1)}px`; }).join(", "),
                 size: entries.map((e) => { const r = rect(e); return `${r[2].toFixed(1)}px ${r[3].toFixed(1)}px`; }).join(", "),
             };
+        }
+
+        // 窓のマスクを出すのを遅らせる（インクが覆いきってから窓が現れる順番を守る）
+        const maskHoldUntil = new Map();   // layerIndex → performance.now() 基準の解禁時刻
+
+        // window スタイル用の共有ビデオ。着弾のたびに窓側と同じ再生時刻へ合わせて使い回す。
+        // （連打では前の着弾から奪われることがあるが、直後にフェードするので目立たない）
+        let impactVideo = null;
+        function acquireImpactVideo() {
+            if (!impactVideo) {
+                impactVideo = document.createElement("video");
+                impactVideo.src = revealVideo.currentSrc || revealVideo.src;
+                impactVideo.muted = true;
+                impactVideo.loop = true;
+                impactVideo.playsInline = true;
+                impactVideo.preload = "auto";
+                impactVideo.setAttribute("aria-hidden", "true");
+            }
+            try { impactVideo.currentTime = revealVideo.currentTime; } catch {}
+            impactVideo.play().catch(() => {});
+            return impactVideo;
+        }
+
+        function releaseImpact(el) {
+            if (impactVideo && impactVideo.parentNode === el) {
+                impactVideo.pause();
+                impactVideo.remove();
+            }
+            el.remove();
+        }
+
+        // 着弾点から飛び散る小滴。transform/opacity のみ＝映像の描画を乱さない
+        const DROPLET_FILL = {
+            white: "radial-gradient(circle at 40% 35%, #ffffff, #cfd6dd 70%)",
+            window: "radial-gradient(circle at 40% 35%, #ffd9a0, #d99a55 70%)",
+            plate: "radial-gradient(circle at 40% 35%, #ffd9a0, #d99a55 70%)",
+        };
+        function spawnDroplets(p) {
+            const fill = DROPLET_FILL[IMPACT_STYLE];
+            if (!fill) return;
+            const cx = (stage.clientWidth * p.ox) / 100;
+            const cy = (stage.clientHeight * p.oy) / 100;
+            const n = 5 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < n; i++) {
+                const d = document.createElement("div");
+                d.className = "ink-droplet";
+                const size = 5 + Math.random() * 12;
+                d.style.width = d.style.height = `${size.toFixed(1)}px`;
+                d.style.left = `${(cx - size / 2).toFixed(1)}px`;
+                d.style.top = `${(cy - size / 2).toFixed(1)}px`;
+                d.style.background = fill;
+                stage.appendChild(d);
+                const ang = Math.random() * Math.PI * 2;
+                const dist = 46 + Math.random() * 110;
+                const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
+                d.animate(
+                    [
+                        { transform: "translate(0, 0) scale(1)", opacity: 0.95, offset: 0 },
+                        { transform: `translate(${(dx * 0.7).toFixed(1)}px, ${(dy * 0.7 - 12).toFixed(1)}px) scale(0.8)`, opacity: 0.9, offset: 0.55 },
+                        { transform: `translate(${dx.toFixed(1)}px, ${(dy + 18).toFixed(1)}px) scale(0.3)`, opacity: 0, offset: 1 },
+                    ],
+                    { duration: 560 + Math.random() * 260, easing: "cubic-bezier(0.16, 0.8, 0.4, 1)", fill: "forwards" }
+                ).finished.then(() => d.remove()).catch(() => d.remove());
+            }
         }
 
         // 開いた窓の跳ね。0.55 → 1.06 → 1.0
@@ -1750,36 +1872,50 @@
                 el.classList.add("is-streak");
                 applyStreakClass(el, meta.options);
             }
-            if (isSupporter && IMPACT_STYLE === "plate") el.classList.add("is-supporter");
+            if (isSupporter) el.classList.add("is-supporter");
             const css = maskCssFor([{ p, k: 1 }]);
             for (const prop of ["webkitMaskImage", "maskImage"]) el.style[prop] = css.image;
             for (const prop of ["webkitMaskPosition", "maskPosition"]) el.style[prop] = css.position;
             for (const prop of ["webkitMaskSize", "maskSize"]) el.style[prop] = css.size;
             el.style.transformOrigin = `${p.ox}% ${p.oy}%`;
+            if (IMPACT_STYLE === "window") el.appendChild(acquireImpactVideo());
             stage.insertBefore(el, warmLayer);
 
             const isCore = layerIndex % 2 === 0;
+            const dur = isCore ? 440 : 680;
+            // インクが窓を覆いきるまで窓のマスクを出さない（着弾→溶けて窓が現れる、の順番）。
+            // window スタイルは着地の瞬間に下の窓と同じ絵で重なるので、着地まで待つ
+            const coverAt = IMPACT_STYLE === "window" ? dur : dur * 0.42;
+            maskHoldUntil.set(layerIndex, performance.now() + coverAt);
+            spawnDroplets(p);
+
+            // blur は毎フレーム再ラスタライズになるので使わない（transform/opacity のみ）
             const frames = isCore
                 ? [
-                    { transform: "scale(0.08) rotate(-10deg)", filter: "blur(18px)", opacity: 0, offset: 0 },
-                    { transform: "scale(1.35) rotate(3deg)", filter: "blur(2px)", opacity: 1, offset: 0.34 },
-                    { transform: "scale(0.93) rotate(-1deg)", filter: "blur(0px)", opacity: 1, offset: 0.62 },
-                    { transform: "scale(1) rotate(0deg)", filter: "blur(0px)", opacity: 1, offset: 1 },
+                    { transform: "scale(0.12) rotate(-8deg)", opacity: 0, offset: 0 },
+                    { transform: "scale(1.28) rotate(2deg)", opacity: 1, offset: 0.42 },
+                    { transform: "scale(0.94) rotate(-1deg)", opacity: 1, offset: 0.72 },
+                    { transform: "scale(1) rotate(0deg)", opacity: 1, offset: 1 },
                   ]
                 : [
-                    { transform: "scale(0.62) rotate(-4deg)", filter: "blur(12px)", opacity: 0, offset: 0 },
-                    { transform: "scale(1.10) rotate(1deg)", filter: "blur(1px)", opacity: 1, offset: 0.55 },
-                    { transform: "scale(1) rotate(0deg)", filter: "blur(0px)", opacity: 1, offset: 1 },
+                    { transform: "scale(0.55) rotate(-3deg)", opacity: 0, offset: 0 },
+                    { transform: "scale(1.10) rotate(1deg)", opacity: 1, offset: 0.5 },
+                    { transform: "scale(0.97) rotate(0deg)", opacity: 1, offset: 0.8 },
+                    { transform: "scale(1) rotate(0deg)", opacity: 1, offset: 1 },
                   ];
             el.animate(frames, {
-                duration: isCore ? 440 : 720,
+                duration: dur,
                 easing: "cubic-bezier(0.18, 1.25, 0.32, 1)",
                 fill: "forwards",
             }).finished
-                .then(() => el.animate([{ opacity: 1 }, { opacity: 0 }],
-                    { duration: 520, delay: 160, fill: "forwards" }).finished)
-                .then(() => el.remove())
-                .catch(() => el.remove());
+                .then(() => el.animate(
+                    [
+                        { opacity: 1, transform: "scale(1)" },
+                        { opacity: 0, transform: "scale(1.04)" },
+                    ],
+                    { duration: 620, delay: 160, fill: "forwards" }).finished)
+                .then(() => releaseImpact(el))
+                .catch(() => releaseImpact(el));
         }
 
         let lastMaskCss = "";
@@ -1844,8 +1980,10 @@
                 seenRevealed = new Set(onIdx);
             }
 
+            const now = performance.now();
+            for (const [i, t] of maskHoldUntil) if (t <= now) maskHoldUntil.delete(i);
             const entries = onIdx
-                .filter((i) => placements[i])
+                .filter((i) => placements[i] && !maskHoldUntil.has(i))
                 .map((i) => ({ p: placements[i], k: burstScale(i) }));
             const css = entries.length ? maskCssFor(entries) : { image: "", position: "", size: "" };
             const key = css.image + "|" + css.position + "|" + css.size;
@@ -1870,8 +2008,8 @@
                     { name: "ケンタ", comment: "十年ぶりに東口に降りた。まだ好きだった。" },
                 ]);
             }
-            // shape-NN.png は元フレームの端で直線に切られている（bboxの縁が5〜7割埋まる）。
-            // 中央に置くと切断面が矩形として露出するので、切れていない -core だけを使う。
+            // shape-NN-core.png は make-ink-people-assets.py が切断辺を修復済みの飛沫
+            // （元素材の直線カットは揺らぎ＋小滴に置き換わっている）。
             // 芯=同じ形の 62%、完成形=100% として大小で二段階を表す。
             shapeImgs = await Promise.all(
                 layout.shapes.map(async (_, i) => {

@@ -13,8 +13,10 @@ demo_v2 の DOOH は、荒廃した新宿 (assets/video/karasu.mp4) の上に、
 前提と注意:
   * karasu / clean は同じ画角の固定カメラ。動くのはカラスと人だけ。
   * 元素材 assets/ink/NN.jpg は「回復後プレート ∩ 飛沫」の合成物で、
-    飛沫は画面端で直線に切り落とされている。中央に置くと切断面が矩形として
-    露出するため、切れていない -core だけをシルエットの供給源にする。
+    多くの飛沫は素材の段階で直線に切り落とされている（完全に有機的なのは
+    05/06 のみ）。直線のまま使うと窓が角丸の矩形に見えるため、切断辺を
+    検出して、その辺だけインクらしい揺らぎ＋小滴で作り直す。
+    有機的な辺は本物のインクなのでそのまま残す。
   * マスクは輝度で起こすので、プレートが暗い画素（窓ガラス・庇の影）が穴になる。
     アルファ切り抜きでは穴から廃墟が透けるため solidify() で塞ぐ。
 
@@ -75,6 +77,81 @@ def cells(y0, y1, x0, x1):
             slice(int(GX * x0 / W), int(np.ceil(GX * x1 / W))))
 
 
+# ---- 切断辺の修復 ----------------------------------------------------------
+# 素材の切断は軸平行（矩形で切り出されている）なので、bbox の各辺に
+# 長い直線として現れる。辺ごとに検出し、なめらかなノイズで内側に食い込ませ
+# つつ外側に膨らませ、仕上げのボカシ→二値化で表面張力のような縁にする。
+REPAIR_PAD = 90          # 外側への膨らみと小滴のための余白
+WOBBLE_STEP = 64         # 揺らぎの制御点間隔(px)。大きいほどうねりが緩い
+WOBBLE_IN, WOBBLE_OUT = 44, 26   # 内側に食う最大 / 外側に出る最大(px)
+
+
+def smooth_noise(n, rng, step=WOBBLE_STEP, lo=-WOBBLE_IN, hi=WOBBLE_OUT):
+    pts = rng.uniform(lo, hi, n // step + 2)
+    idx = np.arange(n) / step
+    i0 = idx.astype(int)
+    t = (1 - np.cos((idx - i0) * np.pi)) / 2
+    return pts[i0] * (1 - t) + pts[i0 + 1] * t
+
+
+def cut_runs(edge, valid, near_tol=3, min_len=120):
+    """辺に張り付いた境界の連続区間 [start, end) を列挙する。"""
+    near = valid & (edge <= near_tol)
+    runs, s = [], None
+    for i, v in enumerate(np.append(near, False)):
+        if v and s is None:
+            s = i
+        elif not v and s is not None:
+            if i - s >= min_len:
+                runs.append((s, i))
+            s = None
+    return runs
+
+
+def repair_cut_edges(mask, rng):
+    """直線に切れた辺をインクらしい縁に置き換える。mask は bbox 切り抜き済み。"""
+    m = np.pad(mask, REPAIR_PAD)
+    droplets = []
+    for side in "LRTB":
+        a = m if side in "LR" else m.T           # 行方向に辺が走るよう転置
+        flip = side in "RB"                       # R/B は列を反転して L/T と同じ扱い
+        v = a[:, ::-1] if flip else a
+        valid = v.any(axis=1)
+        first = np.argmax(v, axis=1)              # 各行で辺に最も近い画素
+        inner = np.where(valid, first, 10 ** 9).min()   # bbox 辺の位置（=REPAIR_PAD）
+        for s, e in cut_runs(first - inner, valid):
+            off = smooth_noise(e - s, rng)
+            ramp = np.minimum(1, np.minimum(np.arange(e - s), np.arange(e - s)[::-1]) / 40)
+            off = (off * ramp).astype(int)
+            for r, o in zip(range(s, e), off):
+                ex = first[r]
+                if o > 0:
+                    v[r, max(0, ex - o):ex + 2] = True    # 外側へ膨らむ
+                elif o < 0:
+                    v[r, ex:ex - o] = False               # 内側へ食い込む
+            # 切断辺の外に小滴を散らして、本物の辺の衛星滴と馴染ませる
+            for _ in range(rng.integers(2, 5)):
+                r = rng.integers(s, e)
+                cy, cx = r, first[r] - rng.integers(20, 60)
+                rad = int(rng.integers(5, 14))
+                if cx - rad < 0:
+                    continue
+                droplets.append((side, cy, cx, rad, v.shape))
+        # a / v は m のビューなので書き戻しは不要
+
+    # 小滴は転置/反転を戻した座標系で描く
+    im = Image.fromarray((m * 255).astype(np.uint8), "L")
+    d = ImageDraw.Draw(im)
+    for side, cy, cx, rad, shp in droplets:
+        if side in "RB":
+            cx = shp[1] - 1 - cx
+        y, x = (cy, cx) if side in "LR" else (cx, cy)
+        d.ellipse([x - rad, y - rad, x + rad, y + rad], fill=255)
+
+    im = im.filter(ImageFilter.GaussianBlur(4))
+    return np.asarray(im) > 120
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
@@ -83,17 +160,19 @@ def main() -> None:
         karasu = grab_frame(ROOT / "assets/video/karasu.mp4", KARASU_SEC, tmp / "karasu.jpg")
         plate.save(OUT / "plate.jpg", quality=90)
 
-        # --- 飛沫のシルエット（切れていない -core のみ） ---------------
+        # --- 飛沫のシルエット（-core を底に、切断辺だけ修復） ------------
         shapes = []
         for i in range(1, 10):
             stem = f"{i:02d}"
-            full = solidify(silhouette(ROOT / f"assets/ink/{stem}.jpg"))
             core = solidify(silhouette(ROOT / f"assets/ink/{stem}-core.jpg"))
-
-            # 切り取り枠は full の bbox。core も同じ枠で切り、相対位置を保つ
-            ys, xs = np.nonzero(full)
+            ys, xs = np.nonzero(core)
             y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
-            alpha = (core[y0:y1, x0:x1] * 255).astype(np.uint8)
+            mask = repair_cut_edges(core[y0:y1, x0:x1], np.random.default_rng(i))
+            mask = solidify(mask)
+
+            ys, xs = np.nonzero(mask)
+            y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+            alpha = (mask[y0:y1, x0:x1] * 255).astype(np.uint8)
             rgba = np.dstack([np.full_like(alpha, 255)] * 3 + [alpha])
             Image.fromarray(rgba, "RGBA").save(OUT / f"shape-{stem}-core.png", optimize=True)
 
