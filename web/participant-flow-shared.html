@@ -97,6 +97,8 @@
         />
         <link rel="stylesheet" href="web/theme-morning.css" />
         <link rel="stylesheet" href="web/outro.css?v=20260608-2" />
+        <link rel="stylesheet" href="web/supporter-certificate.css?v=20260709-founding-1" />
+        <link rel="stylesheet" href="web/ranking.css?v=20260710-ranking-1" />
     </head>
     <body
         data-post-flow-form="https://forms.gle/wjinG48Eg5UJf1wa7"
@@ -395,7 +397,7 @@
                             />
                         </div>
                         <p class="field-helper" id="nicknameHelp">
-                            入力した名前は参加証とDOOHに数秒間表示されます。<br />本名でなくニックネームを入力してください。
+                            入力した名前は参加証とDOOH、参加者ランキングに表示されます。<br />本名でなくニックネームを入力してください。
                         </p>
                         <fieldset class="ticker-font-picker" aria-describedby="tickerFontHelp">
                             <legend>名前の見た目を選ぶ</legend>
@@ -523,6 +525,13 @@
                             </button>
                         </div>
                         <p id="shareStatus" aria-live="polite"></p>
+
+                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
+                            <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
+                            <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
+                            <ol class="ranking-list" id="rankingList"></ol>
+                            <p class="ranking-note" id="rankingNote"></p>
+                        </section>
                     </section>
                 </div>
             </div>

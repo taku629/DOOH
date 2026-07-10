@@ -1,0 +1,326 @@
+/*
+ * クラファン支援者（4桁パスコード認証済み）だけに出す参加証と、
+ * 発行の瞬間の全画面シネマティック演出。
+ * 通常の参加証には一切影響しないよう、すべて .is-founding-supporter / #supporterCeremony 配下に閉じる。
+ * テーマ側が body.has-color-participation .card.done まで詳細度を上げてくるため、
+ * 参加証本体は #finalCard を起点にして確実に上書きする。
+ */
+
+:root {
+  --founding-gold: #e8c37a;
+  --founding-gold-bright: #fff3d0;
+  --founding-gold-deep: #a9762c;
+  --founding-ink: #12100c;
+}
+
+/* 金の縁を回すために角度を補間可能にする。未対応ブラウザでは静止した金枠になる。 */
+@property --founding-rim-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ========== 参加証本体 ========== */
+
+/*
+ * 暗い盤面は padding-box、回る金の箔は border-box に敷く。
+ * 擬似要素で縁を作ると overflow:hidden に切られるため、多重背景で表現する。
+ */
+#finalCard.is-founding-supporter {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--founding-gold-bright);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(232, 195, 122, 0.16), transparent 62%) padding-box,
+    linear-gradient(168deg, #16130d 0%, #0b0a07 52%, #131009 100%) padding-box,
+    conic-gradient(
+      from var(--founding-rim-angle),
+      var(--founding-gold-deep),
+      var(--founding-gold-bright) 12%,
+      var(--founding-gold-deep) 26%,
+      #6b4a18 42%,
+      var(--founding-gold-bright) 58%,
+      var(--founding-gold-deep) 74%,
+      #6b4a18 88%,
+      var(--founding-gold-deep)
+    ) border-box;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 243, 208, 0.22);
+  animation: founding-rim-spin 7s linear infinite;
+}
+
+/* テーマ側が .card::before に敷く明るい装飾を、金の盤面では消す。 */
+#finalCard.is-founding-supporter::before {
+  display: none;
+}
+
+/* 表面を斜めに走る光沢。 */
+#finalCard.is-founding-supporter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    104deg,
+    transparent 38%,
+    rgba(255, 243, 208, 0.16) 47%,
+    rgba(255, 255, 255, 0.34) 50%,
+    rgba(255, 243, 208, 0.16) 53%,
+    transparent 62%
+  );
+  background-size: 260% 100%;
+  background-position: 190% 0;
+  animation: founding-sheen 5.4s var(--ease-in-out) 1.1s infinite;
+}
+
+#finalCard.is-founding-supporter > * {
+  position: relative;
+  z-index: 2;
+}
+
+#finalCard.is-founding-supporter > p:first-of-type {
+  color: var(--founding-gold);
+  letter-spacing: 0.22em;
+  font-weight: 700;
+}
+
+/* 名前は刻印。塗りを暗く落とし、上下のハイライトで彫り込みに見せる。 */
+#finalCard.is-founding-supporter h3 {
+  color: #d8b877;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 -1px 0 rgba(255, 243, 208, 0.34),
+    0 0 22px rgba(232, 195, 122, 0.32);
+}
+
+#finalCard.is-founding-supporter p,
+#finalCard.is-founding-supporter small {
+  color: rgba(255, 243, 208, 0.72);
+}
+
+#finalCard.is-founding-supporter a {
+  color: var(--founding-gold-bright);
+}
+
+/* 内側で新宿の街並みが色づく。棒＝ビル。 */
+.certificate-city {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 46px;
+  margin: 14px 0 4px;
+  opacity: 0;
+  animation: founding-city-wake 900ms var(--ease-out) 700ms forwards;
+}
+
+.certificate-city i {
+  flex: 0 0 auto;
+  width: 6px;
+  height: var(--h, 40%);
+  border-radius: 1px 1px 0 0;
+  background: linear-gradient(180deg, var(--c, #fff) 0%, rgba(255, 255, 255, 0.06) 100%);
+  box-shadow: 0 0 12px var(--c, #fff);
+  transform-origin: bottom;
+  animation: founding-city-breathe 3.4s var(--ease-in-out) infinite;
+  animation-delay: var(--d, 0s);
+}
+
+#finalCard.is-founding-supporter .certificate-serial {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(232, 195, 122, 0.24);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  color: var(--founding-gold);
+}
+
+/* 入れ子の注記カードは、金の盤面の上で読めるよう暗い面に置き換える。 */
+#finalCard.is-founding-supporter .project-note-card,
+#finalCard.is-founding-supporter .official-follow-up {
+  background: rgba(255, 243, 208, 0.05);
+  border: 1px solid rgba(232, 195, 122, 0.2);
+  box-shadow: none;
+}
+
+/* color-flow.css が白地カード前提で !important を打っているため、同じ強さで戻す。 */
+#finalCard.is-founding-supporter .project-note-card span,
+#finalCard.is-founding-supporter .project-note-card p,
+#finalCard.is-founding-supporter .official-follow-up span,
+#finalCard.is-founding-supporter .official-follow-up h4,
+#finalCard.is-founding-supporter .official-follow-up small {
+  color: rgba(255, 243, 208, 0.78) !important;
+}
+
+#finalCard.is-founding-supporter .project-note-card a,
+#finalCard.is-founding-supporter .official-follow-up a {
+  color: var(--founding-ink);
+  background: var(--founding-gold);
+  border-color: transparent;
+}
+
+/* 発行シーケンスの最後にカードが着地する動き。 */
+#finalCard.is-founding-supporter.is-arriving {
+  animation:
+    founding-card-arrive 950ms var(--ease-out) both,
+    founding-rim-spin 7s linear infinite;
+}
+
+/* ========== 発行シネマティック ========== */
+
+#supporterCeremony {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 420ms var(--ease-out);
+}
+
+#supporterCeremony.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 暗転幕。カードが降りてくる段で透ける。 */
+.ceremony-veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 60% at 50% 50%, #0a0906 0%, #000 100%);
+  transition: opacity 620ms var(--ease-in-out);
+}
+
+#supporterCeremony.is-lifting .ceremony-veil {
+  opacity: 0;
+}
+
+#supporterCeremony.is-lifting {
+  pointer-events: none;
+}
+
+/* 光が中心へ集まる。 */
+.ceremony-converge {
+  position: absolute;
+  width: min(78vw, 420px);
+  aspect-ratio: 1;
+  opacity: 0;
+}
+
+#supporterCeremony.is-converging .ceremony-converge {
+  animation: founding-converge-core 1000ms var(--ease-in-out) forwards;
+}
+
+.ceremony-converge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--founding-gold-bright) 0%, rgba(232, 195, 122, 0.5) 24%, transparent 66%);
+}
+
+.ceremony-ray {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: min(52vw, 280px);
+  transform-origin: top center;
+  transform: rotate(var(--angle)) translateY(0);
+  background: linear-gradient(180deg, rgba(232, 195, 122, 0.9), transparent);
+  opacity: 0;
+}
+
+#supporterCeremony.is-converging .ceremony-ray {
+  animation: founding-ray-pull 900ms var(--ease-out) forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+/* 金の粒。 */
+.ceremony-spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--founding-gold-bright);
+  box-shadow: 0 0 10px var(--founding-gold);
+  opacity: 0;
+}
+
+#supporterCeremony.is-bursting .ceremony-spark {
+  animation: founding-spark-fall 1500ms var(--ease-out) forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+/* ========== keyframes ========== */
+
+@keyframes founding-rim-spin {
+  to { --founding-rim-angle: 360deg; }
+}
+
+@keyframes founding-sheen {
+  0%, 42% { background-position: 190% 0; }
+  72%, 100% { background-position: -90% 0; }
+}
+
+@keyframes founding-city-wake {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes founding-city-breathe {
+  0%, 100% { transform: scaleY(1); filter: brightness(1); }
+  50% { transform: scaleY(1.16); filter: brightness(1.5); }
+}
+
+@keyframes founding-card-arrive {
+  0% { opacity: 0; transform: perspective(900px) rotateX(52deg) translateY(-56px) scale(1.14); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: perspective(900px) rotateX(0) translateY(0) scale(1); }
+}
+
+@keyframes founding-converge-core {
+  0% { opacity: 0; transform: scale(1.9); }
+  55% { opacity: 1; transform: scale(0.42); }
+  100% { opacity: 0; transform: scale(0.06); }
+}
+
+@keyframes founding-ray-pull {
+  0% { opacity: 0; transform: rotate(var(--angle)) translateY(min(46vw, 250px)) scaleY(0.3); }
+  45% { opacity: 0.95; }
+  100% { opacity: 0; transform: rotate(var(--angle)) translateY(0) scaleY(1); }
+}
+
+@keyframes founding-spark-fall {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  12% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(0.9);
+  }
+}
+
+/* 動きを減らす設定では演出を止め、静的な豪華さだけ残す。 */
+@media (prefers-reduced-motion: reduce) {
+  #finalCard.is-founding-supporter,
+  #finalCard.is-founding-supporter::after,
+  #finalCard.is-founding-supporter.is-arriving,
+  .certificate-city i {
+    animation: none;
+  }
+
+  .certificate-city {
+    opacity: 1;
+    animation: none;
+  }
+}

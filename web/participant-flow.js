@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260708-increment-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260708-increment-1";
 import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -45,6 +45,24 @@ const supporterCommentHelp = document.getElementById("supporterCommentHelp");
 const tickerFontButtons = [...document.querySelectorAll("[data-ticker-font]")];
 const defaultNicknameHelpText = nicknameHelp?.textContent ?? "";
 const defaultSupporterCommentHelpText = supporterCommentHelp?.textContent ?? "";
+
+// パスコード認証を通ったクラファン支援者だけ、参加証と発行演出が別物になる。
+let isFoundingSupporter = false;
+let foundingSupporterSerial = "";
+const CEREMONY_SPARK_COUNT = 26;
+const CEREMONY_RAY_COUNT = 10;
+// 演出が終わるまでアンケート遷移も debug リセットも走らせない。
+let isCeremonyPlaying = false;
+// 支援者は参加証をじっくり眺めたいので、アウトロが被さるまでの間を長く取る。
+const SUPPORTER_OUTRO_EXTRA_LEAD_MS = 3200;
+// debug 時に最初の画面へ戻すまでの猶予。文言や参加証を確認できる長さにする。
+const DEBUG_REPLAY_RESET_MS = 15000;
+// 窓の明かりに与える色。「彩＝人」の配色をそのまま持ち込む。
+const CERTIFICATE_CITY_COLORS = [
+  "#ff5f6d", "#ffc371", "#f9f871", "#7bed9f",
+  "#4dd4ff", "#7d8cff", "#c084fc", "#ff8fd0",
+];
+
 const NAME_CHECKING_MESSAGE = "\u8868\u793a\u540d\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const NAME_BLOCKED_MESSAGE = "\u3053\u306e\u8868\u793a\u540d\u306f\u516c\u958b\u3067\u304d\u307e\u305b\u3093\u3002\u5225\u306e\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u306b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
 const SUPPORTER_CHECKING_MESSAGE = "\u30af\u30e9\u30d5\u30a1\u30f3\u652f\u63f4\u8005\u30b3\u30e1\u30f3\u30c8\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
@@ -363,7 +381,13 @@ const UI_TEXT = {
     displayNameLabel: "表示名（任意）",
     nameTab: "ここに入力",
     nicknamePlaceholder: "例：さくら",
-    nicknameHelp: "入力した名前は参加証とDOOHに数秒間表示されます。\n本名でなくニックネームを入力してください。",
+    nicknameHelp: "入力した名前は参加証とDOOH、参加者ランキングに表示されます。\n本名でなくニックネームを入力してください。",
+    rankingTitle: "参加者ランキング",
+    rankingKicker: "通算参加日数の多い順",
+    rankingDays: "{days}日",
+    rankingSelfNote: "あなたは{rank}位です。",
+    rankingAnonymousNote: "名前を入力するとランキングに載ります。",
+    rankingEmpty: "まだランキングを作れるほど参加がありません。",
     fontLegend: "名前の見た目を選ぶ",
     fontHelp: "好きな見た目を選べます",
     supporterKicker: "クラファン支援者の方へ",
@@ -425,6 +449,9 @@ const UI_TEXT = {
     certificateDescMorning: "この参加は無料です。集まったお金から、朝の新宿を応援する支援先へ¥{amount}を届けます。",
     certificateDescAll: "この参加は無料です。集まったお金から、誰もが過ごしやすい新宿を支える支援先へ¥{amount}を届けます。",
     certificateDescDefault: "この参加は無料です。集まったお金から、新宿を応援する支援先へ¥{amount}を届けます。",
+    certificateLabelSupporter: "FOUNDING SUPPORTER",
+    certificateDescSupporter: "クラウドファンディングであなたが灯した光が、この街の色になりました。あなたの応援コメントはDOOHに表示されます。",
+    certificateSerial: "SERIAL No.{serial}",
     storyThanks: "ありがとうございます。支援先のストーリーを表示しています。",
   },
   en: {
@@ -457,7 +484,13 @@ const UI_TEXT = {
     displayNameLabel: "Display name (optional)",
     nameTab: "Enter here",
     nicknamePlaceholder: "e.g. Sakura",
-    nicknameHelp: "Your name may appear on the certificate and DOOH screen for a few seconds.\nPlease use a nickname, not your real name.",
+    nicknameHelp: "Your name may appear on the certificate, the DOOH screen and the participant ranking.\nPlease use a nickname, not your real name.",
+    rankingTitle: "Participant ranking",
+    rankingKicker: "By total days taken part",
+    rankingDays: "{days} days",
+    rankingSelfNote: "You are ranked #{rank}.",
+    rankingAnonymousNote: "Enter a name to appear in the ranking.",
+    rankingEmpty: "Not enough participants yet to build a ranking.",
     fontLegend: "Choose name style",
     fontHelp: "Pick the look you like",
     supporterKicker: "For crowdfunding supporters",
@@ -519,6 +552,9 @@ const UI_TEXT = {
     certificateDescMorning: "This action is free. Sponsored funds will send ¥{amount} to a morning Shinjuku support destination.",
     certificateDescAll: "This action is free. Sponsored funds will send ¥{amount} to a destination that supports a more welcoming Shinjuku.",
     certificateDescDefault: "This action is free. Sponsored funds will send ¥{amount} to a support destination for Shinjuku.",
+    certificateLabelSupporter: "FOUNDING SUPPORTER",
+    certificateDescSupporter: "The light you funded on the crowdfunding campaign became this city's colour. Your message will appear on the DOOH screen.",
+    certificateSerial: "SERIAL No.{serial}",
     storyThanks: "Thank you. Showing one of the actions your support connects to.",
   },
 };
@@ -678,6 +714,9 @@ function applyLanguage() {
   setElementText("#createCard", text("createCard"));
   setElementText("#skipName", text("skipName"));
   setElementText("#shareTitle", text("shareTitle"));
+  setElementText("#rankingTitle", text("rankingTitle"));
+  setElementText("#rankingKicker", text("rankingKicker"));
+  paintRanking();   // 行と注記は言語ごとに作り直す
   setElementText("#shareBtn", text("share"));
   setElementText("#shareLineBtn", text("shareLine"));
   setElementText("#shareXBtn", text("shareX"));
@@ -997,6 +1036,14 @@ function setupSupporterDemoCodeButton() {
   field.appendChild(button);
 }
 
+// 同じパスコードなら毎回同じ番号が出るよう、ハッシュから通し番号を導く。
+function markFoundingSupporter(codeHash) {
+  isFoundingSupporter = true;
+  const seed = /^[a-f0-9]{6}/.test(String(codeHash ?? "")) ? codeHash.slice(0, 6) : "";
+  const serial = seed ? parseInt(seed, 16) % 10000 : 0;
+  foundingSupporterSerial = String(serial).padStart(4, "0");
+}
+
 function getSupporterCommentInput() {
   return {
     code: String(supporterPasscode?.value ?? "").replace(/\D/g, "").slice(0, 4),
@@ -1034,6 +1081,8 @@ async function publishOptionalSupporterComment(displayName = "") {
     supporterPasscode.focus();
     return false;
   }
+
+  markFoundingSupporter(verification.codeHash);
 
   if (isDebugReplay) {
     setSupporterCommentHelp(SUPPORTER_COMMENT_SAVED, "success");
@@ -1300,6 +1349,112 @@ function setTrackPosition(index, dragPercent = 0) {
   track.style.transform = `translate3d(0, calc(${-index * 100}% + ${dragPercent}%), 0)`;
 }
 
+// 参加者ランキング。nameShouts（名前）と participantHistory（日数）を
+// visitorId で突き合わせた結果が getRecentNameAnnouncements から返る。
+const RANKING_TOP = 10;
+const rankingPanel = document.getElementById("rankingPanel");
+const rankingList = document.getElementById("rankingList");
+const rankingNote = document.getElementById("rankingNote");
+let rankingLoaded = false;
+let rankingData = null;    // 言語を切り替えたときに描き直せるよう保持する
+let rankingSelfIndex = -1;
+
+function buildRanking(announcements) {
+  // 同じ人が複数回名乗っているので、最新の名前と最大の通算日数にまとめる
+  const byVisitor = new Map();
+  for (const entry of announcements) {
+    const visitorId = typeof entry?.visitorId === "string" ? entry.visitorId : "";
+    const name = String(entry?.name ?? "").trim();
+    if (!visitorId || !name) {
+      continue;
+    }
+    const totalDays = Math.max(1, Number(entry.totalDays) || 1);
+    const createdAt = Number(entry.createdAt) || 0;
+    const current = byVisitor.get(visitorId);
+    if (!current || createdAt >= current.createdAt) {
+      byVisitor.set(visitorId, { visitorId, name, createdAt, totalDays: Math.max(totalDays, current?.totalDays ?? 0) });
+    } else if (totalDays > current.totalDays) {
+      current.totalDays = totalDays;
+    }
+  }
+
+  return [...byVisitor.values()].sort(
+    (a, b) => b.totalDays - a.totalDays || a.name.localeCompare(b.name, "ja")
+  );
+}
+
+function rankingRow(entry, rank, isSelf) {
+  const li = document.createElement("li");
+  li.className = "ranking-row";
+  li.classList.toggle("is-self", isSelf);
+  if (rank <= 3) {
+    li.dataset.medal = String(rank);
+  }
+  const r = document.createElement("span");
+  r.className = "ranking-rank";
+  r.textContent = String(rank);
+  const n = document.createElement("span");
+  n.className = "ranking-name";
+  n.textContent = entry.name;
+  const d = document.createElement("span");
+  d.className = "ranking-days";
+  d.textContent = text("rankingDays", { days: entry.totalDays });
+  li.append(r, n, d);
+  return li;
+}
+
+async function renderRanking() {
+  if (!rankingPanel || !rankingList || rankingLoaded) {
+    return;
+  }
+  rankingLoaded = true;
+
+  let ranking = [];
+  try {
+    const announcements = await getRecentNameAnnouncements({ all: true, channel: PARTICIPATION_CHANNEL });
+    ranking = buildRanking(announcements);
+  } catch (error) {
+    console.info("[participant] ranking unavailable:", error);
+    rankingLoaded = false;
+    return;
+  }
+  if (ranking.length === 0) {
+    return;
+  }
+
+  const myVisitorId = completedParticipationVisit?.visitorId ?? null;
+  rankingData = ranking;
+  rankingSelfIndex = myVisitorId ? ranking.findIndex((entry) => entry.visitorId === myVisitorId) : -1;
+  paintRanking();
+}
+
+function paintRanking() {
+  if (!rankingPanel || !rankingList || !rankingData) {
+    return;
+  }
+  const myIndex = rankingSelfIndex;
+
+  rankingList.replaceChildren();
+  rankingData.slice(0, RANKING_TOP).forEach((entry, i) => {
+    rankingList.append(rankingRow(entry, i + 1, i === myIndex));
+  });
+
+  // 圏外の自分は、区切りを挟んで下に足す
+  if (myIndex >= RANKING_TOP) {
+    const gap = document.createElement("li");
+    gap.className = "ranking-gap";
+    gap.textContent = "···";
+    rankingList.append(gap, rankingRow(rankingData[myIndex], myIndex + 1, true));
+  }
+
+  if (rankingNote) {
+    rankingNote.textContent = myIndex >= 0
+      ? text("rankingSelfNote", { rank: myIndex + 1 })
+      : text("rankingAnonymousNote");
+  }
+  rankingPanel.hidden = false;
+}
+
 function showStep(index) {
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
@@ -1318,6 +1473,9 @@ function showStep(index) {
   app.classList.toggle("is-post-participation", index >= 1);
   document.body.classList.toggle("has-color-participation", index >= 1);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
+  if (index === totalSteps - 1) {
+    renderRanking();
+  }
   if (stepBackButton) {
     stepBackButton.hidden = index <= 1 || index >= totalSteps - 1;
   }
@@ -1359,6 +1517,10 @@ function scheduleFormRedirect() {
   if (formRedirectTimer || outroStarted) {
     return;
   }
+  // 参加証の降臨演出中は数えない。演出の終わりに改めて呼び直す。
+  if (isCeremonyPlaying) {
+    return;
+  }
   // 調査用プレビューでは親画面がDOOH表示後のアンケート遷移を管理する。
   if (window.parent !== window) {
     return;
@@ -1368,7 +1530,7 @@ function scheduleFormRedirect() {
     formRedirectTimer = window.setTimeout(() => {
       formRedirectTimer = null;
       resetFlowForDebug();
-    }, 4000);
+    }, DEBUG_REPLAY_RESET_MS);
     return;
   }
   const formUrl = (document.body?.dataset?.postFlowForm || "").trim();
@@ -1415,6 +1577,16 @@ function resetFlowForDebug() {
   storyCardOverlay?.classList.remove("is-active");
   storyCardOverlay?.setAttribute("aria-hidden", "true");
   document.body.classList.remove("is-story-card-open");
+
+  // 支援者の状態を残すと、次の周回でコード未入力でも金の参加証が出てしまう。
+  clearCeremonyTimers();
+  isCeremonyPlaying = false;
+  isFoundingSupporter = false;
+  foundingSupporterSerial = "";
+  // これを戻さないと announceDonorName が即 return し、2周目以降は認証自体が走らない。
+  hasAnnouncedName = false;
+  ceremonyOverlay?.classList.remove("is-active", "is-converging", "is-lifting", "is-bursting");
+  finalCard?.classList.remove("is-founding-supporter", "is-arriving");
 
   hasCountedParticipation = false;
   hasAcceptedParticipation = false;
@@ -1537,7 +1709,8 @@ function startSurveyOutro(formUrl) {
   }
   outroStarted = true;
 
-  const lead = Number(document.body?.dataset?.postFlowLead) || 1800;
+  const baseLead = Number(document.body?.dataset?.postFlowLead) || 1800;
+  const lead = baseLead + (isFoundingSupporter ? SUPPORTER_OUTRO_EXTRA_LEAD_MS : 0);
   const autoMs = Number(document.body?.dataset?.postFlowDelay) || 5000;
 
   if (outroAnswerBtn) {
@@ -1637,6 +1810,16 @@ function ensureSupportChoice() {
 
 function getCertificateContent() {
   const name = getDisplayName();
+  const amountYen = DEMO_DONATION_YEN.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
+
+  if (isFoundingSupporter) {
+    return {
+      label: text("certificateLabelSupporter"),
+      name,
+      description: text("certificateDescSupporter", { amount: amountYen }),
+    };
+  }
+
   const label = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
     : isAllExperience
@@ -1647,7 +1830,7 @@ function getCertificateContent() {
       ? "CERTIFICATE OF SUPPORT"
       : text("certificateLabelDefault");
 
-  const amount = DEMO_DONATION_YEN.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
+  const amount = amountYen;
   const description = activeTheme === "morning"
     ? text("certificateDescMorning", { amount })
     : isAllExperience
@@ -1655,6 +1838,33 @@ function getCertificateContent() {
       : text("certificateDescDefault", { amount });
 
   return { label, name, description };
+}
+
+// 金の縁・刻印・色づく街並み・通し番号。支援者証だけに足す。
+function decorateFoundingSupporterCard(labelNode, nameNode) {
+  finalCard.classList.toggle("is-founding-supporter", isFoundingSupporter);
+  if (!isFoundingSupporter) {
+    return;
+  }
+
+  labelNode.textContent = `✦ ${labelNode.textContent} ✦`;
+
+  const city = document.createElement("div");
+  city.className = "certificate-city";
+  city.setAttribute("aria-hidden", "true");
+  CERTIFICATE_CITY_COLORS.forEach((color, index) => {
+    const building = document.createElement("i");
+    building.style.setProperty("--c", color);
+    building.style.setProperty("--h", `${34 + ((index * 37) % 58)}%`);
+    building.style.setProperty("--d", `${index * 0.18}s`);
+    city.append(building);
+  });
+  nameNode.before(city);
+
+  const serial = document.createElement("p");
+  serial.className = "certificate-serial";
+  serial.textContent = text("certificateSerial", { serial: foundingSupporterSerial });
+  finalCard.append(serial);
 }
 
 function buildFinalCard() {
@@ -1675,6 +1885,7 @@ function buildFinalCard() {
   description.textContent = content.description;
 
   finalCard.append(label, name, description);
+  decorateFoundingSupporterCard(label, name);
 
   const projectNote = document.createElement("section");
   projectNote.className = "project-note-card";
@@ -1802,6 +2013,84 @@ function showStoryThanksCard() {
   return true;
 }
 
+let ceremonyOverlay = null;
+const ceremonyTimers = [];
+
+function buildCeremonyOverlay() {
+  if (ceremonyOverlay) {
+    return ceremonyOverlay;
+  }
+
+  ceremonyOverlay = document.createElement("div");
+  ceremonyOverlay.id = "supporterCeremony";
+  ceremonyOverlay.setAttribute("aria-hidden", "true");
+
+  const veil = document.createElement("div");
+  veil.className = "ceremony-veil";
+
+  const converge = document.createElement("div");
+  converge.className = "ceremony-converge";
+  for (let index = 0; index < CEREMONY_RAY_COUNT; index += 1) {
+    const ray = document.createElement("span");
+    ray.className = "ceremony-ray";
+    ray.style.setProperty("--angle", `${(360 / CEREMONY_RAY_COUNT) * index}deg`);
+    ray.style.setProperty("--delay", `${index * 0.035}s`);
+    converge.append(ray);
+  }
+
+  ceremonyOverlay.append(veil, converge);
+
+  for (let index = 0; index < CEREMONY_SPARK_COUNT; index += 1) {
+    const spark = document.createElement("span");
+    spark.className = "ceremony-spark";
+    spark.style.setProperty("--x", `${(Math.random() - 0.5) * 320}px`);
+    spark.style.setProperty("--y", `${60 + Math.random() * 420}px`);
+    spark.style.setProperty("--delay", `${Math.random() * 0.5}s`);
+    ceremonyOverlay.append(spark);
+  }
+
+  document.body.append(ceremonyOverlay);
+  return ceremonyOverlay;
+}
+
+function clearCeremonyTimers() {
+  while (ceremonyTimers.length) {
+    window.clearTimeout(ceremonyTimers.pop());
+  }
+}
+
+function afterCeremonyBeat(delayMs, action) {
+  ceremonyTimers.push(window.setTimeout(action, delayMs));
+}
+
+// 暗転 → 光が集束 → カードが降臨 → 金の粒。約3.4秒。
+function playSupporterCeremony() {
+  const overlay = buildCeremonyOverlay();
+  clearCeremonyTimers();
+  isCeremonyPlaying = true;
+  overlay.classList.remove("is-converging", "is-lifting", "is-bursting");
+  void overlay.offsetWidth;
+  overlay.classList.add("is-active");
+
+  afterCeremonyBeat(430, () => overlay.classList.add("is-converging"));
+
+  afterCeremonyBeat(1250, () => {
+    nextStep();
+    finalCard.classList.add("is-arriving");
+    overlay.classList.add("is-lifting");
+  });
+
+  afterCeremonyBeat(1900, () => overlay.classList.add("is-bursting"));
+
+  afterCeremonyBeat(3400, () => {
+    overlay.classList.remove("is-active", "is-converging", "is-lifting", "is-bursting");
+    finalCard.classList.remove("is-arriving");
+    isCeremonyPlaying = false;
+    // 演出中は見送っていたアンケート遷移を、ここから数え始める。
+    scheduleFormRedirect();
+  });
+}
+
 function finalizeCard() {
   if (!ensureSupportChoice()) {
     return false;
@@ -1809,7 +2098,11 @@ function finalizeCard() {
 
   isFinalCardBuilt = false;
   buildFinalCard();
-  nextStep();
+  if (isFoundingSupporter && !prefersReducedMotion) {
+    playSupporterCeremony();
+  } else {
+    nextStep();
+  }
   if (window.parent !== window) {
     window.parent.postMessage({
       type: "dooh-research-card-complete",
@@ -2016,6 +2309,11 @@ async function registerParticipation() {
 
   if (isDebugReplay) {
     // debug: Firebase 送信も「今日は参加済み」ロックもせず、ローカルだけで完了扱いにする。
+    // visitorId だけは本番と同じく確定させる（ランキングの自分の行を確認するため）。
+    completedParticipationVisit = getParticipationVisit({
+      today: participationDateOverride,
+      storageKey: participationStorageOptions.storageKey,
+    });
     participantCount += 1;
     updateCounterGoalProgress(participantCount);
     updateMilestonePreview(participantCount);
@@ -3053,8 +3351,23 @@ createCardButton?.addEventListener("click", async () => {
     setNameChecking(false);
   }
 });
-skipNameButton?.addEventListener("click", () => {
-  finalizeCard();
+// 表示名を出さない支援者でも、パスコードを入れていれば認証して支援者証を出す。
+skipNameButton?.addEventListener("click", async () => {
+  const { code, comment } = getSupporterCommentInput();
+  if (!code && !comment) {
+    finalizeCard();
+    return;
+  }
+
+  setNameChecking(true);
+  try {
+    if (!await publishOptionalSupporterComment("")) {
+      return;
+    }
+    finalizeCard();
+  } finally {
+    setNameChecking(false);
+  }
 });
 
 supportChoiceButtons.forEach((button) => {
