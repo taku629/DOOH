@@ -1,5 +1,6 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260620-supporter-comment-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260708-increment-1";
+import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
 import { moderateDisplayName } from "../src/name-moderation.js?v=20260619-ai-1";
@@ -12,6 +13,7 @@ const steps = [...document.querySelectorAll(".step")];
 const progressText = document.getElementById("progressText");
 const progressBar = document.getElementById("progressBar");
 const progressElement = document.querySelector(".bar");
+const stepBackButton = document.getElementById("stepBack");
 const counterValue = document.getElementById("counterValue");
 const counterBox = document.getElementById("counterBox");
 const counterParticipants = document.getElementById("counterParticipants");
@@ -40,14 +42,194 @@ const skipNameButton = document.getElementById("skipName");
 const supporterPasscode = document.getElementById("supporterPasscode");
 const supporterComment = document.getElementById("supporterComment");
 const supporterCommentHelp = document.getElementById("supporterCommentHelp");
+const tickerFontButtons = [...document.querySelectorAll("[data-ticker-font]")];
 const defaultNicknameHelpText = nicknameHelp?.textContent ?? "";
 const defaultSupporterCommentHelpText = supporterCommentHelp?.textContent ?? "";
+const sectionJumpNav = document.getElementById("sectionJumpNav");
+const sectionJumpToggle = document.getElementById("sectionJumpToggle");
+const sectionJumpMenu = document.getElementById("sectionJumpMenu");
+const sectionJumpButtons = [...document.querySelectorAll("[data-jump-target]")];
+const isSupporterFlow = document.body?.dataset.flowMode === "supporter";
+
+function syncVisibleViewportHeight() {
+  const height = window.visualViewport?.height || window.innerHeight;
+  document.documentElement.style.setProperty("--visible-viewport-height", `${Math.round(height)}px`);
+}
+
+syncVisibleViewportHeight();
+window.visualViewport?.addEventListener("resize", syncVisibleViewportHeight, { passive: true });
+window.addEventListener("orientationchange", syncVisibleViewportHeight, { passive: true });
+
+const certificateStep = steps[2];
+const certificateActions = certificateStep?.querySelector(":scope > .actions");
+const thanksStep = steps[1];
+const thanksActionPortal = thanksStep?.querySelector(":scope > .thanks-actions");
+const thanksPrimaryAction = thanksActionPortal?.querySelector(":scope > .primary");
+const thanksFastTrackAction = document.getElementById("supporterFastTrack");
+
+function syncMobileCertificateActions(stepIndex = currentStep) {
+  const isMobile = window.matchMedia("(max-width: 480px)").matches;
+  const shouldPortalThanks = stepIndex === 1 && isMobile;
+  if (thanksStep && thanksActionPortal && shouldPortalThanks && thanksActionPortal.parentElement !== document.body) {
+    thanksActionPortal.classList.add("is-mobile");
+    document.body.append(thanksActionPortal);
+  } else if (thanksStep && thanksActionPortal && !shouldPortalThanks && thanksActionPortal.parentElement === document.body) {
+    thanksActionPortal.classList.remove("is-mobile");
+    thanksStep.append(thanksActionPortal);
+  }
+
+  if (!certificateStep || !certificateActions) {
+    return;
+  }
+  const shouldPortal = stepIndex === 2 && isMobile;
+  if (shouldPortal && certificateActions.parentElement !== document.body) {
+    certificateActions.classList.add("is-mobile-action-portal");
+    document.body.append(certificateActions);
+  } else if (!shouldPortal && certificateActions.parentElement === document.body) {
+    certificateActions.classList.remove("is-mobile-action-portal");
+    certificateStep.append(certificateActions);
+  }
+}
+
+window.addEventListener("resize", () => syncMobileCertificateActions(), { passive: true });
+
+thanksFastTrackAction?.addEventListener("click", () => {
+  if (!isSupporterFlow) {
+    const params = new URLSearchParams(location.search);
+    params.set("entry", "swiped");
+    const experiencePath = document.documentElement.dataset.experience === "men" ? "men" : "women";
+    location.href = `/supporter/${experiencePath}?${params.toString()}`;
+    return;
+  }
+  setSupporterCertificateIntent(true);
+  showStep(2);
+  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
+});
+
+thanksPrimaryAction?.addEventListener("click", () => setSupporterCertificateIntent(false));
+
+let supporterCertificateIntent = false;
+
+function setSupporterCertificateIntent(isSupporter) {
+  supporterCertificateIntent = isSupporter;
+  document.body.classList.toggle("is-supporter-certificate-intent", isSupporter);
+  if (createCardButton) {
+    createCardButton.textContent = isSupporter
+      ? (isEnglish() ? "Supporter certificate" : "この名前で支援者版")
+      : (isEnglish() ? "Create with this name" : "この名前で作成");
+  }
+  if (skipNameButton) {
+    skipNameButton.textContent = isSupporter
+      ? (isEnglish() ? "Supporter certificate without name" : "名前なしで支援者版")
+      : (isEnglish() ? "Create without a name" : "名前なしで作成");
+  }
+}
+
+[supporterPasscode, supporterComment].forEach((field) => {
+  field?.addEventListener("input", () => {
+    setSupporterCertificateIntent(Boolean(supporterPasscode?.value.trim() || supporterComment?.value.trim()));
+  });
+});
+
+function setSectionJumpMenuOpen(isOpen) {
+  if (!sectionJumpToggle || !sectionJumpMenu) {
+    return;
+  }
+  sectionJumpToggle.setAttribute("aria-expanded", String(isOpen));
+  sectionJumpMenu.hidden = !isOpen;
+  sectionJumpNav?.classList.toggle("is-open", isOpen);
+}
+
+function jumpToCertificateSection(targetId) {
+  const target = document.getElementById(targetId);
+  if (!target) {
+    return;
+  }
+  const scrollTarget = targetId === "nickname"
+    ? document.querySelector('label[for="nickname"]') || target
+    : target;
+  setSectionJumpMenuOpen(false);
+  scrollTarget.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "start",
+  });
+  if (target.matches("input, textarea, button")) {
+    window.setTimeout(() => target.focus({ preventScroll: true }), 360);
+  }
+}
+
+sectionJumpToggle?.addEventListener("click", () => {
+  setSectionJumpMenuOpen(sectionJumpToggle.getAttribute("aria-expanded") !== "true");
+});
+
+sectionJumpButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.dataset.jumpTarget === "supporterCommentEntry") {
+      setSupporterCertificateIntent(true);
+    } else if (button.dataset.jumpTarget === "nickname") {
+      setSupporterCertificateIntent(false);
+    }
+    jumpToCertificateSection(button.dataset.jumpTarget);
+  });
+});
+
+document.addEventListener("click", (event) => {
+  if (sectionJumpNav && !sectionJumpNav.hidden && !sectionJumpNav.contains(event.target)) {
+    setSectionJumpMenuOpen(false);
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setSectionJumpMenuOpen(false);
+    sectionJumpToggle?.focus({ preventScroll: true });
+  }
+});
+
+const jumpSectionIds = ["supportChoiceSection", "nickname", "supporterCommentEntry", "certificatePreview"];
+if (typeof IntersectionObserver === "function") {
+  const jumpSectionObserver = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (!visible) {
+      return;
+    }
+    sectionJumpMenu?.querySelectorAll("[data-jump-target]").forEach((button) => {
+      button.classList.toggle("is-current", button.dataset.jumpTarget === visible.target.id);
+    });
+  }, { rootMargin: "-18% 0px -62% 0px", threshold: [0.01, 0.2, 0.5] });
+  jumpSectionIds.forEach((id) => {
+    const target = document.getElementById(id);
+    if (target) jumpSectionObserver.observe(target);
+  });
+}
+
+// パスコード認証を通ったクラファン支援者だけ、参加証と発行演出が別物になる。
+let isFoundingSupporter = false;
+let foundingSupporterSerial = "";
+let foundingSupporterComment = "";
+let isCreatingSupporterVideo = false;
+const CEREMONY_SPARK_COUNT = 26;
+const CEREMONY_RAY_COUNT = 10;
+// 演出が終わるまでアンケート遷移も debug リセットも走らせない。
+let isCeremonyPlaying = false;
+// 支援者は参加証をじっくり眺めたいので、アウトロが被さるまでの間を長く取る。
+const SUPPORTER_OUTRO_EXTRA_LEAD_MS = 3200;
+// debug 時に最初の画面へ戻すまでの猶予。文言や参加証を確認できる長さにする。
+const DEBUG_REPLAY_RESET_MS = 15000;
+// 窓の明かりに与える色。「彩＝人」の配色をそのまま持ち込む。
+const CERTIFICATE_CITY_COLORS = [
+  "#ff5f6d", "#ffc371", "#f9f871", "#7bed9f",
+  "#4dd4ff", "#7d8cff", "#c084fc", "#ff8fd0",
+];
+
 const NAME_CHECKING_MESSAGE = "\u8868\u793a\u540d\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const NAME_BLOCKED_MESSAGE = "\u3053\u306e\u8868\u793a\u540d\u306f\u516c\u958b\u3067\u304d\u307e\u305b\u3093\u3002\u5225\u306e\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u306b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
 const SUPPORTER_CHECKING_MESSAGE = "\u30af\u30e9\u30d5\u30a1\u30f3\u652f\u63f4\u8005\u30b3\u30e1\u30f3\u30c8\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const SUPPORTER_PASSCODE_ERROR = "4\u6841\u306e\u30d1\u30b9\u30b3\u30fc\u30c9\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
 const SUPPORTER_COMMENT_ERROR = "\u3053\u306e\u30b3\u30e1\u30f3\u30c8\u306f\u8868\u793a\u3067\u304d\u307e\u305b\u3093\u3002\u8868\u73fe\u3092\u5909\u3048\u3066\u304f\u3060\u3055\u3044\u3002";
-const SUPPORTER_COMMENT_SAVED = "\u30b3\u30e1\u30f3\u30c8\u3092DOOH\u306b\u5c4a\u3051\u307e\u3057\u305f\u3002";
+const SUPPORTER_COMMENT_SAVED = "\u30b3\u30e1\u30f3\u30c8\u3092\u78ba\u8a8d\u3057\u307e\u3057\u305f\u3002\u53c2\u52a0\u8a3c\u3092\u4f5c\u6210\u3067\u304d\u307e\u3059\u3002";
 const SUPPORTER_DEMO_CODE_CHECKING = "\u672a\u4f7f\u7528\u306e\u30c7\u30e2\u7528\u30b3\u30fc\u30c9\u3092\u63a2\u3057\u3066\u3044\u307e\u3059...";
 const SUPPORTER_DEMO_CODE_READY = "\u30c7\u30e2\u7528\u30b3\u30fc\u30c9\u3092\u81ea\u52d5\u5165\u529b\u3057\u307e\u3057\u305f\u3002\u4e00\u8a00\u30b3\u30e1\u30f3\u30c8\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
 const SUPPORTER_DEMO_CODE_FULL = "\u30c7\u30e2\u7528\u30b3\u30fc\u30c9\u304c\u3059\u3079\u3066\u4f7f\u7528\u6e08\u307f\u306e\u305f\u3081\u3001\u5225\u306e\u30b3\u30fc\u30c9\u3092\u81ea\u52d5\u5165\u529b\u3057\u307e\u3057\u305f\u3002";
@@ -61,14 +243,31 @@ const outroDesc = document.getElementById("outroDesc");
 const outroAnswerBtn = document.getElementById("outroAnswerBtn");
 const outroTimerFill = outroOverlay?.querySelector(".outro-timer i");
 const OUTRO_SCENES = [
-  { glyph: "shield", title: "夜の歌舞伎町を見守る取り組み", desc: "新宿で続く夜間パトロールを知るきっかけになります。" },
-  { glyph: "cleaning_services", title: "街の環境を整える取り組み", desc: "落書き消去など、街の環境を整える活動を知るきっかけになります。" },
-  { glyph: "volunteer_activism", title: "若者を支える取り組み", desc: "NPOによる声かけや相談支援を知るきっかけになります。" },
+  { glyph: "shield", title: "新宿の再編", desc: "新宿グランドターミナルに向けた再編を知るきっかけになります。" },
+  { glyph: "cleaning_services", title: "歩きやすい街へ", desc: "人が憩い、楽しく歩ける都市空間を知るきっかけになります。" },
+  { glyph: "volunteer_activism", title: "地域活性化", desc: "歌舞伎町の文化と賑わいを育てる取り組みを知るきっかけになります。" },
+];
+const OUTRO_SCENES_EN = [
+  { glyph: "shield", title: "Shinjuku Redevelopment", desc: "A quick look at the Shinjuku Grand Terminal redevelopment project." },
+  { glyph: "cleaning_services", title: "A More Walkable City", desc: "A quick look at streets and public spaces designed for walking and gathering." },
+  { glyph: "volunteer_activism", title: "Local Vitality", desc: "A quick look at cultural and community initiatives around Kabukicho." },
 ];
 let outroStarted = false;
 let outroSceneTimer = null;
 let swipeCardShown = false;
 let swipeCardDone = false;
+let hasTrackedYouTubeSwipeStart = false;
+
+function setSupportColor(choiceId = null) {
+  const normalized = SUPPORT_CHOICE_DETAILS[choiceId] ? choiceId : "";
+  if (normalized) {
+    app.dataset.supportColor = normalized;
+    document.body.dataset.supportColor = normalized;
+    return;
+  }
+  delete app.dataset.supportColor;
+  delete document.body.dataset.supportColor;
+}
 
 // チーム比較用トグル：?thanks=svg で旧・手描き線画ストーリーカード、未指定なら新カード（thanks-proto風）
 const thanksStyle = new URLSearchParams(location.search).get("thanks");
@@ -83,14 +282,24 @@ const activeTheme = resolveTheme({ defaultTheme: "day" });
 const participationSearchParams = new URLSearchParams(location.search);
 const PARTICIPATION_MODE = participationSearchParams.get("mode");
 const isYouTubeParticipation = PARTICIPATION_MODE === "youtube";
-const YOUTUBE_PARTICIPATION_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+const requiresSupportChoice = !isYouTubeParticipation;
+const YOUTUBE_PARTICIPATION_COOLDOWN_MS = 10 * 1000;
 const YOUTUBE_PARTICIPATION_STORAGE_KEY = "shinjuku-dooh-participation-youtube";
+const TOTAL_PARTICIPANT_GOAL = 3000;
+const VISUAL_CHANGE_INTERVAL = 18;
 const requestedParticipationChannel = participationSearchParams.get("channel");
 const isExplicitTeamTest = participationSearchParams.get("team-test") === "1";
-const PARTICIPATION_CHANNEL = requestedParticipationChannel === "research" && isExplicitTeamTest
-  ? "research"
-  : getChannelForTheme(activeTheme, "default");
-const participationStorageOptions = PARTICIPATION_CHANNEL === "research"
+const PARTICIPATION_CHANNEL = isYouTubeParticipation
+  ? "youtube"
+  : requestedParticipationChannel === "research" && isExplicitTeamTest
+    ? "research"
+    : getChannelForTheme(activeTheme, "default");
+const participationStorageOptions = PARTICIPATION_CHANNEL === "youtube"
+  ? {
+      storageKey: YOUTUBE_PARTICIPATION_STORAGE_KEY,
+      displayNameStorageKey: "shinjuku-dooh-display-name-youtube",
+    }
+  : PARTICIPATION_CHANNEL === "research"
   ? {
       storageKey: "shinjuku-dooh-participation-research",
       displayNameStorageKey: "shinjuku-dooh-display-name-research",
@@ -99,6 +308,8 @@ const participationStorageOptions = PARTICIPATION_CHANNEL === "research"
       storageKey: "shinjuku-dooh-participation",
       displayNameStorageKey: "shinjuku-dooh-display-name",
     };
+const TICKER_FONT_IDS = new Set(["noto", "rounded", "mincho", "dot", "yusei"]);
+const tickerFontStorageKey = `shinjuku-dooh-ticker-font-${PARTICIPATION_CHANNEL}`;
 const pendingParticipationVisit = getParticipationVisit({
   today: participationDateOverride,
   storageKey: participationStorageOptions.storageKey,
@@ -123,6 +334,11 @@ const STORY_CARD_VISIBLE_MS = 2300;
 const STORY_CARD_REDUCED_MOTION_MS = 1000;
 const STORY_IMAGE_WIDTH = 1080;
 const STORY_IMAGE_HEIGHT = 1920;
+const SUPPORTER_VIDEO_WIDTH = 1080;
+const SUPPORTER_VIDEO_HEIGHT = 1920;
+const SUPPORTER_VIDEO_DURATION_MS = 8000;
+const SUPPORTER_CEREMONY_IMAGE_URL = new URL("../assets/effects/supporter-color-ceremony-v2.png", import.meta.url).href;
+const SUPPORTER_SIGNATURE_IMAGE_URL = new URL("../assets/effects/supporter-keepsake-city-v3.png", import.meta.url).href;
 const COPY_FEEDBACK_VISIBLE_MS = 2600;
 const EXTERNAL_BROWSER_GUIDE_SESSION_KEY = "shinjuku-dooh-external-browser-guide-dismissed";
 
@@ -186,43 +402,326 @@ function setupExternalBrowserGuide() {
       await navigator.clipboard.writeText(url.href);
       button.textContent = "コピーしました";
     } catch {
-      button.textContent = "右上メニューからブラウザで開く";
+      button.textContent = "メニューや共有ボタンからブラウザで開く";
     }
   });
 }
 
 setupExternalBrowserGuide();
+
+const LANGUAGE_STORAGE_KEY = "shinjuku-dooh-language";
+
+function normalizeLanguage(value) {
+  return String(value || "").toLowerCase() === "en" ? "en" : "ja";
+}
+
+function getInitialLanguage() {
+  const requestedLanguage = new URLSearchParams(location.search).get("lang");
+  if (requestedLanguage) {
+    return normalizeLanguage(requestedLanguage);
+  }
+  try {
+    return normalizeLanguage(localStorage.getItem(LANGUAGE_STORAGE_KEY));
+  } catch {
+    return "ja";
+  }
+}
+
+let currentLanguage = getInitialLanguage();
+
+function isEnglish() {
+  return currentLanguage === "en";
+}
+
+function buildAboutUrl() {
+  const isLocalPreview = location.hostname === "127.0.0.1" || location.hostname === "localhost";
+  const url = new URL(isLocalPreview ? "/about.html" : "/about", location.origin);
+  url.searchParams.set("from", `${location.pathname}${location.search}${location.hash}`);
+  if (isEnglish()) {
+    url.searchParams.set("lang", "en");
+  }
+  return url.toString();
+}
+
+function setupAboutLinks() {
+  const aboutUrl = buildAboutUrl();
+  document.querySelectorAll("[data-about-link]").forEach((link) => {
+    link.setAttribute("href", aboutUrl);
+  });
+}
+
+setupAboutLinks();
+
 const THANKS_STORIES = [
   {
     id: "patrol",
-    title: "夜の歌舞伎町を見守る取り組み",
-    description: "新宿で続く夜間パトロールを知り、応援する意思を示しました。",
-    descriptionMen: "新宿で続く夜間パトロールを知り、応援する意思を示しました。",
-    descriptionAll: "新宿で続く夜間パトロールを知り、応援する意思を示しました。",
+    title: "新宿の再編を知る",
+    description: "新宿グランドターミナルに向けた再編の取り組みを知り、応援する意思を示しました。",
+    descriptionMen: "新宿グランドターミナルに向けた再編の取り組みを知り、応援する意思を示しました。",
+    descriptionAll: "新宿グランドターミナルに向けた再編の取り組みを知り、応援する意思を示しました。",
   },
   {
     id: "graffiti",
-    title: "壁の落書き消去",
-    description: "落書き消去など、街の環境を整える活動を知り、応援する意思を示しました。",
+    title: "歩きやすい街へ",
+    description: "人が憩い、楽しく歩ける都市空間を目指す取り組みを知り、応援する意思を示しました。",
   },
   {
     id: "outreach",
-    title: "NPOによる声かけ・支援",
-    description: "若者を支えるNPOの活動を知り、応援する意思を示しました。",
+    title: "地域活性化を知る",
+    description: "歌舞伎町の文化と賑わいを育てる取り組みを知り、応援する意思を示しました。",
   },
 ];
 const SUPPORT_CHOICE_DETAILS = {
   patrol: {
-    title: "夜間の見守り活動",
-    description: "夜の街でのパトロールや声かけを支えます。",
+    title: "新宿の再編",
+    description: "駅・駅前広場・駅ビルを一体的に整備する、新宿グランドターミナルの取り組みを確認できます。",
+    linkLabel: "新宿駅直近地区の取り組みを見る",
+    url: "https://www.city.shinjuku.lg.jp/kusei/toshikei01_000001_00018.html",
   },
   graffiti: {
-    title: "街の環境整備",
-    description: "落書き消去や清掃など、不安を感じにくい街並みづくりを支えます。",
+    title: "歩きやすい街へ",
+    description: "人が憩い、楽しく歩ける都市空間を目指す、西新宿地区の再整備を確認できます。",
+    linkLabel: "西新宿地区の取り組みを見る",
+    url: "https://www.city.shinjuku.lg.jp/kusei/toshikei01_000001_00048.html",
   },
   outreach: {
-    title: "若者への相談支援",
-    description: "困難を抱える若者が相談先につながる活動を支えます。",
+    title: "地域活性化",
+    description: "文化の創造・発信と賑わいづくりを進める、歌舞伎町ルネッサンスの取り組みを確認できます。",
+    linkLabel: "歌舞伎町ルネッサンスを見る",
+    url: "https://www.city.shinjuku.lg.jp/kusei/tokumei01_001037.html",
+  },
+};
+
+const SUPPORT_CHOICE_TRANSLATIONS = {
+  ja: SUPPORT_CHOICE_DETAILS,
+  en: {
+    patrol: {
+      title: "Shinjuku Redevelopment",
+      description: "Learn about the Shinjuku Grand Terminal project, which connects the station, station plaza, and surrounding buildings.",
+      linkLabel: "View the station-area project",
+      url: SUPPORT_CHOICE_DETAILS.patrol.url,
+    },
+    graffiti: {
+      title: "A More Walkable City",
+      description: "Learn about the Nishi-Shinjuku project for streets and public spaces that are easier and more enjoyable to walk through.",
+      linkLabel: "View the Nishi-Shinjuku project",
+      url: SUPPORT_CHOICE_DETAILS.graffiti.url,
+    },
+    outreach: {
+      title: "Local Vitality",
+      description: "Learn about Kabukicho Renaissance, an initiative that supports local culture, activity, and vibrancy.",
+      linkLabel: "View Kabukicho Renaissance",
+      url: SUPPORT_CHOICE_DETAILS.outreach.url,
+    },
+  },
+};
+
+const UI_TEXT = {
+  ja: {
+    pageTitle: "新宿DOOH 参加体験",
+    about: "この企画について",
+    back: "前の画面へ",
+    progressLabels: ["応援", "感謝", "取組", "参加証"],
+    eyebrow: "Donation Action",
+    campaignTitle: "新宿DOOH",
+    lead: "白と黒のコントラストで、静かに参加を届けるデモ体験です。",
+    swipeTitle: "新宿を<br />応援しよう",
+    fundingNote: "日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。",
+    donationLabel: "参加者の負担",
+    free: "無料",
+    swipeInstruction: "指のエリアを上にスワイプしてください。",
+    thanksTitle: "ありがとうございます！",
+    thanksBody: "あなたの参加で、新宿に静かな光が重なりました。",
+    certificateTitle: "参加証に名前を残す",
+    supportKicker: "何に使われているの？",
+    supportTitle: "応援したい取り組みを見る",
+    supportLead: "任意です。タップすると取り組みの概要を確認できます。",
+    supportAria: "応援したい取り組み",
+    detail: "詳しく見る",
+    supportNote: "※このデモでは寄付は実行されません。",
+    trendKicker: "新宿の治安のいま",
+    trendTitle: "犯罪件数は減少傾向",
+    trendBody: "一方で、不安感はまだ残っています。",
+    trendStat: "刑法犯認知件数：2009年 10,968件 → 2024年 6,025件",
+    trendNote: "出典：警視庁公開データ。詳細は参加証作成後に確認できます。",
+    displayNameLabel: "表示名（任意）",
+    nameTab: "ここに入力",
+    nicknamePlaceholder: "例：さくら",
+    nicknameHelp: "入力した名前は参加証とDOOH、参加者ランキングに表示されます。\n本名でなくニックネームを入力してください。",
+    rankingTitle: "参加者ランキング",
+    rankingKicker: "通算参加日数の多い順",
+    rankingDays: "{days}日",
+    rankingSelfNote: "あなたは{rank}位です。",
+    rankingAnonymousNote: "名前を入力するとランキングに載ります。",
+    rankingEmpty: "まだランキングを作れるほど参加がありません。",
+    fontLegend: "名前の見た目を選ぶ",
+    fontHelp: "好きな見た目を選べます",
+    supporterKicker: "クラファン支援者の方へ",
+    supporterTitle: "クラファン支援者版の参加証を作成",
+    supporterLead: "4桁のパスコードと一言コメントを入力すると、\n特別な演出と支援者版参加証を受け取れます。",
+    passcode: "パスコード",
+    comment: "一言コメント",
+    commentPlaceholder: "例：新宿が、誰かの居場所であり続けますように",
+    supporterHelp: "入力は任意です。URLや個人情報は表示できません。",
+    createCard: "この名前で作成",
+    skipName: "名前なしで作成",
+    shareTitle: "参加証が届きました。",
+    share: "シェアする",
+    shareLine: "LINEで送る",
+    shareX: "Xにポスト",
+    copyLink: "リンクをコピー",
+    counterLabel: "現在の参加人数",
+    counterUnit: "人",
+    counterGoal: "目標 {goal}人",
+    counterRemaining: "あと{remaining}人で達成",
+    counterReached: "{goal}人達成しました",
+    milestoneKicker: "3000人の彩プロジェクト",
+    milestoneShifted: "新宿の映像が切り替わります",
+    milestonePrimary: "次の映像変化まであと{remaining}人",
+    milestoneSecondary: "累計 {count}人 / 目標 {goal}人",
+    milestoneSecondaryReached: "累計 {count}人 / 目標 {goal}人",
+    detailAfterCard: "参加証を作成すると、この取り組みの新宿区公式ページを開けます。",
+    projectNoteLabel: "デモについて",
+    projectNoteText: "現在は授業制作のプロトタイプです。実際の決済や寄付は発生しません。",
+    projectNoteLink: "この企画について確認する",
+    dataLabel: "出典を確認",
+    dataTitle: "新宿区の刑法犯認知件数",
+    dataLink: "警視庁の公開データを見る ↗",
+    externalNote: "公式ページは別画面で開きます。",
+    more: "もっと知る",
+    surveyThanks: "ありがとうございました",
+    surveyDesc: "あなたの参加が、新宿に光を重ねました。",
+    surveyNote: "ご参加ありがとうございました。\nこの後、アンケートにご協力ください。",
+    answerNow: "今すぐ答える",
+    autoMove: "まもなく自動で移動します…",
+    youtubeEyebrow: "YouTube Live",
+    youtubeTitle: "応援アクションを<br><span class=\"no-break\">送る</span>",
+    youtubeLead: "QRを読み取ってスワイプすると、ライブ中のDOOH画面に匿名で反映されます。",
+    youtubeCopy: "この操作は無料です。名前やコメントは表示されません。",
+    youtubeSwipe: "指のエリアを上にスワイプしてください。",
+    youtubeDoneTitle: "送信しました",
+    youtubeDoneCopy: "応援アクションがDOOH画面に反映されます。ライブ画面をご確認ください。",
+    youtubeDoneHint: "DOOH画面をご確認ください。約{remaining}後にもう一度参加できます。",
+    youtubeLockedTitle: "すでに<br><span class=\"no-break\">送信済みです</span>",
+    youtubeLockedCopy: "次の応援アクションは約{remaining}後に送れます。",
+    youtubeLockedHint: "送信済みです。約{remaining}後にもう一度参加できます。",
+    sendFailed: "参加は1日1回までです。また明日の参加をお待ちしています。",
+    sending: "応援アクションを反映しています。",
+    busy: "通信が混み合っています。少し時間をおいてもう一度お試しください。",
+    alreadyHint: "本日はすでに参加済みです。また明日の参加をお待ちしています。",
+    alreadyTitle: "本日は参加済みです",
+    certificateLabelAll: "新宿みんなのアクション証",
+    certificateLabelDefault: "SHINJUKU COLOR SUPPORTER",
+    certificateDescMorning: "この参加は無料です。集まったお金から、朝の新宿を応援する支援先へ¥{amount}を届けます。",
+    certificateDescAll: "この参加は無料です。集まったお金から、誰もが過ごしやすい新宿を支える支援先へ¥{amount}を届けます。",
+    certificateDescDefault: "この参加は無料です。集まったお金から、新宿を応援する支援先へ¥{amount}を届けます。",
+    certificateLabelSupporter: "FOUNDING SUPPORTER",
+    certificateDescSupporter: "クラウドファンディングであなたが灯した光が、この街の色になりました。あなたの応援コメントはDOOHに表示されます。",
+    certificateSerial: "SERIAL No.{serial}",
+    storyThanks: "ありがとうございます。支援先のストーリーを表示しています。",
+  },
+  en: {
+    pageTitle: "Shinjuku DOOH Experience",
+    about: "About",
+    back: "Back",
+    progressLabels: ["Support", "Thanks", "Action", "Certificate"],
+    eyebrow: "Donation Action",
+    campaignTitle: "SHINJUKU DOOH",
+    lead: "A web prototype where your swipe visualizes support for Shinjuku.",
+    swipeTitle: "Support<br />Shinjuku",
+    fundingNote: "Your free swipe turns sponsored funds from across Japan into support for Shinjuku.",
+    donationLabel: "Your cost",
+    free: "Free",
+    swipeInstruction: "Swipe up inside the finger area.",
+    thanksTitle: "Thank you!",
+    thanksBody: "Your action added another light to Shinjuku.",
+    certificateTitle: "Create your supporter certificate",
+    supportKicker: "Where does it go?",
+    supportTitle: "Explore the actions you support",
+    supportLead: "Optional. Tap a card to see a short overview.",
+    supportAria: "Actions to support",
+    detail: "View details",
+    supportNote: "No real donation is made in this demo.",
+    trendKicker: "Safety in Shinjuku now",
+    trendTitle: "Crime reports are trending down",
+    trendBody: "But some people still feel uneasy.",
+    trendStat: "Reported penal-code offenses: 10,968 in 2009 → 6,025 in 2024",
+    trendNote: "Source: Tokyo Metropolitan Police Department open data. Details are available after creating your certificate.",
+    displayNameLabel: "Display name (optional)",
+    nameTab: "Enter here",
+    nicknamePlaceholder: "e.g. Sakura",
+    nicknameHelp: "Your name may appear on the certificate, the DOOH screen and the participant ranking.\nPlease use a nickname, not your real name.",
+    rankingTitle: "Participant ranking",
+    rankingKicker: "By total days taken part",
+    rankingDays: "{days} days",
+    rankingSelfNote: "You are ranked #{rank}.",
+    rankingAnonymousNote: "Enter a name to appear in the ranking.",
+    rankingEmpty: "Not enough participants yet to build a ranking.",
+    fontLegend: "Choose name style",
+    fontHelp: "Pick the look you like",
+    supporterKicker: "For crowdfunding supporters",
+    supporterTitle: "Create a crowdfunding supporter certificate",
+    supporterLead: "Enter your 4-digit passcode and a short message\nto receive the special certificate and ceremony.",
+    passcode: "Passcode",
+    comment: "Short message",
+    commentPlaceholder: "e.g. May Shinjuku stay welcoming for everyone",
+    supporterHelp: "Optional. URLs and personal information cannot be shown.",
+    createCard: "Create with this name",
+    skipName: "Create without a name",
+    shareTitle: "Your certificate is ready.",
+    share: "Share",
+    shareLine: "Send on LINE",
+    shareX: "Post on X",
+    copyLink: "Copy link",
+    counterLabel: "Current participants",
+    counterUnit: "",
+    counterGoal: "Goal: {goal}",
+    counterRemaining: "{remaining} to go",
+    counterReached: "{goal} reached",
+    milestoneKicker: "3000-Supporter Color Project",
+    milestoneShifted: "The Shinjuku scene is changing",
+    milestonePrimary: "{remaining} swipes until the next scene change",
+    milestoneSecondary: "Total {count} / Goal {goal}",
+    milestoneSecondaryReached: "Total {count} / Goal {goal}",
+    detailAfterCard: "After creating your certificate, you can open the official Shinjuku City page.",
+    projectNoteLabel: "About this demo",
+    projectNoteText: "This is a class prototype. No real payment or donation is made.",
+    projectNoteLink: "Learn about this project",
+    dataLabel: "Source",
+    dataTitle: "Reported penal-code offenses in Shinjuku City",
+    dataLink: "View TMPD open data ↗",
+    externalNote: "The official page opens separately.",
+    more: "Learn more",
+    surveyThanks: "Thank you",
+    surveyDesc: "Your participation added light to Shinjuku.",
+    surveyNote: "Thank you for participating.\nPlease answer the short survey next.",
+    answerNow: "Answer now",
+    autoMove: "Redirecting shortly…",
+    youtubeEyebrow: "YouTube Live",
+    youtubeTitle: "Send<br><span class=\"no-break\">support</span>",
+    youtubeLead: "Scan the QR code and swipe. Your action will anonymously affect the live DOOH screen.",
+    youtubeCopy: "This action is free. Your name and comments will not be shown.",
+    youtubeSwipe: "Swipe up inside the finger area.",
+    youtubeDoneTitle: "Sent",
+    youtubeDoneCopy: "Your action will be reflected on the DOOH screen. Please check the live view.",
+    youtubeDoneHint: "Check the DOOH screen. You can join again in about {remaining}.",
+    youtubeLockedTitle: "Already<br><span class=\"no-break\">sent</span>",
+    youtubeLockedCopy: "You can send the next support action in about {remaining}.",
+    youtubeLockedHint: "Already sent. You can join again in about {remaining}.",
+    sendFailed: "You can join once per day. See you again tomorrow!",
+    sending: "Sending your support action…",
+    busy: "The connection is busy. Please wait a moment and try again.",
+    alreadyHint: "You have already joined today. Please come back tomorrow.",
+    alreadyTitle: "Already joined today",
+    certificateLabelAll: "SHINJUKU ACTION CERTIFICATE",
+    certificateLabelDefault: "SHINJUKU COLOR SUPPORTER",
+    certificateDescMorning: "This action is free. Sponsored funds will send ¥{amount} to a morning Shinjuku support destination.",
+    certificateDescAll: "This action is free. Sponsored funds will send ¥{amount} to a destination that supports a more welcoming Shinjuku.",
+    certificateDescDefault: "This action is free. Sponsored funds will send ¥{amount} to a support destination for Shinjuku.",
+    certificateLabelSupporter: "FOUNDING SUPPORTER",
+    certificateDescSupporter: "The light you funded on the crowdfunding campaign became this city's colour. Your message will appear on the DOOH screen.",
+    certificateSerial: "SERIAL No.{serial}",
+    storyThanks: "Thank you. Showing one of the actions your support connects to.",
   },
 };
 const storyCardOverlay = document.getElementById("storyCardOverlay");
@@ -247,18 +746,191 @@ let hasAcceptedParticipation = false;
 let hasShownSwipeReadyEffect = false;
 let hasAnimatedCounter = false;
 let isFinalCardBuilt = false;
+let selectedSupportChoiceId = null;
+let selectedTickerFont = "noto";
 let isRegisteringParticipation = false;
 let isAutoCompletingSwipe = false;
 let swipeChargeValue = 0;
 let counterAnimationFrame = null;
 let storyCardDismissTimer = null;
+let youtubeCooldownTimer = null;
 let copyFeedbackTimer = null;
 let relightPlaylist = null;
 updateCounterGoalProgress(participantCount);
 const milestonePreview = buildMilestonePreview();
+const milestoneKicker = milestonePreview?.querySelector("[data-milestone-kicker]");
 const milestonePrimary = milestonePreview?.querySelector("[data-milestone-primary]");
 const milestoneSecondary = milestonePreview?.querySelector("[data-milestone-secondary]");
 const milestoneProgressBar = milestonePreview?.querySelector("[data-milestone-bar]");
+
+function text(key, replacements = {}) {
+  const dictionary = UI_TEXT[currentLanguage] || UI_TEXT.ja;
+  let value = dictionary[key] ?? UI_TEXT.ja[key] ?? "";
+  if (Array.isArray(value)) {
+    return value;
+  }
+  Object.entries(replacements).forEach(([name, replacement]) => {
+    value = value.replaceAll(`{${name}}`, String(replacement));
+  });
+  return value;
+}
+
+function supportChoiceDetailFor(choiceId) {
+  const choices = SUPPORT_CHOICE_TRANSLATIONS[currentLanguage] || SUPPORT_CHOICE_TRANSLATIONS.ja;
+  return choices[choiceId] || SUPPORT_CHOICE_DETAILS[choiceId];
+}
+
+function setElementText(selector, value) {
+  const element = typeof selector === "string" ? document.querySelector(selector) : selector;
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function setElementHtml(selector, value) {
+  const element = typeof selector === "string" ? document.querySelector(selector) : selector;
+  if (element) {
+    element.innerHTML = value;
+  }
+}
+
+function ensureLanguageToggle() {
+  const appbar = document.querySelector(".sparkle-appbar");
+  if (!appbar || appbar.querySelector("[data-language-toggle]")) {
+    return;
+  }
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "language-toggle";
+  button.dataset.languageToggle = "1";
+  button.addEventListener("click", () => {
+    setLanguage(isEnglish() ? "ja" : "en", { persist: true });
+  });
+  const aboutLink = appbar.querySelector("[data-about-link]");
+  if (aboutLink) {
+    aboutLink.before(button);
+  } else {
+    appbar.append(button);
+  }
+}
+
+function syncLanguageToggle() {
+  const toggle = document.querySelector("[data-language-toggle]");
+  if (toggle) {
+    toggle.textContent = isEnglish() ? "JA" : "EN";
+    toggle.setAttribute("aria-label", isEnglish() ? "日本語に切り替え" : "Switch to English");
+  }
+}
+
+function setMultilineText(element, value) {
+  if (!element) return;
+  element.replaceChildren();
+  String(value).split("\n").forEach((line, index) => {
+    if (index > 0) {
+      element.append(document.createElement("br"));
+    }
+    element.append(line);
+  });
+}
+
+function applyLanguage() {
+  document.documentElement.lang = currentLanguage;
+  document.title = text("pageTitle");
+  steps.forEach((step, index) => {
+    const label = text("progressLabels")[index];
+    if (label) step.dataset.label = label;
+  });
+
+  setElementText("[data-about-link]", text("about"));
+  setElementText("#stepBack", text("back"));
+  setElementText(".eyebrow", text("eyebrow"));
+  setElementHtml("#campaignTitle", text("campaignTitle"));
+  setElementText(".lead", text("lead"));
+  setElementHtml("#swipeTitle", text("swipeTitle"));
+  setElementHtml(".funding-note", text("fundingNote"));
+  setElementText(".donation-preview span", text("donationLabel"));
+  setElementText(".donation-preview strong", text("free"));
+  setElementText(".swipe-instruction", text("swipeInstruction"));
+  setElementText("#thanksTitle", text("thanksTitle"));
+  setElementText(steps[1]?.querySelector("p"), text("thanksBody"));
+  setElementText("#certificateTitle", text("certificateTitle"));
+  setElementText(".support-choice-kicker", text("supportKicker"));
+  setElementText("#supportChoiceTitle", text("supportTitle"));
+  setElementText(".support-choice-lead", text("supportLead"));
+  document.querySelector(".support-choice-options")?.setAttribute("aria-label", text("supportAria"));
+  setElementText(".support-choice-note", text("supportNote"));
+  setElementText(".support-trend-kicker", text("trendKicker"));
+  setElementText("#supportTrendTitle", text("trendTitle"));
+  setElementText(".support-trend div > p:not(.support-trend-kicker)", text("trendBody"));
+  setElementText(".support-trend-stat", text("trendStat"));
+  setElementText(".support-trend-note", text("trendNote"));
+  setElementText("label[for='nickname']", text("displayNameLabel"));
+  setElementText(".sparkle-name-tab", text("nameTab"));
+  if (nickname) nickname.placeholder = text("nicknamePlaceholder");
+  setMultilineText(nicknameHelp, text("nicknameHelp"));
+  setElementText(".ticker-font-picker legend", text("fontLegend"));
+  setElementText("#tickerFontHelp", text("fontHelp"));
+  setElementText(".supporter-comment-kicker", text("supporterKicker"));
+  setElementText("#supporterCommentTitle", text("supporterTitle"));
+  setMultilineText(document.querySelector(".supporter-comment-lead"), text("supporterLead"));
+  setElementText("label[for='supporterPasscode'] span", text("passcode"));
+  setElementText("label[for='supporterComment'] span", text("comment"));
+  if (supporterComment) supporterComment.placeholder = text("commentPlaceholder");
+  setElementText("#supporterCommentHelp", text("supporterHelp"));
+  setElementText("#createCard", text("createCard"));
+  setElementText("#skipName", text("skipName"));
+  setElementText("#shareTitle", text("shareTitle"));
+  setElementText("#rankingTitle", text("rankingTitle"));
+  setElementText("#rankingKicker", text("rankingKicker"));
+  paintRanking();   // 行と注記は言語ごとに作り直す
+  setElementText("#shareBtn", text("share"));
+  setElementText("#shareLineBtn", text("shareLine"));
+  setElementText("#shareXBtn", text("shareX"));
+  setElementText("#shareCopyBtn", text("copyLink"));
+  setElementText(".outro-note", text("surveyNote"));
+  setElementText("#outroAnswerBtn", text("answerNow"));
+  setElementText(".outro-auto", text("autoMove"));
+
+  supportChoiceButtons.forEach((button) => {
+    const detail = supportChoiceDetailFor(button.dataset.supportChoice);
+    setElementText(button.querySelector("span"), detail?.title || "");
+    setElementText(button.querySelector("small"), text("detail"));
+  });
+
+  if (selectedSupportChoiceId && supportChoiceDetail && !supportChoiceDetail.hidden) {
+    const detail = supportChoiceDetailFor(selectedSupportChoiceId);
+    supportChoiceDetail.replaceChildren();
+    const title = document.createElement("h4");
+    title.textContent = detail.title;
+    const description = document.createElement("p");
+    description.textContent = detail.description;
+    const note = document.createElement("small");
+    note.className = "support-choice-complete-note";
+    note.textContent = text("detailAfterCard");
+    supportChoiceDetail.append(title, description, note);
+  }
+
+  updateCounterGoalProgress(participantCount);
+  updateMilestonePreview(participantCount);
+  updateProgress(currentStep);
+  setupAboutLinks();
+  syncLanguageToggle();
+  if (isYouTubeParticipation) {
+    applyYouTubeParticipationCopy();
+  }
+}
+
+function setLanguage(nextLanguage, options = {}) {
+  currentLanguage = normalizeLanguage(nextLanguage);
+  if (options.persist) {
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLanguage);
+    } catch {
+      /* Storage may be unavailable in some in-app browsers. */
+    }
+  }
+  applyLanguage();
+}
 
 const reducedMotionQuery = window.matchMedia(
   "(prefers-reduced-motion: reduce)"
@@ -333,6 +1005,22 @@ function saveYouTubeParticipation(visitorId) {
 }
 
 function formatCooldownTime(ms) {
+  const seconds = Math.max(1, Math.ceil(ms / 1000));
+  if (isEnglish()) {
+    if (ms < 60000) {
+      return `${seconds} sec`;
+    }
+    const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours <= 0) {
+      return `${minutes} min`;
+    }
+    return minutes > 0 ? `${hours} hr ${minutes} min` : `${hours} hr`;
+  }
+  if (ms < 60000) {
+    return `${seconds}秒`;
+  }
   const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -352,6 +1040,43 @@ function getDisplayName() {
   return input;
 }
 
+function normalizeTickerFont(value) {
+  return TICKER_FONT_IDS.has(value) ? value : "noto";
+}
+
+function setSelectedTickerFont(value, options = {}) {
+  selectedTickerFont = normalizeTickerFont(value);
+  tickerFontButtons.forEach((button) => {
+    const isSelected = button.dataset.tickerFont === selectedTickerFont;
+    button.classList.toggle("is-selected", isSelected);
+    button.setAttribute("aria-pressed", String(isSelected));
+  });
+
+  // 選んだ書体を参加証プレビューの名前と、入力欄の文字へ即時反映する。
+  if (previewName) {
+    previewName.dataset.tickerFont = selectedTickerFont;
+  }
+  if (nickname) {
+    nickname.dataset.tickerFont = selectedTickerFont;
+  }
+
+  if (options.persist !== false) {
+    try {
+      localStorage.setItem(tickerFontStorageKey, selectedTickerFont);
+    } catch {
+      // The page still works when storage is unavailable.
+    }
+  }
+}
+
+function restoreSelectedTickerFont() {
+  try {
+    setSelectedTickerFont(localStorage.getItem(tickerFontStorageKey), { persist: false });
+  } catch {
+    setSelectedTickerFont("noto", { persist: false });
+  }
+}
+
 function setNicknameHelp(message, status = "") {
   if (!nicknameHelp) {
     return;
@@ -362,7 +1087,7 @@ function setNicknameHelp(message, status = "") {
 }
 
 function restoreNicknameHelp() {
-  setNicknameHelp(defaultNicknameHelpText, "");
+  setNicknameHelp(isEnglish() ? text("nicknameHelp") : defaultNicknameHelpText, "");
 }
 
 function setNameChecking(isChecking) {
@@ -385,7 +1110,7 @@ function setSupporterCommentHelp(message, status = "") {
 }
 
 function restoreSupporterCommentHelp() {
-  setSupporterCommentHelp(defaultSupporterCommentHelpText, "");
+  setSupporterCommentHelp(isEnglish() ? text("supporterHelp") : defaultSupporterCommentHelpText, "");
 }
 
 function setSupporterAutoCodeButtonState(button, isChecking) {
@@ -477,6 +1202,14 @@ function setupSupporterDemoCodeButton() {
   field.appendChild(button);
 }
 
+// 同じパスコードなら毎回同じ番号が出るよう、ハッシュから通し番号を導く。
+function markFoundingSupporter(codeHash) {
+  isFoundingSupporter = true;
+  const seed = /^[a-f0-9]{6}/.test(String(codeHash ?? "")) ? codeHash.slice(0, 6) : "";
+  const serial = seed ? parseInt(seed, 16) % 10000 : 0;
+  foundingSupporterSerial = String(serial).padStart(4, "0");
+}
+
 function getSupporterCommentInput() {
   return {
     code: String(supporterPasscode?.value ?? "").replace(/\D/g, "").slice(0, 4),
@@ -514,6 +1247,9 @@ async function publishOptionalSupporterComment(displayName = "") {
     supporterPasscode.focus();
     return false;
   }
+
+  markFoundingSupporter(verification.codeHash);
+  foundingSupporterComment = input.comment;
 
   if (isDebugReplay) {
     setSupporterCommentHelp(SUPPORTER_COMMENT_SAVED, "success");
@@ -586,18 +1322,24 @@ function updateCounterGoalProgress(count = participantCount) {
   counterBox.style.setProperty("--counter-goal-progress", `${status.progress}%`);
 
   if (counterLabel) {
-    counterLabel.textContent = "現在の参加人数";
+    counterLabel.textContent = text("counterLabel");
   }
   if (counterUnit) {
-    counterUnit.textContent = "人";
+    counterUnit.textContent = text("counterUnit");
   }
   if (counterBadge) {
-    counterBadge.textContent = `目標 ${MONTHLY_PARTICIPANT_GOAL.toLocaleString("ja-JP")}人`;
+    counterBadge.textContent = text("counterGoal", {
+      goal: MONTHLY_PARTICIPANT_GOAL.toLocaleString(isEnglish() ? "en-US" : "ja-JP"),
+    });
   }
   if (counterDetail) {
     counterDetail.textContent = status.reached
-      ? `${MONTHLY_PARTICIPANT_GOAL.toLocaleString("ja-JP")}人達成しました`
-      : `あと${status.remaining.toLocaleString("ja-JP")}人で達成`;
+      ? text("counterReached", {
+          goal: MONTHLY_PARTICIPANT_GOAL.toLocaleString(isEnglish() ? "en-US" : "ja-JP"),
+        })
+      : text("counterRemaining", {
+          remaining: status.remaining.toLocaleString(isEnglish() ? "en-US" : "ja-JP"),
+        });
   }
 }
 
@@ -612,15 +1354,16 @@ function buildMilestonePreview() {
   preview.setAttribute("aria-live", "polite");
 
   const kicker = document.createElement("span");
-  kicker.textContent = "点灯チャレンジ";
+  kicker.dataset.milestoneKicker = "";
+  kicker.textContent = text("milestoneKicker");
 
   const primary = document.createElement("strong");
   primary.dataset.milestonePrimary = "";
-  primary.textContent = "あと9人で新宿が点灯";
+  primary.textContent = text("milestonePrimary", { remaining: "9" });
 
   const secondary = document.createElement("small");
   secondary.dataset.milestoneSecondary = "";
-  secondary.textContent = "現在 0人 / 9人で点灯";
+  secondary.textContent = text("milestoneSecondary", { count: "0", goal: "3,000" });
 
   const progress = document.createElement("div");
   progress.className = "milestone-progress";
@@ -650,27 +1393,42 @@ function updateMilestonePreview(count = participantCount) {
   }
 
   const safeCount = Math.max(0, Number(count) || 0);
-  const goal = getDonationMilestoneGoal(relightPlaylist, safeCount, DEMO_DONATION_YEN);
-  const formattedCount = safeCount.toLocaleString("ja-JP");
-  const formattedTarget = goal.targetCount.toLocaleString("ja-JP");
+  const numberLocale = isEnglish() ? "en-US" : "ja-JP";
+  const formattedCount = safeCount.toLocaleString(numberLocale);
+  const formattedTotalGoal = TOTAL_PARTICIPANT_GOAL.toLocaleString(numberLocale);
+  const roundPosition = safeCount % VISUAL_CHANGE_INTERVAL;
+  const remainingToNextVisual = roundPosition === 0 && safeCount > 0
+    ? 0
+    : VISUAL_CHANGE_INTERVAL - roundPosition;
+  const progressToNextVisual = remainingToNextVisual === 0
+    ? 100
+    : (roundPosition / VISUAL_CHANGE_INTERVAL) * 100;
+  const justReachedVisualShift = remainingToNextVisual === 0 && safeCount > 0;
 
-  milestonePreview.classList.toggle("is-reached", goal.reached);
-  milestonePreview.style.setProperty("--milestone-progress", `${goal.progress}%`);
+  milestonePreview.classList.toggle("is-reached", justReachedVisualShift);
+  milestonePreview.style.setProperty("--milestone-progress", `${progressToNextVisual}%`);
+
+  if (milestoneKicker) {
+    milestoneKicker.textContent = text("milestoneKicker");
+  }
 
   if (milestonePrimary) {
-    milestonePrimary.textContent = goal.reached
-      ? "新宿が点灯しました"
-      : `あと${goal.remainingCount.toLocaleString("ja-JP")}人で新宿が点灯`;
+    milestonePrimary.textContent = justReachedVisualShift
+      ? text("milestoneShifted")
+      : text("milestonePrimary", {
+          remaining: remainingToNextVisual.toLocaleString(numberLocale),
+        });
   }
 
   if (milestoneSecondary) {
-    milestoneSecondary.textContent = goal.reached
-      ? `現在 ${formattedCount}人参加 / ${formattedTarget}人達成`
-      : `現在 ${formattedCount}人 / ${formattedTarget}人で点灯`;
+    milestoneSecondary.textContent = text("milestoneSecondary", {
+      count: formattedCount,
+      goal: formattedTotalGoal,
+    });
   }
 
   if (milestoneProgressBar) {
-    milestoneProgressBar.style.width = `${goal.progress}%`;
+    milestoneProgressBar.style.width = `${progressToNextVisual}%`;
   }
 }
 
@@ -714,6 +1472,14 @@ function updateSwipeCharge(value) {
   const isComplete = normalized >= 100;
 
   swipeChargeValue = normalized;
+
+  if (isYouTubeParticipation && !hasTrackedYouTubeSwipeStart && normalized >= 8) {
+    hasTrackedYouTubeSwipeStart = true;
+    logAnalyticsEvent("youtube_swipe_start", {
+      channel: "youtube",
+      experience: isMenExperience ? "men" : "women",
+    });
+  }
   setSwipeFill(normalized);
   swipeStep.classList.toggle("is-swipe-active", normalized > 0);
   swipeStep.classList.toggle("is-swipe-charged", isComplete);
@@ -750,12 +1516,126 @@ function setTrackPosition(index, dragPercent = 0) {
   track.style.transform = `translate3d(0, calc(${-index * 100}% + ${dragPercent}%), 0)`;
 }
 
+// 参加者ランキング。nameShouts（名前）と participantHistory（日数）を
+// visitorId で突き合わせた結果が getRecentNameAnnouncements から返る。
+const RANKING_TOP = 10;
+const rankingPanel = document.getElementById("rankingPanel");
+const rankingList = document.getElementById("rankingList");
+const rankingNote = document.getElementById("rankingNote");
+let rankingLoaded = false;
+let rankingData = null;    // 言語を切り替えたときに描き直せるよう保持する
+let rankingSelfIndex = -1;
+
+function buildRanking(announcements) {
+  // 同じ人が複数回名乗っているので、最新の名前と最大の通算日数にまとめる
+  const byVisitor = new Map();
+  for (const entry of announcements) {
+    const visitorId = typeof entry?.visitorId === "string" ? entry.visitorId : "";
+    const name = String(entry?.name ?? "").trim();
+    if (!visitorId || !name) {
+      continue;
+    }
+    const totalDays = Math.max(1, Number(entry.totalDays) || 1);
+    const createdAt = Number(entry.createdAt) || 0;
+    const current = byVisitor.get(visitorId);
+    if (!current || createdAt >= current.createdAt) {
+      byVisitor.set(visitorId, { visitorId, name, createdAt, totalDays: Math.max(totalDays, current?.totalDays ?? 0) });
+    } else if (totalDays > current.totalDays) {
+      current.totalDays = totalDays;
+    }
+  }
+
+  return [...byVisitor.values()].sort(
+    (a, b) => b.totalDays - a.totalDays || a.name.localeCompare(b.name, "ja")
+  );
+}
+
+function rankingRow(entry, rank, isSelf) {
+  const li = document.createElement("li");
+  li.className = "ranking-row";
+  li.classList.toggle("is-self", isSelf);
+  if (rank <= 3) {
+    li.dataset.medal = String(rank);
+  }
+  const r = document.createElement("span");
+  r.className = "ranking-rank";
+  r.textContent = String(rank);
+  const n = document.createElement("span");
+  n.className = "ranking-name";
+  n.textContent = entry.name;
+  const d = document.createElement("span");
+  d.className = "ranking-days";
+  d.textContent = text("rankingDays", { days: entry.totalDays });
+  li.append(r, n, d);
+  return li;
+}
+
+async function renderRanking() {
+  if (!rankingPanel || !rankingList || rankingLoaded) {
+    return;
+  }
+  rankingLoaded = true;
+
+  let ranking = [];
+  try {
+    const announcements = await getRecentNameAnnouncements({ all: true, channel: PARTICIPATION_CHANNEL });
+    ranking = buildRanking(announcements);
+  } catch (error) {
+    console.info("[participant] ranking unavailable:", error);
+    rankingLoaded = false;
+    return;
+  }
+  if (ranking.length === 0) {
+    return;
+  }
+
+  const myVisitorId = completedParticipationVisit?.visitorId ?? null;
+  rankingData = ranking;
+  rankingSelfIndex = myVisitorId ? ranking.findIndex((entry) => entry.visitorId === myVisitorId) : -1;
+  paintRanking();
+}
+
+function paintRanking() {
+  if (!rankingPanel || !rankingList || !rankingData) {
+    return;
+  }
+  const myIndex = rankingSelfIndex;
+
+  rankingList.replaceChildren();
+  rankingData.slice(0, RANKING_TOP).forEach((entry, i) => {
+    rankingList.append(rankingRow(entry, i + 1, i === myIndex));
+  });
+
+  // 圏外の自分は、区切りを挟んで下に足す
+  if (myIndex >= RANKING_TOP) {
+    const gap = document.createElement("li");
+    gap.className = "ranking-gap";
+    gap.textContent = "···";
+    rankingList.append(gap, rankingRow(rankingData[myIndex], myIndex + 1, true));
+  }
+
+  if (rankingNote) {
+    rankingNote.textContent = myIndex >= 0
+      ? text("rankingSelfNote", { rank: myIndex + 1 })
+      : text("rankingAnonymousNote");
+  }
+  rankingPanel.hidden = false;
+}
+
 function showStep(index) {
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
 
   currentStep = index;
+  if (index === 2 && isSupporterFlow) {
+    setSupporterCertificateIntent(true);
+  }
+  syncMobileCertificateActions(index);
+  if (sectionJumpNav) {
+    sectionJumpNav.hidden = index !== 2;
+    if (index !== 2) setSectionJumpMenuOpen(false);
+  }
   viewport.classList.toggle("is-participation-step", index === 0);
   steps.forEach((step, stepIndex) => {
     const isCurrent = stepIndex === index;
@@ -766,7 +1646,14 @@ function showStep(index) {
   setTrackPosition(index);
   updateProgress(index);
   app.classList.toggle("is-post-participation", index >= 1);
+  document.body.classList.toggle("has-color-participation", index >= 1);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
+  if (index === totalSteps - 1) {
+    renderRanking();
+  }
+  if (stepBackButton) {
+    stepBackButton.hidden = index <= 1 || index >= totalSteps - 1;
+  }
 
   const resetStepScroll = () => {
     viewport.scrollTop = 0;
@@ -788,6 +1675,10 @@ function showStep(index) {
     hasAnimatedCounter = true;
     const delay = prefersReducedMotion ? 0 : 420;
     updateCounterGoalProgress(participantCount);
+    if (counterValue && !prefersReducedMotion) {
+      // ロールアップ開始前のプレースホルダも0から（HTML初期値の名残の100を見せない）
+      counterValue.textContent = "0";
+    }
     window.setTimeout(() => animateCounter(participantCount), delay);
   }
 }
@@ -801,6 +1692,10 @@ function scheduleFormRedirect() {
   if (formRedirectTimer || outroStarted) {
     return;
   }
+  // 参加証の降臨演出中は数えない。演出の終わりに改めて呼び直す。
+  if (isCeremonyPlaying) {
+    return;
+  }
   // 調査用プレビューでは親画面がDOOH表示後のアンケート遷移を管理する。
   if (window.parent !== window) {
     return;
@@ -810,7 +1705,7 @@ function scheduleFormRedirect() {
     formRedirectTimer = window.setTimeout(() => {
       formRedirectTimer = null;
       resetFlowForDebug();
-    }, 4000);
+    }, DEBUG_REPLAY_RESET_MS);
     return;
   }
   const formUrl = (document.body?.dataset?.postFlowForm || "").trim();
@@ -848,6 +1743,7 @@ function resetFlowForDebug() {
   window.clearTimeout(formRedirectTimer);
   window.clearTimeout(outroSceneTimer);
   window.clearTimeout(storyCardDismissTimer);
+  clearYouTubeCooldownTimer();
   formRedirectTimer = null;
   outroSceneTimer = null;
   storyCardDismissTimer = null;
@@ -856,6 +1752,20 @@ function resetFlowForDebug() {
   storyCardOverlay?.classList.remove("is-active");
   storyCardOverlay?.setAttribute("aria-hidden", "true");
   document.body.classList.remove("is-story-card-open");
+
+  // 支援者の状態を残すと、次の周回でコード未入力でも金の参加証が出てしまう。
+  clearCeremonyTimers();
+  isCeremonyPlaying = false;
+  isFoundingSupporter = false;
+  foundingSupporterSerial = "";
+  foundingSupporterComment = "";
+  // これを戻さないと announceDonorName が即 return し、2周目以降は認証自体が走らない。
+  hasAnnouncedName = false;
+  ceremonyOverlay?.classList.remove("is-active", "is-converging", "is-lifting", "is-bursting");
+  finalCard?.classList.remove("is-founding-supporter", "is-arriving");
+  document.querySelectorAll("[data-supporter-keepsake]").forEach((button) => {
+    button.hidden = true;
+  });
 
   hasCountedParticipation = false;
   hasAcceptedParticipation = false;
@@ -866,6 +1776,15 @@ function resetFlowForDebug() {
   swipeCardShown = false;
   swipeCardDone = false;
   outroStarted = false;
+  selectedSupportChoiceId = null;
+  setSupportColor(null);
+  document.body.classList.remove("has-color-participation");
+  supportChoiceButtons.forEach((button) => button.setAttribute("aria-pressed", "false"));
+  supportChoiceDetail?.replaceChildren();
+  if (supportChoiceDetail) {
+    supportChoiceDetail.hidden = true;
+    supportChoiceDetail.classList.remove("is-visible");
+  }
 
   swipeStep?.classList.remove("is-participation-locked");
   swipeControl?.removeAttribute("aria-disabled");
@@ -921,7 +1840,7 @@ function closeOutro() {
 }
 
 function playOutroScene(index) {
-  const scene = OUTRO_SCENES[index];
+  const scene = (isEnglish() ? OUTRO_SCENES_EN : OUTRO_SCENES)[index];
   if (!scene) {
     return;
   }
@@ -969,7 +1888,8 @@ function startSurveyOutro(formUrl) {
   }
   outroStarted = true;
 
-  const lead = Number(document.body?.dataset?.postFlowLead) || 1800;
+  const baseLead = Number(document.body?.dataset?.postFlowLead) || 1800;
+  const lead = baseLead + (isFoundingSupporter ? SUPPORTER_OUTRO_EXTRA_LEAD_MS : 0);
   const autoMs = Number(document.body?.dataset?.postFlowDelay) || 5000;
 
   if (outroAnswerBtn) {
@@ -978,8 +1898,8 @@ function startSurveyOutro(formUrl) {
 
   window.setTimeout(() => {
     if (outroGlyph) outroGlyph.textContent = "favorite";
-    if (outroTitle) outroTitle.textContent = "ありがとうございました";
-    if (outroDesc) outroDesc.textContent = "あなたの参加が、新宿に光を重ねました。";
+    if (outroTitle) outroTitle.textContent = text("surveyThanks");
+    if (outroDesc) outroDesc.textContent = text("surveyDesc");
     openOutro("survey");
     void outroCard.offsetWidth;
     outroCard.classList.add("is-playing");
@@ -1004,9 +1924,8 @@ function animateCounter(target) {
     cancelAnimationFrame(counterAnimationFrame);
     counterAnimationFrame = null;
   }
-
   if (prefersReducedMotion) {
-    counterValue.textContent = target.toLocaleString("ja-JP");
+    counterValue.textContent = target.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
     updateCounterGoalProgress(target);
     counterBox.classList.remove("is-counting");
     counterBox.classList.add("is-counted");
@@ -1015,6 +1934,8 @@ function animateCounter(target) {
 
   counterBox.classList.add("is-counting");
 
+  // 0から最終値までロールアップして「参加が積み上がってきた」動きを見せ、
+  // 最後に数字がポップして自分の1人が加わったことを示す
   const startValue = 0;
   const duration = 1900;
   const startTime = performance.now();
@@ -1023,8 +1944,8 @@ function animateCounter(target) {
     const elapsed = now - startTime;
     const progress = Math.min(elapsed / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 4);
-    const value = Math.floor(startValue + (target - startValue) * eased);
-    counterValue.textContent = value.toLocaleString("ja-JP");
+    const value = Math.round(startValue + (target - startValue) * eased);
+    counterValue.textContent = value.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
     updateCounterGoalProgress(value);
 
     if (progress < 1) {
@@ -1033,10 +1954,18 @@ function animateCounter(target) {
     }
 
     counterAnimationFrame = null;
-    counterValue.textContent = target.toLocaleString("ja-JP");
+    counterValue.textContent = target.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
     updateCounterGoalProgress(target);
     counterBox.classList.remove("is-counting");
     counterBox.classList.add("is-counted");
+    counterValue.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: "scale(1.16)", offset: 0.4 },
+        { transform: "scale(1)" },
+      ],
+      { duration: 480, easing: "cubic-bezier(0.22, 1.4, 0.36, 1)" }
+    );
   }
 
   counterAnimationFrame = requestAnimationFrame(tick);
@@ -1048,29 +1977,96 @@ function nextStep() {
   }
 }
 
+function previousStep() {
+  if (currentStep > 1 && currentStep < totalSteps - 1) {
+    showStep(currentStep - 1);
+  }
+}
+
+function ensureSupportChoice() {
+  return true;
+}
+
 function getCertificateContent() {
   const name = getDisplayName();
+  const amountYen = DEMO_DONATION_YEN.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
+
+  if (isFoundingSupporter) {
+    return {
+      label: text("certificateLabelSupporter"),
+      name,
+      description: text("certificateDescSupporter", { amount: amountYen }),
+    };
+  }
+
   const label = activeTheme === "morning"
     ? "SHINJUKU MORNING SUPPORTER"
     : isAllExperience
-      ? "新宿みんなのアクション証"
+      ? text("certificateLabelAll")
     : isMenExperience
       ? "CERTIFICATE OF SUPPORT"
     : isSparkleExperience
       ? "CERTIFICATE OF SUPPORT"
-      : "SHINJUKU COLOR SUPPORTER";
+      : text("certificateLabelDefault");
 
+  const amount = amountYen;
   const description = activeTheme === "morning"
-    ? `この参加は無料です。集まったお金から、朝の新宿を応援する支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`
+    ? text("certificateDescMorning", { amount })
     : isAllExperience
-      ? `この参加は無料です。集まったお金から、誰もが過ごしやすい新宿を支える支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`
-    : isMenExperience
-      ? `この参加は無料です。集まったお金から、新宿を応援する支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`
-    : isSparkleExperience
-      ? `この参加は無料です。集まったお金から、新宿を応援する支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`
-      : `この参加は無料です。集まったお金から、新宿を応援する支援先へ¥${DEMO_DONATION_YEN.toLocaleString("ja-JP")}を届けます。`;
+      ? text("certificateDescAll", { amount })
+      : text("certificateDescDefault", { amount });
 
   return { label, name, description };
+}
+
+// 金の縁・刻印・色づく街並み・通し番号。支援者証だけに足す。
+function decorateFoundingSupporterCard(labelNode, nameNode) {
+  finalCard.classList.toggle("is-founding-supporter", isFoundingSupporter);
+  if (!isFoundingSupporter) {
+    return;
+  }
+
+  labelNode.textContent = `✦ ${labelNode.textContent} ✦`;
+
+  const edition = document.createElement("span");
+  edition.className = "certificate-edition";
+  edition.textContent = isEnglish() ? "CROWDFUNDING EDITION" : "クラウドファンディング支援者限定";
+  labelNode.after(edition);
+
+  const city = document.createElement("div");
+  city.className = "certificate-city";
+  city.setAttribute("aria-hidden", "true");
+  CERTIFICATE_CITY_COLORS.forEach((color, index) => {
+    const building = document.createElement("i");
+    building.style.setProperty("--c", color);
+    building.style.setProperty("--h", `${34 + ((index * 37) % 58)}%`);
+    building.style.setProperty("--d", `${index * 0.18}s`);
+    city.append(building);
+  });
+  nameNode.before(city);
+
+  const lightCaption = document.createElement("p");
+  lightCaption.className = "certificate-light-caption";
+  lightCaption.textContent = isEnglish()
+    ? "This light is your support."
+    : "この一灯が、あなたの支援です";
+  city.after(lightCaption);
+
+  if (foundingSupporterComment) {
+    const message = document.createElement("blockquote");
+    message.className = "certificate-message";
+    const messageLabel = document.createElement("span");
+    messageLabel.textContent = isEnglish() ? "YOUR MESSAGE TO SHINJUKU" : "あなたが新宿に灯した言葉";
+    const messageText = document.createElement("q");
+    messageText.textContent = foundingSupporterComment;
+    message.append(messageLabel, messageText);
+    finalCard.append(message);
+  }
+
+  const serial = document.createElement("p");
+  serial.className = "certificate-serial";
+  serial.textContent = text("certificateSerial", { serial: foundingSupporterSerial });
+  finalCard.append(serial);
 }
 
 function buildFinalCard() {
@@ -1091,6 +2087,64 @@ function buildFinalCard() {
   description.textContent = content.description;
 
   finalCard.append(label, name, description);
+  decorateFoundingSupporterCard(label, name);
+  if (isFoundingSupporter) {
+    const keepsake = document.createElement("section");
+    keepsake.className = "certificate-keepsake";
+    keepsake.setAttribute("aria-label", isEnglish() ? "Founding supporter certificate" : "クラウドファンディング支援者参加証");
+    keepsake.append(...finalCard.childNodes);
+    finalCard.append(keepsake);
+  }
+  ensureSupporterKeepsakeActions();
+
+  const projectNote = document.createElement("section");
+  projectNote.className = "project-note-card";
+  const projectNoteLabel = document.createElement("span");
+  projectNoteLabel.textContent = text("projectNoteLabel");
+  const projectNoteText = document.createElement("p");
+  projectNoteText.textContent = text("projectNoteText");
+  const projectNoteLink = document.createElement("a");
+  projectNoteLink.href = buildAboutUrl();
+  projectNoteLink.textContent = text("projectNoteLink");
+  projectNote.append(projectNoteLabel, projectNoteText, projectNoteLink);
+  finalCard.append(projectNote);
+
+  const dataFollowUp = document.createElement("section");
+  dataFollowUp.className = "official-follow-up official-follow-up-data";
+  const dataFollowUpLabel = document.createElement("span");
+  dataFollowUpLabel.textContent = text("dataLabel");
+  const dataFollowUpTitle = document.createElement("h4");
+  dataFollowUpTitle.textContent = text("dataTitle");
+  const dataFollowUpLink = document.createElement("a");
+  dataFollowUpLink.href = "https://www.keishicho.metro.tokyo.lg.jp/about_mpd/jokyo_tokei/jokyo/ninchikensu.html";
+  dataFollowUpLink.target = "_blank";
+  dataFollowUpLink.rel = "noopener noreferrer";
+  dataFollowUpLink.textContent = text("dataLink");
+  const dataFollowUpNote = document.createElement("small");
+  dataFollowUpNote.textContent = text("externalNote");
+  dataFollowUp.append(dataFollowUpLabel, dataFollowUpTitle, dataFollowUpLink, dataFollowUpNote);
+  finalCard.append(dataFollowUp);
+
+  const supportChoice = supportChoiceDetailFor(selectedSupportChoiceId);
+  if (!supportChoice) {
+    return;
+  }
+
+  const followUp = document.createElement("section");
+  followUp.className = "official-follow-up";
+  const followUpLabel = document.createElement("span");
+  followUpLabel.textContent = text("more");
+  const followUpTitle = document.createElement("h4");
+  followUpTitle.textContent = supportChoice.title;
+  const followUpLink = document.createElement("a");
+  followUpLink.href = supportChoice.url;
+  followUpLink.target = "_blank";
+  followUpLink.rel = "noopener noreferrer";
+  followUpLink.textContent = `${supportChoice.linkLabel} ↗`;
+  const followUpNote = document.createElement("small");
+  followUpNote.textContent = text("externalNote");
+  followUp.append(followUpLabel, followUpTitle, followUpLink, followUpNote);
+  finalCard.append(followUp);
 }
 
 function getRandomThanksStory() {
@@ -1163,16 +2217,108 @@ function showStoryThanksCard() {
   scheduleStoryCardDismiss();
 
   if (swipeHint) {
-    swipeHint.textContent = "ありがとうございます。支援先のストーリーを表示しています。";
+    swipeHint.textContent = text("storyThanks");
   }
 
   return true;
 }
 
+let ceremonyOverlay = null;
+const ceremonyTimers = [];
+
+function buildCeremonyOverlay() {
+  if (ceremonyOverlay) {
+    return ceremonyOverlay;
+  }
+
+  ceremonyOverlay = document.createElement("div");
+  ceremonyOverlay.id = "supporterCeremony";
+  ceremonyOverlay.setAttribute("aria-hidden", "true");
+
+  const veil = document.createElement("div");
+  veil.className = "ceremony-veil";
+
+  const ceremonyCity = document.createElement("div");
+  ceremonyCity.className = "ceremony-city";
+  ceremonyCity.setAttribute("aria-hidden", "true");
+
+  const converge = document.createElement("div");
+  converge.className = "ceremony-converge";
+  for (let index = 0; index < CEREMONY_RAY_COUNT; index += 1) {
+    const ray = document.createElement("span");
+    ray.className = "ceremony-ray";
+    ray.style.setProperty("--angle", `${(360 / CEREMONY_RAY_COUNT) * index}deg`);
+    ray.style.setProperty("--delay", `${index * 0.035}s`);
+    ray.style.setProperty("--ray-color", CERTIFICATE_CITY_COLORS[index % CERTIFICATE_CITY_COLORS.length]);
+    converge.append(ray);
+  }
+
+  ceremonyOverlay.append(veil, ceremonyCity, converge);
+
+  for (let index = 0; index < CEREMONY_SPARK_COUNT; index += 1) {
+    const spark = document.createElement("span");
+    spark.className = "ceremony-spark";
+    spark.style.setProperty("--x", `${(Math.random() - 0.5) * 320}px`);
+    spark.style.setProperty("--y", `${60 + Math.random() * 420}px`);
+    spark.style.setProperty("--delay", `${Math.random() * 0.5}s`);
+    spark.style.setProperty("--spark-color", CERTIFICATE_CITY_COLORS[index % CERTIFICATE_CITY_COLORS.length]);
+    ceremonyOverlay.append(spark);
+  }
+
+  document.body.append(ceremonyOverlay);
+  return ceremonyOverlay;
+}
+
+function clearCeremonyTimers() {
+  while (ceremonyTimers.length) {
+    window.clearTimeout(ceremonyTimers.pop());
+  }
+}
+
+function afterCeremonyBeat(delayMs, action) {
+  ceremonyTimers.push(window.setTimeout(action, delayMs));
+}
+
+// 暗転 → 光が集束 → カードが降臨 → 金の粒。約3.4秒。
+function playSupporterCeremony() {
+  const overlay = buildCeremonyOverlay();
+  clearCeremonyTimers();
+  isCeremonyPlaying = true;
+  overlay.classList.remove("is-converging", "is-lifting", "is-bursting");
+  void overlay.offsetWidth;
+  overlay.classList.add("is-active");
+
+  afterCeremonyBeat(430, () => overlay.classList.add("is-converging"));
+
+  afterCeremonyBeat(980, () => overlay.classList.add("is-bursting"));
+
+  afterCeremonyBeat(2250, () => {
+    nextStep();
+    finalCard.classList.add("is-arriving");
+    overlay.classList.add("is-lifting");
+  });
+
+  afterCeremonyBeat(5000, () => {
+    overlay.classList.remove("is-active", "is-converging", "is-lifting", "is-bursting");
+    finalCard.classList.remove("is-arriving");
+    isCeremonyPlaying = false;
+    // 演出中は見送っていたアンケート遷移を、ここから数え始める。
+    scheduleFormRedirect();
+  });
+}
+
 function finalizeCard() {
+  if (!ensureSupportChoice()) {
+    return false;
+  }
+
   isFinalCardBuilt = false;
   buildFinalCard();
-  nextStep();
+  if (isFoundingSupporter && !prefersReducedMotion) {
+    playSupporterCeremony();
+  } else {
+    nextStep();
+  }
   if (window.parent !== window) {
     window.parent.postMessage({
       type: "dooh-research-card-complete",
@@ -1181,6 +2327,8 @@ function finalizeCard() {
       surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
     }, location.origin);
   }
+
+  return true;
 }
 
 // 寄付デモ完了後、公開に同意して入力された表示名だけをDOOHへ一度通知する。
@@ -1224,6 +2372,7 @@ async function announceDonorName() {
     isConsecutiveReturn: completedParticipationVisit?.isConsecutiveReturn === true,
     streakDays: completedParticipationVisit?.streakDays ?? 1,
     totalDays: completedParticipationVisit?.totalDays ?? 1,
+    tickerFont: selectedTickerFont,
   };
   if (isAllExperience) {
     payload.source = "participant-flow-all";
@@ -1245,10 +2394,10 @@ function markAlreadyParticipatedToday(visit) {
   swipeStep?.classList.add("is-participation-locked");
   swipeControl?.setAttribute("aria-disabled", "true");
   if (swipeHint) {
-    swipeHint.textContent = "本日はすでに参加済みです。また明日の参加をお待ちしています。";
+    swipeHint.textContent = text("alreadyHint");
   }
   if (thanksTitle) {
-    thanksTitle.textContent = "本日は参加済みです";
+    thanksTitle.textContent = text("alreadyTitle");
   }
   if (window.parent !== window) {
     window.parent.postMessage({
@@ -1272,20 +2421,57 @@ function applyYouTubeParticipationCopy() {
   const firstStepCopy = steps[0]?.querySelector("p");
   const stepCount = steps[0]?.querySelector(".step-count");
 
-  if (eyebrow) eyebrow.textContent = "YouTube Live";
-  if (title) title.innerHTML = "応援アクションを<br><span class=\"no-break\">送る</span>";
+  if (eyebrow) eyebrow.textContent = text("youtubeEyebrow");
+  if (title) title.innerHTML = text("youtubeTitle");
   if (lead) {
-    lead.textContent = "QRを読み取ってスワイプすると、ライブ中のDOOH画面に匿名で反映されます。";
+    lead.textContent = text("youtubeLead");
   }
   if (firstStepCopy) {
-    firstStepCopy.textContent = "この操作は無料です。名前やコメントは表示されません。";
+    firstStepCopy.textContent = text("youtubeCopy");
   }
   if (stepCount) {
     stepCount.textContent = "LIVE";
   }
   if (swipeHint) {
-    swipeHint.textContent = "指のエリアを上にスワイプしてください。";
+    swipeHint.textContent = text("youtubeSwipe");
   }
+}
+
+function clearYouTubeCooldownTimer() {
+  if (youtubeCooldownTimer) {
+    window.clearTimeout(youtubeCooldownTimer);
+    youtubeCooldownTimer = null;
+  }
+}
+
+function resetYouTubeParticipationForRetry() {
+  if (!isYouTubeParticipation) {
+    return;
+  }
+
+  clearYouTubeCooldownTimer();
+  hasCountedParticipation = false;
+  hasAcceptedParticipation = false;
+  hasAnimatedCounter = false;
+  isRegisteringParticipation = false;
+  document.body.classList.remove("is-youtube-locked", "is-youtube-complete");
+  swipeStep?.classList.remove("is-participation-locked");
+  swipeControl?.removeAttribute("aria-disabled");
+  updateSwipeCharge(0);
+  applyYouTubeParticipationCopy();
+}
+
+function scheduleYouTubeRetryUnlock(state = getYouTubeCooldownState()) {
+  if (!isYouTubeParticipation) {
+    return;
+  }
+
+  clearYouTubeCooldownTimer();
+  const delayMs = Math.max(0, Number(state.remainingMs) || 0);
+  youtubeCooldownTimer = window.setTimeout(
+    resetYouTubeParticipationForRetry,
+    delayMs + 120,
+  );
 }
 
 function markYouTubeCooldown(state = getYouTubeCooldownState()) {
@@ -1297,32 +2483,36 @@ function markYouTubeCooldown(state = getYouTubeCooldownState()) {
   const title = document.querySelector("#campaignTitle");
   const firstStepCopy = steps[0]?.querySelector("p");
   if (title) {
-    title.innerHTML = "すでに<br><span class=\"no-break\">送信済みです</span>";
+    title.innerHTML = text("youtubeLockedTitle");
   }
   if (firstStepCopy) {
-    firstStepCopy.textContent = `次の応援アクションは約${remaining}後に送れます。`;
+    firstStepCopy.textContent = text("youtubeLockedCopy", { remaining });
   }
   if (swipeHint) {
-    swipeHint.textContent = `送信済みです。約${remaining}後にもう一度参加できます。`;
+    swipeHint.textContent = text("youtubeLockedHint", { remaining });
   }
+  scheduleYouTubeRetryUnlock(state);
 }
 
 function showYouTubeCompletion() {
   document.body.classList.add("is-youtube-complete");
   swipeStep?.classList.add("is-participation-locked");
   swipeControl?.setAttribute("aria-disabled", "true");
+  const cooldown = getYouTubeCooldownState();
+  const remaining = formatCooldownTime(cooldown.remainingMs);
 
   const title = document.querySelector("#campaignTitle");
   const firstStepCopy = steps[0]?.querySelector("p");
   if (title) {
-    title.innerHTML = "送信しました";
+    title.innerHTML = text("youtubeDoneTitle");
   }
   if (firstStepCopy) {
-    firstStepCopy.textContent = "応援アクションがDOOH画面に反映されます。ライブ画面をご確認ください。";
+    firstStepCopy.textContent = text("youtubeDoneCopy");
   }
   if (swipeHint) {
-    swipeHint.textContent = "DOOH画面をご確認ください。次は3時間後に参加できます。";
+    swipeHint.textContent = text("youtubeDoneHint", { remaining });
   }
+  scheduleYouTubeRetryUnlock(cooldown);
 }
 
 async function registerParticipation() {
@@ -1335,6 +2525,11 @@ async function registerParticipation() {
 
   if (isDebugReplay) {
     // debug: Firebase 送信も「今日は参加済み」ロックもせず、ローカルだけで完了扱いにする。
+    // visitorId だけは本番と同じく確定させる（ランキングの自分の行を確認するため）。
+    completedParticipationVisit = getParticipationVisit({
+      today: participationDateOverride,
+      storageKey: participationStorageOptions.storageKey,
+    });
     participantCount += 1;
     updateCounterGoalProgress(participantCount);
     updateMilestonePreview(participantCount);
@@ -1357,8 +2552,11 @@ async function registerParticipation() {
       const payload = {
         name: RANDOM_GUEST_NAME,
         donationAmountYen: DEMO_DONATION_YEN,
-        visitorId: cooldown.visitorId,
-        participationDate: new Date().toISOString().slice(0, 10),
+        // YouTube Live は「同じ端末でも短い間隔で再参加OK」にする。
+        // 通常参加と同じ visitorId / participationDate を送ると、1日1回制限により
+        // 2回目以降が accepted:false になるため、サーバー側の日次重複判定には載せない。
+        visitorId: null,
+        participationDate: null,
         isReturning: false,
         isConsecutiveReturn: false,
         streakDays: 1,
@@ -1373,7 +2571,7 @@ async function registerParticipation() {
       const result = await publishSwipeComplete(payload);
       if (result?.failed === true || result?.accepted === false) {
         if (swipeHint) {
-          swipeHint.textContent = "通信が混み合っています。少し時間をおいてもう一度お試しください。";
+          swipeHint.textContent = text("busy");
         }
         return false;
       }
@@ -1388,6 +2586,10 @@ async function registerParticipation() {
       hasCountedParticipation = true;
       hasAcceptedParticipation = true;
       hasAnimatedCounter = false;
+      logAnalyticsEvent("youtube_swipe_complete", {
+        channel: "youtube",
+        experience: isMenExperience ? "men" : "women",
+      });
       return true;
     }
 
@@ -1426,7 +2628,7 @@ async function registerParticipation() {
     const result = await publishSwipeComplete(payload);
     if (result?.failed === true) {
       if (swipeHint) {
-        swipeHint.textContent = "通信が混み合っています。接続を確認して、もう一度スワイプしてください。";
+        swipeHint.textContent = text("busy");
       }
       return false;
     }
@@ -1461,8 +2663,23 @@ async function registerParticipation() {
     return true;
   } catch (error) {
     console.warn("[firebase] participation count update failed:", error);
+    if (isYouTubeParticipation) {
+      const cooldown = getYouTubeCooldownState();
+      saveYouTubeParticipation(cooldown.visitorId);
+      participantCount += 1;
+      updateCounterGoalProgress(participantCount);
+      updateMilestonePreview(participantCount);
+      hasCountedParticipation = true;
+      hasAcceptedParticipation = true;
+      hasAnimatedCounter = false;
+      logAnalyticsEvent("youtube_swipe_complete_local_fallback", {
+        channel: "youtube",
+        experience: isMenExperience ? "men" : "women",
+      });
+      return true;
+    }
     if (swipeHint) {
-      swipeHint.textContent = "通信に失敗しました。接続を確認してもう一度お試しください。";
+      swipeHint.textContent = text("sendFailed");
     }
     return false;
   } finally {
@@ -1492,14 +2709,14 @@ async function completeSwipeCharge() {
   isAutoCompletingSwipe = true;
   updateSwipeCharge(100);
   if (swipeHint) {
-    swipeHint.textContent = "応援アクションを反映しています。";
+    swipeHint.textContent = text("sending");
   }
 
   const didComplete = await markParticipationComplete();
   if (!didComplete) {
     updateSwipeCharge(84);
     if (swipeHint) {
-      swipeHint.textContent = "通信に失敗しました。もう一度上までスワイプしてください。";
+      swipeHint.textContent = text("sendFailed");
     }
   }
 
@@ -1700,6 +2917,351 @@ function downloadBlob(blob, filename) {
   anchor.click();
   anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function loadSupporterImage(source) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Supporter relight image failed to load."));
+    image.src = source;
+  });
+}
+
+function drawImageCover(ctx, image, x, y, width, height) {
+  const sourceRatio = image.naturalWidth / image.naturalHeight;
+  const targetRatio = width / height;
+  let sourceWidth = image.naturalWidth;
+  let sourceHeight = image.naturalHeight;
+  let sourceX = 0;
+  let sourceY = 0;
+  if (sourceRatio > targetRatio) {
+    sourceWidth = image.naturalHeight * targetRatio;
+    sourceX = (image.naturalWidth - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.naturalWidth / targetRatio;
+    sourceY = (image.naturalHeight - sourceHeight) / 2;
+  }
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
+function supporterVideoFormat() {
+  if (typeof MediaRecorder !== "function") {
+    return null;
+  }
+  const candidates = [
+    { mimeType: "video/mp4;codecs=avc1.42E01E", extension: "mp4" },
+    { mimeType: "video/mp4", extension: "mp4" },
+    { mimeType: "video/webm;codecs=vp9", extension: "webm" },
+    { mimeType: "video/webm;codecs=vp8", extension: "webm" },
+    { mimeType: "video/webm", extension: "webm" },
+  ];
+  return candidates.find(({ mimeType }) => MediaRecorder.isTypeSupported?.(mimeType)) ?? null;
+}
+
+function drawSupporterVideoFrame(ctx, ceremonyImage, signatureImage, elapsedMs) {
+  const width = SUPPORTER_VIDEO_WIDTH;
+  const height = SUPPORTER_VIDEO_HEIGHT;
+  const progress = Math.min(1, elapsedMs / SUPPORTER_VIDEO_DURATION_MS);
+  const reveal = Math.min(1, Math.max(0, (progress - 0.06) / 0.25));
+  const cardReveal = Math.min(1, Math.max(0, (progress - 0.27) / 0.2));
+  const messageReveal = Math.min(1, Math.max(0, (progress - 0.48) / 0.16));
+
+  const backdrop = ctx.createRadialGradient(810, 260, 20, 540, 820, 1200);
+  backdrop.addColorStop(0, "#42240e");
+  backdrop.addColorStop(0.32, "#181109");
+  backdrop.addColorStop(1, "#050504");
+  ctx.fillStyle = backdrop;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.globalAlpha = 0.13;
+  ctx.strokeStyle = "#e8c37a";
+  ctx.lineWidth = 2;
+  for (let x = -height; x < width + height; x += 118) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + height, height);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for (let index = 0; index < 54; index += 1) {
+    const seed = ((index * 47) % 101) / 101;
+    const travel = (progress * 1.45 + seed) % 1;
+    const angle = index * 2.399;
+    const radius = (1 - travel) * (520 + (index % 7) * 34);
+    const x = width / 2 + Math.cos(angle) * radius;
+    const y = 750 + Math.sin(angle) * radius * 0.78;
+    ctx.globalAlpha = Math.sin(travel * Math.PI) * 0.72;
+    const particleColorReveal = Math.min(1, Math.max(0, (progress - 0.22) / 0.28));
+    ctx.fillStyle = particleColorReveal > 0.45
+      ? CERTIFICATE_CITY_COLORS[index % CERTIFICATE_CITY_COLORS.length]
+      : (index % 4 === 0 ? "#fff3d0" : "#e8c37a");
+    ctx.beginPath();
+    ctx.arc(x, y, 2 + (index % 3), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = "#e8c37a";
+  ctx.font = "700 28px ui-monospace, monospace";
+  ctx.letterSpacing = "6px";
+  ctx.fillText("SHINJUKU RELIGHT", 72, 102);
+  ctx.fillStyle = "#fff3d0";
+  ctx.font = "700 48px 'Noto Sans JP', sans-serif";
+  ctx.letterSpacing = "0px";
+  ctx.fillText(isEnglish() ? "Your support became the city's light." : "あなたの支援が、新宿の光になりました。", 72, 176);
+
+  ctx.save();
+  ctx.globalAlpha = reveal;
+  drawRoundedRect(ctx, 62, 232, 956, 538, 34);
+  ctx.clip();
+  const colorReveal = Math.min(1, Math.max(0, (progress - 0.1) / 0.38));
+  ctx.filter = `grayscale(${1 - colorReveal}) saturate(${0.72 + colorReveal * 0.5}) brightness(${0.68 + colorReveal * 0.32})`;
+  drawImageCover(ctx, ceremonyImage, 62, 232, 956, 538);
+  ctx.filter = "none";
+  const cityShade = ctx.createLinearGradient(62, 232, 62, 770);
+  cityShade.addColorStop(0, "rgba(0,0,0,0.04)");
+  cityShade.addColorStop(1, "rgba(0,0,0,0.58)");
+  ctx.fillStyle = cityShade;
+  ctx.fillRect(62, 232, 956, 538);
+  ctx.restore();
+  ctx.strokeStyle = "rgba(232,195,122,0.62)";
+  ctx.lineWidth = 3;
+  drawRoundedRect(ctx, 62, 232, 956, 538, 34);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.font = "700 25px 'Noto Sans JP', sans-serif";
+  ctx.letterSpacing = "1px";
+  ctx.fillText(isEnglish() ? "This light is your support." : "この一灯が、あなたの支援です", 94, 728);
+
+  ctx.save();
+  ctx.globalAlpha = cardReveal;
+  ctx.translate(0, (1 - cardReveal) * 80);
+  drawRoundedRect(ctx, 62, 812, 956, 978, 40);
+  ctx.fillStyle = "rgba(11,10,7,0.94)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(232,195,122,0.64)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  drawRoundedRect(ctx, 92, 995, 896, 250, 26);
+  ctx.clip();
+  drawImageCover(ctx, signatureImage, 92, 995, 896, 250);
+  ctx.restore();
+
+  ctx.fillStyle = "#e8c37a";
+  ctx.font = "700 28px ui-monospace, monospace";
+  ctx.letterSpacing = "7px";
+  ctx.fillText("✦ FOUNDING SUPPORTER ✦", 112, 900);
+  ctx.fillStyle = "rgba(232,195,122,0.12)";
+  drawRoundedRect(ctx, 112, 928, 460, 50, 25);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(232,195,122,0.42)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = "#fff3d0";
+  ctx.font = "700 22px 'Noto Sans JP', sans-serif";
+  ctx.letterSpacing = "2px";
+  ctx.fillText(isEnglish() ? "CROWDFUNDING EDITION" : "クラウドファンディング支援者限定", 138, 961);
+
+  ctx.fillStyle = "#e8c37a";
+  ctx.font = "700 76px 'Noto Sans JP', sans-serif";
+  ctx.letterSpacing = "0px";
+  drawWrappedText(ctx, getDisplayName(), 112, 1070, 850, 88, 2);
+  ctx.fillStyle = "rgba(255,243,208,0.74)";
+  ctx.font = "500 32px 'Noto Sans JP', sans-serif";
+  drawWrappedText(ctx, isEnglish()
+    ? "The light you funded became part of this city."
+    : "クラウドファンディングであなたが灯した光が、この街の色になりました。", 112, 1170, 850, 50, 3);
+
+  ctx.globalAlpha = messageReveal;
+  drawRoundedRect(ctx, 108, 1310, 864, 260, 28);
+  ctx.fillStyle = "rgba(232,195,122,0.07)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(232,195,122,0.42)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = "#e8c37a";
+  ctx.font = "700 22px ui-monospace, monospace";
+  ctx.letterSpacing = "3px";
+  ctx.fillText(isEnglish() ? "YOUR MESSAGE TO SHINJUKU" : "あなたが新宿に灯した言葉", 146, 1372);
+  ctx.fillStyle = "#fff3d0";
+  ctx.font = "700 39px 'Noto Sans JP', sans-serif";
+  ctx.letterSpacing = "0px";
+  drawWrappedText(ctx, foundingSupporterComment, 146, 1448, 786, 58, 3);
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = "rgba(232,195,122,0.28)";
+  ctx.beginPath();
+  ctx.moveTo(112, 1620);
+  ctx.lineTo(968, 1620);
+  ctx.stroke();
+  ctx.fillStyle = "#e8c37a";
+  ctx.font = "700 25px ui-monospace, monospace";
+  ctx.letterSpacing = "5px";
+  ctx.fillText(`SERIAL No.${foundingSupporterSerial}`, 112, 1672);
+  ctx.fillStyle = "rgba(255,243,208,0.65)";
+  ctx.font = "500 25px 'Noto Sans JP', sans-serif";
+  ctx.letterSpacing = "0px";
+  ctx.fillText("SHINJUKU DOOH PROJECT", 112, 1740);
+  ctx.restore();
+
+  const fadeOut = Math.max(0, (progress - 0.96) / 0.04);
+  if (fadeOut > 0) {
+    ctx.globalAlpha = fadeOut;
+    ctx.fillStyle = "#050504";
+    ctx.fillRect(0, 0, width, height);
+    ctx.globalAlpha = 1;
+  }
+}
+
+async function createSupporterCeremonyVideo(button) {
+  if (!isFoundingSupporter || isCreatingSupporterVideo) {
+    return;
+  }
+  const format = supporterVideoFormat();
+  if (!format || typeof HTMLCanvasElement.prototype.captureStream !== "function") {
+    if (shareStatus) {
+      shareStatus.textContent = isEnglish()
+        ? "Video export is not supported on this device. Replay the ceremony and use screen recording."
+        : "この端末では動画保存に対応していません。演出を再生し、端末の画面収録をご利用ください。";
+    }
+    return;
+  }
+
+  isCreatingSupporterVideo = true;
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  button.dataset.generating = "true";
+  button.style.setProperty("--video-progress", "0%");
+  button.setAttribute("role", "progressbar");
+  button.setAttribute("aria-valuemin", "0");
+  button.setAttribute("aria-valuemax", "100");
+  button.setAttribute("aria-valuenow", "0");
+  button.textContent = isEnglish() ? "Creating video… 8s left" : "演出動画を作成中… あと8秒";
+  window.clearTimeout(formRedirectTimer);
+  if (shareStatus) {
+    shareStatus.textContent = isEnglish() ? "Creating your 8-second supporter movie…" : "8秒の支援者限定ムービーを作成しています…";
+  }
+
+  try {
+    await document.fonts?.ready;
+    const [ceremonyImage, signatureImage] = await Promise.all([
+      loadSupporterImage(SUPPORTER_CEREMONY_IMAGE_URL),
+      loadSupporterImage(SUPPORTER_SIGNATURE_IMAGE_URL),
+    ]);
+    const canvas = document.createElement("canvas");
+    canvas.width = SUPPORTER_VIDEO_WIDTH;
+    canvas.height = SUPPORTER_VIDEO_HEIGHT;
+    const ctx = canvas.getContext("2d");
+    const stream = canvas.captureStream(30);
+    const chunks = [];
+    const recorder = new MediaRecorder(stream, {
+      mimeType: format.mimeType,
+      videoBitsPerSecond: 6_000_000,
+    });
+    recorder.ondataavailable = (event) => {
+      if (event.data?.size) chunks.push(event.data);
+    };
+    const stopped = new Promise((resolve, reject) => {
+      recorder.onstop = resolve;
+      recorder.onerror = () => reject(recorder.error || new Error("Video recording failed."));
+    });
+    recorder.start(250);
+    const startedAt = performance.now();
+    await new Promise((resolve) => {
+      const render = (now) => {
+        const elapsed = Math.min(SUPPORTER_VIDEO_DURATION_MS, now - startedAt);
+        drawSupporterVideoFrame(ctx, ceremonyImage, signatureImage, elapsed);
+        const percent = Math.round((elapsed / SUPPORTER_VIDEO_DURATION_MS) * 100);
+        const remainingSeconds = Math.max(0, Math.ceil((SUPPORTER_VIDEO_DURATION_MS - elapsed) / 1000));
+        button.style.setProperty("--video-progress", `${percent}%`);
+        button.setAttribute("aria-valuenow", String(percent));
+        button.textContent = isEnglish()
+          ? `Creating video… ${remainingSeconds}s left`
+          : `演出動画を作成中… あと${remainingSeconds}秒`;
+        if (elapsed >= SUPPORTER_VIDEO_DURATION_MS) {
+          resolve();
+          return;
+        }
+        requestAnimationFrame(render);
+      };
+      requestAnimationFrame(render);
+    });
+    recorder.stop();
+    await stopped;
+    stream.getTracks().forEach((track) => track.stop());
+    const blob = new Blob(chunks, { type: format.mimeType });
+    if (!blob.size) {
+      throw new Error("The generated video was empty.");
+    }
+    downloadBlob(blob, `shinjuku-founding-supporter.${format.extension}`);
+    if (shareStatus) {
+      shareStatus.textContent = isEnglish() ? "Your supporter movie is ready." : "支援者限定ムービーを保存しました。";
+    }
+    button.textContent = isEnglish() ? "Video saved" : "動画を保存しました";
+  } catch (error) {
+    console.warn("[supporter-video] export failed:", error);
+    if (shareStatus) {
+      shareStatus.textContent = isEnglish()
+        ? "The video could not be created. Please replay the ceremony and use screen recording."
+        : "動画を作成できませんでした。演出を再生し、端末の画面収録をご利用ください。";
+    }
+  } finally {
+    isCreatingSupporterVideo = false;
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+    button.removeAttribute("role");
+    button.removeAttribute("aria-valuemin");
+    button.removeAttribute("aria-valuemax");
+    button.removeAttribute("aria-valuenow");
+    delete button.dataset.generating;
+    button.style.removeProperty("--video-progress");
+    window.setTimeout(() => {
+      if (!isCreatingSupporterVideo) {
+        button.textContent = isEnglish() ? "Save ceremony video" : "演出動画を保存";
+      }
+    }, 1800);
+  }
+}
+
+function ensureSupporterKeepsakeActions() {
+  const shareButton = document.getElementById("shareBtn");
+  const actions = shareButton?.closest(".actions");
+  if (!actions) {
+    return;
+  }
+  let replayButton = document.getElementById("replaySupporterCeremonyBtn");
+  let videoButton = document.getElementById("saveSupporterVideoBtn");
+  if (!replayButton) {
+    replayButton = document.createElement("button");
+    replayButton.type = "button";
+    replayButton.id = "replaySupporterCeremonyBtn";
+    replayButton.className = "ghost supporter-keepsake-action";
+    replayButton.dataset.supporterKeepsake = "1";
+    replayButton.addEventListener("click", () => {
+      window.clearTimeout(formRedirectTimer);
+      playSupporterCeremony();
+    });
+    actions.insertBefore(replayButton, shareButton);
+  }
+  if (!videoButton) {
+    videoButton = document.createElement("button");
+    videoButton.type = "button";
+    videoButton.id = "saveSupporterVideoBtn";
+    videoButton.className = "primary supporter-keepsake-action";
+    videoButton.dataset.supporterKeepsake = "1";
+    videoButton.addEventListener("click", () => createSupporterCeremonyVideo(videoButton));
+    actions.insertBefore(videoButton, shareButton);
+  }
+  replayButton.hidden = !isFoundingSupporter;
+  videoButton.hidden = !isFoundingSupporter;
+  replayButton.textContent = isEnglish() ? "Replay the ceremony" : "豪華演出をもう一度見る";
+  videoButton.textContent = isEnglish() ? "Save ceremony video" : "演出動画を保存";
 }
 
 function drawStoryShareImage() {
@@ -1990,6 +3552,9 @@ function canAdvanceFrom(index) {
     }
     return (isDebugReplay || !pendingParticipationVisit.alreadyParticipatedToday) && swipeChargeValue >= 100;
   }
+  if (index === 2) {
+    return true;
+  }
   return true;
 }
 
@@ -2218,6 +3783,8 @@ document.querySelectorAll("[data-next]").forEach((button) => {
   button.addEventListener("click", nextStep);
 });
 
+stepBackButton?.addEventListener("click", previousStep);
+
 // 表示名を参加証プレビューへ即時反映。日本語IMEの変換中(composition)でも更新されるよう
 // input だけでなく composition 系イベントも拾う（一部の端末は input が確定まで走らないため）。
 const syncPreviewName = () => {
@@ -2345,13 +3912,28 @@ createCardButton?.addEventListener("click", async () => {
     setNameChecking(false);
   }
 });
-skipNameButton?.addEventListener("click", () => {
-  finalizeCard();
+// 表示名を出さない支援者でも、パスコードを入れていれば認証して支援者証を出す。
+skipNameButton?.addEventListener("click", async () => {
+  const { code, comment } = getSupporterCommentInput();
+  if (!code && !comment) {
+    finalizeCard();
+    return;
+  }
+
+  setNameChecking(true);
+  try {
+    if (!await publishOptionalSupporterComment("")) {
+      return;
+    }
+    finalizeCard();
+  } finally {
+    setNameChecking(false);
+  }
 });
 
 supportChoiceButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    const detail = SUPPORT_CHOICE_DETAILS[button.dataset.supportChoice];
+    const detail = supportChoiceDetailFor(button.dataset.supportChoice);
     if (!detail || !supportChoiceDetail) {
       return;
     }
@@ -2359,13 +3941,18 @@ supportChoiceButtons.forEach((button) => {
     supportChoiceButtons.forEach((option) => {
       option.setAttribute("aria-pressed", String(option === button));
     });
+    selectedSupportChoiceId = button.dataset.supportChoice;
+    setSupportColor(selectedSupportChoiceId);
     supportChoiceDetail.replaceChildren();
     const title = document.createElement("h4");
     title.textContent = detail.title;
     const description = document.createElement("p");
     description.textContent = detail.description;
+    const note = document.createElement("small");
+    note.className = "support-choice-complete-note";
+    note.textContent = text("detailAfterCard");
     supportChoiceDetail.classList.remove("is-visible");
-    supportChoiceDetail.append(title, description);
+    supportChoiceDetail.append(title, description, note);
     supportChoiceDetail.hidden = false;
     requestAnimationFrame(() => {
       supportChoiceDetail.classList.add("is-visible");
@@ -2376,6 +3963,12 @@ supportChoiceButtons.forEach((button) => {
         supportChoice: button.dataset.supportChoice,
       }, location.origin);
     }
+  });
+});
+
+tickerFontButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setSelectedTickerFont(button.dataset.tickerFont);
   });
 });
 
@@ -2439,6 +4032,16 @@ window.addEventListener("resize", () => {
 updateSwipeCharge(0);
 applyThemeCopy();
 applyYouTubeParticipationCopy();
+restoreSelectedTickerFont();
+ensureLanguageToggle();
+applyLanguage();
+
+if (isYouTubeParticipation && !isDebugReplay) {
+  logAnalyticsEvent("youtube_page_open", {
+    channel: "youtube",
+    experience: isMenExperience ? "men" : "women",
+  });
+}
 // debug（host/ローカル）では「今日は参加済み」ロックを無視して、毎回スワイプから試せるようにする。
 if (!isDebugReplay && isYouTubeParticipation && getYouTubeCooldownState().blocked) {
   markYouTubeCooldown();
@@ -2447,6 +4050,11 @@ if (!isDebugReplay && isYouTubeParticipation && getYouTubeCooldownState().blocke
 }
 mountDebugReplayButton();
 showStep(0);
+if (isSupporterFlow && new URLSearchParams(location.search).get("entry") === "swiped") {
+  setSupporterCertificateIntent(true);
+  showStep(2);
+  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
+}
 updateMilestonePreview(participantCount);
 loadRelightPlaylist();
 

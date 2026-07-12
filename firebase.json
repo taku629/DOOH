@@ -1,106 +1,43 @@
 {
-  "database": {
-    "rules": "database.rules.json"
-  },
   "hosting": {
     "public": ".",
-    "predeploy": [
-      "npm run build:admin"
-    ],
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      ".git",
-      ".git/**",
-      "**/.git/**",
-      "**/node_modules/**",
-      "README.md",
-      "docs/**",
-      "shinjuku-dooh-demo/**",
-      "scripts/**",
-      "database.rules.json",
-      "package.json",
-      "package-lock.json",
-      "playlist.json",
-      "test.html",
-      "testmen.html",
-      "vite.config.js",
-      "web/admin-src/**",
-      "*.pptx"
+    "ignore": ["firebase.json", "supporter-preview.html"],
+    "headers": [
+      { "source": "**/*.html", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/demo", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/demo_v2", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/research", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/team-test", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/about", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/men", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/women", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/supporter", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
+      { "source": "/supporter/**", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] }
     ],
     "rewrites": [
-      {
-        "source": "/v1",
-        "destination": "/index.html"
-      },
-      {
-        "source": "/v2",
-        "destination": "/index-v2.html"
-      },
-      {
-        "source": "/demo",
-        "destination": "/demo.html"
-      },
-      {
-        "source": "/research",
-        "destination": "/research-preview.html"
-      },
-      {
-        "source": "/team-test",
-        "destination": "/research-preview.html"
-      },
-      {
-        "source": "/v3",
-        "destination": "/index.html"
-      },
-      {
-        "source": "/participant-v1",
-        "destination": "/web/participant-flow.html"
-      },
-      {
-        "source": "/men",
-        "destination": "/web/participant-flow-men.html"
-      },
-      {
-        "source": "/women",
-        "destination": "/web/participant-flow-women.html"
-      },
-      {
-        "source": "/participant-v1-women",
-        "destination": "/web/participant-flow-women.html"
-      },
-      {
-        "source": "/participant-v1-women-orange",
-        "destination": "/web/participant-flow-women-orange.html"
-      },
-      {
-        "source": "/participant-v1-men",
-        "destination": "/web/participant-flow-men.html"
-      },
-      {
-        "source": "/participant-v1-all",
-        "destination": "/web/participant-flow-all.html"
-      },
-      {
-        "source": "/participant-v2",
-        "destination": "/web/participant-flow-v2.html"
-      },
-      {
-        "source": "/participant-v3",
-        "destination": "/web/participant-flow.html"
-      },
-      {
-        "source": "/participant-v1-horizontal",
-        "destination": "/web/participant-flow-horizontal.html"
-      },
-      {
-        "source": "/participant-v2-horizontal",
-        "destination": "/web/participant-flow-v2-horizontal.html"
-      },
-      {
-        "source": "/admin",
-        "destination": "/web/admin-dist/index.html"
-      }
+      { "source": "/v1", "destination": "/index.html" },
+      { "source": "/v2", "destination": "/index-v2.html" },
+      { "source": "/demo", "destination": "/demo.html" },
+      { "source": "/demo_v2", "destination": "/demo_v2.html" },
+      { "source": "/research", "destination": "/research-preview.html" },
+      { "source": "/team-test", "destination": "/research-preview.html" },
+      { "source": "/about", "destination": "/about.html" },
+      { "source": "/v3", "destination": "/index.html" },
+      { "source": "/participant-v1", "destination": "/web/participant-flow.html" },
+      { "source": "/men", "destination": "/web/participant-flow-shared.html" },
+      { "source": "/women", "destination": "/web/participant-flow-shared.html" },
+      { "source": "/supporter", "destination": "/web/supporter-flow.html" },
+      { "source": "/supporter/women", "destination": "/web/supporter-flow.html" },
+      { "source": "/supporter/men", "destination": "/web/supporter-flow.html" },
+      { "source": "/participant-v1-women", "destination": "/web/participant-flow-shared.html" },
+      { "source": "/participant-v1-women-orange", "destination": "/web/participant-flow-women-orange.html" },
+      { "source": "/participant-v1-men", "destination": "/web/participant-flow-shared.html" },
+      { "source": "/participant-v1-all", "destination": "/web/participant-flow-all.html" },
+      { "source": "/participant-v2", "destination": "/web/participant-flow-v2.html" },
+      { "source": "/participant-v3", "destination": "/web/participant-flow.html" },
+      { "source": "/participant-v1-horizontal", "destination": "/web/participant-flow-horizontal.html" },
+      { "source": "/participant-v2-horizontal", "destination": "/web/participant-flow-v2-horizontal.html" },
+      { "source": "/admin", "destination": "/web/admin-dist/index.html" }
     ]
   }
 }
