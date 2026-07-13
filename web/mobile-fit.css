@@ -191,7 +191,7 @@ body[data-flow-mode] .section-skip-button[data-jump-target="nickname"] {
 }
 
 body[data-flow-mode] .section-skip-button[data-jump-target="nickname"]::before {
-  content: "参加証を作るところまで移動";
+  content: "名前入力";
   font-size: 0.82rem;
 }
 
