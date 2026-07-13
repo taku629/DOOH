@@ -107,7 +107,7 @@ thanksFastTrackAction?.addEventListener("click", () => {
   }
   setSupporterCertificateIntent(true);
   showStep(2);
-  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
+  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("certificateTitle")));
 });
 
 thanksPrimaryAction?.addEventListener("click", () => setSupporterCertificateIntent(false));
