@@ -3641,7 +3641,11 @@ function startPointer(event) {
   if (isInteractiveTarget(event.target)) {
     return;
   }
-  if (!event.target.closest("[data-swipe-control]")) {
+  // The first screen visually reads as one swipe surface. Requiring the
+  // gesture to begin on the small icon area made swipes from the copy or
+  // surrounding whitespace appear broken, especially on phones.
+  const activeStep = steps[currentStep];
+  if (!activeStep?.contains(event.target)) {
     return;
   }
 
