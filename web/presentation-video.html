@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#071014" />
+    <title>DOOH Presentation Video | Swipe to Relight Shinjuku</title>
+    <link rel="stylesheet" href="presentation-video.css" />
+  </head>
+  <body>
+    <main class="video-stage" id="videoStage">
+      <div class="stage-grid" aria-hidden="true"></div>
+      <header class="presentation-header">
+        <div class="brand-lockup">
+          <img src="../assets/shinjuku-relight.svg" alt="" />
+          <span>SHINJUKU RELIGHT</span>
+        </div>
+        <div class="timeline-readout"><span id="timecode">00:00</span><span>/ 00:30</span></div>
+      </header>
+
+      <section class="split-screen" aria-label="スマートフォンの参加画面とDOOHの連動デモ">
+        <article class="phone-column">
+          <div class="column-label"><span class="label-index">01</span><span>スマホで参加</span></div>
+          <div class="phone-frame">
+            <div class="phone-speaker"></div>
+            <div class="phone-screen">
+              <div class="phone-statusbar"><span>9:41</span><span>● ● ●</span></div>
+              <div class="crowdfunding-nav"><span class="nav-back">‹</span><span>クラウドファンディング</span><span class="nav-dot">•••</span></div>
+              <div class="funding-hero">
+                <div class="funding-image"><span>新宿の夜を、<br />もう一度。</span></div>
+                <div class="funding-tag">SHINJUKU RELIGHT</div>
+                <h1>あなたのスワイプで<br /><em>街に彩りを。</em></h1>
+                <p>新宿のサイネージを、<br />みんなの参加で点灯させよう。</p>
+              </div>
+              <div class="funding-card">
+                <div class="funding-row"><span>現在の参加者</span><strong id="phoneCount">49</strong><small> / 50人</small></div>
+                <div class="funding-track"><span id="phoneProgress"></span></div>
+                <div class="funding-row funding-meta"><span>目標まであと</span><strong id="phoneRemaining">1人</strong></div>
+                <div class="swipe-cta" id="swipeCta"><span id="ctaLabel">右へスワイプして参加</span><span class="cta-arrow">→</span></div>
+              </div>
+              <div class="phone-success" id="phoneSuccess"><span class="success-check">✓</span><strong>参加完了</strong><span>新宿の光に加わりました</span></div>
+              <img class="swipe-finger" id="swipeFinger" src="../assets/swipe-finger.png" alt="" />
+            </div>
+          </div>
+          <div class="phone-caption" id="phoneCaption">参加者を待っています</div>
+        </article>
+
+        <div class="connection-line" aria-hidden="true"><span class="connection-pulse"></span><span class="connection-icon">↔</span></div>
+
+        <article class="dooh-column">
+          <div class="column-label"><span class="label-index">02</span><span>DOOHが変わる</span></div>
+          <div class="dooh-frame">
+            <div class="dooh-topbar"><span>SHINJUKU / EAST EXIT</span><span class="live-dot"><i></i> LIVE</span></div>
+            <div class="dooh-screen" id="doohScreen">
+              <div class="dooh-scene" id="doohScene"></div>
+              <div class="dooh-noise"></div>
+              <div class="dooh-copy dooh-waiting" id="doohWaiting"><span class="copy-kicker">COMMUNITY LIGHT PROJECT</span><strong>あと<span id="doohRemaining">1</span>人で<br /><em>新宿が点灯</em></strong><span class="copy-sub">あなたの参加が、街の色になる。</span></div>
+              <div class="dooh-copy dooh-lit" id="doohLit"><span class="copy-kicker">SHINJUKU IS ALIVE</span><strong>50人のスワイプで<br /><em>彩りが戻った。</em></strong><span class="copy-sub">THANK YOU FOR JOINING</span></div>
+              <div class="dooh-copy dooh-fallback" id="doohFallback"><span class="copy-kicker">NO SWIPE DETECTED</span><strong>次の参加を<br /><em>待っています</em></strong><span class="copy-sub">フォールバック映像 / 05 sec</span></div>
+              <div class="dooh-progress"><span id="doohProgress"></span></div>
+            </div>
+            <div class="dooh-footer"><span>DOOH DISPLAY 01</span><span id="doohState">WAITING FOR ONE MORE</span></div>
+          </div>
+          <div class="dooh-caption" id="doohCaption">残り1人</div>
+        </article>
+      </section>
+
+      <section class="story-card" id="storyCard" aria-live="polite">
+        <span class="story-kicker" id="storyKicker">THE IDEA</span>
+        <strong id="storyTitle">スマホのひと swipe が、街の光になる。</strong>
+        <span id="storyDetail">クラファン参加とDOOH演出をリアルタイムでつなぐ。</span>
+      </section>
+
+      <div class="end-card" id="endCard" aria-hidden="true">
+        <span class="end-mark">50</span>
+        <span class="story-kicker">ONE SWIPE, ONE LIGHT</span>
+        <strong>みんなの参加で、<br />新宿の夜を変える。</strong>
+        <span>SHINJUKU RELIGHT / 30 sec presentation demo</span>
+      </div>
+
+      <div class="presentation-controls">
+        <button type="button" id="replayButton" title="30秒デモを最初から再生">Replay</button>
+        <button type="button" id="pauseButton" title="再生と一時停止を切り替え">Pause</button>
+      </div>
+      <div class="progress-rail"><span id="stageProgress"></span></div>
+    </main>
+    <script src="presentation-video.js"></script>
+  </body>
+</html>
