@@ -288,6 +288,11 @@
             margin-bottom: 0.35em;
         }
 
+        .impact-badge.is-participant {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.36em;
+        }
+
         .impact-comment {
             display: block;
             margin-top: 0.42em;
@@ -1766,12 +1771,10 @@
 
             const comment = supporterCommentFor(raw);
             el.classList.toggle("is-supporter", Boolean(comment));
-            if (comment) {
-                const badge = document.createElement("span");
-                badge.className = "impact-badge";
-                badge.textContent = "支 援 者";
-                el.appendChild(badge);
-            }
+            const badge = document.createElement("span");
+            badge.className = `impact-badge ${comment ? "is-supporter" : "is-participant"}`;
+            badge.textContent = comment ? "支 援 者" : "参 加 者";
+            el.appendChild(badge);
             const line = document.createElement("span");
             line.textContent = `${raw}さん`;
             el.appendChild(line);
