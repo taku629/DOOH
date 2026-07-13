@@ -1459,6 +1459,16 @@ function syncParticipantCount(count, options = {}) {
     updateCounterGoalProgress(participantCount);
   }
 
+  // The supporter route can reach the certificate before the initial Firebase
+  // count has arrived. If the count screen is open, replay with the live value
+  // instead of leaving the placeholder at zero.
+  if (currentStep === 1 && hasAnimatedCounter && counterValue) {
+    const displayedCount = Number(counterValue.textContent.replace(/[^0-9]/g, "")) || 0;
+    if (displayedCount !== participantCount) {
+      animateCounter(participantCount);
+    }
+  }
+
   updateMilestonePreview(participantCount);
 }
 
@@ -1990,7 +2000,11 @@ function nextStep() {
 
 function previousStep() {
   if (currentStep > 1 && currentStep < totalSteps - 1) {
-    showStep(currentStep - 1);
+    const previousIndex = currentStep - 1;
+    if (previousIndex === 1) {
+      hasAnimatedCounter = false;
+    }
+    showStep(previousIndex);
   }
 }
 
