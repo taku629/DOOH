@@ -252,12 +252,12 @@
                             <em>1スワイプ/100円</em>
                         </div>
                         <div class="thanks-actions thanks-action-portal" aria-label="作成する参加証を選ぶ">
-                            <p>参加方法に合わせて参加証を選ぶ</p>
+                            <p>作成する参加証を選ぶ</p>
                             <button class="primary" type="button" data-next>
-                                <span>通常参加者版</span><small>名前あり・なしで参加証を作る</small>
+                                <span>通常参加証</span><small>名前あり・なしを選べます</small>
                             </button>
                             <button class="ghost supporter-fast-track" type="button" id="supporterFastTrack">
-                                <span>クラファン支援者版</span><small>コード＋一言で豪華な参加証を作る</small>
+                                <span>クラファン支援者版</span><small>パスコードと一言で豪華な参加証を作る</small>
                             </button>
                         </div>
                     </section>
@@ -272,7 +272,7 @@
                         <h2 id="certificateTitle">参加証に名前を残す</h2>
                         <aside class="supporter-route-hero" aria-label="クラファン支援者限定機能">
                             <span>クラファン支援者限定</span>
-                            <strong>コードと一言コメントで、豪華な参加証を作れます</strong>
+                            <strong>4桁のパスコードと一言コメントで、豪華な参加証を作れます</strong>
                             <p>取組やグラフなど通常サイトの内容も、このページ内ですべて確認できます。</p>
                         </aside>
                         <div class="section-skip-actions" aria-label="入力欄へのショートカット">
@@ -479,9 +479,9 @@
                                 class="field-helper supporter-comment-help"
                                 id="supporterCommentHelp"
                             >
-                                入力は任意です。URLや個人情報は表示できません。
+                                パスコードはクラファン支援時にお渡しした4桁の数字です。コメントにURLや個人情報は書けません。
                             </p>
-                            <p class="supporter-create-guide">コードと一言を入力したら、画面下の支援者版ボタンから参加証を作れます。</p>
+                            <p class="supporter-create-guide">パスコードと一言コメントを入力したら、画面下の支援者版ボタンから参加証を作れます。</p>
                         </section>
                         <article
                             class="card"
@@ -518,6 +518,12 @@
                             id="finalCard"
                             aria-live="polite"
                         ></article>
+                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
+                            <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
+                            <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
+                            <ol class="ranking-list" id="rankingList"></ol>
+                            <p class="ranking-note" id="rankingNote"></p>
+                        </section>
                         <div class="actions stacked">
                             <button class="primary" type="button" id="shareBtn">
                                 シェアする
@@ -546,12 +552,6 @@
                         </div>
                         <p id="shareStatus" aria-live="polite"></p>
 
-                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
-                            <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
-                            <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
-                            <ol class="ranking-list" id="rankingList"></ol>
-                            <p class="ranking-note" id="rankingNote"></p>
-                        </section>
                     </section>
                 </div>
             </div>
@@ -1139,7 +1139,7 @@
 
         <script
             type="module"
-            src="web/participant-flow.js?v=20260713-separated-flows-11"
+            src="web/participant-flow.js?v=20260713-separated-flows-16"
         ></script>
     </body>
 </html>

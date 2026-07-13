@@ -304,7 +304,7 @@
                                 <span>通常参加証</span><small>名前あり・なしを選べます</small>
                             </button>
                             <button class="ghost thanks-choice-supporter" type="button" id="supporterSiteLink">
-                                <span>クラファン支援者版</span><small>コード＋一言で豪華な参加証を作る</small>
+                                <span>クラファン支援者版</span><small>パスコードと一言で豪華な参加証を作る</small>
                             </button>
                         </div>
                     </section>
@@ -553,6 +553,12 @@
                             id="finalCard"
                             aria-live="polite"
                         ></article>
+                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
+                            <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
+                            <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
+                            <ol class="ranking-list" id="rankingList"></ol>
+                            <p class="ranking-note" id="rankingNote"></p>
+                        </section>
                         <div class="actions stacked">
                             <button class="primary" type="button" id="shareBtn">
                                 シェアする
@@ -581,12 +587,6 @@
                         </div>
                         <p id="shareStatus" aria-live="polite"></p>
 
-                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
-                            <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
-                            <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
-                            <ol class="ranking-list" id="rankingList"></ol>
-                            <p class="ranking-note" id="rankingNote"></p>
-                        </section>
                     </section>
                 </div>
             </div>

@@ -178,9 +178,9 @@ sectionJumpButtons.forEach((button) => {
   button.addEventListener("click", () => {
     if (button.dataset.jumpTarget === "supporterCommentEntry") {
       setSupporterCertificateIntent(true);
-    } else if (button.dataset.jumpTarget === "nickname") {
-      setSupporterCertificateIntent(false);
     }
+    // nickname ジャンプは単なる移動。ここで intent を false に戻すと、
+    // クラファンページで名前入力へ移動しただけで通常参加証に落ちてしまう。
     jumpToCertificateSection(button.dataset.jumpTarget);
   });
 });
@@ -574,7 +574,7 @@ const UI_TEXT = {
     passcode: "パスコード",
     comment: "一言コメント",
     commentPlaceholder: "例：新宿が、誰かの居場所であり続けますように",
-    supporterHelp: "入力は任意です。URLや個人情報は表示できません。",
+    supporterHelp: "パスコードはクラファン支援時にお渡しした4桁の数字です。コメントにURLや個人情報は書けません。",
     createCard: "この名前で作成",
     skipName: "名前なしで作成",
     shareTitle: "参加証が届きました。",
@@ -677,7 +677,7 @@ const UI_TEXT = {
     passcode: "Passcode",
     comment: "Short message",
     commentPlaceholder: "e.g. May Shinjuku stay welcoming for everyone",
-    supporterHelp: "Optional. URLs and personal information cannot be shown.",
+    supporterHelp: "The passcode is the 4-digit number you received as a supporter. URLs and personal info cannot be shown.",
     createCard: "Create with this name",
     skipName: "Create without a name",
     shareTitle: "Your certificate is ready.",
@@ -1207,7 +1207,7 @@ function setupSupporterDemoCodeButton() {
   button.type = "button";
   button.className = "supporter-demo-code-button";
   button.dataset.supporterDemoCode = "1";
-  button.textContent = "デモ用コードを自動入力";
+  button.textContent = "デモ用パスコードを自動入力";
   button.addEventListener("click", () => {
     chooseAvailableDemoSupporterCode(button);
   });
@@ -4067,7 +4067,17 @@ if (
   document.body.dataset.flowMode === "supporter" &&
   new URLSearchParams(window.location.search).get("entry") === "swiped"
 ) {
+  // 入口ページでスワイプ済み。参加済み状態を引き継がないと announceDonorName が
+  // 早期returnし、名前つき作成でコード検証＝支援者版参加証・演出が丸ごと飛ばされる。
+  hasAcceptedParticipation = true;
+  if (!completedParticipationVisit) {
+    completedParticipationVisit = getParticipationVisit({
+      today: participationDateOverride,
+      storageKey: participationStorageOptions.storageKey,
+    });
+  }
   setSupporterCertificateIntent(true);
+  // ステップ先頭の見出し「参加証に名前を残す」が見える位置で止める（自動スクロールしない）
   showStep(2);
 }
 updateMilestonePreview(participantCount);
