@@ -293,6 +293,25 @@
             font-size: 0.36em;
         }
 
+        .impact-badge.is-supporter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: max-content;
+            margin-inline: auto;
+            padding: 0.42em 0.78em 0.42em 0.98em;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            color: #fff;
+            font-size: 0.34em;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            background:
+                linear-gradient(rgba(8, 12, 18, 0.9), rgba(8, 12, 18, 0.9)) padding-box,
+                linear-gradient(90deg, #e55b55, #efa94a, #7db56e, #4e92bb, #8c79bb) border-box;
+            box-shadow: 0 0 20px rgba(92, 150, 215, 0.2), 0 0 28px rgba(229, 91, 85, 0.12);
+        }
+
         .impact-comment {
             display: block;
             margin-top: 0.42em;
@@ -308,7 +327,30 @@
 
         .impact-name.is-supporter {
             text-align: center;
+            color: #fff;
             text-shadow: 0 4px 26px rgba(0, 0, 0, 0.9), 0 1px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .impact-name.is-supporter::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: -0.8em -1.25em;
+            border-radius: 50%;
+            pointer-events: none;
+            background: radial-gradient(circle,
+                rgba(255, 255, 255, 0.2) 0%,
+                rgba(78, 146, 187, 0.18) 30%,
+                rgba(140, 121, 187, 0.12) 48%,
+                rgba(229, 91, 85, 0.08) 64%,
+                transparent 76%);
+            animation: supporter-color-bloom 1500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes supporter-color-bloom {
+            0% { opacity: 0; transform: scale(0.45); }
+            38% { opacity: 1; transform: scale(1.08); }
+            100% { opacity: 0.42; transform: scale(1); }
         }
 
         /* 常連の一撃は、その人の色に染まったインクになる（彩＝人） */
@@ -327,27 +369,32 @@
             filter: drop-shadow(0 0 26px color-mix(in srgb, var(--returning-color, #ffc56d) 45%, transparent));
         }
 
-        /* 支援者の一撃は金。常連色より優先する */
+        /* 支援者の一撃は、企画テーマの「モノクロから彩」で区別する。 */
         .ink-impact.is-supporter,
         .ink-impact.is-streak.is-supporter {
-            background-color: #e7c877;
+            background: conic-gradient(from 120deg, #e55b55, #efa94a, #7db56e, #4e92bb, #8c79bb, #e55b55);
             background-blend-mode: color;
-            box-shadow: 0 0 90px rgba(231, 200, 119, 0.35);
+            box-shadow: 0 0 55px rgba(78, 146, 187, 0.24), 0 0 90px rgba(229, 91, 85, 0.18);
         }
 
         /* 白では支援者でもインクの色は変えない（金で塗るとインクの個性が消える）。
-           金は縁の光としてまとわせる。DEVは全員支援者になる暫定仕様なので、塗りだと確認もできない */
+           彩は縁の光としてまとわせる。 */
         .ink-impact.is-white.is-supporter {
             background-color: transparent;
             background-blend-mode: normal;
             box-shadow: none;
-            filter: drop-shadow(0 0 34px rgba(231, 200, 119, 0.62));
+            filter: drop-shadow(0 0 22px rgba(78, 146, 187, 0.6)) drop-shadow(0 0 34px rgba(229, 91, 85, 0.34));
         }
 
         /* 常連参加者は名前が streak 色で立つ（従来ピル/ティッカーが担っていた表現） */
         .impact-name.is-returning {
             color: var(--returning-color, #ffc56d);
             text-shadow: 0 4px 26px rgba(0, 0, 0, 0.8), 0 0 22px var(--returning-color, #ffc56d);
+        }
+
+        .impact-name.is-supporter.is-returning {
+            color: #fff;
+            text-shadow: 0 4px 26px rgba(0, 0, 0, 0.9), 0 0 18px rgba(78, 146, 187, 0.36);
         }
 
         /* 支援者コメントは「祝祭」と「誰も参加していない静かな時間」に出す。
@@ -809,6 +856,18 @@
         body.is-live-broadcast .thanks,
         body.is-live-broadcast .supporter-comment-wall {
             display: none !important;
+        }
+
+        .ticker-name.is-supporter {
+            color: #fff;
+        }
+
+        .ticker-name.is-supporter::before {
+            content: "✦";
+            display: inline-block;
+            margin-right: 0.38em;
+            color: #7dbce0;
+            text-shadow: 0 0 8px rgba(229, 91, 85, 0.72), 0 0 12px rgba(125, 181, 110, 0.5);
         }
 
         body.is-live-broadcast .participation-thanks {
@@ -1773,7 +1832,7 @@
             el.classList.toggle("is-supporter", Boolean(comment));
             const badge = document.createElement("span");
             badge.className = `impact-badge ${comment ? "is-supporter" : "is-participant"}`;
-            badge.textContent = comment ? "支 援 者" : "参 加 者";
+            badge.textContent = comment ? "✦ CROWDFUNDING SUPPORTER" : "参 加 者";
             el.appendChild(badge);
             const line = document.createElement("span");
             line.textContent = `${raw}さん`;
@@ -1800,7 +1859,7 @@
                     { opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.76 },
                     { opacity: 0, transform: "translate(-50%, -62%) scale(1.02)", offset: 1 },
                 ],
-                { duration: comment ? 5200 : 2800, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
+                { duration: comment ? 6500 : 2800, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
             ).finished
                 .then(() => {
                     const i = activeNames.indexOf(el);
@@ -2568,6 +2627,7 @@
                 name.className = `ticker-name ${getTickerFontClass(entry)}`;
                 name.classList.toggle("is-returning", entry.isReturning && hasStreakColor(entry));
                 name.classList.toggle("is-latest", entry === priorityEntry);
+                name.classList.toggle("is-supporter", Boolean(supporterCommentFor(entry.name)));
                 applyStreakClass(name, entry);
                 name.textContent = `${entry.name}さん`;
                 group.appendChild(name);
@@ -2782,6 +2842,7 @@
             supporterCommentRotation.push(...normalized);
             supporterCommentIndex = 0;
             if (supporterCommentWall) supporterCommentWall.hidden = true;
+            renderDonorTicker(latestDonorEntry);
         }
 
         function showSupporterCommentForParticipant(name) {
