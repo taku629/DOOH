@@ -99,7 +99,9 @@ thanksFastTrackAction?.addEventListener("click", () => {
   requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
 });
 
-thanksPrimaryAction?.addEventListener("click", () => setSupporterCertificateIntent(false));
+thanksPrimaryAction?.addEventListener("click", () => {
+  if (!isSupporterFlow) setSupporterCertificateIntent(false);
+});
 
 let supporterCertificateIntent = false;
 
@@ -118,9 +120,15 @@ function setSupporterCertificateIntent(isSupporter) {
   }
 }
 
+if (isSupporterFlow) {
+  setSupporterCertificateIntent(true);
+}
+
 [supporterPasscode, supporterComment].forEach((field) => {
   field?.addEventListener("input", () => {
-    setSupporterCertificateIntent(Boolean(supporterPasscode?.value.trim() || supporterComment?.value.trim()));
+    setSupporterCertificateIntent(
+      isSupporterFlow || Boolean(supporterPasscode?.value.trim() || supporterComment?.value.trim())
+    );
   });
 });
 
@@ -1218,6 +1226,11 @@ async function publishOptionalSupporterComment(displayName = "") {
   const input = getSupporterCommentInput();
   const hasAnyInput = Boolean(input.code || input.comment);
   if (!hasAnyInput) {
+    if (isSupporterFlow) {
+      setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
+      supporterPasscode.focus();
+      return false;
+    }
     restoreSupporterCommentHelp();
     return true;
   }
@@ -3634,7 +3647,10 @@ function startPointer(event) {
   if (isInteractiveTarget(event.target)) {
     return;
   }
-  if (!event.target.closest("[data-swipe-control]")) {
+  // The whole first card is the swipe surface. On phones, limiting the
+  // gesture to the central icon made valid upward swipes look unresponsive.
+  const activeStep = steps[currentStep];
+  if (!activeStep?.contains(event.target)) {
     return;
   }
 
