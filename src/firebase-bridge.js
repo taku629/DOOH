@@ -503,20 +503,34 @@ export async function subscribeToNameAnnouncements(callback, options = {}) {
 
     const channel = normalizeChannel(options.channel);
     const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
+    // A moving one-item query emits the newest child and every child that
+    // subsequently becomes newest, without downloading the full history.
+    const liveQuery = sdk.query(shoutsRef, sdk.limitToLast(1));
     const knownIds = new Set();
 
-    try {
-        const snapshot = await sdk.get(shoutsRef);
-        if (snapshot.exists()) {
-            snapshot.forEach((child) => {
-                knownIds.add(child.key);
-            });
-        }
-    } catch (error) {
-        console.warn("[firebase] initial name shouts fetch failed:", error);
+    // Callers that already fetched the current list can provide its IDs and
+    // avoid downloading the same snapshot again before listening for deltas.
+    const suppliedKnownIds = Array.isArray(options.knownIds);
+    if (suppliedKnownIds) {
+        options.knownIds.forEach((id) => {
+            if (typeof id === "string" && id) knownIds.add(id);
+        });
     }
 
-    return sdk.onChildAdded(shoutsRef, (snap) => {
+    if (!suppliedKnownIds) {
+        try {
+            const snapshot = await sdk.get(liveQuery);
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    knownIds.add(child.key);
+                });
+            }
+        } catch (error) {
+            console.warn("[firebase] initial name shouts fetch failed:", error);
+        }
+    }
+
+    return sdk.onChildAdded(liveQuery, (snap) => {
         if (knownIds.has(snap.key)) {
             return;
         }

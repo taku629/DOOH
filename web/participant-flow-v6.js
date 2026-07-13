@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260708-increment-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260713-ranking-live-1";
 import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -1383,6 +1383,10 @@ const rankingNote = document.getElementById("rankingNote");
 let rankingLoaded = false;
 let rankingData = null;    // 言語を切り替えたときに描き直せるよう保持する
 let rankingSelfIndex = -1;
+let rankingAnnouncements = [];
+let rankingLiveUnsubscribe = null;
+let rankingLiveStarting = false;
+let rankingRefreshTimer = null;
 
 function updateRankingToggleLabel() {
   if (!rankingToggle || !rankingToggleLabel) return;
@@ -1397,6 +1401,46 @@ rankingToggle?.addEventListener("click", () => {
   rankingToggle.setAttribute("aria-expanded", String(willOpen));
   if (rankingBody) rankingBody.hidden = !willOpen;
   updateRankingToggleLabel();
+});
+
+function refreshLiveRanking() {
+  rankingRefreshTimer = null;
+  const ranking = buildRanking(rankingAnnouncements);
+  if (ranking.length === 0) return;
+  const myVisitorId = completedParticipationVisit?.visitorId ?? null;
+  rankingData = ranking;
+  rankingSelfIndex = myVisitorId ? ranking.findIndex((entry) => entry.visitorId === myVisitorId) : -1;
+  paintRanking();
+}
+
+function queueLiveRankingEntry(entry) {
+  if (!entry?.id) return;
+  const existingIndex = rankingAnnouncements.findIndex((current) => current.id === entry.id);
+  if (existingIndex >= 0) rankingAnnouncements.splice(existingIndex, 1);
+  rankingAnnouncements.push(entry);
+  window.clearTimeout(rankingRefreshTimer);
+  rankingRefreshTimer = window.setTimeout(refreshLiveRanking, 300);
+}
+
+async function startLiveRanking(knownIds) {
+  if (rankingLiveUnsubscribe || rankingLiveStarting) return;
+  rankingLiveStarting = true;
+  try {
+    rankingLiveUnsubscribe = await subscribeToNameAnnouncements(queueLiveRankingEntry, {
+      channel: PARTICIPATION_CHANNEL,
+      knownIds,
+    });
+  } catch (error) {
+    console.info("[participant] live ranking unavailable:", error);
+  } finally {
+    rankingLiveStarting = false;
+  }
+}
+
+window.addEventListener("pagehide", () => {
+  rankingLiveUnsubscribe?.();
+  rankingLiveUnsubscribe = null;
+  window.clearTimeout(rankingRefreshTimer);
 });
 
 function buildRanking(announcements) {
@@ -1452,7 +1496,9 @@ async function renderRanking() {
   let ranking = [];
   try {
     const announcements = await getRecentNameAnnouncements({ all: true, channel: PARTICIPATION_CHANNEL });
+    rankingAnnouncements = announcements;
     ranking = buildRanking(announcements);
+    startLiveRanking(announcements.map((entry) => entry.id).filter(Boolean));
   } catch (error) {
     console.info("[participant] ranking unavailable:", error);
     rankingLoaded = false;
