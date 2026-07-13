@@ -3,5 +3,6 @@
 .firebase/
 *.pptx
 node_modules/
+artifacts/
 web/admin-dist/
 shinjuku-dooh-demo/

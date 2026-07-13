@@ -3,6 +3,9 @@
   const SWIPE_TIMES = [4700, 5900, 7100, 8300];
   const FALLBACK_START = 20500;
   const FALLBACK_END = 25500;
+  const requestedTimeParam = new URLSearchParams(window.location.search).get("time");
+  const requestedTime = Number(requestedTimeParam);
+  const hasRequestedTime = requestedTimeParam !== null && Number.isFinite(requestedTime);
 
   const $ = (id) => document.getElementById(id);
   const state = {
@@ -44,6 +47,7 @@
   };
 
   function currentTime() {
+    if (hasRequestedTime) return Math.max(0, Math.min(DURATION_MS, requestedTime));
     if (state.paused) return state.pausedAt;
     return Math.min(DURATION_MS, performance.now() - state.startedAt);
   }
@@ -159,7 +163,7 @@
     elements.doohScene.classList.remove("is-lit");
     elements.doohScreen.classList.remove("is-fallback");
     updateStage(0);
-    requestAnimationFrame(tick);
+    if (!hasRequestedTime) requestAnimationFrame(tick);
   }
 
   elements.pauseButton.addEventListener("click", () => {
@@ -176,4 +180,5 @@
   $("replayButton").addEventListener("click", replay);
 
   replay();
+  if (hasRequestedTime) updateStage(currentTime());
 })();
