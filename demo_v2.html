@@ -193,11 +193,11 @@
         .hint { display: none; }
         body.dooh-dev .hint { display: block; }
 
-        /* 累計人数と支援者コメントは、18人達成の祝祭のときだけ */
+        /* 累計人数はDOOHの現在地として常設する */
         .dock .live .label,
         .dock .live .value {
-            opacity: 0;
-            transform: translateY(8px);
+            opacity: 1;
+            transform: none;
             transition: opacity 700ms ease, transform 700ms ease;
         }
 
