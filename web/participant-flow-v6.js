@@ -391,6 +391,8 @@ const UI_TEXT = {
     nicknameHelp: "ニックネームで入力。参加証・DOOH・ランキングに表示されます。",
     rankingTitle: "参加者ランキング",
     rankingKicker: "通算参加日数の多い順",
+    rankingOpen: "参加者ランキングを見る",
+    rankingClose: "ランキングを閉じる",
     rankingDays: "{days}日",
     rankingSelfNote: "あなたは{rank}位です。",
     rankingAnonymousNote: "名前を入力するとランキングに載ります。",
@@ -494,6 +496,8 @@ const UI_TEXT = {
     nicknameHelp: "Your name may appear on the certificate, the DOOH screen and the participant ranking.\nPlease use a nickname, not your real name.",
     rankingTitle: "Participant ranking",
     rankingKicker: "By total days taken part",
+    rankingOpen: "View participant ranking",
+    rankingClose: "Close ranking",
     rankingDays: "{days} days",
     rankingSelfNote: "You are ranked #{rank}.",
     rankingAnonymousNote: "Enter a name to appear in the ranking.",
@@ -723,6 +727,7 @@ function applyLanguage() {
   setElementText("#shareTitle", text("shareTitle"));
   setElementText("#rankingTitle", text("rankingTitle"));
   setElementText("#rankingKicker", text("rankingKicker"));
+  updateRankingToggleLabel();
   paintRanking();   // 行と注記は言語ごとに作り直す
   setElementText("#shareBtn", text("share"));
   setElementText("#shareLineBtn", text("shareLine"));
@@ -1370,11 +1375,29 @@ function setTrackPosition(index, dragPercent = 0) {
 // visitorId で突き合わせた結果が getRecentNameAnnouncements から返る。
 const RANKING_TOP = 10;
 const rankingPanel = document.getElementById("rankingPanel");
+const rankingToggle = document.getElementById("rankingToggle");
+const rankingToggleLabel = document.getElementById("rankingToggleLabel");
+const rankingBody = document.getElementById("rankingBody");
 const rankingList = document.getElementById("rankingList");
 const rankingNote = document.getElementById("rankingNote");
 let rankingLoaded = false;
 let rankingData = null;    // 言語を切り替えたときに描き直せるよう保持する
 let rankingSelfIndex = -1;
+
+function updateRankingToggleLabel() {
+  if (!rankingToggle || !rankingToggleLabel) return;
+  const isOpen = rankingToggle.getAttribute("aria-expanded") === "true";
+  rankingToggleLabel.textContent = text(isOpen ? "rankingClose" : "rankingOpen");
+  const icon = rankingToggle.querySelector(".ranking-toggle-icon");
+  if (icon) icon.textContent = isOpen ? "−" : "＋";
+}
+
+rankingToggle?.addEventListener("click", () => {
+  const willOpen = rankingToggle.getAttribute("aria-expanded") !== "true";
+  rankingToggle.setAttribute("aria-expanded", String(willOpen));
+  if (rankingBody) rankingBody.hidden = !willOpen;
+  updateRankingToggleLabel();
+});
 
 function buildRanking(announcements) {
   // 同じ人が複数回名乗っているので、最新の名前と最大の通算日数にまとめる

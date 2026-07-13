@@ -2,10 +2,49 @@
    通算参加日数の多い順に10人。自分が圏外なら、その下に自分の行を足す。 */
 .ranking {
     margin-top: clamp(20px, 5vw, 32px);
-    padding: clamp(16px, 4vw, 22px);
+    padding: 0;
+    overflow: hidden;
     border: 1px solid var(--separator, rgba(0, 0, 0, 0.1));
     border-radius: var(--radius-lg, 20px);
     background: var(--surface, rgba(255, 255, 255, 0.04));
+}
+
+.ranking-toggle {
+    width: 100%;
+    min-height: 58px;
+    padding: 14px 18px;
+    border: 0;
+    background: transparent;
+    color: var(--ink, inherit);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ranking-toggle-icon {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--bg-soft, rgba(0, 0, 0, 0.06));
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.ranking-body {
+    padding: clamp(16px, 4vw, 22px);
+    border-top: 1px solid var(--separator, rgba(0, 0, 0, 0.1));
+}
+
+.ranking-body[hidden] {
+    display: none;
 }
 
 .ranking-title {

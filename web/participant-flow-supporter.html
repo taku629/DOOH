@@ -98,7 +98,7 @@
         <link rel="stylesheet" href="web/theme-morning.css" />
         <link rel="stylesheet" href="web/outro.css?v=20260608-2" />
         <link rel="stylesheet" href="web/supporter-certificate.css?v=20260712-card-fx-2" />
-        <link rel="stylesheet" href="web/ranking.css?v=20260710-ranking-1" />
+        <link rel="stylesheet" href="web/ranking.css?v=20260713-ranking-2" />
         <link rel="stylesheet" href="web/mobile-fit.css?v=20260713-separated-flows-11" />
     </head>
     <body data-flow-mode="supporter">
@@ -500,12 +500,6 @@
                             id="finalCard"
                             aria-live="polite"
                         ></article>
-                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
-                            <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
-                            <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
-                            <ol class="ranking-list" id="rankingList"></ol>
-                            <p class="ranking-note" id="rankingNote"></p>
-                        </section>
                         <div class="actions stacked">
                             <button class="primary" type="button" id="shareBtn">
                                 シェアする
@@ -533,6 +527,18 @@
                             </button>
                         </div>
                         <p id="shareStatus" aria-live="polite"></p>
+                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
+                            <button class="ranking-toggle" id="rankingToggle" type="button" aria-expanded="false" aria-controls="rankingBody">
+                                <span id="rankingToggleLabel">参加者ランキングを見る</span>
+                                <span class="ranking-toggle-icon" aria-hidden="true">＋</span>
+                            </button>
+                            <div class="ranking-body" id="rankingBody" hidden>
+                                <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
+                                <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
+                                <ol class="ranking-list" id="rankingList"></ol>
+                                <p class="ranking-note" id="rankingNote"></p>
+                            </div>
+                        </section>
 
                     </section>
                 </div>
@@ -1121,7 +1127,7 @@
 
         <script
             type="module"
-            src="web/participant-flow.js?v=20260713-separated-flows-19"
+            src="web/participant-flow.js?v=20260713-separated-flows-20"
         ></script>
     </body>
 </html>
