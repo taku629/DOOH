@@ -317,15 +317,9 @@
                             class="support-choice"
                             aria-labelledby="supportChoiceTitle"
                         >
-                            <p class="support-choice-kicker">
-                                何に使われているの？
-                            </p>
                             <h3 id="supportChoiceTitle">
-                                応援したい取り組みを見る
+                                応援先を選ぶ（任意）
                             </h3>
-                            <p class="support-choice-lead">
-                                任意です。タップすると取り組みの概要を確認できます。
-                            </p>
                             <div
                                 class="support-choice-options"
                                 role="group"
@@ -388,7 +382,6 @@
                                 <h3 id="supportTrendTitle">
                                     犯罪件数は減少傾向
                                 </h3>
-                                <p>一方で、不安感はまだ残っています。</p>
                             </div>
                             <svg
                                 class="support-trend-chart"
@@ -421,11 +414,8 @@
                                 <text x="18" y="88">2009年</text>
                                 <text class="support-trend-label-now" x="170" y="90">2024年</text>
                             </svg>
-                            <p class="support-trend-stat">
-                                刑法犯認知件数：2009年 10,968件 → 2024年 6,025件
-                            </p>
                             <p class="support-trend-note">
-                                出典：警視庁公開データ。詳細は参加証作成後に確認できます。
+                                出典：警視庁公開データ
                             </p>
                         </section>
                         <label class="sparkle-field-label" for="nickname"
@@ -448,11 +438,10 @@
                             />
                         </div>
                         <p class="field-helper" id="nicknameHelp">
-                            入力した名前は参加証とDOOH、参加者ランキングに表示されます。<br />本名でなくニックネームを入力してください。
+                            ニックネームで入力。参加証・DOOH・ランキングに表示されます。
                         </p>
-                        <fieldset class="ticker-font-picker" aria-describedby="tickerFontHelp">
+                        <fieldset class="ticker-font-picker">
                             <legend>名前の見た目を選ぶ</legend>
-                            <p id="tickerFontHelp">好きな見た目を選べます</p>
                             <div class="ticker-font-options" role="group" aria-label="名前の見た目を選ぶ">
                                 <button type="button" class="ticker-font-option is-selected" data-ticker-font="noto" aria-pressed="true">標準</button>
                                 <button type="button" class="ticker-font-option" data-ticker-font="rounded" aria-pressed="false">まる</button>
@@ -474,7 +463,7 @@
                                 DOOHに一言コメントを表示
                             </h3>
                             <p class="supporter-comment-lead">
-                                4桁のパスコードを入力して<br />新宿への応援コメントをしましょう！
+                                パスコードと一言を入力
                             </p>
                             <div class="supporter-comment-fields">
                                 <label
@@ -1157,7 +1146,7 @@
 
         <script
             type="module"
-                    src="web/participant-flow-v6.js?v=20260713-v6base-2"
+                    src="web/participant-flow-v6.js?v=20260713-v6base-3"
         ></script>
             <script>
             // クラファン支援者版は別サイトへ。スワイプ済みなので遷移先では entry=swiped でスワイプを再要求しない。

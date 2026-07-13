@@ -267,28 +267,21 @@
                         <h2 id="certificateTitle">参加証に名前を残す</h2>
                         <aside class="supporter-route-hero" aria-label="クラファン支援者限定機能">
                             <span>クラファン支援者限定</span>
-                            <strong>4桁のパスコードと一言コメントで、豪華な参加証を作れます</strong>
-                            <p>取組やグラフなど通常サイトの内容も、このページ内ですべて確認できます。</p>
+                            <strong>パスコードと一言で、特別な参加証を作れます</strong>
                         </aside>
                         <div class="section-skip-actions" aria-label="入力欄へのショートカット">
-                            <button class="section-skip-button is-overview" type="button" data-jump-target="supportChoiceSection">取組・グラフを見る</button>
-                            <button class="section-skip-button" type="button" data-jump-target="nickname">参加証を作るところまで移動</button>
-                            <button class="section-skip-button is-supporter" type="button" data-jump-target="supporterCommentEntry">クラファン支援者版を作る</button>
+                            <button class="section-skip-button is-overview" type="button" data-jump-target="supportChoiceSection">取組・グラフ</button>
+                            <button class="section-skip-button" type="button" data-jump-target="nickname">名前入力</button>
+                            <button class="section-skip-button is-supporter" type="button" data-jump-target="supporterCommentEntry">クラファン参加証</button>
                         </div>
                         <section
                             class="support-choice"
                             id="supportChoiceSection"
                             aria-labelledby="supportChoiceTitle"
                         >
-                            <p class="support-choice-kicker">
-                                何に使われているの？
-                            </p>
                             <h3 id="supportChoiceTitle">
-                                応援したい取り組みを見る
+                                応援先を選ぶ（任意）
                             </h3>
-                            <p class="support-choice-lead">
-                                任意です。タップすると取り組みの概要を確認できます。
-                            </p>
                             <div
                                 class="support-choice-options"
                                 role="group"
@@ -351,7 +344,6 @@
                                 <h3 id="supportTrendTitle">
                                     犯罪件数は減少傾向
                                 </h3>
-                                <p>一方で、不安感はまだ残っています。</p>
                             </div>
                             <svg
                                 class="support-trend-chart"
@@ -384,11 +376,8 @@
                                 <text x="18" y="88">2009年</text>
                                 <text class="support-trend-label-now" x="170" y="90">2024年</text>
                             </svg>
-                            <p class="support-trend-stat">
-                                刑法犯認知件数：2009年 10,968件 → 2024年 6,025件
-                            </p>
                             <p class="support-trend-note">
-                                出典：警視庁公開データ。詳細は参加証作成後に確認できます。
+                                出典：警視庁公開データ
                             </p>
                         </section>
                         <label class="sparkle-field-label" for="nickname"
@@ -411,11 +400,10 @@
                             />
                         </div>
                         <p class="field-helper" id="nicknameHelp">
-                            入力した名前は参加証とDOOH、参加者ランキングに表示されます。<br />本名でなくニックネームを入力してください。
+                            ニックネームで入力。参加証・DOOH・ランキングに表示されます。
                         </p>
-                        <fieldset class="ticker-font-picker" aria-describedby="tickerFontHelp">
+                        <fieldset class="ticker-font-picker">
                             <legend>名前の見た目を選ぶ</legend>
-                            <p id="tickerFontHelp">好きな見た目を選べます</p>
                             <div class="ticker-font-options" role="group" aria-label="名前の見た目を選ぶ">
                                 <button type="button" class="ticker-font-option is-selected" data-ticker-font="noto" aria-pressed="true">標準</button>
                                 <button type="button" class="ticker-font-option" data-ticker-font="rounded" aria-pressed="false">まる</button>
@@ -437,7 +425,7 @@
                                 DOOHに一言コメントを表示
                             </h3>
                             <p class="supporter-comment-lead">
-                                4桁のパスコードを入力して<br />新宿への応援コメントをしましょう！
+                                パスコードと一言を入力
                             </p>
                             <div class="supporter-comment-fields">
                                 <label
@@ -474,9 +462,8 @@
                                 class="field-helper supporter-comment-help"
                                 id="supporterCommentHelp"
                             >
-                                パスコードはクラファン支援時にお渡しした4桁の数字です。コメントにURLや個人情報は書けません。
+                                支援時の4桁を入力。URL・個人情報は書けません。
                             </p>
-                            <p class="supporter-create-guide">パスコードと一言コメントを入力したら、画面下の支援者版ボタンから参加証を作れます。</p>
                         </section>
                         <article
                             class="card"
@@ -1134,7 +1121,7 @@
 
         <script
             type="module"
-            src="web/participant-flow.js?v=20260713-separated-flows-18"
+            src="web/participant-flow.js?v=20260713-separated-flows-19"
         ></script>
     </body>
 </html>
