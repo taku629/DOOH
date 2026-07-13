@@ -45,177 +45,6 @@ const supporterCommentHelp = document.getElementById("supporterCommentHelp");
 const tickerFontButtons = [...document.querySelectorAll("[data-ticker-font]")];
 const defaultNicknameHelpText = nicknameHelp?.textContent ?? "";
 const defaultSupporterCommentHelpText = supporterCommentHelp?.textContent ?? "";
-const sectionJumpNav = document.getElementById("sectionJumpNav");
-const sectionJumpToggle = document.getElementById("sectionJumpToggle");
-const sectionJumpMenu = document.getElementById("sectionJumpMenu");
-const sectionJumpButtons = [...document.querySelectorAll("[data-jump-target]")];
-const isSupporterFlow = document.body?.dataset.flowMode === "supporter";
-
-function syncVisibleViewportHeight() {
-  const height = window.visualViewport?.height || window.innerHeight;
-  document.documentElement.style.setProperty("--visible-viewport-height", `${Math.round(height)}px`);
-}
-
-syncVisibleViewportHeight();
-window.visualViewport?.addEventListener("resize", syncVisibleViewportHeight, { passive: true });
-window.addEventListener("orientationchange", syncVisibleViewportHeight, { passive: true });
-
-const certificateStep = steps[2];
-const certificateActions = certificateStep?.querySelector(":scope > .actions");
-const thanksStep = steps[1];
-const thanksActionPortal = thanksStep?.querySelector(":scope > .thanks-actions");
-const thanksPrimaryAction = thanksActionPortal?.querySelector(":scope > .primary");
-const thanksFastTrackAction = document.getElementById("supporterFastTrack");
-
-function syncMobileCertificateActions(stepIndex = currentStep) {
-  const isMobile = window.matchMedia("(max-width: 480px)").matches;
-  const shouldPortalThanks = stepIndex === 1 && isMobile;
-  if (thanksStep && thanksActionPortal && shouldPortalThanks && thanksActionPortal.parentElement !== document.body) {
-    thanksActionPortal.classList.add("is-mobile");
-    document.body.append(thanksActionPortal);
-  } else if (thanksStep && thanksActionPortal && !shouldPortalThanks && thanksActionPortal.parentElement === document.body) {
-    thanksActionPortal.classList.remove("is-mobile");
-    thanksStep.append(thanksActionPortal);
-  }
-
-  if (!certificateStep || !certificateActions) {
-    return;
-  }
-  const shouldPortal = stepIndex === 2 && isMobile;
-  if (shouldPortal && certificateActions.parentElement !== document.body) {
-    certificateActions.classList.add("is-mobile-action-portal");
-    document.body.append(certificateActions);
-  } else if (!shouldPortal && certificateActions.parentElement === document.body) {
-    certificateActions.classList.remove("is-mobile-action-portal");
-    certificateStep.append(certificateActions);
-  }
-}
-
-window.addEventListener("resize", () => syncMobileCertificateActions(), { passive: true });
-
-thanksFastTrackAction?.addEventListener("click", () => {
-  // 通常ページ(standard)ではクラファン入力を持たないので、支援者ページへ遷移する。
-  // スワイプ(募金)は済んでいるため、遷移先では entry=swiped でスワイプを再要求しない。
-  if (document.body.dataset.flowMode === "standard") {
-    const params = new URLSearchParams(window.location.search);
-    params.set("entry", "swiped");
-    const dest = window.location.pathname.includes("participant-flow-shared.html")
-      ? window.location.pathname.replace("participant-flow-shared.html", "participant-flow-supporter.html")
-      : (isMenExperience ? "/supporter/men" : "/supporter/women");
-    window.location.href = `${dest}?${params.toString()}`;
-    return;
-  }
-  setSupporterCertificateIntent(true);
-  showStep(2);
-  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
-});
-
-thanksPrimaryAction?.addEventListener("click", () => setSupporterCertificateIntent(false));
-
-let supporterCertificateIntent = false;
-
-function setSupporterCertificateIntent(isSupporter) {
-  supporterCertificateIntent = isSupporter;
-  document.body.classList.toggle("is-supporter-certificate-intent", isSupporter);
-  if (createCardButton) {
-    createCardButton.textContent = isSupporter
-      ? (isEnglish() ? "Supporter certificate" : "この名前で支援者版")
-      : (isEnglish() ? "Create with this name" : "この名前で作成");
-  }
-  if (skipNameButton) {
-    skipNameButton.textContent = isSupporter
-      ? (isEnglish() ? "Supporter certificate without name" : "名前なしで支援者版")
-      : (isEnglish() ? "Create without a name" : "名前なしで作成");
-  }
-}
-
-[supporterPasscode, supporterComment].forEach((field) => {
-  field?.addEventListener("input", () => {
-    setSupporterCertificateIntent(Boolean(supporterPasscode?.value.trim() || supporterComment?.value.trim()));
-  });
-});
-
-function setSectionJumpMenuOpen(isOpen) {
-  if (!sectionJumpToggle || !sectionJumpMenu) {
-    return;
-  }
-  sectionJumpToggle.setAttribute("aria-expanded", String(isOpen));
-  sectionJumpMenu.hidden = !isOpen;
-  sectionJumpNav?.classList.toggle("is-open", isOpen);
-}
-
-function jumpToCertificateSection(targetId) {
-  const target = document.getElementById(targetId);
-  if (!target) {
-    return;
-  }
-  const scrollTarget = targetId === "nickname"
-    ? document.querySelector('label[for="nickname"]') || target
-    : target;
-  setSectionJumpMenuOpen(false);
-  // #viewport は color-flow の装飾のため overflow:hidden。scrollIntoView だと
-  // この要素までスクロールされ、ユーザーが指やホイールで上に戻せなくなる。
-  // 内側は常に0へ戻し、移動はページ(window)スクロールだけで行う。
-  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  const margin = parseFloat(getComputedStyle(scrollTarget).scrollMarginTop) || 0;
-  viewport.scrollTop = 0;
-  const currentStepEl = steps[currentStep];
-  if (currentStepEl) {
-    currentStepEl.scrollTop = 0;
-  }
-  const docTop = scrollTarget.getBoundingClientRect().top + window.scrollY;
-  window.scrollTo({ top: Math.max(0, docTop - margin), behavior });
-  if (target.matches("input, textarea, button")) {
-    window.setTimeout(() => target.focus({ preventScroll: true }), 360);
-  }
-}
-
-sectionJumpToggle?.addEventListener("click", () => {
-  setSectionJumpMenuOpen(sectionJumpToggle.getAttribute("aria-expanded") !== "true");
-});
-
-sectionJumpButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    if (button.dataset.jumpTarget === "supporterCommentEntry") {
-      setSupporterCertificateIntent(true);
-    } else if (button.dataset.jumpTarget === "nickname") {
-      setSupporterCertificateIntent(false);
-    }
-    jumpToCertificateSection(button.dataset.jumpTarget);
-  });
-});
-
-document.addEventListener("click", (event) => {
-  if (sectionJumpNav && !sectionJumpNav.hidden && !sectionJumpNav.contains(event.target)) {
-    setSectionJumpMenuOpen(false);
-  }
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    setSectionJumpMenuOpen(false);
-    sectionJumpToggle?.focus({ preventScroll: true });
-  }
-});
-
-const jumpSectionIds = ["supportChoiceSection", "nickname", "supporterCommentEntry", "certificatePreview"];
-if (typeof IntersectionObserver === "function") {
-  const jumpSectionObserver = new IntersectionObserver((entries) => {
-    const visible = entries
-      .filter((entry) => entry.isIntersecting)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (!visible) {
-      return;
-    }
-    sectionJumpMenu?.querySelectorAll("[data-jump-target]").forEach((button) => {
-      button.classList.toggle("is-current", button.dataset.jumpTarget === visible.target.id);
-    });
-  }, { rootMargin: "-18% 0px -62% 0px", threshold: [0.01, 0.2, 0.5] });
-  jumpSectionIds.forEach((id) => {
-    const target = document.getElementById(id);
-    if (target) jumpSectionObserver.observe(target);
-  });
-}
 
 // パスコード認証を通ったクラファン支援者だけ、参加証と発行演出が別物になる。
 let isFoundingSupporter = false;
@@ -672,8 +501,8 @@ const UI_TEXT = {
     fontLegend: "Choose name style",
     fontHelp: "Pick the look you like",
     supporterKicker: "For crowdfunding supporters",
-    supporterTitle: "Show your message on the DOOH",
-    supporterLead: "Enter your 4-digit passcode and\nsend a cheer for Shinjuku!",
+    supporterTitle: "Show a short message on DOOH",
+    supporterLead: "Enter a 4-digit passcode\nand leave a message for Shinjuku!",
     passcode: "Passcode",
     comment: "Short message",
     commentPlaceholder: "e.g. May Shinjuku stay welcoming for everyone",
@@ -1640,13 +1469,6 @@ function showStep(index) {
   }
 
   currentStep = index;
-  // 支援者ページでも intent はボタン側で明示的に決める。
-  // ここで強制的に true にすると「通常参加証」を選んでも支援者版扱いになってしまう。
-  syncMobileCertificateActions(index);
-  if (sectionJumpNav) {
-    sectionJumpNav.hidden = index !== 2;
-    if (index !== 2) setSectionJumpMenuOpen(false);
-  }
   viewport.classList.toggle("is-participation-step", index === 0);
   steps.forEach((step, stepIndex) => {
     const isCurrent = stepIndex === index;
@@ -4061,15 +3883,6 @@ if (!isDebugReplay && isYouTubeParticipation && getYouTubeCooldownState().blocke
 }
 mountDebugReplayButton();
 showStep(0);
-// 合体導線: 通常ページでスワイプ→「クラファン支援者版」から遷移してきた場合は、
-// スワイプをやり直させず「参加証に名前を残す」の先頭から始める（直接アクセス時は従来どおりスワイプから）。
-if (
-  document.body.dataset.flowMode === "supporter" &&
-  new URLSearchParams(window.location.search).get("entry") === "swiped"
-) {
-  setSupporterCertificateIntent(true);
-  showStep(2);
-}
 updateMilestonePreview(participantCount);
 loadRelightPlaylist();
 
