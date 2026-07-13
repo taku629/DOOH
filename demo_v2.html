@@ -1759,7 +1759,7 @@
             while (activeNames.length >= MAX_NAMES) dismissName(activeNames[0]);
             const el = document.createElement("div");
             el.className = "impact-name";
-            // 常連は「おかえりなさい」＋通算日数の色。従来ピルが持っていた情報をここへ移す
+            // 通算参加者は文言を増やさず、色だけで区別する。
             const returning = options?.isReturning === true && hasStreakColor(options);
             el.classList.toggle("is-returning", returning);
             if (returning) applyStreakClass(el, options);
@@ -1773,7 +1773,7 @@
                 el.appendChild(badge);
             }
             const line = document.createElement("span");
-            line.textContent = returning ? `おかえりなさい、${raw}さん` : `${raw}さん`;
+            line.textContent = `${raw}さん`;
             el.appendChild(line);
             if (comment) {
                 const c = document.createElement("span");
@@ -2673,8 +2673,6 @@
             applyStreakClass(stage, options);
             item.textContent = LIVE_BROADCAST_MODE
                 ? liveBroadcastText
-                : isReturning
-                ? `${isRealName(raw) ? `おかえりなさい、${raw}さん` : "おかえりなさい"}`
                 : isRealName(raw)
                     ? `${raw}さん、ご参加ありがとうございます`
                     : "ご参加ありがとうございます";
