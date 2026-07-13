@@ -347,8 +347,8 @@
 
         /* 支援者コメントは「祝祭」と「誰も参加していない静かな時間」に出す。
            映像が主役のリレー進行中だけ引っ込む。 */
-        /* 静かな時間はすぐ、祝祭では反転から1.5秒おいてから出す（視線を割らない） */
-        body:not(.is-quiet):not(.comment-ready) .supporter-comment-wall { display: none !important; }
+        /* クラファン支援者本人の参加直後だけコメントを表示する。 */
+        body:not(.supporter-comment-active) .supporter-comment-wall { display: none !important; }
 
         /* 祝祭中は映像が静かなので、コメントを主役として大きく読ませる */
         body.is-celebrating .supporter-comment-text {
@@ -1941,9 +1941,6 @@
                 void billboard.offsetWidth;
                 billboard.classList.add("is-lit");
             }
-            commentDelayTimer = window.setTimeout(
-                () => document.body.classList.add("comment-ready"), COMMENT_DELAY_MS
-            );
         }
 
         function onCelebrationEnd() {
@@ -2494,6 +2491,7 @@
         const supporterCommentRotation = [];
         let supporterCommentIndex = 0;
         let supporterCommentTimer = null;
+        let supporterEventTimer = null;
 
         function getStreakClass(options = {}) {
             // 色は「連続日数」ではなく「通算参加日数」で決める。連続でなくても日数が増えれば色が進む。
@@ -2709,6 +2707,7 @@
             // 着弾エフェクトへ名前を渡す。購読が二重に発火してもズレないよう
             // 「直近の1件だけ・鮮度つき」で持つ（FIFOだとイベント数と飛沫数がずれる）
             window.__setImpactName?.(name, options);
+            showSupporterCommentForParticipant(name);
             participationStackQueue.push({ name, options });
             if (participationStackQueue.length > 120) {
                 participationStackQueue.splice(0, participationStackQueue.length - 120);
@@ -2781,7 +2780,22 @@
                 .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
             supporterCommentRotation.push(...normalized);
             supporterCommentIndex = 0;
-            startSupporterCommentTicker();
+            if (supporterCommentWall) supporterCommentWall.hidden = true;
+        }
+
+        function showSupporterCommentForParticipant(name) {
+            const index = supporterCommentRotation.findIndex(
+                (entry) => entry?.name === name && entry?.comment
+            );
+            if (index < 0) return;
+            supporterCommentIndex = index;
+            renderSupporterComment();
+            document.body.classList.add("supporter-comment-active");
+            window.clearTimeout(supporterEventTimer);
+            supporterEventTimer = window.setTimeout(() => {
+                document.body.classList.remove("supporter-comment-active");
+                if (supporterCommentWall) supporterCommentWall.hidden = true;
+            }, SUPPORTER_COMMENT_ROTATION_MS);
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -2839,11 +2853,9 @@
             pulseCount();
             // DEVの「＋1人参加」は名前を持たないので、確認用のダミー名を回す
             if (DEV) {
-                // 【暫定】クラファン支援者だけを想定して確認するため、DEVの参加者は全員支援者にする。
-                // 名前は実際の支援者コメントのフィードから取るので、突き合わせが必ず成立する。
-                const pool = supporterCommentRotation.length ? supporterCommentRotation : DEV_PERSONAS.filter(Boolean);
-                const persona = pool[count % pool.length];
-                showParticipationThanks(persona?.name, {});
+                // 通常・匿名・常連・クラファンを混ぜ、本番と同じ分岐を確認する。
+                const persona = DEV_PERSONAS[count % DEV_PERSONAS.length];
+                showParticipationThanks(persona?.name, persona ?? {});
             } else {
                 showParticipationThanks();
             }
@@ -3098,7 +3110,7 @@
         skipSceneBtn.addEventListener("click", (e) => { e.stopPropagation(); skipScene(); });
         newParticipantTestBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            const testNames = ["さくら", "タクヤ", "ミナ", "新宿サポーター"];
+            const testNames = ["タクヤ", "ミナ", "はる", "あおい"];
             showThanks(testNames[donorNameTestIndex % testNames.length], { isReturning: false, streakDays: 1, totalDays: 1 });
             donorNameTestIndex += 1;
         });
