@@ -94,13 +94,6 @@ function syncMobileCertificateActions(stepIndex = currentStep) {
 window.addEventListener("resize", () => syncMobileCertificateActions(), { passive: true });
 
 thanksFastTrackAction?.addEventListener("click", () => {
-  if (!isSupporterFlow) {
-    const params = new URLSearchParams(location.search);
-    params.set("entry", "swiped");
-    const experiencePath = document.documentElement.dataset.experience === "men" ? "men" : "women";
-    location.href = `/supporter/${experiencePath}?${params.toString()}`;
-    return;
-  }
   setSupporterCertificateIntent(true);
   showStep(2);
   requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
@@ -3641,11 +3634,7 @@ function startPointer(event) {
   if (isInteractiveTarget(event.target)) {
     return;
   }
-  // The first screen visually reads as one swipe surface. Requiring the
-  // gesture to begin on the small icon area made swipes from the copy or
-  // surrounding whitespace appear broken, especially on phones.
-  const activeStep = steps[currentStep];
-  if (!activeStep?.contains(event.target)) {
+  if (!event.target.closest("[data-swipe-control]")) {
     return;
   }
 
@@ -4054,11 +4043,6 @@ if (!isDebugReplay && isYouTubeParticipation && getYouTubeCooldownState().blocke
 }
 mountDebugReplayButton();
 showStep(0);
-if (isSupporterFlow && new URLSearchParams(location.search).get("entry") === "swiped") {
-  setSupporterCertificateIntent(true);
-  showStep(2);
-  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
-}
 updateMilestonePreview(participantCount);
 loadRelightPlaylist();
 
