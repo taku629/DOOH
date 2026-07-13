@@ -1765,8 +1765,8 @@
             return meta;
         }
 
-        // QR・カウンター・タイトル・DEV操作パネルの上に名前を出さない
-        const HUD_SELECTORS = [".cta", ".dock .live", ".brandbar", ".supporter-comment-wall", ".tools"];
+        // 名前ロール・QR・カウンター・タイトル・DEV操作パネルの上に名前を出さない
+        const HUD_SELECTORS = [".thanks", ".cta", ".dock .live", ".brandbar", ".supporter-comment-wall", ".tools"];
 
         function hudRects() {
             return HUD_SELECTORS.flatMap((sel) => [...document.querySelectorAll(sel)])
