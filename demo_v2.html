@@ -278,6 +278,19 @@
             mask-repeat: no-repeat;
         }
 
+        .ink-outline.is-name-linked {
+            z-index: 4;
+            background: linear-gradient(135deg, #ffffff 0%, #f9f871 28%, #4dd4ff 62%, #ff8fd0 100%);
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.92))
+                drop-shadow(0 0 26px rgba(77, 212, 255, 0.72));
+        }
+
+        .ink-outline.is-name-linked.is-supporter {
+            background: linear-gradient(135deg, #fff7c8 0%, #ffd56a 48%, #ff8fd0 100%);
+            filter: drop-shadow(0 0 12px rgba(255, 245, 190, 0.96))
+                drop-shadow(0 0 32px rgba(255, 197, 72, 0.78));
+        }
+
         /* 支援者は文言ラベルではなく、彩のシンボルとラインで見分ける。 */
         .supporter-sigil {
             display: block;
@@ -413,7 +426,7 @@
         /* 支援者コメントは「祝祭」と「誰も参加していない静かな時間」に出す。
            映像が主役のリレー進行中だけ引っ込む。 */
         /* クラファン支援者本人の参加直後だけコメントを表示する。 */
-        body:not(.supporter-comment-active) .supporter-comment-wall { display: none !important; }
+        body:not(.supporter-comment-active):not(.supporter-comment-history-active) .supporter-comment-wall { display: none !important; }
 
         /* 祝祭中は映像が静かなので、コメントを主役として大きく読ませる */
         body.is-celebrating .supporter-comment-text {
@@ -567,9 +580,34 @@
 
         .live > .label,
         .live > .value,
+        .progress-wrap,
         .cta,
         .thanks {
             transition: opacity 900ms ease, transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 60秒間参加がない時は黄色映像を背景として見せ、参加導線だけを残す。 */
+        body.is-idle-video .live > .label,
+        body.is-idle-video .live > .value,
+        body.is-idle-video .progress-wrap,
+        body.is-idle-video .thanks,
+        body.is-idle-video .participation-thanks,
+        body.is-idle-video .supporter-comment-wall {
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+
+        body.is-idle-video .cta {
+            opacity: 1;
+            transform: none;
+        }
+
+        body.is-idle-video .cta-copy strong,
+        body.is-idle-video .cta-copy small {
+            color: #fff;
+            opacity: 1;
+            text-shadow: 0 2px 18px rgba(0, 0, 0, 0.82);
         }
 
         /* 完成映像の切替中は、固定情報を残しつつ映像へ視線を譲る。 */
@@ -1067,6 +1105,12 @@
             display: flex;
         }
 
+        body.dooh-dev.dev-ui-hidden .tools,
+        body.dooh-dev.dev-ui-hidden .hint,
+        body.dooh-dev.dev-ui-hidden .url-note {
+            display: none !important;
+        }
+
         .tools button {
             pointer-events: auto;
             padding: 10px 16px;
@@ -1293,7 +1337,7 @@
         </aside>
     </div>
 
-    <div class="url-note" id="urlNote">https://dooh-ca9c2.web.app/men</div>
+    <div class="url-note" id="urlNote">https://shinjuku-dooh-live.web.app/join</div>
 
     <div class="tools">
         <button id="addBtn" type="button">＋ 1人参加</button>
@@ -1301,6 +1345,7 @@
         <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
         <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
         <button id="returningParticipantTestBtn" type="button" hidden>通算2〜7日参加を再現</button>
+        <button id="linkedNameTestBtn" type="button" hidden>同じインクに名前を追加</button>
         <button id="crowdTestBtn" type="button" hidden>50人同時参加を再現</button>
         <button id="resetCheckBtn" type="button" hidden>映像リセット確認</button>
         <button id="emergencyStopBtn" class="is-danger" type="button" hidden>緊急停止</button>
@@ -1326,23 +1371,57 @@
             || window.matchMedia("(pointer: coarse) and (max-width: 1180px)").matches;
         const LIVE_BROADCAST_MODE = params.has("live") || params.has("youtube") || params.has("broadcast");
         const MANUAL_MODE = DEV || DEMO_MODE || DOOH_PHONE_PREVIEW;
-        // DEV検証用の人物。支援者(さくら/タクミ/ケンタ)・常連・新規・匿名がひと回りで出る
-        const DEV_PERSONAS = [
-            { name: "タクミ" },                                        // 支援者・新規
-            { name: "ゆうと", isReturning: true, totalDays: 7 },        // 常連7日
-            null,                                                      // 匿名
-            { name: "さくら", isReturning: true, totalDays: 3 },        // 支援者かつ常連
-            { name: "みなみ" },                                        // 新規
-            null,                                                      // 匿名
-            { name: "ケンタ" },                                        // 支援者
-            { name: "あおい", isReturning: true, totalDays: 2 },        // 常連2日
-            null,                                                      // 匿名
+        // DEVの「＋1人参加」用。毎回ランダムな名前と通算参加日数を付ける。
+        const DEV_NAMES = [
+            "さくら", "ゆうと", "あかり", "ケンタ",
+            "みなみ", "はる", "タクミ", "あおい",
+            "ひろと", "りん", "まこと", "こはる",
+            "そうた", "めい", "なお", "ひなた",
         ];
+        let lastDevNameIndex = -1;
+
+        function createRandomDevPersona() {
+            let index = Math.floor(Math.random() * DEV_NAMES.length);
+            if (DEV_NAMES.length > 1 && index === lastDevNameIndex) {
+                index = (index + 1 + Math.floor(Math.random() * (DEV_NAMES.length - 1))) % DEV_NAMES.length;
+            }
+            lastDevNameIndex = index;
+            const totalDays = 1 + Math.floor(Math.random() * 7);
+            return {
+                name: DEV_NAMES[index],
+                isReturning: totalDays > 1,
+                isConsecutiveReturn: false,
+                streakDays: 1,
+                totalDays,
+            };
+        }
         const CONTROL_TOOLS_MODE = DEV || params.has("ops") || params.has("control") || DOOH_PHONE_PREVIEW;
         document.body.classList.toggle("is-manual-mode", CONTROL_TOOLS_MODE);
         document.body.classList.toggle("is-live-broadcast", LIVE_BROADCAST_MODE);
         document.body.classList.toggle("is-dooh-phone-preview", DOOH_PHONE_PREVIEW);
         document.body.classList.toggle("is-mobile-video", MOBILE_VIDEO_MODE);
+        const toolsPanel = document.querySelector(".tools");
+
+        function setDevUiHidden(hidden) {
+            if (!DEV) return;
+            document.body.classList.toggle("dev-ui-hidden", Boolean(hidden));
+        }
+
+        if (DEV && toolsPanel) {
+            const hideDevUiBtn = document.createElement("button");
+            hideDevUiBtn.type = "button";
+            hideDevUiBtn.textContent = "操作表示を隠す";
+            hideDevUiBtn.title = "DEV操作・説明表示を一時的に隠す（Hキーでも切替）";
+            hideDevUiBtn.addEventListener("click", (event) => {
+                event.stopPropagation();
+                setDevUiHidden(true);
+            });
+            toolsPanel.appendChild(hideDevUiBtn);
+
+            if (params.has("clean") || params.has("hide-tools")) {
+                setDevUiHidden(true);
+            }
+        }
         const stage = document.getElementById("stage");
         const countNum = document.getElementById("countNum");
         const progressText = document.getElementById("progressText");
@@ -1370,6 +1449,7 @@
         const skipSceneBtn = document.getElementById("skipSceneBtn");
         const newParticipantTestBtn = document.getElementById("newParticipantTestBtn");
         const returningParticipantTestBtn = document.getElementById("returningParticipantTestBtn");
+        const linkedNameTestBtn = document.getElementById("linkedNameTestBtn");
         const crowdTestBtn = document.getElementById("crowdTestBtn");
         const resetCheckBtn = document.getElementById("resetCheckBtn");
         const emergencyStopBtn = document.getElementById("emergencyStopBtn");
@@ -1378,6 +1458,7 @@
         urlNote?.classList.toggle("is-dev-visible", DEV);
         newParticipantTestBtn.hidden = !CONTROL_TOOLS_MODE;
         returningParticipantTestBtn.hidden = !CONTROL_TOOLS_MODE;
+        linkedNameTestBtn.hidden = !CONTROL_TOOLS_MODE;
         crowdTestBtn.hidden = !CONTROL_TOOLS_MODE;
         resetCheckBtn.hidden = !CONTROL_TOOLS_MODE;
         emergencyStopBtn.hidden = !CONTROL_TOOLS_MODE;
@@ -1886,7 +1967,8 @@
         }
 
         function billboardFlash(name) {
-            if (!name || stage.classList.contains("is-complete")) return;
+            // 最後の1人の名前待ち中は表示し、完成映像が始まった後だけ割り込みを止める。
+            if (!name || celebrationActive) return;
             billboardText.textContent = name;
             billboard.style.transform = billboardMatrix();
             billboard.classList.remove("is-flash", "is-lit");
@@ -1895,9 +1977,11 @@
         }
 
         // 同じ形を2枚重ね、内側を数px縮めて引き算する = 輪郭だけが残る
-        function spawnOutline(p) {
+        function spawnOutline(p, options = {}) {
             const el = document.createElement("div");
             el.className = "ink-outline";
+            el.classList.toggle("is-name-linked", options.linked === true);
+            el.classList.toggle("is-supporter", options.isSupporter === true);
             const [kx, ky] = frameScale();
             const w = p.w * kx, h = p.h * ky, x = p.x * kx, y = p.y * ky;
             const t = 3;  // 線の太さ(px)
@@ -1913,23 +1997,62 @@
             el.style.transformOrigin = `${p.ox}% ${p.oy}%`;
             stage.insertBefore(el, warmLayer);
 
-            el.animate(
-                [
+            const frames = options.linked === true
+                ? [
+                    { opacity: 0, transform: "scale(0.94)", offset: 0 },
+                    { opacity: 1, transform: "scale(1.035)", offset: 0.16 },
+                    { opacity: 0.62, transform: "scale(0.995)", offset: 0.38 },
+                    { opacity: 1, transform: "scale(1.025)", offset: 0.62 },
+                    { opacity: 0, transform: "scale(1.06)", offset: 1 },
+                  ]
+                : [
                     { opacity: 0, transform: "scale(0.97)", offset: 0 },
                     { opacity: 0.95, transform: "scale(1.01)", offset: 0.18 },
                     { opacity: 0.55, transform: "scale(1)", offset: 0.4 },
                     { opacity: 0, transform: "scale(1.03)", offset: 1 },
-                ],
-                { duration: 1100, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
-            ).finished.then(() => el.remove()).catch(() => el.remove());
+                  ];
+            el.animate(frames, {
+                duration: options.linked === true ? 2600 : 1100,
+                easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                fill: "forwards",
+            }).finished.then(() => el.remove()).catch(() => el.remove());
+        }
+
+        function relightParticipation(name, options = {}) {
+            const raw = String(name ?? "").trim().slice(0, 24);
+            const swipeCount = Math.floor(Number(options?.swipeCount));
+            if (!isRealName(raw) || !Number.isFinite(swipeCount) || swipeCount <= 0) {
+                return false;
+            }
+
+            const layerIndex = ((swipeCount - 1) % TOTAL + TOTAL) % TOTAL;
+            const p = placements[layerIndex];
+            if (!p) return false;
+
+            noteParticipationActivity();
+            const isSupporter = options.isSupporter === true || Boolean(supporterCommentFor(raw));
+            spawnOutline(p, { linked: true, isSupporter });
+            showImpactName(p, { raw, options: { ...options, isSupporter } });
+            if (isSupporter) {
+                // 支援者は同じインクと街中の電子看板の両方へ表示する。
+                billboardFlash(raw);
+            }
+            resolvePendingCompletionWithName(swipeCount);
+            return true;
         }
 
         function spawnImpact(layerIndex) {
             const p = placements[layerIndex];
             if (!p) return;
             const meta = takeImpactMeta();
-            const isSupporter = Boolean(meta?.raw && supporterCommentFor(meta.raw));
-            if (meta) showImpactName(p, meta);
+            const isSupporter = Boolean(
+                meta?.options?.isSupporter === true ||
+                (meta?.raw && supporterCommentFor(meta.raw))
+            );
+            if (meta) showImpactName(p, {
+                ...meta,
+                options: { ...meta.options, isSupporter },
+            });
             else spawnOutline(p);
             if (isSupporter && meta?.raw) billboardFlash(meta.raw);
 
@@ -2001,8 +2124,9 @@
         // 起動直後は保存済みの参加数が復元されるので、それを新規参加と誤認して弾けさせない
         const IMPACTS_LIVE_AFTER = Date.now() + 2000;
 
-        const QUIET_MS = 18_000;   // これだけ参加が無ければ「静かな時間」= 支援者コメントの出番
+        const QUIET_MS = 20_000;   // これだけ参加が無ければ「静かな時間」= 過去コメントの出番
         const COMMENT_DELAY_MS = 1500;   // 反転してからコメントを出すまでの間
+        if (!window.__lastParticipationAt) window.__lastParticipationAt = Date.now();
         let wasCelebrating = false;
         let commentDelayTimer = null;
 
@@ -2011,14 +2135,8 @@
         }
 
         function onCelebrationStart() {
-            const host = currentSupporter();
-            if (host?.name) {
-                billboardText.textContent = host.name;
-                billboard.style.transform = billboardMatrix();
-                billboard.classList.remove("is-lit", "is-flash");
-                void billboard.offsetWidth;
-                billboard.classList.add("is-lit");
-            }
+            // 過去の支援者名（例：はる）を達成時に自動選出しない。
+            billboard.classList.remove("is-lit", "is-flash");
         }
 
         function onCelebrationEnd() {
@@ -2035,10 +2153,9 @@
             }
             const lastAt = window.__lastParticipationAt ?? 0;
             document.body.classList.toggle("is-celebrating", celebrating);
-            document.body.classList.toggle(
-                "is-quiet",
-                !celebrating && Date.now() - lastAt > QUIET_MS
-            );
+            const isQuiet = !celebrating && Date.now() - lastAt > QUIET_MS;
+            document.body.classList.toggle("is-quiet", isQuiet);
+            syncSupporterCommentHistory(isQuiet && !idleVideoActive);
             if (!layout) return;
             const onIdx = layers.map((l, i) => (l.classList.contains("is-revealed") ? i : -1))
                 .filter((i) => i >= 0);
@@ -2112,8 +2229,11 @@
         let idleVideoFinishTimer = null;
         let warmPlayRetryTimer = null;
         let celebrationWatchdogTimer = null;
+        let completionNameGraceTimer = null;
+        let pendingCompletionSwipeCount = 0;
         let idleVideoActive = false;
         let celebrationActive = false;
+        let celebrationPersistence = null;
         let celebrationStartedAt = 0;
         let activeChallengeNumber = 0;
         let liveCountInitialized = false;
@@ -2128,6 +2248,8 @@
         let donorNameTestIndex = 0;
         const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
         const CLEAN_SCENE_MS = 7_000 * SCENE_TIME_SCALE;
+        const COMPLETION_NAME_GRACE_MS = 20_000 * SCENE_TIME_SCALE;
+        const COMPLETION_NAME_REVEAL_MS = 3_200 * SCENE_TIME_SCALE;
         const LIVE_REVEAL_INTERVAL_MS = 260;
         const QUEUED_REPLAY_HOLD_MS = 5_000 * SCENE_TIME_SCALE;
         const QUEUED_REPLAY_INTERVAL_MS = 700 * SCENE_TIME_SCALE;
@@ -2270,9 +2392,20 @@
             idleVideoFinishTimer = null;
         }
 
+        function setIdleVideoMode(active) {
+            idleVideoActive = active;
+            document.body.classList.toggle("is-idle-video", active);
+            if (active) {
+                document.body.classList.remove("supporter-comment-history-active");
+                if (!document.body.classList.contains("supporter-comment-active") && supporterCommentWall) {
+                    supporterCommentWall.hidden = true;
+                }
+            }
+        }
+
         function finishIdleVideo() {
             clearIdleVideoTimers();
-            idleVideoActive = false;
+            setIdleVideoMode(false);
             idleLayer.onended = null;
             idleLayer.classList.remove("is-visible");
             try {
@@ -2288,7 +2421,7 @@
                 scheduleIdleVideo();
                 return;
             }
-            idleVideoActive = true;
+            setIdleVideoMode(true);
             try {
                 idleLayer.currentTime = 0;
             } catch {}
@@ -2312,9 +2445,13 @@
 
         function noteParticipationActivity() {
             window.__lastParticipationAt = Date.now();
+            document.body.classList.remove("supporter-comment-history-active");
+            if (!document.body.classList.contains("supporter-comment-active") && supporterCommentWall) {
+                supporterCommentWall.hidden = true;
+            }
             if (idleVideoActive) {
                 clearIdleVideoTimers();
-                idleVideoActive = false;
+                setIdleVideoMode(false);
                 idleLayer.onended = null;
                 idleLayer.classList.remove("is-visible");
                 try {
@@ -2387,13 +2524,43 @@
             if (countdownTimer) clearInterval(countdownTimer);
             if (warmPlayRetryTimer) clearTimeout(warmPlayRetryTimer);
             if (celebrationWatchdogTimer) clearInterval(celebrationWatchdogTimer);
+            if (completionNameGraceTimer) clearTimeout(completionNameGraceTimer);
             celebrationTimer = null;
             warmTimer = null;
             countdownTimer = null;
             warmPlayRetryTimer = null;
             celebrationWatchdogTimer = null;
+            completionNameGraceTimer = null;
             warmLayer.onended = null;
             if (transitionCountdown) transitionCountdown.textContent = "";
+        }
+
+        function startPendingCompletion() {
+            if (celebrationActive || completionNameGraceTimer) return;
+            pendingCompletionSwipeCount = Math.max(1, Math.floor(getVisualParticipantCount()));
+            completionNameGraceTimer = window.setTimeout(() => {
+                completionNameGraceTimer = null;
+                pendingCompletionSwipeCount = 0;
+                startCelebration();
+            }, COMPLETION_NAME_GRACE_MS);
+        }
+
+        function resolvePendingCompletionWithName(swipeCount) {
+            const linkedCount = Math.floor(Number(swipeCount));
+            if (
+                !completionNameGraceTimer ||
+                !Number.isFinite(linkedCount) ||
+                linkedCount !== pendingCompletionSwipeCount
+            ) {
+                return false;
+            }
+            window.clearTimeout(completionNameGraceTimer);
+            completionNameGraceTimer = window.setTimeout(() => {
+                completionNameGraceTimer = null;
+                pendingCompletionSwipeCount = 0;
+                startCelebration();
+            }, COMPLETION_NAME_REVEAL_MS);
+            return true;
         }
 
         function setSceneFocus(active) {
@@ -2447,6 +2614,7 @@
             clearCelebrationTimers();
             warmLayer.onended = null;
             celebrationActive = false;
+            pendingCompletionSwipeCount = 0;
             setSceneFocus(false);
             celebrationStartedAt = 0;
             activeChallengeNumber = 0;
@@ -2465,6 +2633,17 @@
         }
 
         function startCelebration() {
+            const celebrationCount = Math.max(0, Math.floor(getVisualParticipantCount()));
+            if (celebrationPersistence && celebrationCount > 0 && celebrationCount % TOTAL === 0) {
+                try {
+                    const persistenceResult = celebrationPersistence(celebrationCount);
+                    persistenceResult?.catch?.((error) => {
+                        console.info("[demo] celebration state write skipped:", error);
+                    });
+                } catch (error) {
+                    console.info("[demo] celebration state write skipped:", error);
+                }
+            }
             recordDemoEvent("celebration:start");
             clearCelebrationTimers();
             clearIdleVideoTimers();
@@ -2473,6 +2652,7 @@
             // キュー再生中に達成した場合も、次の回は必ず荒廃状態を数秒見せてから再開する。
             clearQueuedReplayTimer();
             celebrationActive = true;
+            pendingCompletionSwipeCount = 0;
             setSceneFocus(true);
             celebrationStartedAt = Date.now();
             const videoDurationMs = Number.isFinite(warmLayer.duration) && warmLayer.duration > 0
@@ -2557,19 +2737,24 @@
         const donorNameRotation = [];
         const STREAK_CLASS_NAMES = ["streak-2", "streak-3", "streak-4", "streak-5", "streak-6", "streak-7"];
         const NAME_NOTIFICATION_MS = 3400;
+        const NAME_TO_TICKER_DELAY_MS = 3200;
+        const NAME_EFFECT_DEDUPE_MS = 10_000;
         const PARTICIPATION_STACK_VISIBLE_MS = 7000;
         const PARTICIPATION_STACK_MAX_VISIBLE = 6;
         const PARTICIPATION_STACK_ARRIVAL_MS = 380;
         let latestDonorEntry = null;
         const nameNotificationQueue = [];
+        const recentNameEffectAt = new Map();
         let nameNotificationTimer = null;
         const participationStackQueue = [];
         let participationStackTimer = null;
         const SUPPORTER_COMMENT_ROTATION_MS = 6500;
+        const SUPPORTER_COMMENT_WAIT_MS = 15_000;
         const supporterCommentRotation = [];
         let supporterCommentIndex = 0;
         let supporterCommentTimer = null;
         let supporterEventTimer = null;
+        let pendingSupporterCommentRequest = null;
 
         function getStreakClass(options = {}) {
             // 色は「連続日数」ではなく「通算参加日数」で決める。連続でなくても日数が増えれば色が進む。
@@ -2594,15 +2779,18 @@
                 name,
                 visitorId: typeof options.visitorId === "string" ? options.visitorId : "",
                 isReturning: options.isReturning === true,
+                isSupporter: options.isSupporter === true,
                 streakDays: Math.max(1, Number(options.streakDays) || 1),
                 totalDays: Math.max(1, Number(options.totalDays) || Number(options.streakDays) || 1),
                 tickerFont: typeof options.tickerFont === "string" ? options.tickerFont : "",
                 createdAt: Number(options.createdAt) || 0,
+                swipeEventId: typeof options.swipeEventId === "string" ? options.swipeEventId : "",
+                swipeCount: Math.max(0, Math.floor(Number(options.swipeCount) || 0)),
             };
-            const dedupeKey = entry.visitorId ? `visitor:${entry.visitorId}` : `name:${entry.name}`;
             const existingIndex = donorNameRotation.findIndex((current) => {
-                const currentKey = current.visitorId ? `visitor:${current.visitorId}` : `name:${current.name}`;
-                return currentKey === dedupeKey;
+                const sameVisitor = Boolean(entry.visitorId && current.visitorId === entry.visitorId);
+                const sameDisplayName = String(current.name).trim() === String(entry.name).trim();
+                return sameVisitor || sameDisplayName;
             });
             if (existingIndex >= 0) {
                 donorNameRotation.splice(existingIndex, 1);
@@ -2643,7 +2831,7 @@
                 name.className = `ticker-name ${getTickerFontClass(entry)}`;
                 name.classList.toggle("is-returning", entry.isReturning && hasStreakColor(entry));
                 name.classList.toggle("is-latest", entry === priorityEntry);
-                name.classList.toggle("is-supporter", Boolean(supporterCommentFor(entry.name)));
+                name.classList.toggle("is-supporter", entry.isSupporter === true || Boolean(supporterCommentFor(entry.name)));
                 applyStreakClass(name, entry);
                 name.textContent = `${entry.name}さん`;
                 group.appendChild(name);
@@ -2661,13 +2849,16 @@
                 return;
             }
 
-            const orderedEntries = priorityEntry
+            const orderedEntriesWithDuplicates = priorityEntry
                 ? [priorityEntry, ...donorNameRotation.filter((entry) => entry !== priorityEntry)]
                 : donorNameRotation;
-            const entries = [];
-            while (entries.length < Math.max(12, orderedEntries.length)) {
-                entries.push(...orderedEntries);
-            }
+            const seenNames = new Set();
+            const entries = orderedEntriesWithDuplicates.filter((entry) => {
+                const normalizedName = String(entry?.name ?? "").trim();
+                if (!normalizedName || seenNames.has(normalizedName)) return false;
+                seenNames.add(normalizedName);
+                return true;
+            });
             const track = document.createElement("span");
             track.className = "thanks-track";
             track.style.setProperty("--ticker-duration", `${Math.max(24, entries.length * 2.1)}s`);
@@ -2706,14 +2897,31 @@
             }
             const raw = String(name ?? "").trim().slice(0, 24);
             if (!isRealName(raw)) return;
-            const entry = addToDonorNameRotation(raw, options);
-            nameNotificationQueue.push(entry);
-            if (nameNotificationQueue.length > 120) {
-                nameNotificationQueue.splice(0, nameNotificationQueue.length - 120);
+            const swipeEventId = String(options?.swipeEventId ?? "").trim();
+            const swipeCount = Math.floor(Number(options?.swipeCount));
+            const effectKey = swipeEventId
+                ? `swipe:${swipeEventId}`
+                : `name:${raw}:${Number.isFinite(swipeCount) ? swipeCount : ""}`;
+            const now = Date.now();
+            const previousEffectAt = recentNameEffectAt.get(effectKey) ?? 0;
+            if (now - previousEffectAt < NAME_EFFECT_DEDUPE_MS) return;
+            recentNameEffectAt.set(effectKey, now);
+            for (const [key, createdAt] of recentNameEffectAt) {
+                if (now - createdAt >= NAME_EFFECT_DEDUPE_MS) recentNameEffectAt.delete(key);
             }
-            renderDonorTicker(latestDonorEntry);
-            showParticipationThanks(raw, entry);
-            processNameNotificationQueue();
+            // 新着名は最初にインク（支援者は電子看板も）へ出し、消えてから名前ロールへ移す。
+            // 同じ名前が同時に2人いるように見える状態を防ぐ。
+            relightParticipation(raw, options);
+            showSupporterCommentForParticipant(raw, options);
+            window.setTimeout(() => {
+                const entry = addToDonorNameRotation(raw, options);
+                nameNotificationQueue.push(entry);
+                if (nameNotificationQueue.length > 120) {
+                    nameNotificationQueue.splice(0, nameNotificationQueue.length - 120);
+                }
+                renderDonorTicker(latestDonorEntry);
+                processNameNotificationQueue();
+            }, NAME_TO_TICKER_DELAY_MS);
         }
 
         function setDonorNameRotation(names) {
@@ -2783,7 +2991,9 @@
         function showParticipationThanks(name, options = {}) {
             // 着弾エフェクトへ名前を渡す。購読が二重に発火してもズレないよう
             // 「直近の1件だけ・鮮度つき」で持つ（FIFOだとイベント数と飛沫数がずれる）
-            window.__setImpactName?.(name, options);
+            if (options?.skipImpact !== true) {
+                window.__setImpactName?.(name, options);
+            }
             showSupporterCommentForParticipant(name);
             participationStackQueue.push({ name, options });
             if (participationStackQueue.length > 120) {
@@ -2801,6 +3011,8 @@
             return {
                 comment,
                 name: isRealName(name) ? name : "",
+                swipeEventId: String(entry?.swipeEventId ?? "").trim(),
+                swipeCount: Math.max(0, Math.floor(Number(entry?.swipeCount) || 0)),
                 createdAt: Number(entry?.createdAt) || 0,
                 id: String(entry?.id ?? entry?.codeHash ?? comment),
             };
@@ -2835,12 +3047,27 @@
             if (supporterCommentRotation.length > 1) {
                 supporterCommentTimer = window.setInterval(() => {
                     // 画面に出ていない間は順番を進めない（見えない秒で持ち時間を消費させない）
-                    const visible = document.body.classList.contains("is-quiet")
-                        || document.body.classList.contains("is-celebrating");
+                    const visible = document.body.classList.contains("supporter-comment-history-active");
                     if (!visible) return;
                     supporterCommentIndex = (supporterCommentIndex + 1) % supporterCommentRotation.length;
                     renderSupporterComment();
                 }, SUPPORTER_COMMENT_ROTATION_MS);
+            }
+        }
+
+        function syncSupporterCommentHistory(active) {
+            const shouldShow = Boolean(
+                active &&
+                !idleVideoActive &&
+                supporterCommentRotation.length > 0 &&
+                !document.body.classList.contains("supporter-comment-active")
+            );
+            const wasShowing = document.body.classList.contains("supporter-comment-history-active");
+            document.body.classList.toggle("supporter-comment-history-active", shouldShow);
+            if (shouldShow && !wasShowing) {
+                startSupporterCommentTicker();
+            } else if (!shouldShow && wasShowing && supporterCommentWall) {
+                supporterCommentWall.hidden = true;
             }
         }
 
@@ -2854,18 +3081,47 @@
             const normalized = comments
                 .map(normalizeSupporterCommentForDisplay)
                 .filter(Boolean)
-                .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
+                .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id))
+                .slice(0, 20);
             supporterCommentRotation.push(...normalized);
             supporterCommentIndex = 0;
             if (supporterCommentWall) supporterCommentWall.hidden = true;
             renderDonorTicker(latestDonorEntry);
+            syncSupporterCommentHistory(
+                document.body.classList.contains("is-quiet") && !idleVideoActive,
+            );
+            if (pendingSupporterCommentRequest) {
+                if (Date.now() <= pendingSupporterCommentRequest.expiresAt) {
+                    showSupporterCommentForParticipant(
+                        pendingSupporterCommentRequest.name,
+                        pendingSupporterCommentRequest.options,
+                    );
+                } else {
+                    pendingSupporterCommentRequest = null;
+                }
+            }
         }
 
-        function showSupporterCommentForParticipant(name) {
+        function showSupporterCommentForParticipant(name, options = {}) {
+            const normalizedName = String(name ?? "").trim().slice(0, 24);
+            const swipeEventId = String(options?.swipeEventId ?? "").trim();
             const index = supporterCommentRotation.findIndex(
-                (entry) => entry?.name === name && entry?.comment
+                (entry) => entry?.comment && (
+                    (swipeEventId && entry?.swipeEventId === swipeEventId) ||
+                    (!swipeEventId && normalizedName && entry?.name === normalizedName)
+                )
             );
-            if (index < 0) return;
+            if (index < 0) {
+                if (options?.isSupporter === true && (swipeEventId || normalizedName)) {
+                    pendingSupporterCommentRequest = {
+                        name: normalizedName,
+                        options: { ...options, swipeEventId },
+                        expiresAt: Date.now() + SUPPORTER_COMMENT_WAIT_MS,
+                    };
+                }
+                return false;
+            }
+            pendingSupporterCommentRequest = null;
             supporterCommentIndex = index;
             renderSupporterComment();
             document.body.classList.add("supporter-comment-active");
@@ -2874,6 +3130,7 @@
                 document.body.classList.remove("supporter-comment-active");
                 if (supporterCommentWall) supporterCommentWall.hidden = true;
             }, SUPPORTER_COMMENT_ROTATION_MS);
+            return true;
         }
 
         // カウントを軽く弾ませてライブ感を出す
@@ -2895,6 +3152,11 @@
                 splat(finalLayer);
                 return;
             }
+            if (!options.force && completionNameGraceTimer) {
+                queuedRevealCount += 1;
+                splat(finalLayer);
+                return;
+            }
             if (!options.force && queuedReplayHoldTimer) {
                 queuedRevealCount += 1;
                 return;
@@ -2911,8 +3173,8 @@
                 splat(el);
                 revealed += 1;
                 if (revealed >= TOTAL) {
-                    // 18人ごとに、きれいな新宿 → 温かな新宿 → 次のチャレンジへ進む
-                    startCelebration();
+                    // 最後のスワイプへ名前を後付けできる猶予を置いてから完成映像へ進む。
+                    startPendingCompletion();
                 }
                 updateHud(); // 進捗バー/テキストを飛沫ごとに更新（ライブ連動の連続表示にも対応）
             } else {
@@ -2925,15 +3187,17 @@
         function addParticipant() {
             if (liveActive && !MANUAL_MODE) return;
             noteParticipationActivity();
+            const persona = DEV ? createRandomDevPersona() : null;
             count += 1;
             triggerSplat();
             updateHud();
             pulseCount();
-            // DEVの「＋1人参加」は名前を持たないので、確認用のダミー名を回す
-            if (DEV) {
-                // 通常・匿名・常連・クラファンを混ぜ、本番と同じ分岐を確認する。
-                const persona = DEV_PERSONAS[count % DEV_PERSONAS.length];
-                showParticipationThanks(persona?.name, persona ?? {});
+            if (persona) {
+                showThanks(persona.name, {
+                    ...persona,
+                    swipeCount: count,
+                    createdAt: Date.now(),
+                });
             } else {
                 showParticipationThanks();
             }
@@ -3019,7 +3283,7 @@
                             if (hint && !DEV) hint.textContent = "● LIVE — 参加証投影中";
                             return;
                         }
-                        if (celebrationActive || queuedReplayHoldTimer) {
+                        if (celebrationActive || completionNameGraceTimer || queuedReplayHoldTimer) {
                             if (hint && !DEV) {
                                 const pending = Math.max(0, count - visualizedLiveCount);
                                 hint.textContent = pending > 0
@@ -3115,7 +3379,7 @@
             liveCountInitialized = resetLiveState ? false : liveCountInitialized;
             visualizedLiveCount = count;
             queuedRevealCount = 0;
-            idleVideoActive = false;
+            setIdleVideoMode(false);
             celebrationActive = false;
             setSceneFocus(false);
             celebrationStartedAt = 0;
@@ -3205,6 +3469,13 @@
             returningParticipantTestDay = returningParticipantTestDay >= 7
                 ? 2
                 : returningParticipantTestDay + 1;
+        });
+        linkedNameTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            relightParticipation("太郎", {
+                swipeCount: Math.max(1, count),
+                isSupporter: true,
+            });
         });
         function simulateCrowd(size = 50) {
             const safeSize = Math.max(1, Math.min(100, Math.floor(Number(size) || 50)));
@@ -3307,7 +3578,10 @@
             if (LIVE_BROADCAST_MODE) {
                 return;
             }
-            if (e.code === "Space" || e.code === "Enter" || e.code === "ArrowRight") {
+            if (DEV && e.code === "KeyH") {
+                e.preventDefault();
+                setDevUiHidden(!document.body.classList.contains("dev-ui-hidden"));
+            } else if (e.code === "Space" || e.code === "Enter" || e.code === "ArrowRight") {
                 e.preventDefault();
                 addParticipant();
             } else if (e.code === "KeyA") {
@@ -3331,6 +3605,7 @@
             applyLiveCount,
             showThanks,
             showParticipationThanks,
+            relightParticipation,
             setDonorNameRotation,
             resumeDonorTicker,
             setSupporterComments,
@@ -3341,6 +3616,9 @@
             stopAutoCountDemo,
             skipScene,
             completeCurrentChallenge,
+            setCelebrationPersistence: (callback) => {
+                celebrationPersistence = typeof callback === "function" ? callback : null;
+            },
             getDebugLog: () => demoDebugLog.slice(),
             getDebugState: () => ({
                 count,
@@ -3355,7 +3633,7 @@
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getLatestSwipeComplete, getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260708-increment-1";
+        import { getLastCelebratedCount, getRecentNameAnnouncements, setLastCelebratedCount, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260714-linked-ink-1";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
@@ -3371,7 +3649,6 @@
             : searchParams.get("channel") === "research" && searchParams.get("team-test") === "1"
                 ? "research"
                 : getChannelForTheme(theme, "default");
-        const INITIAL_COMPLETION_REPLAY_WINDOW_MS = 60 * 60 * 1000;
         let initialCountHandled = false;
 
         async function shouldReplayInitialCompletion(liveCount) {
@@ -3382,17 +3659,21 @@
             try {
                 // swipeイベントは連番countを持たない(participantCountをincrementで採番)ため、
                 // 「直近1時間以内に最後のスワイプがあったか」だけで判定する
-                const latestSwipe = await getLatestSwipeComplete({ channel });
-                const latestCreatedAt = Number(latestSwipe?.createdAt) || 0;
-                return latestCreatedAt > 0
-                    && Date.now() - latestCreatedAt <= INITIAL_COMPLETION_REPLAY_WINDOW_MS;
+                const lastCelebratedCount = await getLastCelebratedCount({ channel });
+                return count > lastCelebratedCount;
             } catch (error) {
-                console.info("[demo] latest swipe check skipped:", error);
+                console.info("[demo] celebration replay state read skipped:", error);
                 return false;
             }
         }
 
         // ?dev のときだけ「本番+1」ボタンを出す：QRと同じFirebaseイベントを1件送って連動確認できる
+        window.__inkDemo?.setCelebrationPersistence((count) =>
+            setLastCelebratedCount(count, { channel }).catch((error) => {
+                console.info("[demo] celebration state write skipped:", error);
+            })
+        );
+
         if (isDevMode) {
             const tools = document.querySelector(".tools");
             const liveBtn = document.createElement("button");
@@ -3424,7 +3705,7 @@
 
         }
 
-        if (!isLiveBroadcastMode) {
+        if (!isLiveBroadcastMode && !isManualOnlyMode) {
             getRecentNameAnnouncements({ channel, all: true })
                 .then((events) => {
                     const validEvents = events
@@ -3466,14 +3747,13 @@
     </script>
 
     <script type="module">
-        // 時間で参加ページのQRを切替：偶数時=男性 / 奇数時=女性
-        // 本番とRSでホストが混ざらないよう、DOOH画面を開いているホストに合わせる。
+        // 男女共通の参加入口へ統一。本番とRSでホストが混ざらないよう、
+        // DOOH画面を開いているホストに合わせて /join を生成する。
         const PARTICIPANT_ORIGIN = /^https?:$/.test(location.protocol)
-            && /^(dooh-ca9c2|shinjuku-dooh-rs)\.web\.app$/.test(location.hostname)
+            && /^(dooh-ca9c2|shinjuku-dooh-live|shinjuku-dooh-rs)\.web\.app$/.test(location.hostname)
             ? location.origin
-            : "https://dooh-ca9c2.web.app";
-        const MEN_URL = `${PARTICIPANT_ORIGIN}/men`;
-        const WOMEN_URL = `${PARTICIPANT_ORIGIN}/women`;
+            : "https://shinjuku-dooh-live.web.app";
+        const JOIN_URL = `${PARTICIPANT_ORIGIN}/join`;
         const qrSearchParams = new URLSearchParams(location.search);
         const QR_YOUTUBE_MODE = qrSearchParams.has("youtube") || qrSearchParams.has("live") || qrSearchParams.has("broadcast");
         const qrCode = document.getElementById("qrCode");
@@ -3481,8 +3761,8 @@
 
         const { default: QRCode } = await import("https://cdn.skypack.dev/qrcode@1.5.3");
 
-        function pickParticipantUrl(now = new Date()) {
-            const baseUrl = now.getHours() % 2 === 0 ? MEN_URL : WOMEN_URL;
+        function pickParticipantUrl() {
+            const baseUrl = JOIN_URL;
             if (!QR_YOUTUBE_MODE) {
                 return baseUrl;
             }
