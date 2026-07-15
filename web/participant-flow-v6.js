@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260714-linked-ink-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260715-name-feed-race-1";
 import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -526,6 +526,7 @@ const UI_TEXT = {
     nameTab: "Enter here",
     nicknamePlaceholder: "e.g. Sakura",
     nicknameHelp: "Your name may appear on the certificate, the DOOH screen and the participant ranking.\nPlease use a nickname, not your real name.",
+    namePublishError: "We could not send your name to the DOOH. Check your connection and try again.",
     rankingTitle: "Participant ranking",
     rankingKicker: "By total days taken part",
     rankingOpen: "View participant ranking",
@@ -2390,11 +2391,14 @@ async function announceDonorName() {
     announcementResult?.blocked === true
   ) {
     setNicknameHelp(NAME_LINK_FAILED_MESSAGE, "error");
+    nickname.setAttribute("aria-invalid", "true");
+    nickname.focus();
     return false;
   }
 
   saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
   hasAnnouncedName = true;
+  nickname.removeAttribute("aria-invalid");
   setNicknameHelp(NAME_LINKED_MESSAGE, "success");
   return true;
 }

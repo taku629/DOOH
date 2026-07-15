@@ -578,39 +578,28 @@ export async function subscribeToNameAnnouncements(callback, options = {}) {
 
     const channel = normalizeChannel(options.channel);
     const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
-    // A moving one-item query emits the newest child and every child that
-    // subsequently becomes newest, without downloading the full history.
-    const liveQuery = sdk.query(shoutsRef, sdk.limitToLast(1));
-    const knownIds = new Set();
+    let latestExistingKey = null;
 
-    // Callers that already fetched the current list can provide its IDs and
-    // avoid downloading the same snapshot again before listening for deltas.
-    const suppliedKnownIds = Array.isArray(options.knownIds);
-    if (suppliedKnownIds) {
-        options.knownIds.forEach((id) => {
-            if (typeof id === "string" && id) knownIds.add(id);
+    try {
+        const latestSnapshot = await sdk.get(sdk.query(
+            shoutsRef,
+            sdk.orderByKey(),
+            sdk.limitToLast(1)
+        ));
+        latestSnapshot.forEach((child) => {
+            latestExistingKey = child.key;
         });
+    } catch (error) {
+        console.warn("[firebase] initial name shouts fetch failed:", error);
     }
 
-    if (!suppliedKnownIds) {
-        try {
-            const snapshot = await sdk.get(liveQuery);
-            if (snapshot.exists()) {
-                snapshot.forEach((child) => {
-                    knownIds.add(child.key);
-                });
-            }
-        } catch (error) {
-            console.warn("[firebase] initial name shouts fetch failed:", error);
-        }
-    }
-
-    return sdk.onChildAdded(liveQuery, (snap) => {
-        if (knownIds.has(snap.key)) {
-            return;
-        }
-        knownIds.add(snap.key);
-
+    // Push IDs are chronological. Starting immediately after the newest existing
+    // key avoids replaying the full history without leaving a gap for a name that
+    // arrives between the initial read and listener attachment.
+    const liveShoutsQuery = latestExistingKey
+        ? sdk.query(shoutsRef, sdk.orderByKey(), sdk.startAfter(latestExistingKey))
+        : shoutsRef;
+    return sdk.onChildAdded(liveShoutsQuery, (snap) => {
         const data = snap.val();
         if (!data || data.type !== "name-announced" || isInappropriateName(data.name)) {
             return;
