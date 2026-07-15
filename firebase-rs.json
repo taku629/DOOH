@@ -56,6 +56,24 @@
             "value": "no-cache, no-store, must-revalidate"
           }
         ]
+      },
+      {
+        "source": "/supporter/women",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/supporter/men",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
       }
     ],
     "rewrites": [
@@ -98,6 +116,14 @@
       {
         "source": "/women",
         "destination": "/web/participant-flow-shared.html"
+      },
+      {
+        "source": "/supporter/men",
+        "destination": "/web/participant-flow-supporter.html"
+      },
+      {
+        "source": "/supporter/women",
+        "destination": "/web/participant-flow-supporter.html"
       },
       {
         "source": "/participant-v1-women",
