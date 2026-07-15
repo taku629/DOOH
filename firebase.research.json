@@ -25,6 +25,7 @@
       "web/admin-src/**",
       "*.pptx",
       "firebase-rs.json",
+      "firebase.loadtest.json",
       "**/*.py",
       "**/__pycache__/**",
       "**/*.log",

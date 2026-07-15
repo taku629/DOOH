@@ -15,6 +15,7 @@ import {
     ref,
     serverTimestamp,
     set,
+    update,
 } from "firebase/database";
 
 const CONFIG_PATH = "/config/firebase-config.json";
@@ -48,6 +49,10 @@ function getParticipationPath(channel = "default") {
 
 function getParticipantCountPath(channel) {
     return `${getParticipationPath(channel)}/participantCount`;
+}
+
+function getLastCelebratedCountPath(channel) {
+    return `${getParticipationPath(channel)}/lastCelebratedCount`;
 }
 
 function getDisplayConfigPath(channel) {
@@ -154,7 +159,10 @@ export async function resetParticipantCount(options = {}) {
     const { database } = await requireAdminContext();
     const channel = normalizeChannel(options.channel);
 
-    await set(ref(database, getParticipantCountPath(channel)), 0);
+    await update(ref(database), {
+        [getParticipantCountPath(channel)]: 0,
+        [getLastCelebratedCountPath(channel)]: 0,
+    });
 }
 
 export async function subscribeToParticipantCount(callback, options = {}) {

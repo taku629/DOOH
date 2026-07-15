@@ -2134,3 +2134,23 @@ body.is-youtube-locked .slider-thumb {
   display: inline-block;
   transform-origin: 50% 70%;
 }
+.ink-link-note {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0 20px;
+  padding: 14px 16px;
+  border: 1px solid rgba(70, 141, 176, 0.28);
+  border-radius: 16px;
+  background: linear-gradient(120deg, rgba(77, 212, 255, 0.1), rgba(255, 143, 208, 0.08));
+  color: #30383c;
+}
+
+.ink-link-note strong {
+  font-size: 1rem;
+  color: #111719;
+}
+
+.ink-link-note span {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}

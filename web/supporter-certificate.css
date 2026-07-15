@@ -1,0 +1,832 @@
+/*
+ * クラファン支援者（4桁パスコード認証済み）だけに出す参加証と、
+ * 発行の瞬間の全画面シネマティック演出。
+ * 通常の参加証には一切影響しないよう、すべて .is-founding-supporter / #supporterCeremony 配下に閉じる。
+ * テーマ側が body.has-color-participation .card.done まで詳細度を上げてくるため、
+ * 参加証本体は #finalCard を起点にして確実に上書きする。
+ */
+
+:root {
+  --founding-gold: #e8c37a;
+  --founding-gold-bright: #fff3d0;
+  --founding-gold-deep: #a9762c;
+  --founding-ink: #12100c;
+}
+
+/* 金の縁を回すために角度を補間可能にする。未対応ブラウザでは静止した金枠になる。 */
+@property --founding-rim-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ========== 参加証本体 ========== */
+
+/*
+ * 暗い盤面は padding-box、回る金の箔は border-box に敷く。
+ * 擬似要素で縁を作ると overflow:hidden に切られるため、多重背景で表現する。
+ */
+#finalCard.is-founding-supporter {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--founding-gold-bright);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(232, 195, 122, 0.16), transparent 62%) padding-box,
+    linear-gradient(168deg, #16130d 0%, #0b0a07 52%, #131009 100%) padding-box,
+    conic-gradient(
+      from var(--founding-rim-angle),
+      #ff5f6d,
+      #ffc371 14%,
+      #f9f871 27%,
+      #7bed9f 40%,
+      #4dd4ff 54%,
+      #7d8cff 68%,
+      #c084fc 82%,
+      #ff8fd0 92%,
+      #ff5f6d
+    ) border-box;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.58),
+    -12px 0 34px rgba(255, 95, 109, 0.12),
+    12px 0 34px rgba(77, 212, 255, 0.12),
+    inset 0 1px 0 rgba(255, 243, 208, 0.24),
+    inset 0 0 70px rgba(169, 118, 44, 0.06);
+  animation: founding-rim-spin 7s linear infinite;
+}
+
+/* テーマ側が .card::before に敷く明るい装飾を、金の盤面では消す。 */
+#finalCard.is-founding-supporter::before {
+  display: none;
+}
+
+/* 表面を斜めに走る光沢。 */
+#finalCard.is-founding-supporter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    104deg,
+    transparent 38%,
+    rgba(255, 243, 208, 0.16) 47%,
+    rgba(255, 255, 255, 0.34) 50%,
+    rgba(255, 243, 208, 0.16) 53%,
+    transparent 62%
+  );
+  background-size: 260% 100%;
+  background-position: 190% 0;
+  animation: founding-sheen 5.4s var(--ease-in-out) 1.1s infinite;
+}
+
+#finalCard.is-founding-supporter > * {
+  position: relative;
+  z-index: 2;
+}
+
+#finalCard.is-founding-supporter > p:first-of-type {
+  color: var(--founding-gold);
+  letter-spacing: 0.22em;
+  font-weight: 700;
+}
+
+#finalCard.is-founding-supporter .certificate-edition {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  width: fit-content;
+  margin: -3px 0 2px;
+  padding: 5px 10px;
+  border: 1px solid rgba(232, 195, 122, 0.38);
+  border-radius: 999px;
+  color: var(--founding-gold-bright);
+  background: rgba(232, 195, 122, 0.08);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+#finalCard.is-founding-supporter .certificate-edition::before {
+  content: "◆";
+  color: var(--founding-gold);
+}
+
+/* 名前は刻印。塗りを暗く落とし、上下のハイライトで彫り込みに見せる。 */
+#finalCard.is-founding-supporter h3 {
+  color: #fffaf0;
+  background: none;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.7),
+    -3px 0 18px rgba(255, 95, 109, 0.38),
+    3px 0 18px rgba(77, 212, 255, 0.34),
+    0 0 24px rgba(192, 132, 252, 0.18);
+}
+
+#finalCard.is-founding-supporter p,
+#finalCard.is-founding-supporter small {
+  color: rgba(255, 243, 208, 0.72);
+}
+
+#finalCard.is-founding-supporter a {
+  color: var(--founding-gold-bright);
+}
+
+/* 内側で新宿の街並みが色づく。棒＝ビル。 */
+.certificate-city {
+  position: relative;
+  display: block;
+  height: clamp(104px, 30vw, 146px);
+  margin: 18px 0 12px;
+  overflow: hidden;
+  border: 1px solid rgba(232, 195, 122, 0.42);
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(8, 7, 5, 0.2), rgba(8, 7, 5, 0.02)),
+    url("../assets/effects/supporter-keepsake-city-v3.png") center / cover no-repeat;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 243, 208, 0.18),
+    0 10px 30px rgba(0, 0, 0, 0.34),
+    0 0 24px rgba(232, 195, 122, 0.1);
+  opacity: 0;
+  filter: grayscale(1) brightness(0.72);
+  animation:
+    founding-city-wake 900ms var(--ease-out) 700ms forwards,
+    founding-city-colorize 1900ms var(--ease-in-out) 1150ms forwards;
+}
+
+.certificate-city::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.08), transparent 42%, rgba(0, 0, 0, 0.34)),
+    linear-gradient(105deg, transparent 36%, rgba(255, 243, 208, 0.22) 49%, transparent 62%);
+  background-size: 240% 100%;
+  animation: founding-city-sheen 5.8s var(--ease-in-out) 1.5s infinite;
+}
+
+#finalCard.is-founding-supporter .certificate-message {
+  position: relative;
+  margin: 18px 0 4px;
+  padding: 18px 18px 17px;
+  border: 1px solid rgba(232, 195, 122, 0.34);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(232, 195, 122, 0.12), transparent 48%),
+    rgba(255, 243, 208, 0.045);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 243, 208, 0.11),
+    0 10px 26px rgba(0, 0, 0, 0.24);
+}
+
+#finalCard.is-founding-supporter .certificate-message::before,
+#finalCard.is-founding-supporter .certificate-message::after {
+  position: absolute;
+  color: rgba(232, 195, 122, 0.34);
+  font-family: Georgia, serif;
+  font-size: 2.7rem;
+  line-height: 1;
+}
+
+#finalCard.is-founding-supporter .certificate-message::before {
+  content: "“";
+  top: 5px;
+  left: 9px;
+}
+
+#finalCard.is-founding-supporter .certificate-message::after {
+  content: "”";
+  right: 9px;
+  bottom: -8px;
+}
+
+#finalCard.is-founding-supporter .certificate-message span {
+  display: block;
+  margin: 0 0 8px 22px;
+  color: var(--founding-gold);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+
+#finalCard.is-founding-supporter .certificate-message q {
+  display: block;
+  color: var(--founding-gold-bright);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.75;
+  quotes: none;
+  text-shadow: 0 0 18px rgba(232, 195, 122, 0.16);
+}
+
+.certificate-city i {
+  display: none;
+}
+
+#finalCard.is-founding-supporter .certificate-serial {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(232, 195, 122, 0.24);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  color: var(--founding-gold);
+}
+
+/* 入れ子の注記カードは、金の盤面の上で読めるよう暗い面に置き換える。 */
+#finalCard.is-founding-supporter .project-note-card,
+#finalCard.is-founding-supporter .official-follow-up {
+  background: rgba(255, 243, 208, 0.05);
+  border: 1px solid rgba(232, 195, 122, 0.2);
+  box-shadow: none;
+}
+
+/* color-flow.css が白地カード前提で !important を打っているため、同じ強さで戻す。 */
+#finalCard.is-founding-supporter .project-note-card span,
+#finalCard.is-founding-supporter .project-note-card p,
+#finalCard.is-founding-supporter .official-follow-up span,
+#finalCard.is-founding-supporter .official-follow-up h4,
+#finalCard.is-founding-supporter .official-follow-up small {
+  color: rgba(255, 243, 208, 0.78) !important;
+}
+
+#finalCard.is-founding-supporter .project-note-card a,
+#finalCard.is-founding-supporter .official-follow-up a {
+  color: var(--founding-ink);
+  background: var(--founding-gold);
+  border-color: transparent;
+}
+
+/* 発行シーケンスの最後にカードが着地する動き。 */
+#finalCard.is-founding-supporter.is-arriving {
+  animation:
+    founding-card-arrive 950ms var(--ease-out) both,
+    founding-rim-spin 7s linear infinite;
+}
+
+.supporter-keepsake-action[hidden] {
+  display: none !important;
+}
+
+.supporter-keepsake-action {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(232, 195, 122, 0.52) !important;
+  color: #fff3d0 !important;
+  background:
+    linear-gradient(110deg, rgba(255, 243, 208, 0.04), rgba(232, 195, 122, 0.15), rgba(255, 243, 208, 0.04)),
+    #12100c !important;
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 243, 208, 0.16) !important;
+}
+
+.supporter-keepsake-action.primary {
+  color: #12100c !important;
+  background: linear-gradient(135deg, #fff3d0, #e8c37a 54%, #a9762c) !important;
+  font-weight: 800;
+}
+
+.supporter-keepsake-action.primary[data-generating="true"] {
+  color: #fff3d0 !important;
+  background:
+    linear-gradient(
+      90deg,
+      #a9762c 0%,
+      #e8c37a var(--video-progress, 0%),
+      #19140c var(--video-progress, 0%),
+      #0b0a07 100%
+    ) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  opacity: 1;
+  transition: background 180ms linear;
+}
+
+.supporter-keepsake-action.primary[data-generating="true"]::after {
+  animation-duration: 2.2s;
+}
+
+.supporter-keepsake-action::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.42) 50%, transparent 62%);
+  background-size: 230% 100%;
+  animation: founding-button-sheen 4.8s var(--ease-in-out) infinite;
+}
+
+.supporter-keepsake-action:disabled {
+  opacity: 0.66;
+  cursor: wait;
+}
+
+/* ========== 発行シネマティック ========== */
+
+#supporterCeremony {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 1;
+}
+
+#supporterCeremony.is-active {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 暗転幕。カードが降りてくる段で透ける。 */
+.ceremony-veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 60% at 50% 50%, #0a0906 0%, #000 100%);
+  transition: opacity 620ms var(--ease-in-out);
+}
+
+.ceremony-city {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.16), rgba(0,0,0,0.58)),
+    url("../assets/effects/supporter-color-ceremony-v2.png") center / cover no-repeat;
+  filter: grayscale(1) brightness(0.46) contrast(1.12);
+  transition: opacity 440ms var(--ease-out), filter 1200ms var(--ease-in-out);
+}
+
+.ceremony-city::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.34)),
+    url("../assets/effects/supporter-color-ceremony-v2.png") center / cover no-repeat;
+  clip-path: circle(0% at 50% 54%);
+  filter: saturate(1.2) contrast(1.04);
+}
+
+#supporterCeremony.is-converging .ceremony-city {
+  opacity: 1;
+}
+
+#supporterCeremony.is-bursting .ceremony-city {
+  filter: grayscale(0.18) brightness(0.78) contrast(1.05);
+}
+
+#supporterCeremony.is-bursting .ceremony-city::after {
+  animation: founding-color-bloom 1450ms var(--ease-out) forwards;
+}
+
+#supporterCeremony.is-lifting .ceremony-city {
+  opacity: 0;
+  transition-duration: 260ms;
+}
+
+#supporterCeremony.is-lifting .ceremony-veil {
+  opacity: 0;
+}
+
+#supporterCeremony.is-lifting {
+  pointer-events: none;
+}
+
+/* 光が中心へ集まる。 */
+.ceremony-converge {
+  position: absolute;
+  width: min(78vw, 420px);
+  aspect-ratio: 1;
+  opacity: 0;
+}
+
+#supporterCeremony.is-converging .ceremony-converge {
+  animation: founding-converge-core 1000ms var(--ease-in-out) forwards;
+}
+
+.ceremony-converge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--founding-gold-bright) 0%, rgba(232, 195, 122, 0.5) 24%, transparent 66%);
+}
+
+.ceremony-ray {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: min(52vw, 280px);
+  transform-origin: top center;
+  transform: rotate(var(--angle)) translateY(0);
+  background: linear-gradient(180deg, var(--ray-color, rgba(232, 195, 122, 0.9)), transparent);
+  box-shadow: 0 0 14px var(--ray-color, rgba(232, 195, 122, 0.7));
+  opacity: 0;
+}
+
+#supporterCeremony.is-converging .ceremony-ray {
+  animation: founding-ray-pull 900ms var(--ease-out) forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+/* 金の粒。 */
+.ceremony-spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--spark-color, var(--founding-gold-bright));
+  box-shadow: 0 0 12px var(--spark-color, var(--founding-gold));
+  opacity: 0;
+}
+
+#supporterCeremony.is-bursting .ceremony-spark {
+  animation: founding-spark-fall 1500ms var(--ease-out) forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+/* ========== keyframes ========== */
+
+@keyframes founding-rim-spin {
+  to { --founding-rim-angle: 360deg; }
+}
+
+@keyframes founding-sheen {
+  0%, 42% { background-position: 190% 0; }
+  72%, 100% { background-position: -90% 0; }
+}
+
+@keyframes founding-city-wake {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes founding-city-colorize {
+  0%, 18% { filter: grayscale(1) brightness(0.72); }
+  58% { filter: grayscale(0.52) brightness(0.9) saturate(0.72); }
+  100% { filter: grayscale(0) brightness(1) saturate(1.16); }
+}
+
+@keyframes founding-color-bloom {
+  from { clip-path: circle(0% at 50% 54%); }
+  to { clip-path: circle(92% at 50% 54%); }
+}
+
+@keyframes founding-city-sheen {
+  0%, 44% { background-position: 180% 0; }
+  76%, 100% { background-position: -80% 0; }
+}
+
+@keyframes founding-button-sheen {
+  0%, 48% { background-position: 180% 0; }
+  78%, 100% { background-position: -80% 0; }
+}
+
+@keyframes founding-city-breathe {
+  0%, 100% { transform: scaleY(1); filter: brightness(1); }
+  50% { transform: scaleY(1.16); filter: brightness(1.5); }
+}
+
+@keyframes founding-card-arrive {
+  0% { opacity: 0; transform: perspective(900px) rotateX(52deg) translateY(-56px) scale(1.14); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: perspective(900px) rotateX(0) translateY(0) scale(1); }
+}
+
+@keyframes founding-converge-core {
+  0% { opacity: 0; transform: scale(1.9); }
+  55% { opacity: 1; transform: scale(0.42); }
+  100% { opacity: 0; transform: scale(0.06); }
+}
+
+@keyframes founding-ray-pull {
+  0% { opacity: 0; transform: rotate(var(--angle)) translateY(min(46vw, 250px)) scaleY(0.3); }
+  45% { opacity: 0.95; }
+  100% { opacity: 0; transform: rotate(var(--angle)) translateY(0) scaleY(1); }
+}
+
+@keyframes founding-spark-fall {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  12% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(0.9);
+  }
+}
+
+/* 動きを減らす設定では演出を止め、静的な豪華さだけ残す。 */
+/* Keepsake v3: the collectible certificate is one compact object; guidance stays outside. */
+#finalCard.is-founding-supporter {
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+#finalCard.is-founding-supporter::after {
+  display: none;
+}
+
+#finalCard.is-founding-supporter .certificate-keepsake {
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  padding: clamp(22px, 5vw, 34px);
+  border: 1px solid rgba(220, 228, 238, 0.34);
+  border-radius: 24px;
+  color: #f7f8fb;
+  background:
+    radial-gradient(circle at 84% 10%, rgba(64, 174, 255, 0.11), transparent 30%),
+    radial-gradient(circle at 8% 86%, rgba(227, 74, 170, 0.09), transparent 34%),
+    linear-gradient(155deg, #11141a 0%, #07090d 55%, #0d1017 100%);
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+#finalCard.is-founding-supporter .certificate-keepsake::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(125deg, rgba(255,255,255,.55), rgba(83,201,255,.38) 38%, rgba(192,132,252,.34) 65%, rgba(255,255,255,.12));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+#finalCard.is-founding-supporter .certificate-keepsake > p:first-child {
+  margin: 0 0 10px;
+  color: rgba(239, 243, 250, 0.72);
+  font-family: var(--font-mono);
+  font-size: clamp(0.68rem, 2.2vw, 0.82rem);
+  letter-spacing: 0.18em;
+}
+
+#finalCard.is-founding-supporter .certificate-edition {
+  margin: 0 0 16px;
+  border-color: rgba(130, 207, 255, 0.26);
+  color: #edf6ff;
+  background: rgba(91, 184, 255, 0.08);
+}
+
+#finalCard.is-founding-supporter .certificate-edition::before {
+  color: #78d8ff;
+}
+
+#finalCard.is-founding-supporter .certificate-city {
+  height: clamp(150px, 40vw, 218px);
+  margin: 0 0 20px;
+  border-color: rgba(218, 228, 241, 0.24);
+  border-radius: 18px;
+  filter: grayscale(0.72) brightness(0.72);
+  box-shadow: inset 0 0 40px rgba(0,0,0,.28), 0 14px 36px rgba(0,0,0,.3);
+  opacity: 1;
+  filter: grayscale(0) brightness(0.82);
+  animation: none;
+}
+
+#finalCard.is-founding-supporter .certificate-light-caption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -8px 0 18px;
+  color: rgba(222, 232, 244, 0.78);
+  font-size: clamp(0.72rem, 2.8vw, 0.84rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+#finalCard.is-founding-supporter .certificate-light-caption::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #f1c76b;
+  box-shadow: 0 0 6px #f1c76b, 0 0 18px rgba(241, 199, 107, 0.72);
+}
+
+#finalCard.is-founding-supporter h3 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: clamp(1.85rem, 7vw, 3rem);
+  font-weight: 850;
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-shadow: 0 0 28px rgba(94, 196, 255, 0.16);
+}
+
+#finalCard.is-founding-supporter .certificate-keepsake > h3 + p {
+  margin: 0;
+  color: rgba(232, 237, 245, 0.7);
+  font-size: clamp(0.82rem, 3vw, 0.96rem);
+  line-height: 1.75;
+}
+
+#finalCard.is-founding-supporter .certificate-message {
+  margin: 22px 0 0;
+  padding: 17px 18px;
+  border-color: rgba(121, 207, 255, 0.22);
+  background: linear-gradient(135deg, rgba(82, 190, 255, 0.07), rgba(197, 96, 255, 0.055));
+  box-shadow: none;
+}
+
+#finalCard.is-founding-supporter .certificate-message span {
+  margin-left: 0;
+  color: #82dcff;
+}
+
+#finalCard.is-founding-supporter .certificate-message q {
+  color: #fff;
+  font-size: clamp(1rem, 4vw, 1.15rem);
+  text-shadow: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 430px) {
+  #finalCard.is-founding-supporter .certificate-keepsake {
+    padding: 20px 18px;
+    border-radius: 20px;
+  }
+
+  #finalCard.is-founding-supporter .certificate-city {
+    height: 150px;
+    border-radius: 14px;
+  }
+
+  #finalCard.is-founding-supporter h3 {
+    font-size: clamp(1.75rem, 10vw, 2.45rem);
+  }
+}
+
+#finalCard.is-founding-supporter .certificate-message::before,
+#finalCard.is-founding-supporter .certificate-message::after {
+  display: none;
+}
+
+#finalCard.is-founding-supporter .certificate-serial {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-color: rgba(218, 228, 241, 0.16);
+  color: rgba(232, 239, 248, 0.68);
+  font-size: 0.7rem;
+}
+
+#finalCard.is-founding-supporter > .project-note-card,
+#finalCard.is-founding-supporter > .official-follow-up {
+  margin: 16px 0 0;
+  color: inherit;
+  background: var(--surface, #fff);
+  border-color: var(--line, rgba(0,0,0,.12));
+  box-shadow: none;
+}
+
+#finalCard.is-founding-supporter > .project-note-card span,
+#finalCard.is-founding-supporter > .project-note-card p,
+#finalCard.is-founding-supporter > .official-follow-up span,
+#finalCard.is-founding-supporter > .official-follow-up h4,
+#finalCard.is-founding-supporter > .official-follow-up small {
+  color: #30343b !important;
+}
+
+#finalCard.is-founding-supporter > .project-note-card a,
+#finalCard.is-founding-supporter > .official-follow-up a {
+  color: #081018;
+  background: #8edcff;
+}
+
+/* The certificate is engraved once, immediately after the full-screen ceremony. */
+#finalCard.is-founding-supporter.is-arriving .certificate-keepsake {
+  animation:
+    keepsake-settle 700ms var(--ease-out) both,
+    keepsake-rim-glow 720ms var(--ease-in-out) 1980ms both;
+}
+
+#finalCard.is-founding-supporter.is-arriving .certificate-city {
+  animation: keepsake-city-awaken 1450ms var(--ease-in-out) both;
+}
+
+#finalCard.is-founding-supporter.is-arriving .certificate-city::after {
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.18)),
+    url("../assets/effects/supporter-keepsake-city-v3.png") center / cover no-repeat;
+  animation: keepsake-color-bloom 1450ms var(--ease-in-out) 120ms both;
+}
+
+#finalCard.is-founding-supporter .certificate-light-caption::before {
+  animation: keepsake-light-breathe 2.8s ease-in-out infinite;
+}
+
+#finalCard.is-founding-supporter.is-arriving .certificate-light-caption {
+  animation: keepsake-engrave 420ms var(--ease-out) 850ms both;
+}
+
+#finalCard.is-founding-supporter.is-arriving .certificate-light-caption::before {
+  animation: keepsake-light-ignite 900ms var(--ease-out) 250ms both,
+    keepsake-light-breathe 2.8s ease-in-out 1150ms infinite;
+}
+
+#finalCard.is-founding-supporter.is-arriving h3 {
+  animation: keepsake-engrave 520ms var(--ease-out) 1120ms both;
+}
+
+#finalCard.is-founding-supporter.is-arriving .certificate-keepsake > h3 + p {
+  animation: keepsake-engrave 480ms var(--ease-out) 1350ms both;
+}
+
+#finalCard.is-founding-supporter.is-arriving .certificate-message {
+  animation: keepsake-engrave 520ms var(--ease-out) 1550ms both;
+}
+
+#finalCard.is-founding-supporter.is-arriving .certificate-serial {
+  animation: keepsake-engrave 460ms var(--ease-out) 1780ms both;
+}
+
+#finalCard.is-founding-supporter .certificate-keepsake::after {
+  display: none;
+}
+
+#finalCard.is-founding-supporter.is-arriving .certificate-keepsake::after {
+  animation: none;
+}
+
+@keyframes keepsake-settle {
+  from { opacity: .88; transform: translateY(10px) scale(.992); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes keepsake-city-awaken {
+  0% { opacity: .78; filter: grayscale(1) brightness(.48); }
+  45% { opacity: 1; filter: grayscale(1) brightness(.58); }
+  100% { opacity: 1; filter: grayscale(0) brightness(.82); }
+}
+
+@keyframes keepsake-color-bloom {
+  0% { opacity: 0; clip-path: circle(0% at 18% 72%); filter: saturate(.7) brightness(.72); }
+  15% { opacity: .98; }
+  100% { opacity: 1; clip-path: circle(145% at 18% 72%); filter: saturate(1.08) brightness(.92); }
+}
+
+@keyframes keepsake-light-ignite {
+  0% { opacity: 0; transform: scale(.2); box-shadow: 0 0 0 rgba(241,199,107,0); }
+  55% { opacity: 1; transform: scale(1.8); box-shadow: 0 0 12px #f1c76b, 0 0 32px rgba(241,199,107,.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes keepsake-light-breathe {
+  0%, 100% { opacity: .72; transform: scale(.88); }
+  50% { opacity: 1; transform: scale(1.14); }
+}
+
+@keyframes keepsake-engrave {
+  from { opacity: 0; transform: translateY(10px); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes keepsake-rim-glow {
+  0%, 100% {
+    border-color: rgba(220, 228, 238, 0.34);
+    box-shadow: 0 26px 70px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1);
+  }
+  50% {
+    border-color: rgba(132, 220, 255, 0.94);
+    box-shadow: 0 26px 70px rgba(0,0,0,.4), 0 0 18px rgba(94,202,255,.52), 0 0 34px rgba(190,128,255,.24), inset 0 1px 0 rgba(255,255,255,.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #finalCard.is-founding-supporter,
+  #finalCard.is-founding-supporter::after,
+  #finalCard.is-founding-supporter.is-arriving,
+  .certificate-city i {
+    animation: none;
+  }
+
+  .certificate-city {
+    opacity: 1;
+    animation: none;
+  }
+}

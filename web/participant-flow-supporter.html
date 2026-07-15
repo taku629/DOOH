@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>新宿DOOH 参加体験</title>
+        <title>新宿DOOH クラファン支援者参加体験</title>
         <script>
             (() => {
                 if (location.protocol !== "file:") {
@@ -99,57 +99,9 @@
         <link rel="stylesheet" href="web/outro.css?v=20260608-2" />
         <link rel="stylesheet" href="web/supporter-certificate.css?v=20260714-ceremony-flash-fix-1" />
         <link rel="stylesheet" href="web/ranking.css?v=20260713-ranking-2" />
-            <style>
-            /* 通常ページ: クラファン入力欄は出さない（支援者版は別サイトへ誘導） */
-            #supporterCommentEntry { display: none !important; }
-            .thanks-choice {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-                margin-top: auto;
-            }
-            .thanks-choice > p {
-                grid-column: 1 / -1;
-                margin: 0 0 2px;
-                color: rgba(21, 25, 25, 0.66);
-                font-size: 0.8rem;
-                font-weight: 900;
-            }
-            .thanks-choice > button {
-                min-height: 58px;
-                margin: 0;
-                padding: 9px 8px;
-                border-radius: 999px;
-            }
-            .thanks-choice > button span,
-            .thanks-choice > button small { display: block; }
-            .thanks-choice > button span {
-                font-size: 0.92rem;
-                font-weight: 900;
-                line-height: 1.3;
-            }
-            .thanks-choice > button small {
-                margin-top: 4px;
-                font-size: 0.78rem;
-                font-weight: 700;
-                line-height: 1.35;
-                opacity: 1;
-            }
-            .thanks-choice > button.thanks-choice-normal {
-                color: #fff !important;
-                background: linear-gradient(135deg, #e0562c, #c23a1f) !important;
-                box-shadow: 0 14px 30px rgba(178, 62, 31, 0.32) !important;
-            }
-            .thanks-choice > button.thanks-choice-normal small { color: rgba(255, 255, 255, 0.94) !important; }
-            .thanks-choice > button.thanks-choice-supporter {
-                color: #fff !important;
-                background: linear-gradient(120deg, #17151d, #34234e 48%, #075b70) !important;
-                box-shadow: inset 0 0 0 1px rgba(114, 82, 246, 0.45), 0 14px 34px rgba(50, 30, 91, 0.3) !important;
-            }
-            .thanks-choice > button.thanks-choice-supporter small { color: rgba(255, 255, 255, 0.88) !important; }
-        </style>
+        <link rel="stylesheet" href="web/mobile-fit.css?v=20260714-linked-ink-1" />
     </head>
-    <body>
+    <body data-flow-mode="supporter">
         <div class="sparkle-pattern" aria-hidden="true"></div>
         <div class="sparkle-particles" aria-hidden="true">
             <span>diamond</span>
@@ -294,12 +246,12 @@
                             >
                             <em>1スワイプ/100円</em>
                         </div>
-                        <div class="thanks-choice" aria-label="作成する参加証を選ぶ">
+                        <div class="thanks-actions thanks-action-portal" aria-label="作成する参加証を選ぶ">
                             <p>作成する参加証を選ぶ</p>
-                            <button class="primary thanks-choice-normal" type="button" data-next>
+                            <button class="primary" type="button" data-next>
                                 <span>通常参加証</span>
                             </button>
-                            <button class="ghost thanks-choice-supporter" type="button" id="supporterSiteLink">
+                            <button class="ghost supporter-fast-track" type="button" id="supporterFastTrack">
                                 <span>クラファン参加証</span>
                             </button>
                         </div>
@@ -317,8 +269,18 @@
                             <strong>あなたのインクは反映済み</strong>
                             <span>名前を追加すると、同じインクが光ります。</span>
                         </p>
+                        <aside class="supporter-route-hero" aria-label="クラファン支援者限定機能">
+                            <span>クラファン支援者限定</span>
+                            <strong>パスコードと一言で、特別な参加証を作れます</strong>
+                        </aside>
+                        <div class="section-skip-actions" aria-label="入力欄へのショートカット">
+                            <button class="section-skip-button is-overview" type="button" data-jump-target="supportChoiceSection">取組・グラフ</button>
+                            <button class="section-skip-button" type="button" data-jump-target="nickname">名前入力</button>
+                            <button class="section-skip-button is-supporter" type="button" data-jump-target="supporterCommentEntry">クラファン参加証</button>
+                        </div>
                         <section
                             class="support-choice"
+                            id="supportChoiceSection"
                             aria-labelledby="supportChoiceTitle"
                         >
                             <h3 id="supportChoiceTitle">
@@ -504,7 +466,7 @@
                                 class="field-helper supporter-comment-help"
                                 id="supporterCommentHelp"
                             >
-                                入力は任意です。URLや個人情報は表示できません。
+                                支援時の4桁を入力。URL・個人情報は書けません。
                             </p>
                         </section>
                         <article
@@ -586,6 +548,19 @@
                 </div>
             </div>
         </main>
+
+        <nav class="section-jump-nav" id="sectionJumpNav" aria-label="参加証ページ内の移動" hidden>
+            <button class="section-jump-toggle" id="sectionJumpToggle" type="button" aria-expanded="false" aria-controls="sectionJumpMenu">
+                ページ内メニュー
+            </button>
+            <div class="section-jump-menu" id="sectionJumpMenu" hidden>
+                <p>ページ内を移動</p>
+                <button type="button" data-jump-target="supportChoiceSection">取り組み</button>
+                <button type="button" data-jump-target="nickname">名前入力</button>
+                <button type="button" data-jump-target="supporterCommentEntry">クラファン</button>
+                <button type="button" data-jump-target="certificatePreview">参加証確認</button>
+            </div>
+        </nav>
 
         <footer class="participant-footer" aria-label="補足情報">
             <a href="/about" data-about-link>この企画について</a>
@@ -1156,26 +1131,7 @@
 
         <script
             type="module"
-                    src="web/participant-flow-v6.js?v=20260715-showcase-swipe-unlock-1"
+            src="web/participant-flow.js?v=20260715-showcase-swipe-unlock-1"
         ></script>
-            <script>
-            // クラファン支援者版は別サイトへ。スワイプ済みなので遷移先では entry=swiped でスワイプを再要求しない。
-            (() => {
-                const btn = document.getElementById("supporterSiteLink");
-                if (!btn) return;
-                btn.addEventListener("click", () => {
-                    const params = new URLSearchParams(location.search);
-                    params.set("entry", "swiped");
-                    let dest;
-                    if (location.pathname.includes("participant-flow-shared.html")) {
-                        dest = location.pathname.replace("participant-flow-shared.html", "participant-flow-supporter.html");
-                    } else {
-                        const isMen = /\/men$/.test(location.pathname) || params.get("exp") === "men";
-                        dest = isMen ? "/supporter/men" : "/supporter/women";
-                    }
-                    location.href = `${dest}?${params.toString()}`;
-                });
-            })();
-        </script>
     </body>
 </html>

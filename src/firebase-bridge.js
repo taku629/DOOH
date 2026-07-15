@@ -54,6 +54,10 @@ function getParticipantCountPath(channel) {
     return `${getParticipationPath(channel)}/participantCount`;
 }
 
+function getLastCelebratedCountPath(channel) {
+    return `${getParticipationPath(channel)}/lastCelebratedCount`;
+}
+
 function getSwipesPath(channel) {
     return `${getParticipationPath(channel)}/swipes`;
 }
@@ -117,6 +121,24 @@ async function loadFirebaseSdk() {
         });
 
     return firebaseSdkPromise;
+}
+
+async function getParticipantCountFromRest(channel) {
+    const config = await loadConfig();
+    if (!config?.databaseURL) {
+        return null;
+    }
+
+    const databaseUrl = String(config.databaseURL).replace(/\/$/, "");
+    const path = getParticipantCountPath(channel)
+        .split("/")
+        .map((segment) => encodeURIComponent(segment))
+        .join("/");
+    const response = await fetch(`${databaseUrl}/${path}.json`, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(`participant count REST fetch failed: ${response.status}`);
+    }
+    return Number(await response.json()) || 0;
 }
 
 async function ensureApp() {
@@ -331,6 +353,18 @@ export async function publishSwipeComplete(payload = {}) {
 }
 
 export async function getParticipantCount(options = {}) {
+    const channel = normalizeChannel(options.channel);
+    // A direct REST read is small and avoids blocking the first paint while the
+    // realtime SDK is still loading (or is stalled by an in-app browser).
+    try {
+        const restCount = await getParticipantCountFromRest(channel);
+        if (restCount !== null) {
+            return restCount;
+        }
+    } catch (error) {
+        console.info("[firebase] REST count fetch failed; using SDK:", error);
+    }
+
     const database = await ensureDatabase();
     if (!database) {
         return null;
@@ -340,9 +374,39 @@ export async function getParticipantCount(options = {}) {
         return null;
     }
 
-    const channel = normalizeChannel(options.channel);
     const snapshot = await sdk.get(sdk.ref(database, getParticipantCountPath(channel)));
     return Number(snapshot.val()) || 0;
+}
+
+export async function getLastCelebratedCount(options = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        return 0;
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        return 0;
+    }
+
+    const channel = normalizeChannel(options.channel);
+    const snapshot = await sdk.get(sdk.ref(database, getLastCelebratedCountPath(channel)));
+    return Math.max(0, Math.floor(Number(snapshot.val()) || 0));
+}
+
+export async function setLastCelebratedCount(count, options = {}) {
+    const database = await ensureDatabase();
+    if (!database) {
+        throw new Error("Firebase database is unavailable.");
+    }
+    const sdk = await loadFirebaseSdk();
+    if (!sdk) {
+        throw new Error("Firebase SDK is unavailable.");
+    }
+
+    const channel = normalizeChannel(options.channel);
+    const safeCount = Math.max(0, Math.floor(Number(count) || 0));
+    await sdk.set(sdk.ref(database, getLastCelebratedCountPath(channel)), safeCount);
+    return safeCount;
 }
 
 export async function getLatestSwipeComplete(options = {}) {
@@ -468,11 +532,22 @@ export async function publishNameAnnouncement(payload = {}) {
         source: payload.source ?? channel,
         visitorId: payload.visitorId ?? null,
         isReturning: payload.isReturning === true,
+        isSupporter: payload.isSupporter === true,
         isConsecutiveReturn: payload.isConsecutiveReturn === true,
         streakDays: Math.max(1, Number(payload.streakDays) || 1),
         totalDays: Math.max(1, Number(payload.totalDays) || 1),
         tickerFont: normalizeTickerFont(payload.tickerFont),
     };
+    const swipeEventId = typeof payload.swipeEventId === "string"
+        ? payload.swipeEventId.trim().slice(0, 64)
+        : "";
+    const swipeCount = Math.floor(Number(payload.swipeCount));
+    if (/^[A-Za-z0-9_-]+$/.test(swipeEventId)) {
+        announcement.swipeEventId = swipeEventId;
+    }
+    if (Number.isFinite(swipeCount) && swipeCount > 0) {
+        announcement.swipeCount = swipeCount;
+    }
     let lastError = null;
 
     for (const delayMs of WRITE_RETRY_DELAYS_MS) {
@@ -503,20 +578,34 @@ export async function subscribeToNameAnnouncements(callback, options = {}) {
 
     const channel = normalizeChannel(options.channel);
     const shoutsRef = sdk.ref(database, getNameShoutsPath(channel));
+    // A moving one-item query emits the newest child and every child that
+    // subsequently becomes newest, without downloading the full history.
+    const liveQuery = sdk.query(shoutsRef, sdk.limitToLast(1));
     const knownIds = new Set();
 
-    try {
-        const snapshot = await sdk.get(shoutsRef);
-        if (snapshot.exists()) {
-            snapshot.forEach((child) => {
-                knownIds.add(child.key);
-            });
-        }
-    } catch (error) {
-        console.warn("[firebase] initial name shouts fetch failed:", error);
+    // Callers that already fetched the current list can provide its IDs and
+    // avoid downloading the same snapshot again before listening for deltas.
+    const suppliedKnownIds = Array.isArray(options.knownIds);
+    if (suppliedKnownIds) {
+        options.knownIds.forEach((id) => {
+            if (typeof id === "string" && id) knownIds.add(id);
+        });
     }
 
-    return sdk.onChildAdded(shoutsRef, (snap) => {
+    if (!suppliedKnownIds) {
+        try {
+            const snapshot = await sdk.get(liveQuery);
+            if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                    knownIds.add(child.key);
+                });
+            }
+        } catch (error) {
+            console.warn("[firebase] initial name shouts fetch failed:", error);
+        }
+    }
+
+    return sdk.onChildAdded(liveQuery, (snap) => {
         if (knownIds.has(snap.key)) {
             return;
         }
@@ -660,6 +749,16 @@ export async function publishSupporterComment(payload = {}) {
         source: payload.source ?? channel,
         visitorId: payload.visitorId ?? null,
     };
+    const swipeEventId = typeof payload.swipeEventId === "string"
+        ? payload.swipeEventId.trim().slice(0, 64)
+        : "";
+    const swipeCount = Math.floor(Number(payload.swipeCount));
+    if (/^[A-Za-z0-9_-]+$/.test(swipeEventId)) {
+        record.swipeEventId = swipeEventId;
+    }
+    if (Number.isFinite(swipeCount) && swipeCount > 0) {
+        record.swipeCount = swipeCount;
+    }
     let lastError = null;
 
     for (const delayMs of WRITE_RETRY_DELAYS_MS) {

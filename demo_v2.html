@@ -1,0 +1,3805 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- ホーム画面に追加して起動するとブラウザUIなしの全画面（プロジェクター表示用） -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="新宿DOOH" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#050606" />
+    <title>新宿インク演出デモ</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.skypack.dev" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=EB+Garamond:wght@500;600;700&family=Hanken+Grotesk:wght@400;600;700&family=M+PLUS+Rounded+1c:wght@500;700&family=Noto+Sans+JP:wght@500;700&family=Shippori+Mincho:wght@600;700&family=Yusei+Magic&display=swap" rel="stylesheet" />
+    <style>
+        /* モノクロ大理石テーマ（theme-men.css / SHINJUKU GIVE に準拠） */
+        :root {
+            --ink: #151919;
+            --ink-strong: #050606;
+            --ink-2: #5c5f60;
+            --silver: #c8c8c8;
+            --line: rgba(21, 25, 25, 0.14);
+            --line-soft: rgba(21, 25, 25, 0.08);
+            --font-sans: "Hanken Grotesk", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+            --font-serif: "EB Garamond", "Noto Sans JP", serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            color: var(--ink);
+            font-family: var(--font-sans);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 大理石の壁（参加サイトと同じ床面） */
+        body {
+            background:
+                radial-gradient(ellipse at 16% 8%, rgba(255, 255, 255, 0.96) 0 12%, transparent 34%),
+                radial-gradient(ellipse at 82% 18%, rgba(230, 230, 230, 0.5) 0 14%, transparent 36%),
+                radial-gradient(ellipse at 42% 88%, rgba(190, 190, 190, 0.18) 0 14%, transparent 38%),
+                linear-gradient(118deg, transparent 0 29%, rgba(21, 21, 21, 0.052) 30%, transparent 33% 100%),
+                linear-gradient(128deg, transparent 0 47%, rgba(21, 21, 21, 0.12) 48%, rgba(21, 21, 21, 0.03) 49%, transparent 51% 100%),
+                linear-gradient(24deg, transparent 0 64%, rgba(48, 48, 48, 0.07) 65%, transparent 68% 100%),
+                #f8f8f8;
+        }
+
+        /* ステージ：画面全体が新宿の写真。黒地に飛沫を screen で累積リビール */
+        .stage {
+            position: fixed;
+            inset: 0;
+            background: #050606;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+            isolation: isolate;
+        }
+
+        /* 待機画面：荒廃した新宿動画をそのまま全画面表示 */
+        .base-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .base-video {
+            filter: brightness(0.82) contrast(1.06) saturate(0.92);
+        }
+
+        .ink-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            /* 全画面いっぱいに新宿を表示 */
+            object-fit: cover;
+            z-index: 1;
+            opacity: 0;
+            /* 黒背景を透過させ、飛沫の明部だけを累積させる */
+            mix-blend-mode: screen;
+            will-change: transform, opacity, filter;
+            pointer-events: none;
+        }
+
+        .ink-layer.is-revealed { opacity: 1; }
+
+        /* 実行時配置版: 18枚のimgは「どの飛沫が出ているか」の状態だけを持つ */
+        img.ink-layer:not(.final-layer) { display: none; }
+
+        .reveal-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 400ms ease;
+            /* 窓の中は「回復した新宿そのもの」。反転後の warm-layer と同一の発色にする */
+            filter: sepia(0.08) saturate(1.08) brightness(0.96) contrast(1.02);
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            mask-composite: add;
+            -webkit-mask-composite: source-over;
+        }
+
+        .reveal-video.has-mask { opacity: 1; }
+
+        /* 着弾。跳ねて消えたあと、下の窓（動くclean映像）が残る */
+        .ink-impact {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+        }
+
+        .ink-impact.is-plate {
+            background: url("assets/ink-people/plate.jpg") center / cover no-repeat;
+            filter: sepia(0.08) saturate(1.08) brightness(0.96);
+        }
+
+        /* 白インク: 暗い廃墟の上でいちばん遠くまで届く */
+        .ink-impact.is-white {
+            background: radial-gradient(circle at 46% 42%, #ffffff 0%, #f1f3f5 55%, #d9dee3 100%);
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.32));
+        }
+
+        /* 映像: 色を付けず、窓の中身（回復した新宿）そのものが飛沫形で弾けて着地する */
+        .ink-impact.is-window video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* 窓（.reveal-video）と同じ発色に合わせ、フェード時の継ぎ目を消す */
+            filter: sepia(0.08) saturate(1.08) brightness(0.96) contrast(1.02);
+        }
+
+        /* 着弾で飛び散る小滴。transform/opacity だけで動かす＝映像の描画を乱さない */
+        .ink-droplet {
+            position: absolute;
+            z-index: 1;
+            border-radius: 50%;
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+
+        /* 参加者の名前は、着弾した飛沫のところに数秒だけ立つ */
+        .impact-name {
+            position: absolute;
+            z-index: 2;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-sans);
+            font-weight: 700;
+            font-size: clamp(1.5rem, 2.7vw, 3.1rem);
+            letter-spacing: 0.02em;
+            color: #fff;
+            text-shadow: 0 4px 26px rgba(0, 0, 0, 0.8), 0 1px 4px rgba(0, 0, 0, 0.6);
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            text-align: center;
+        }
+
+        /* 明るい窓の上でも沈まないよう、文字の背後に太い縁を描く */
+        .impact-name > span {
+            paint-order: stroke fill;
+            -webkit-text-stroke: 10px rgba(6, 9, 12, 0.86);
+        }
+
+        .impact-name .impact-comment { -webkit-text-stroke-width: 6px; }
+        .impact-name .supporter-sigil { -webkit-text-stroke-width: 0; }
+
+        /* ---- DOOHとしての整理: 名前ロール・「あと◯人」・QRを常設 ---- */
+        /* ありがとうスタック / URL / 「第N回 彩リレー」は常設から外す */
+        #participationThanks,
+        .url-note,
+        .challenge-label { display: none !important; }
+
+        /* 運用者向けの操作説明は本番に出さない */
+        .hint { display: none; }
+        body.dooh-dev .hint { display: block; }
+
+        /* 累計人数はDOOHの現在地として常設する */
+        .dock .live .label,
+        .dock .live .value {
+            opacity: 1;
+            transform: none;
+            transition: opacity 700ms ease, transform 700ms ease;
+        }
+
+        body.is-celebrating .dock .live .label,
+        body.is-celebrating .dock .live .value {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* 映像の中の電子広告板。反転の瞬間に点灯し、支援者の名前を掲げる */
+        .billboard {
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 5;
+            transform-origin: 0 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            background: linear-gradient(160deg, rgba(18, 32, 48, 0.92), rgba(10, 18, 30, 0.96));
+            box-shadow: inset 0 0 60px rgba(120, 200, 255, 0.28);
+        }
+
+        .billboard.is-lit { animation: billboard-on 1100ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+
+        /* 支援者のスワイプでは、板が一瞬だけ灯って落ちる（街はまだ直っていない） */
+        .billboard.is-flash { animation: billboard-flash 1250ms ease-out forwards; }
+
+        @keyframes billboard-flash {
+            0%   { opacity: 0; }
+            8%   { opacity: 0.9; }
+            16%  { opacity: 0.15; }
+            26%  { opacity: 0.8; }
+            60%  { opacity: 0.7; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes billboard-on {
+            0%   { opacity: 0; }
+            18%  { opacity: 0.85; }
+            26%  { opacity: 0.1; }
+            38%  { opacity: 0.95; }
+            46%  { opacity: 0.35; }
+            100% { opacity: 1; }
+        }
+
+        .billboard-text {
+            font-family: var(--font-sans);
+            font-weight: 800;
+            font-size: 96px;
+            line-height: 1;
+            letter-spacing: 0.06em;
+            color: #eaf6ff;
+            text-shadow: 0 0 18px rgba(140, 210, 255, 0.9), 0 0 48px rgba(90, 170, 255, 0.55);
+            white-space: nowrap;
+        }
+
+        .billboard-kicker {
+            position: absolute;
+            bottom: 10px;
+            font-size: 26px;
+            letter-spacing: 0.5em;
+            color: rgba(190, 225, 255, 0.75);
+        }
+
+        /* 匿名参加者への返し: その人が開けた窓の輪郭が一瞬だけ光る */
+        .ink-outline {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0;
+            background: #ffffff;
+            mix-blend-mode: screen;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+        }
+
+        .ink-outline.is-name-linked {
+            z-index: 4;
+            background: linear-gradient(135deg, #ffffff 0%, #f9f871 28%, #4dd4ff 62%, #ff8fd0 100%);
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.92))
+                drop-shadow(0 0 26px rgba(77, 212, 255, 0.72));
+        }
+
+        .ink-outline.is-name-linked.is-supporter {
+            background: linear-gradient(135deg, #fff7c8 0%, #ffd56a 48%, #ff8fd0 100%);
+            filter: drop-shadow(0 0 12px rgba(255, 245, 190, 0.96))
+                drop-shadow(0 0 32px rgba(255, 197, 72, 0.78));
+        }
+
+        /* 支援者は文言ラベルではなく、彩のシンボルとラインで見分ける。 */
+        .supporter-sigil {
+            display: block;
+            width: 0.48em;
+            height: 0.48em;
+            margin: 0 auto 0.4em;
+            border-radius: 28% 72% 28% 72%;
+            background: conic-gradient(from 45deg, #e55b55, #efa94a, #7db56e, #4e92bb, #8c79bb, #e55b55);
+            transform: rotate(45deg);
+            box-shadow: 0 0 13px rgba(78, 146, 187, 0.65), 0 0 22px rgba(229, 91, 85, 0.42);
+            animation: supporter-sigil-pulse 1300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .impact-person-name {
+            display: inline-block;
+            position: relative;
+        }
+
+        .impact-name.is-supporter .impact-person-name {
+            padding-bottom: 0.3em;
+        }
+
+        .impact-name.is-supporter .impact-person-name::after {
+            content: "";
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            bottom: 0;
+            height: 4px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #e55b55, #efa94a, #7db56e, #4e92bb, #8c79bb);
+            box-shadow: 0 0 14px rgba(78, 146, 187, 0.45);
+            transform-origin: center;
+            animation: supporter-line-reveal 1200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes supporter-sigil-pulse {
+            0% { opacity: 0; transform: rotate(45deg) scale(0.2); }
+            48% { opacity: 1; transform: rotate(225deg) scale(1.22); }
+            100% { opacity: 0.92; transform: rotate(225deg) scale(1); }
+        }
+
+        @keyframes supporter-line-reveal {
+            from { opacity: 0; transform: scaleX(0); }
+            to { opacity: 1; transform: scaleX(1); }
+        }
+
+        .impact-comment {
+            display: block;
+            margin-top: 0.42em;
+            font-size: 0.52em;
+            font-weight: 500;
+            line-height: 1.45;
+            color: rgba(255, 255, 255, 0.94);
+            max-width: 22em;
+            white-space: normal;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            padding-top: 0.4em;
+        }
+
+        .impact-name.is-supporter {
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 4px 26px rgba(0, 0, 0, 0.9), 0 1px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .impact-name.is-supporter::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: -0.8em -1.25em;
+            border-radius: 50%;
+            pointer-events: none;
+            background: radial-gradient(circle,
+                rgba(255, 255, 255, 0.2) 0%,
+                rgba(78, 146, 187, 0.18) 30%,
+                rgba(140, 121, 187, 0.12) 48%,
+                rgba(229, 91, 85, 0.08) 64%,
+                transparent 76%);
+            animation: supporter-color-bloom 1500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes supporter-color-bloom {
+            0% { opacity: 0; transform: scale(0.45); }
+            38% { opacity: 1; transform: scale(1.08); }
+            100% { opacity: 0.42; transform: scale(1); }
+        }
+
+        /* 常連の一撃は、その人の色に染まったインクになる（彩＝人） */
+        .ink-impact.is-streak {
+            background-color: var(--returning-color, #ffc56d);
+            background-blend-mode: color;
+        }
+
+        /* 白インクは blend だと沈むので、その人の色のグラデーションで直接塗る */
+        .ink-impact.is-white.is-streak {
+            background: radial-gradient(circle at 46% 42%,
+                color-mix(in srgb, var(--returning-color, #ffc56d) 72%, #fff) 0%,
+                var(--returning-color, #ffc56d) 55%,
+                color-mix(in srgb, var(--returning-color, #ffc56d) 60%, #000) 100%);
+            background-blend-mode: normal;
+            filter: drop-shadow(0 0 26px color-mix(in srgb, var(--returning-color, #ffc56d) 45%, transparent));
+        }
+
+        /* 支援者の一撃は、企画テーマの「モノクロから彩」で区別する。 */
+        .ink-impact.is-supporter,
+        .ink-impact.is-streak.is-supporter {
+            background: conic-gradient(from 120deg, #e55b55, #efa94a, #7db56e, #4e92bb, #8c79bb, #e55b55);
+            background-blend-mode: color;
+            box-shadow: 0 0 55px rgba(78, 146, 187, 0.24), 0 0 90px rgba(229, 91, 85, 0.18);
+        }
+
+        /* 白では支援者でもインクの色は変えない（金で塗るとインクの個性が消える）。
+           彩は縁の光としてまとわせる。 */
+        .ink-impact.is-white.is-supporter {
+            background-color: transparent;
+            background-blend-mode: normal;
+            box-shadow: none;
+            filter: drop-shadow(0 0 22px rgba(78, 146, 187, 0.6)) drop-shadow(0 0 34px rgba(229, 91, 85, 0.34));
+        }
+
+        /* 常連参加者は名前が streak 色で立つ（従来ピル/ティッカーが担っていた表現） */
+        .impact-name.is-returning {
+            color: var(--returning-color, #ffc56d);
+            text-shadow: 0 4px 26px rgba(0, 0, 0, 0.8), 0 0 22px var(--returning-color, #ffc56d);
+        }
+
+        .impact-name.is-supporter.is-returning {
+            color: #fff;
+            text-shadow: 0 4px 26px rgba(0, 0, 0, 0.9), 0 0 18px rgba(78, 146, 187, 0.36);
+        }
+
+        /* 支援者コメントは「祝祭」と「誰も参加していない静かな時間」に出す。
+           映像が主役のリレー進行中だけ引っ込む。 */
+        /* クラファン支援者本人の参加直後だけコメントを表示する。 */
+        body:not(.supporter-comment-active):not(.supporter-comment-history-active) .supporter-comment-wall { display: none !important; }
+
+        /* 祝祭中は映像が静かなので、コメントを主役として大きく読ませる */
+        body.is-celebrating .supporter-comment-text {
+            font-size: clamp(1.25rem, 2.1vw, 2.3rem);
+            line-height: 1.45;
+        }
+
+        /* 仕上げの一枚：飛沫ではなく完成版の新宿をくっきり最前面に重ねる */
+        .final-layer {
+            z-index: 2;
+            mix-blend-mode: normal;
+        }
+
+        .warm-layer {
+            z-index: 3;
+            opacity: 0;
+            mix-blend-mode: normal;
+            filter: sepia(0.08) saturate(1.08) brightness(0.96) contrast(1.02);
+            transition: opacity 1800ms ease, filter 1800ms ease;
+        }
+
+        .warm-layer.is-revealed {
+            opacity: 1;
+            filter: sepia(0.12) saturate(1.12) brightness(1.02) contrast(1.04);
+        }
+
+        .idle-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 4;
+            pointer-events: none;
+            opacity: 0;
+            filter: saturate(1.04) brightness(0.98) contrast(1.01);
+            transition: opacity 900ms ease;
+        }
+
+        .idle-layer.is-visible {
+            opacity: 1;
+        }
+
+        /* 全点灯時に画面全体をふわっと持ち上げる（白〜銀のモノクロ光） */
+        .stage.is-complete::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.16), transparent 58%),
+                radial-gradient(circle at 50% 46%, rgba(200, 200, 200, 0.12), transparent 72%);
+            mix-blend-mode: screen;
+            animation: glowPulse 3.2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* ===== ロワーサード：上下のグラデーションで画像を覆わず文字を載せる ===== */
+        .scrim {
+            position: fixed;
+            left: 0;
+            right: 0;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .scrim-top {
+            top: 0;
+            height: 22vh;
+            background: linear-gradient(to bottom, rgba(5, 6, 6, 0.62), rgba(5, 6, 6, 0) 100%);
+        }
+
+        .scrim-bottom {
+            bottom: 0;
+            height: 42vh;
+            background: linear-gradient(to top, rgba(5, 6, 6, 0.9) 0%, rgba(5, 6, 6, 0.62) 26%, rgba(5, 6, 6, 0) 100%);
+        }
+
+        /* ブランド（左上） */
+        .brandbar {
+            position: fixed;
+            top: clamp(20px, 2.6vw, 44px);
+            left: clamp(22px, 2.8vw, 52px);
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: clamp(6px, 0.6vw, 10px);
+            font-family: var(--font-serif);
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            font-size: clamp(1.35rem, 2.2vw, 2.25rem);
+            color: #fff;
+            text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+        }
+
+        .brandbar-title {
+            display: inline-flex;
+            align-items: center;
+            gap: clamp(12px, 1vw, 20px);
+        }
+
+        .brandbar-title::before {
+            content: "";
+            width: clamp(13px, 1.1vw, 20px);
+            height: clamp(13px, 1.1vw, 20px);
+            border-radius: 999px;
+            background: #fff;
+            box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.16), 0 0 16px rgba(255, 255, 255, 0.6);
+            animation: livePulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.7); opacity: 0.55; }
+        }
+
+        /* 操作ヒント／LIVE状態（ブランドの下） */
+        /* タイトルの下の行（LIVE — 参加証投影中） */
+        .hint {
+            font-family: var(--font-sans);
+            font-size: clamp(0.9rem, 1.25vw, 1.15rem);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: rgba(255, 255, 255, 0.72);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+            transition: opacity 400ms ease;
+            pointer-events: none;
+        }
+
+        /* 下部ドック：左＝参加カウント／右＝QR＋CTA */
+        .dock {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 5;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: clamp(24px, 4vw, 80px);
+            padding: clamp(24px, 3.4vw, 64px) clamp(26px, 3.4vw, 68px);
+            pointer-events: none;
+        }
+
+        .live { position: relative; min-width: 0; color: #fff; }
+
+        .live > .label,
+        .live > .value,
+        .progress-wrap,
+        .cta,
+        .thanks {
+            transition: opacity 900ms ease, transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 60秒間参加がない時は黄色映像を背景として見せ、参加導線だけを残す。 */
+        body.is-idle-video .live > .label,
+        body.is-idle-video .live > .value,
+        body.is-idle-video .progress-wrap,
+        body.is-idle-video .thanks,
+        body.is-idle-video .participation-thanks,
+        body.is-idle-video .supporter-comment-wall {
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+
+        body.is-idle-video .cta {
+            opacity: 1;
+            transform: none;
+        }
+
+        body.is-idle-video .cta-copy strong,
+        body.is-idle-video .cta-copy small {
+            color: #fff;
+            opacity: 1;
+            text-shadow: 0 2px 18px rgba(0, 0, 0, 0.82);
+        }
+
+        /* 完成映像の切替中は、固定情報を残しつつ映像へ視線を譲る。 */
+        body.is-scene-focus .live > .label,
+        body.is-scene-focus .live > .value {
+            opacity: 0.28;
+            transform: translateY(8px);
+        }
+
+        body.is-scene-focus .cta {
+            opacity: 0.42;
+            transform: translateY(8px) scale(0.96);
+        }
+
+        body.is-scene-focus .thanks {
+            opacity: 0.08;
+            transform: translateY(-4px);
+        }
+
+        body.is-scene-focus .supporter-comment-wall {
+            opacity: 0.96;
+            transform: translateY(0) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.28);
+            box-shadow: 0 18px 52px rgba(0, 0, 0, 0.3), 0 0 24px rgba(255, 255, 255, 0.08);
+        }
+
+        /* 複数の寄付者名を連結して右から左へ流し続ける放送テロップ。
+           左上が「タイトル＋LIVE行」の2段になったぶん開始位置を下げている。 */
+        .thanks {
+            position: fixed;
+            top: clamp(126px, 15vh, 190px);
+            left: 0;
+            right: 0;
+            z-index: 7;
+            margin: 0;
+            overflow: hidden;
+            font-family: var(--font-sans);
+            font-weight: 700;
+            font-size: clamp(1rem, 1.55vw, 1.55rem);
+            color: rgba(255, 255, 255, 0.82);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.42);
+            pointer-events: none;
+        }
+
+        .thanks-track {
+            display: flex;
+            width: max-content;
+            will-change: transform;
+            animation: donor-ticker var(--ticker-duration, 36s) linear infinite;
+        }
+
+        .thanks-group {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            flex: none;
+            min-width: 100vw;
+            box-sizing: border-box;
+            padding: clamp(9px, 0.8vw, 14px) clamp(28px, 3.4vw, 64px);
+            border-block: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(15, 18, 18, 0.38);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            white-space: nowrap;
+        }
+
+        .ticker-name {
+            color: rgba(255, 255, 255, 0.82);
+            font-feature-settings: "palt" 1;
+            font-synthesis: none;
+            line-height: 1.25;
+        }
+
+        .ticker-font-noto {
+            font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+        }
+
+        .ticker-font-rounded {
+            font-family: "M PLUS Rounded 1c", "Noto Sans JP", sans-serif;
+            font-size: 0.98em;
+        }
+
+        .ticker-font-mincho {
+            font-family: "Shippori Mincho", "Noto Serif JP", serif;
+            font-size: 1.04em;
+            font-weight: 700;
+        }
+
+        .ticker-font-dot {
+            font-family: "DotGothic16", "Noto Sans JP", monospace;
+            font-size: 0.9em;
+            letter-spacing: 0.035em;
+        }
+
+        .ticker-font-yusei {
+            font-family: "Yusei Magic", "Noto Sans JP", sans-serif;
+            font-size: 0.98em;
+            letter-spacing: 0.02em;
+        }
+
+        .ticker-name.is-returning.streak-2,
+        .ticker-name.is-returning.streak-3,
+        .ticker-name.is-returning.streak-4,
+        .ticker-name.is-returning.streak-5,
+        .ticker-name.is-returning.streak-6,
+        .ticker-name.is-returning.streak-7 {
+            color: var(--returning-color, #ffc56d);
+            text-shadow: 0 0 10px color-mix(in srgb, var(--returning-color, #ffc56d) 58%, transparent);
+        }
+
+        .ticker-name.is-latest {
+            padding: 3px 9px;
+            border: 1px solid rgba(255, 255, 255, 0.52);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
+        }
+
+        .streak-2 { --returning-color: #ffc56d; }
+        .streak-3 { --returning-color: #ff8a80; }
+        .streak-4 { --returning-color: #f48fb1; }
+        .streak-5 { --returning-color: #c5a3ff; }
+        .streak-6 { --returning-color: #80d8ff; }
+        .streak-7 { --returning-color: #7ee2b8; }
+
+        .ticker-separator {
+            color: rgba(255, 255, 255, 0.62);
+        }
+
+        @keyframes donor-ticker {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        /* 参加した瞬間だけ、寄付者名テロップとは別に表示するお礼通知。 */
+        .participation-thanks {
+            position: absolute;
+            bottom: calc(100% + 4px);
+            left: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: clamp(7px, 0.7vw, 12px);
+            width: min(64vw, 900px);
+            color: #fff;
+            font-family: var(--font-serif);
+            pointer-events: none;
+        }
+
+        .participation-thanks-item {
+            display: inline-flex;
+            align-items: center;
+            gap: clamp(10px, 0.9vw, 16px);
+            max-width: 100%;
+            padding: clamp(8px, 0.8vw, 13px) clamp(14px, 1.35vw, 24px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            background: rgba(15, 18, 18, 0.54);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: clamp(1rem, 1.55vw, 1.55rem);
+            font-weight: 600;
+            line-height: 1.25;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+            white-space: nowrap;
+            animation: participation-stack-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .participation-thanks-item::before {
+            content: "";
+            width: clamp(9px, 0.8vw, 14px);
+            height: clamp(9px, 0.8vw, 14px);
+            flex: none;
+            border-radius: 999px;
+            background: currentColor;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .participation-thanks-item.is-returning.streak-2,
+        .participation-thanks-item.is-returning.streak-3,
+        .participation-thanks-item.is-returning.streak-4,
+        .participation-thanks-item.is-returning.streak-5,
+        .participation-thanks-item.is-returning.streak-6,
+        .participation-thanks-item.is-returning.streak-7 {
+            color: var(--returning-color, #ffc56d);
+            text-shadow: 0 2px 16px color-mix(in srgb, var(--returning-color, #ffc56d) 48%, #000);
+        }
+
+        .participation-thanks-item.is-leaving {
+            animation: participation-stack-out 460ms ease-in both;
+        }
+
+        @keyframes participation-stack-in {
+            from { opacity: 0; transform: translateY(18px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes participation-stack-out {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-16px); }
+        }
+
+        .supporter-comment-wall {
+            position: fixed;
+            /* 名前テロップ(top 15vh + 帯の高さ約64px)の下に必ず収まる位置 */
+            top: clamp(216px, 23vh, 290px);
+            right: clamp(26px, 3.4vw, 68px);
+            z-index: 6;
+            width: min(38vw, 620px);
+            min-width: 360px;
+            padding: clamp(15px, 1.35vw, 24px) clamp(20px, 1.8vw, 34px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: clamp(16px, 1.45vw, 24px);
+            background: linear-gradient(135deg, rgba(15, 18, 18, 0.7), rgba(15, 18, 18, 0.46));
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #fff;
+            box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+            pointer-events: none;
+            transition: opacity 900ms ease, transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .supporter-comment-wall[hidden] {
+            display: none;
+        }
+
+        .supporter-comment-wall.is-switching {
+            animation: supporter-comment-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .supporter-comment-kicker {
+            display: block;
+            margin-bottom: 5px;
+            font-size: clamp(0.76rem, 1vw, 1rem);
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            color: rgba(255, 255, 255, 0.64);
+        }
+
+        .supporter-comment-text {
+            margin: 0;
+            font-family: var(--font-serif);
+            font-size: clamp(1.28rem, 1.85vw, 2rem);
+            font-weight: 600;
+            line-height: 1.32;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+        }
+
+        .supporter-comment-name {
+            display: block;
+            margin-top: 7px;
+            font-size: clamp(0.82rem, 1.08vw, 1.1rem);
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        @keyframes supporter-comment-in {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 900px) {
+            .supporter-comment-wall {
+                top: clamp(196px, 21vh, 240px);
+                right: clamp(18px, 3vw, 28px);
+                width: min(42vw, 360px);
+                min-width: 240px;
+            }
+        }
+
+        .stage.is-returning-pulse::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 30% 70%, color-mix(in srgb, var(--returning-color, #ffc56d) 34%, transparent), transparent 38%),
+                radial-gradient(circle at 70% 30%, color-mix(in srgb, var(--returning-color, #ffc56d) 20%, transparent), transparent 46%);
+            mix-blend-mode: screen;
+            animation: returningPulse 2600ms ease-out both;
+        }
+
+        @keyframes returningPulse {
+            0% { opacity: 0; }
+            25% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .live .value span.num { display: inline-block; }
+
+        body.is-live-broadcast .thanks,
+        body.is-live-broadcast .supporter-comment-wall {
+            display: none !important;
+        }
+
+        .ticker-name.is-supporter {
+            color: #fff;
+        }
+
+        .ticker-name.is-supporter::before {
+            content: "✦";
+            display: inline-block;
+            margin-right: 0.38em;
+            color: #7dbce0;
+            text-shadow: 0 0 8px rgba(229, 91, 85, 0.72), 0 0 12px rgba(125, 181, 110, 0.5);
+        }
+
+        body.is-live-broadcast .participation-thanks {
+            left: clamp(26px, 3.4vw, 68px);
+            bottom: clamp(200px, 19vw, 330px);
+        }
+
+        body.is-live-broadcast .cta-copy strong {
+            font-size: clamp(1.5rem, 2.55vw, 2.7rem);
+        }
+
+        .live .label {
+            display: block;
+            font-size: clamp(0.95rem, 1.35vw, 1.28rem);
+            font-weight: 700;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.74);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .live .value {
+            display: flex;
+            align-items: baseline;
+            gap: 0.18em;
+            margin: 2px 0 14px;
+            font-family: var(--font-serif);
+            font-weight: 600;
+            font-size: clamp(4.2rem, 10.5vw, 9.5rem);
+            line-height: 0.86;
+            letter-spacing: -0.01em;
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+            text-shadow: 0 6px 30px rgba(0, 0, 0, 0.55);
+        }
+
+        .live .value span.unit {
+            font-family: var(--font-sans);
+            font-size: 0.26em;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .progress-wrap { width: min(620px, 58vw); }
+
+        .progress-text {
+            margin: 0 0 10px;
+            font-family: var(--font-serif);
+            font-size: clamp(1.45rem, 2.7vw, 2.45rem);
+            font-weight: 600;
+            color: #fff;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+        }
+
+        .progress-text.is-complete { color: #fff; }
+
+        .transition-countdown {
+            min-height: 1.4em;
+            margin: -2px 0 10px;
+            font-size: clamp(0.95rem, 1.35vw, 1.25rem);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: rgba(255, 255, 255, 0.82);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.58);
+        }
+
+        .transition-countdown:empty {
+            display: none;
+        }
+
+        .challenge-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: clamp(0.86rem, 1.18vw, 1.08rem);
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .progress-bar {
+            height: clamp(10px, 0.8vw, 15px);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            overflow: hidden;
+        }
+
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #ffffff, #c8c8c8);
+            box-shadow: 0 0 14px rgba(255, 255, 255, 0.5);
+            transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ===== QR＋CTA（右下：視線の終着点・既存DOOHと同じ参加リンク） ===== */
+        .cta {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: clamp(18px, 1.8vw, 32px);
+            pointer-events: auto;
+        }
+
+        .cta-copy { text-align: right; color: #fff; }
+
+        .cta-copy strong {
+            display: block;
+            font-family: var(--font-serif);
+            font-weight: 600;
+            font-size: clamp(1.65rem, 2.75vw, 2.9rem);
+            line-height: 1.1;
+            text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+            transition: opacity 360ms ease, transform 360ms ease;
+        }
+
+        .cta-copy small {
+            display: block;
+            margin-top: 8px;
+            font-size: clamp(1.05rem, 1.45vw, 1.42rem);
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: rgba(255, 255, 255, 0.82);
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+            transition: opacity 360ms ease, transform 360ms ease;
+        }
+
+        .cta-copy.is-changing strong,
+        .cta-copy.is-changing small {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        .qr-code {
+            width: clamp(190px, 18vw, 300px);
+            padding: clamp(13px, 1vw, 18px);
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+            line-height: 0;
+        }
+
+        /* 正方形のQRを等比表示。qrcodeライブラリが付ける inline style を !important で上書き */
+        .qr-code canvas, .qr-code img {
+            display: block;
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: 1;
+        }
+
+        /* QR遷移先の確認用。通常表示では隠し、?dev のときだけ表示する。 */
+        .url-note {
+            display: none;
+            position: fixed;
+            left: clamp(26px, 3.4vw, 68px);
+            bottom: clamp(10px, 1.2vw, 18px);
+            z-index: 5;
+            font-size: clamp(0.8rem, 1.05vw, 1rem);
+            letter-spacing: 0.02em;
+            color: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+        }
+
+        .url-note.is-dev-visible {
+            display: block;
+        }
+
+        /* 操作系（デモ用ツール）：右上 */
+        .tools {
+            position: fixed;
+            top: clamp(16px, 2.4vw, 36px);
+            right: clamp(16px, 2.4vw, 36px);
+            z-index: 6;
+            display: none;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            max-width: min(92vw, 820px);
+        }
+
+        body.is-manual-mode .tools {
+            display: flex;
+        }
+
+        body.dooh-dev.dev-ui-hidden .tools,
+        body.dooh-dev.dev-ui-hidden .hint,
+        body.dooh-dev.dev-ui-hidden .url-note {
+            display: none !important;
+        }
+
+        .tools button {
+            pointer-events: auto;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(21, 25, 25, 0.18);
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--ink);
+            font-family: var(--font-sans);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(21, 25, 25, 0.08);
+            transition: transform 120ms ease, border-color 160ms ease, background 160ms ease;
+        }
+
+        .tools button:hover { border-color: var(--ink); }
+        .tools button:active { transform: scale(0.94); }
+        .tools button.is-on {
+            border-color: var(--ink);
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .tools button.is-danger {
+            border-color: rgba(190, 30, 30, 0.28);
+            background: rgba(190, 30, 30, 0.88);
+            color: #fff;
+        }
+
+        .tools button.is-running {
+            border-color: rgba(21, 25, 25, 0.4);
+            background: rgba(21, 25, 25, 0.88);
+            color: #fff;
+        }
+
+        body.is-live-broadcast .tools,
+        body.is-live-broadcast .hint,
+        body.is-live-broadcast .url-note {
+            display: none !important;
+        }
+
+        body.is-dooh-phone-preview {
+            background: #050606;
+        }
+
+        body.is-dooh-phone-preview::before {
+            content: "横向きにするとDOOH全体が見やすくなります";
+            position: fixed;
+            top: max(10px, env(safe-area-inset-top));
+            left: 50%;
+            z-index: 8;
+            display: none;
+            width: min(92vw, 420px);
+            padding: 9px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            background: rgba(5, 6, 6, 0.68);
+            color: rgba(255, 255, 255, 0.88);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            text-align: center;
+            transform: translateX(-50%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+            pointer-events: none;
+        }
+
+        body.is-dooh-phone-preview .hint {
+            display: none;
+        }
+
+        body.is-dooh-phone-preview .base-video {
+            filter: brightness(0.96) contrast(1.1) saturate(1.04);
+        }
+
+        body.is-dooh-phone-preview .brandbar,
+        body.is-dooh-phone-preview .cta,
+        body.is-dooh-phone-preview .thanks,
+        body.is-dooh-phone-preview .participation-thanks,
+        body.is-dooh-phone-preview .supporter-comment-wall,
+        body.is-dooh-phone-preview .progress-wrap,
+        body.is-dooh-phone-preview .scrim-top {
+            display: none !important;
+        }
+
+        body.is-dooh-phone-preview .scrim-bottom {
+            height: 24vh;
+            background: linear-gradient(to top, rgba(5, 6, 6, 0.78), rgba(5, 6, 6, 0));
+        }
+
+        body.is-dooh-phone-preview .dock {
+            justify-content: flex-start;
+            padding: clamp(14px, 3vw, 24px) clamp(16px, 3.6vw, 28px);
+        }
+
+        body.is-dooh-phone-preview .live {
+            padding: 12px 16px 13px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 18px;
+            background: rgba(5, 6, 6, 0.34);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        body.is-dooh-phone-preview .live > .label {
+            font-size: clamp(0.64rem, 1.8vw, 0.8rem);
+            letter-spacing: 0.18em;
+            color: rgba(255, 255, 255, 0.78);
+        }
+
+        body.is-dooh-phone-preview .live > .value {
+            margin: 4px 0 0;
+            font-size: clamp(2.1rem, 10vw, 4rem);
+        }
+
+        body.is-dooh-phone-preview .tools {
+            top: auto;
+            right: max(12px, env(safe-area-inset-right));
+            bottom: max(12px, env(safe-area-inset-bottom));
+            left: auto;
+            width: auto;
+            justify-content: flex-end;
+            gap: 0;
+            padding: 7px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            background: rgba(5, 6, 6, 0.58);
+            transform: none;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 16px 46px rgba(0, 0, 0, 0.35);
+        }
+
+        body.is-dooh-phone-preview .tools button {
+            min-width: auto;
+            padding: 10px 16px;
+            border-color: rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+        }
+
+        body.is-dooh-phone-preview .tools button:not(#addBtn) {
+            display: none !important;
+        }
+
+        @media (orientation: portrait) {
+            body.is-dooh-phone-preview::before {
+                display: block;
+            }
+
+            body.is-dooh-phone-preview .dock {
+                padding-bottom: max(72px, calc(env(safe-area-inset-bottom) + 68px));
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 540px) {
+            body.is-dooh-phone-preview .tools {
+                right: max(10px, env(safe-area-inset-right));
+                bottom: max(10px, env(safe-area-inset-bottom));
+                padding: 7px;
+                border-radius: 999px;
+            }
+
+            body.is-dooh-phone-preview .tools button {
+                padding: 9px 14px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="stage" id="stage" aria-label="新宿インク演出デモ">
+        <video
+            class="base-layer base-video"
+            data-src-desktop="assets/video/karasu.mp4"
+            data-src-mobile="assets/video/karasu-mobile.mp4"
+            poster="assets/ink/Shinjuku_06_0-00-00-00_1.jpg"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="auto"
+            aria-hidden="true"
+        ></video>
+    </main>
+
+    <div class="scrim scrim-top" aria-hidden="true"></div>
+    <div class="scrim scrim-bottom" aria-hidden="true"></div>
+
+    <div class="brandbar">
+        <div class="brandbar-title">彩宿 — 新宿を彩る</div>
+        <div class="hint" id="hint">画面クリック / スペースキー で参加者 +1</div>
+    </div>
+    <div class="dock">
+        <div class="live">
+            <div class="participation-thanks" id="participationThanks" aria-live="polite"></div>
+            <p class="thanks" id="thanks" aria-hidden="true"></p>
+            <section class="supporter-comment-wall" id="supporterCommentWall" aria-live="polite" hidden>
+                <span class="supporter-comment-kicker">クラファン支援者からのメッセージ</span>
+                <p class="supporter-comment-text" id="supporterCommentText"></p>
+                <small class="supporter-comment-name" id="supporterCommentName"></small>
+            </section>
+            <span class="label">累計参加者</span>
+            <span class="value"><span class="unit"></span><span class="num" id="countNum">0人</span></span>
+            <div class="progress-wrap">
+                <span class="challenge-label" id="challengeLabel">第1回 彩リレー</span>
+                <p class="progress-text" id="progressText">あと18人で取り組みが見えてくる</p>
+                <p class="transition-countdown" id="transitionCountdown" aria-live="polite"></p>
+                <div class="progress-bar"><span id="progressBar"></span></div>
+            </div>
+        </div>
+
+        <aside class="cta" aria-label="スマホ参加QR案内">
+            <div class="cta-copy">
+                <strong>スマホで応援に参加</strong>
+                <small id="qrCaption">無料の参加アクションで反映</small>
+            </div>
+            <div class="qr-code" id="qrCode" aria-hidden="true">QR</div>
+        </aside>
+    </div>
+
+    <div class="url-note" id="urlNote">https://shinjuku-dooh-live.web.app/join</div>
+
+    <div class="tools">
+        <button id="addBtn" type="button">＋ 1人参加</button>
+        <button id="completeBtn" type="button" hidden>達成まで進める</button>
+        <button id="skipSceneBtn" type="button" hidden>⏭ 次の場面へ</button>
+        <button id="newParticipantTestBtn" type="button" hidden>新規参加を再現</button>
+        <button id="returningParticipantTestBtn" type="button" hidden>通算2〜7日参加を再現</button>
+        <button id="linkedNameTestBtn" type="button" hidden>同じインクに名前を追加</button>
+        <button id="crowdTestBtn" type="button" hidden>50人同時参加を再現</button>
+        <button id="resetCheckBtn" type="button" hidden>映像リセット確認</button>
+        <button id="emergencyStopBtn" class="is-danger" type="button" hidden>緊急停止</button>
+        <button class="impact-style-btn" data-impact="white" type="button" hidden>白</button>
+        <button class="impact-style-btn" data-impact="window" type="button" hidden>映像</button>
+        <button id="autoBtn" type="button">▶ 自動</button>
+        <button id="resetBtn" type="button">↺ リセット</button>
+    </div>
+
+    <script>
+        // 1チャレンジ=18人。飛沫9種×2段階（芯で着弾→広がって完成）で18ステップを構成する
+        const TOTAL = 18;
+        // ?dev で開くと、Firebase連動中でも手動ツールで動作確認できる（QR不要）
+        const params = new URLSearchParams(location.search);
+        const DONATION_PER_PERSON_YEN = 100; // 1参加あたりのデモ募金額（publishSwipeComplete の donationAmountYen と一致）
+        const DEV = params.has("dev");
+        const DEMO_MODE = params.has("demo");
+        const DOOH_PHONE_PREVIEW = params.has("phone") || params.has("phone-dooh") || params.has("mobile-dooh");
+        const AUTO_COUNT_MODE = params.has("autoCount") || params.has("auto-count") || params.has("autoplay");
+        const MANUAL_ONLY_MODE = params.has("manual") || params.has("offline") || AUTO_COUNT_MODE;
+        const MOBILE_VIDEO_MODE = DOOH_PHONE_PREVIEW
+            || window.matchMedia("(max-width: 900px)").matches
+            || window.matchMedia("(pointer: coarse) and (max-width: 1180px)").matches;
+        const LIVE_BROADCAST_MODE = params.has("live") || params.has("youtube") || params.has("broadcast");
+        const MANUAL_MODE = DEV || DEMO_MODE || DOOH_PHONE_PREVIEW;
+        // DEVの「＋1人参加」用。毎回ランダムな名前と通算参加日数を付ける。
+        const DEV_NAMES = [
+            "さくら", "ゆうと", "あかり", "ケンタ",
+            "みなみ", "はる", "タクミ", "あおい",
+            "ひろと", "りん", "まこと", "こはる",
+            "そうた", "めい", "なお", "ひなた",
+        ];
+        let lastDevNameIndex = -1;
+
+        function createRandomDevPersona() {
+            let index = Math.floor(Math.random() * DEV_NAMES.length);
+            if (DEV_NAMES.length > 1 && index === lastDevNameIndex) {
+                index = (index + 1 + Math.floor(Math.random() * (DEV_NAMES.length - 1))) % DEV_NAMES.length;
+            }
+            lastDevNameIndex = index;
+            const totalDays = 1 + Math.floor(Math.random() * 7);
+            return {
+                name: DEV_NAMES[index],
+                isReturning: totalDays > 1,
+                isConsecutiveReturn: false,
+                streakDays: 1,
+                totalDays,
+            };
+        }
+        const CONTROL_TOOLS_MODE = DEV || params.has("ops") || params.has("control") || DOOH_PHONE_PREVIEW;
+        document.body.classList.toggle("is-manual-mode", CONTROL_TOOLS_MODE);
+        document.body.classList.toggle("is-live-broadcast", LIVE_BROADCAST_MODE);
+        document.body.classList.toggle("is-dooh-phone-preview", DOOH_PHONE_PREVIEW);
+        document.body.classList.toggle("is-mobile-video", MOBILE_VIDEO_MODE);
+        const toolsPanel = document.querySelector(".tools");
+
+        function setDevUiHidden(hidden) {
+            if (!DEV) return;
+            document.body.classList.toggle("dev-ui-hidden", Boolean(hidden));
+        }
+
+        if (DEV && toolsPanel) {
+            const hideDevUiBtn = document.createElement("button");
+            hideDevUiBtn.type = "button";
+            hideDevUiBtn.textContent = "操作表示を隠す";
+            hideDevUiBtn.title = "DEV操作・説明表示を一時的に隠す（Hキーでも切替）";
+            hideDevUiBtn.addEventListener("click", (event) => {
+                event.stopPropagation();
+                setDevUiHidden(true);
+            });
+            toolsPanel.appendChild(hideDevUiBtn);
+
+            if (params.has("clean") || params.has("hide-tools")) {
+                setDevUiHidden(true);
+            }
+        }
+        const stage = document.getElementById("stage");
+        const countNum = document.getElementById("countNum");
+        const progressText = document.getElementById("progressText");
+        const progressBar = document.getElementById("progressBar");
+        const challengeLabel = document.getElementById("challengeLabel");
+        const transitionCountdown = document.getElementById("transitionCountdown");
+        const hint = document.getElementById("hint");
+        const participationThanks = document.getElementById("participationThanks");
+        const liveLabel = document.querySelector(".live > .label");
+        const liveUnit = document.querySelector(".live > .value .unit");
+        const baseVideo = document.querySelector(".base-video");
+        if (baseVideo) {
+            baseVideo.src = MOBILE_VIDEO_MODE
+                ? baseVideo.dataset.srcMobile
+                : baseVideo.dataset.srcDesktop;
+            baseVideo.load();
+        }
+        const ctaCopy = document.querySelector(".cta-copy");
+        const ctaTitle = document.querySelector(".cta-copy strong");
+        const qrCaption = document.getElementById("qrCaption");
+        const addBtn = document.getElementById("addBtn");
+        const autoBtn = document.getElementById("autoBtn");
+        const resetBtn = document.getElementById("resetBtn");
+        const completeBtn = document.getElementById("completeBtn");
+        const skipSceneBtn = document.getElementById("skipSceneBtn");
+        const newParticipantTestBtn = document.getElementById("newParticipantTestBtn");
+        const returningParticipantTestBtn = document.getElementById("returningParticipantTestBtn");
+        const linkedNameTestBtn = document.getElementById("linkedNameTestBtn");
+        const crowdTestBtn = document.getElementById("crowdTestBtn");
+        const resetCheckBtn = document.getElementById("resetCheckBtn");
+        const emergencyStopBtn = document.getElementById("emergencyStopBtn");
+        const urlNote = document.getElementById("urlNote");
+
+        urlNote?.classList.toggle("is-dev-visible", DEV);
+        newParticipantTestBtn.hidden = !CONTROL_TOOLS_MODE;
+        returningParticipantTestBtn.hidden = !CONTROL_TOOLS_MODE;
+        linkedNameTestBtn.hidden = !CONTROL_TOOLS_MODE;
+        crowdTestBtn.hidden = !CONTROL_TOOLS_MODE;
+        resetCheckBtn.hidden = !CONTROL_TOOLS_MODE;
+        emergencyStopBtn.hidden = !CONTROL_TOOLS_MODE;
+        if (CONTROL_TOOLS_MODE) {
+            completeBtn.hidden = false;
+            skipSceneBtn.hidden = false;
+        }
+
+        // 飛沫レイヤーを生成（黒地は screen 合成で透過 → 明部だけ累積）
+        // 偶数index=芯(XX-core.jpg)、奇数index=完成形(XX.jpg)。完成形が出たら芯は差し替えて消す
+        const layers = [];
+        for (let i = 1; i <= TOTAL / 2; i++) {
+            for (const variant of ["-core", ""]) {
+                const img = document.createElement("img");
+                img.className = "ink-layer";
+                img.alt = "";
+                img.decoding = "async";
+                img.dataset.shape = String(i - 1);          // 形の番号 0..8
+                img.dataset.core = variant === "-core" ? "1" : "";
+                stage.appendChild(img);
+                layers.push(img);
+            }
+        }
+
+        // 全飛沫が出揃った最後に重ねる仕上げの一枚
+        const finalLayer = document.createElement("img");
+        finalLayer.className = "ink-layer final-layer";
+        finalLayer.src = "assets/ink/Shinjuku_11.png";
+        finalLayer.alt = "";
+        finalLayer.decoding = "async";
+        stage.appendChild(finalLayer);
+
+        const warmLayer = document.createElement("video");
+        warmLayer.className = "ink-layer warm-layer";
+        warmLayer.src = MOBILE_VIDEO_MODE
+            ? "assets/video/clean-shinjuku-mobile.mp4"
+            : "assets/video/clean-shinjuku.mp4";
+        warmLayer.muted = true;
+        warmLayer.loop = false;
+        warmLayer.playsInline = true;
+        warmLayer.preload = "auto";
+        warmLayer.setAttribute("aria-hidden", "true");
+        stage.appendChild(warmLayer);
+
+        const idleLayer = document.createElement("video");
+        idleLayer.className = "idle-layer";
+        idleLayer.src = "assets/video/yellow-idle.mp4";
+        idleLayer.muted = true;
+        idleLayer.loop = false;
+        idleLayer.playsInline = true;
+        idleLayer.preload = "auto";
+        idleLayer.setAttribute("aria-hidden", "true");
+        stage.appendChild(idleLayer);
+
+        // ============================================================
+        // 実行時配置エンジン
+        //   飛沫の形は shape-NN.png（切断辺を修復済みの透過PNG）。位置と大きさは毎回JSで決める。
+        //   窓の中身は「動いている clean 映像」を mask で覗かせる。
+        // ============================================================
+        // 着弾の見せ方（?impact= で切替。DEVパネルの 白/映像 でも切替可）。
+        // 窓のマスク（revealVideo側）は一切動かさず、上に重ねる層と小滴だけを
+        // transform/opacity で動かす＝窓の中の映像は乱れない。
+        // window: 窓のカラー映像そのものが飛沫形で弾けて着地する（既定）
+        // white : 白いインクが弾ける
+        // burst : 旧既定。窓のマスク自体が跳ねる（映像が歪む・比較用）
+        // plate : 回復後の静止画が一瞬出る（旧実装・比較用）
+        const IMPACT_STYLES = ["white", "window", "burst", "plate"];
+        let IMPACT_STYLE = (() => {
+            const v = new URLSearchParams(location.search).get("impact");
+            return IMPACT_STYLES.includes(v) ? v : "window";
+        })();
+
+        // 着弾スタイルの試し切替（墨/白/映像）。選んだものは ?impact= にも同期する
+        const impactStyleBtns = [...document.querySelectorAll(".impact-style-btn")];
+        impactStyleBtns.forEach((b) => {
+            b.hidden = !CONTROL_TOOLS_MODE;
+            b.classList.toggle("is-on", b.dataset.impact === IMPACT_STYLE);
+            b.addEventListener("click", (e) => {
+                e.stopPropagation();
+                IMPACT_STYLE = b.dataset.impact;
+                impactStyleBtns.forEach((x) => x.classList.toggle("is-on", x.dataset.impact === IMPACT_STYLE));
+                const u = new URL(location.href);
+                u.searchParams.set("impact", IMPACT_STYLE);
+                history.replaceState(null, "", u);
+            });
+        });
+        const BURST_MS = { core: 420, full: 620 };
+        const TARGET_NEW = 0.045;   // 1人ぶん(芯+完成形)で新しく開く面積 / 画面比
+        const MIN_DIST = 240;       // 狙い同士の最小距離(フレームpx)
+        const SOLVE_W = 240, SOLVE_H = 135;
+
+        const revealVideo = document.createElement("video");
+        revealVideo.className = "reveal-video";
+        revealVideo.src = warmLayer.src;
+        revealVideo.muted = true;
+        revealVideo.loop = true;
+        revealVideo.playsInline = true;
+        revealVideo.preload = "auto";
+        revealVideo.setAttribute("aria-hidden", "true");
+        stage.insertBefore(revealVideo, warmLayer);
+        revealVideo.play().catch(() => {});
+
+
+        // 映像内の電子広告板（回復後フレームで実測した四隅・フレーム座標1920x1080）
+        const BILLBOARD_QUAD = [[1000, 0], [1560, 0], [1555, 235], [1005, 103]];
+        const BB_W = 600, BB_H = 190;   // 板のデザイン座標系（この矩形を四隅へ写す）
+
+        // 4点対応から射影変換を解く（8元1次連立をガウス消去）
+        function solveHomography(src, dst) {
+            const A = [], b = [];
+            for (let i = 0; i < 4; i++) {
+                const [x, y] = src[i], [u, v] = dst[i];
+                A.push([x, y, 1, 0, 0, 0, -x * u, -y * u]); b.push(u);
+                A.push([0, 0, 0, x, y, 1, -x * v, -y * v]); b.push(v);
+            }
+            for (let i = 0; i < 8; i++) {
+                let p = i;
+                for (let r = i + 1; r < 8; r++) if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;
+                [A[i], A[p]] = [A[p], A[i]]; [b[i], b[p]] = [b[p], b[i]];
+                for (let r = 0; r < 8; r++) {
+                    if (r === i || A[r][i] === 0) continue;
+                    const f = A[r][i] / A[i][i];
+                    for (let c = i; c < 8; c++) A[r][c] -= f * A[i][c];
+                    b[r] -= f * b[i];
+                }
+            }
+            return b.map((v, i) => v / A[i][i]);   // [a,b,c,d,e,f,g,h]
+        }
+
+        function billboardMatrix() {
+            const [kx, ky] = frameScale();
+            const dst = BILLBOARD_QUAD.map(([x, y]) => [x * kx, y * ky]);
+            const src = [[0, 0], [BB_W, 0], [BB_W, BB_H], [0, BB_H]];
+            const [a, b2, c, d, e, f, g, h] = solveHomography(src, dst);
+            return `matrix3d(${a},${d},0,${g}, ${b2},${e},0,${h}, 0,0,1,0, ${c},${f},0,1)`;
+        }
+
+        const billboard = document.createElement("div");
+        billboard.className = "billboard";
+        billboard.style.width = `${BB_W}px`;
+        billboard.style.height = `${BB_H}px`;
+        billboard.setAttribute("aria-hidden", "true");
+        const billboardText = document.createElement("span");
+        billboardText.className = "billboard-text";
+        const billboardKicker = document.createElement("span");
+        billboardKicker.className = "billboard-kicker";
+        billboardKicker.textContent = "S U P P O R T E R";
+        billboard.append(billboardText, billboardKicker);
+        stage.appendChild(billboard);
+
+        let layout = null;
+        let shapeImgs = [];      // [i] = {full: Image, core: Image}
+        let placements = [];     // [layerIndex] = {url, x, y, w, h, ox, oy}
+
+        const loadImage = (src) =>
+            new Promise((res, rej) => {
+                const im = new Image();
+                im.onload = () => res(im);
+                im.onerror = rej;
+                im.src = src;
+            });
+
+        function weightedPick(map, count, minDist, FW, FH, GX, GY) {
+            const cells = [];
+            for (let gy = 0; gy < GY; gy++)
+                for (let gx = 0; gx < GX; gx++)
+                    if (map[gy][gx] > 0.01) cells.push({ gx, gy, w: map[gy][gx] });
+            const chosen = [];
+            let guard = 0;
+            while (chosen.length < count && guard++ < 800) {
+                const total = cells.reduce((a, c) => a + c.w, 0);
+                if (total <= 0) break;
+                let r = Math.random() * total;
+                let cell = cells[0];
+                for (const c of cells) { r -= c.w; if (r <= 0) { cell = c; break; } }
+                const x = (cell.gx + Math.random()) * (FW / GX);
+                const y = (cell.gy + Math.random()) * (FH / GY);
+                if (chosen.every((c) => Math.hypot(c.x - x, c.y - y) >= minDist)) chosen.push({ x, y });
+            }
+            // 距離条件で埋まらなければ緩めて補充
+            while (chosen.length < count && cells.length) {
+                const c = cells[Math.floor(Math.random() * cells.length)];
+                chosen.push({ x: (c.gx + 0.5) * (FW / GX), y: (c.gy + 0.5) * (FH / GY) });
+            }
+            return chosen;
+        }
+
+        function planRound() {
+            if (!layout) return;
+            const [FW, FH] = layout.frame;
+            const [GX, GY] = layout.grid;
+            const people = weightedPick(layout.peopleMap, 6, MIN_DIST, FW, FH, GX, GY);
+            const vines = weightedPick(layout.vineMap, 3, MIN_DIST, FW, FH, GX, GY);
+
+            // 直前に開いた窓からいちばん遠い的を次に選ぶ。
+            // 連続スワイプでも窓と名前が画面の反対側に出るので、名前が重なりにくい。
+            const pool = [
+                ...people.map((t) => ({ ...t, lift: 0.3, kind: "people" })),
+                ...vines.map((t) => ({ ...t, lift: 0, kind: "scar" })),
+            ];
+            const targets = [pool.splice(Math.floor(Math.random() * pool.length), 1)[0]];
+            while (pool.length) {
+                const prev = targets[targets.length - 1];
+                let bi = 0, bd = -1;
+                pool.forEach((t, i) => {
+                    const d = Math.hypot(t.x - prev.x, t.y - prev.y);
+                    if (d > bd) { bd = d; bi = i; }
+                });
+                targets.push(pool.splice(bi, 1)[0]);
+            }
+            const order = [...layout.shapes.keys()].sort(() => Math.random() - 0.5);
+
+            // 既に開いた窓を差し引いた正味の新規面積が一定になるよう scale を二分探索
+            const cv = document.createElement("canvas");
+            cv.width = SOLVE_W; cv.height = SOLVE_H;
+            const ctx = cv.getContext("2d", { willReadFrequently: true });
+            const sx = SOLVE_W / FW, sy = SOLVE_H / FH;
+            const acc = new Uint8Array(SOLVE_W * SOLVE_H);
+            const targetPx = TARGET_NEW * SOLVE_W * SOLVE_H;
+
+            const rect = (shape, t, s) => ({
+                w: shape.w * s, h: shape.h * s,
+                x: t.x - shape.cx * s,
+                y: t.y - shape.cy * s - shape.h * s * t.lift,
+            });
+            const newPixels = (img, shape, t, s) => {
+                ctx.clearRect(0, 0, SOLVE_W, SOLVE_H);
+                const r = rect(shape, t, s);
+                ctx.drawImage(img, r.x * sx, r.y * sy, r.w * sx, r.h * sy);
+                const d = ctx.getImageData(0, 0, SOLVE_W, SOLVE_H).data;
+                let n = 0;
+                for (let i = 0, p = 3; i < acc.length; i++, p += 4)
+                    if (d[p] > 128 && !acc[i]) n++;
+                return n;
+            };
+            const commit = (img, shape, t, s) => {
+                ctx.clearRect(0, 0, SOLVE_W, SOLVE_H);
+                const r = rect(shape, t, s);
+                ctx.drawImage(img, r.x * sx, r.y * sy, r.w * sx, r.h * sy);
+                const d = ctx.getImageData(0, 0, SOLVE_W, SOLVE_H).data;
+                for (let i = 0, p = 3; i < acc.length; i++, p += 4) if (d[p] > 128) acc[i] = 1;
+            };
+
+            placements = [];
+            targets.forEach((t, j) => {
+                const si = order[j];
+                const shape = layout.shapes[si];
+                let lo = 0.05, hi = 2.6;
+                for (let it = 0; it < 14; it++) {
+                    const mid = (lo + hi) / 2;
+                    if (newPixels(shapeImgs[si].full, shape, t, mid) < targetPx) lo = mid; else hi = mid;
+                }
+                const s = hi;
+                const r = rect(shape, t, s);
+                commit(shapeImgs[si].core, shape, t, s);
+                commit(shapeImgs[si].full, shape, t, s);
+                const kind = t.kind;
+                for (const which of ["core", "full"]) {
+                    const k = which === "core" ? 0.62 : 1;       // 芯は同じ形の小さい版
+                    const w = r.w * k, h = r.h * k;
+                    placements.push({
+                        url: shapeImgs[si][which].src,
+                        x: r.x + (r.w - w) / 2, y: r.y + (r.h - h) / 2, w, h,
+                        ox: (t.x / FW) * 100, oy: (t.y / FH) * 100,
+                        kind,
+                    });
+                }
+            });
+            lastMaskCss = "__replan__";
+        }
+
+        const frameScale = () => {
+            const [FW, FH] = layout.frame;
+            return [stage.clientWidth / FW, stage.clientHeight / FH];
+        };
+
+        // entries: [{ p, k }] k=飛沫の倍率(burst演出で1未満から跳ねる)。中心を保って拡縮する
+        function maskCssFor(entries) {
+            const [kx, ky] = frameScale();
+            const rect = ({ p, k = 1 }) => {
+                const w = p.w * k, h = p.h * k;
+                const x = p.x + (p.w - w) / 2, y = p.y + (p.h - h) / 2;
+                return [x * kx, y * ky, w * kx, h * ky];
+            };
+            return {
+                image: entries.map((e) => `url("${e.p.url}")`).join(", "),
+                position: entries.map((e) => { const r = rect(e); return `${r[0].toFixed(1)}px ${r[1].toFixed(1)}px`; }).join(", "),
+                size: entries.map((e) => { const r = rect(e); return `${r[2].toFixed(1)}px ${r[3].toFixed(1)}px`; }).join(", "),
+            };
+        }
+
+        // 窓のマスクを出すのを遅らせる（インクが覆いきってから窓が現れる順番を守る）
+        const maskHoldUntil = new Map();   // layerIndex → performance.now() 基準の解禁時刻
+
+        // window スタイル用の共有ビデオ。着弾のたびに窓側と同じ再生時刻へ合わせて使い回す。
+        // （連打では前の着弾から奪われることがあるが、直後にフェードするので目立たない）
+        let impactVideo = null;
+        function acquireImpactVideo() {
+            if (!impactVideo) {
+                impactVideo = document.createElement("video");
+                impactVideo.src = revealVideo.currentSrc || revealVideo.src;
+                impactVideo.muted = true;
+                impactVideo.loop = true;
+                impactVideo.playsInline = true;
+                impactVideo.preload = "auto";
+                impactVideo.setAttribute("aria-hidden", "true");
+            }
+            try { impactVideo.currentTime = revealVideo.currentTime; } catch {}
+            impactVideo.play().catch(() => {});
+            return impactVideo;
+        }
+
+        function releaseImpact(el) {
+            if (impactVideo && impactVideo.parentNode === el) {
+                impactVideo.pause();
+                impactVideo.remove();
+            }
+            el.remove();
+        }
+
+        // 着弾点から飛び散る小滴。transform/opacity のみ＝映像の描画を乱さない
+        const DROPLET_FILL = {
+            white: "radial-gradient(circle at 40% 35%, #ffffff, #cfd6dd 70%)",
+            window: "radial-gradient(circle at 40% 35%, #ffd9a0, #d99a55 70%)",
+            plate: "radial-gradient(circle at 40% 35%, #ffd9a0, #d99a55 70%)",
+        };
+        function spawnDroplets(p) {
+            const fill = DROPLET_FILL[IMPACT_STYLE];
+            if (!fill) return;
+            const cx = (stage.clientWidth * p.ox) / 100;
+            const cy = (stage.clientHeight * p.oy) / 100;
+            const n = 5 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < n; i++) {
+                const d = document.createElement("div");
+                d.className = "ink-droplet";
+                const size = 5 + Math.random() * 12;
+                d.style.width = d.style.height = `${size.toFixed(1)}px`;
+                d.style.left = `${(cx - size / 2).toFixed(1)}px`;
+                d.style.top = `${(cy - size / 2).toFixed(1)}px`;
+                d.style.background = fill;
+                stage.appendChild(d);
+                const ang = Math.random() * Math.PI * 2;
+                const dist = 46 + Math.random() * 110;
+                const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist;
+                d.animate(
+                    [
+                        { transform: "translate(0, 0) scale(1)", opacity: 0.95, offset: 0 },
+                        { transform: `translate(${(dx * 0.7).toFixed(1)}px, ${(dy * 0.7 - 12).toFixed(1)}px) scale(0.8)`, opacity: 0.9, offset: 0.55 },
+                        { transform: `translate(${dx.toFixed(1)}px, ${(dy + 18).toFixed(1)}px) scale(0.3)`, opacity: 0, offset: 1 },
+                    ],
+                    { duration: 560 + Math.random() * 260, easing: "cubic-bezier(0.16, 0.8, 0.4, 1)", fill: "forwards" }
+                ).finished.then(() => d.remove()).catch(() => d.remove());
+            }
+        }
+
+        // 開いた窓の跳ね。0.55 → 1.06 → 1.0
+        const burstAt = new Map();
+        const easeOut = (u) => 1 - (1 - u) * (1 - u);
+        function burstScale(i) {
+            const rec = burstAt.get(i);
+            if (!rec) return 1;
+            const t = (performance.now() - rec.start) / rec.dur;
+            if (t >= 1) { burstAt.delete(i); return 1; }
+            if (t < 0.55) return 0.55 + (1.06 - 0.55) * easeOut(t / 0.55);
+            return 1.06 + (1.0 - 1.06) * easeOut((t - 0.55) / 0.45);
+        }
+
+        const IMPACT_NAME_TTL_MS = 2000;   // これより古い名前は飛沫に付けない
+        let impactName = null;
+        window.__setImpactName = (n, options = {}) => {
+            const raw = String(n ?? "").trim();
+            if (raw && raw !== "匿名サポーター") impactName = { raw, options, at: Date.now() };
+        };
+
+        // 参加イベントは名前しか運ばない。支援者コメントは別フィードなので名前で突き合わせる
+        function supporterCommentFor(name) {
+            const hit = supporterCommentRotation.find((e) => e?.name === name && e?.comment);
+            return hit ? hit.comment : "";
+        }
+
+        function takeImpactMeta() {
+            if (!impactName || Date.now() - impactName.at > IMPACT_NAME_TTL_MS) return null;
+            const meta = impactName;
+            impactName = null;
+            return meta;
+        }
+
+        // 名前ロール・QR・カウンター・タイトル・DEV操作パネルの上に名前を出さない
+        const HUD_SELECTORS = [".thanks", ".cta", ".dock .live", ".brandbar", ".supporter-comment-wall", ".tools"];
+
+        function hudRects() {
+            return HUD_SELECTORS.flatMap((sel) => [...document.querySelectorAll(sel)])
+                .filter((el) => el.offsetParent !== null || getComputedStyle(el).display !== "none")
+                .map((el) => el.getBoundingClientRect())
+                .filter((r) => r.width > 0 && r.height > 0);
+        }
+
+        // 表示中の他の名前も障害物にする。これで名前どうしは絶対に重ならない
+        function blockerRects(exclude) {
+            return hudRects().concat(
+                activeNames.filter((n) => n !== exclude).map((n) => n.getBoundingClientRect())
+            );
+        }
+
+        // 名前は出現時に自分の高さの±12%ぶん上下に跳ねる。その振れ幅を余白で吸収する
+        const overlaps = (a, b, pad = 28) =>
+            a.left < b.right + pad && a.right > b.left - pad &&
+            a.top < b.bottom + pad && a.bottom > b.top - pad;
+
+        function placeNameAvoidingHud(el, ox, oy) {
+            const blockers = blockerRects(el);
+            const put = (x, y) => {
+                el.style.left = `${x}%`;
+                el.style.top = `${y}%`;
+                return el.getBoundingClientRect();
+            };
+            const clampX = (x) => Math.min(78, Math.max(22, x));
+            const clampY = (y) => Math.min(82, Math.max(16, y));   // 上端に張り付かせない
+            const free = (r) => !blockers.some((b) => overlaps(r, b));
+
+            const x0 = clampX(ox), y0 = clampY(oy);
+            if (free(put(x0, y0))) return;
+
+            // 元の着弾点にいちばん近い空き場所を探す（方向に優先順位をつけない）
+            let best = null;
+            for (let d = 6; d <= 44; d += 6) {
+                for (let deg = 0; deg < 360; deg += 30) {
+                    const rad = (deg * Math.PI) / 180;
+                    const x = clampX(x0 + Math.cos(rad) * d * 1.35);   // 横は少し広く探る
+                    const y = clampY(y0 + Math.sin(rad) * d);
+                    if (!free(put(x, y))) continue;
+                    const dist = Math.hypot(x - x0, y - y0);
+                    if (!best || dist < best.dist) best = { x, y, dist };
+                }
+                if (best) break;   // 半径が近い順に探しているので最初に見つかった環で確定
+            }
+            if (best) { put(best.x, best.y); return true; }
+            put(50, 34);
+            return false;   // 空きがなかった
+        }
+
+        const activeNames = [];
+        const MAX_NAMES = 3;   // 同時に立てる名前の上限
+
+        function dismissName(el, fast = true) {
+            const i = activeNames.indexOf(el);
+            if (i >= 0) activeNames.splice(i, 1);
+            el.getAnimations().forEach((a) => a.cancel());
+            el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: fast ? 180 : 400, fill: "forwards" })
+                .finished.then(() => el.remove()).catch(() => el.remove());
+        }
+
+        function showImpactName(p, meta) {
+            if (!meta) return;
+            const { raw, options } = meta;
+            while (activeNames.length >= MAX_NAMES) dismissName(activeNames[0]);
+            const el = document.createElement("div");
+            el.className = "impact-name";
+            // 通算参加者は文言を増やさず、色だけで区別する。
+            const returning = options?.isReturning === true && hasStreakColor(options);
+            el.classList.toggle("is-returning", returning);
+            if (returning) applyStreakClass(el, options);
+
+            const comment = supporterCommentFor(raw);
+            el.classList.toggle("is-supporter", Boolean(comment));
+            if (comment) {
+                const sigil = document.createElement("span");
+                sigil.className = "supporter-sigil";
+                sigil.setAttribute("aria-hidden", "true");
+                el.appendChild(sigil);
+            }
+            const line = document.createElement("span");
+            line.className = "impact-person-name";
+            line.textContent = `${raw}さん`;
+            el.appendChild(line);
+            if (comment) {
+                const c = document.createElement("span");
+                c.className = "impact-comment";
+                c.textContent = comment;
+                el.appendChild(c);
+            }
+            stage.appendChild(el);
+            activeNames.push(el);
+            if (!placeNameAvoidingHud(el, p.ox, p.oy - 7)) {
+                // どこにも置けない＝古い名前が塞いでいる。いちばん古いのを畳んでやり直す
+                if (activeNames.length > 1) {
+                    dismissName(activeNames[0]);
+                    placeNameAvoidingHud(el, p.ox, p.oy - 7);
+                }
+            }
+            el.animate(
+                [
+                    { opacity: 0, transform: "translate(-50%, -35%) scale(0.86)", offset: 0 },
+                    { opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.16 },
+                    { opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.76 },
+                    { opacity: 0, transform: "translate(-50%, -62%) scale(1.02)", offset: 1 },
+                ],
+                { duration: comment ? 6500 : 2800, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
+            ).finished
+                .then(() => {
+                    const i = activeNames.indexOf(el);
+                    if (i >= 0) activeNames.splice(i, 1);
+                    el.remove();
+                })
+                .catch(() => el.remove());
+        }
+
+        function billboardFlash(name) {
+            // 最後の1人の名前待ち中は表示し、完成映像が始まった後だけ割り込みを止める。
+            if (!name || celebrationActive) return;
+            billboardText.textContent = name;
+            billboard.style.transform = billboardMatrix();
+            billboard.classList.remove("is-flash", "is-lit");
+            void billboard.offsetWidth;
+            billboard.classList.add("is-flash");
+        }
+
+        // 同じ形を2枚重ね、内側を数px縮めて引き算する = 輪郭だけが残る
+        function spawnOutline(p, options = {}) {
+            const el = document.createElement("div");
+            el.className = "ink-outline";
+            el.classList.toggle("is-name-linked", options.linked === true);
+            el.classList.toggle("is-supporter", options.isSupporter === true);
+            const [kx, ky] = frameScale();
+            const w = p.w * kx, h = p.h * ky, x = p.x * kx, y = p.y * ky;
+            const t = 3;  // 線の太さ(px)
+            const image = `url("${p.url}"), url("${p.url}")`;
+            const size = `${w.toFixed(1)}px ${h.toFixed(1)}px, ${(w - 2 * t).toFixed(1)}px ${(h - 2 * t).toFixed(1)}px`;
+            const pos = `${x.toFixed(1)}px ${y.toFixed(1)}px, ${(x + t).toFixed(1)}px ${(y + t).toFixed(1)}px`;
+            for (const k of ["webkitMaskImage", "maskImage"]) el.style[k] = image;
+            for (const k of ["webkitMaskSize", "maskSize"]) el.style[k] = size;
+            for (const k of ["webkitMaskPosition", "maskPosition"]) el.style[k] = pos;
+            // mask-image の先頭が最前面。演算子は「自分より下の層」に対して適用される。
+            // したがって「大きい形 subtract 小さい形」= 輪郭。順序を逆にすると塗りつぶしになる。
+            el.style.maskComposite = "subtract, add";
+            el.style.transformOrigin = `${p.ox}% ${p.oy}%`;
+            stage.insertBefore(el, warmLayer);
+
+            const frames = options.linked === true
+                ? [
+                    { opacity: 0, transform: "scale(0.94)", offset: 0 },
+                    { opacity: 1, transform: "scale(1.035)", offset: 0.16 },
+                    { opacity: 0.62, transform: "scale(0.995)", offset: 0.38 },
+                    { opacity: 1, transform: "scale(1.025)", offset: 0.62 },
+                    { opacity: 0, transform: "scale(1.06)", offset: 1 },
+                  ]
+                : [
+                    { opacity: 0, transform: "scale(0.97)", offset: 0 },
+                    { opacity: 0.95, transform: "scale(1.01)", offset: 0.18 },
+                    { opacity: 0.55, transform: "scale(1)", offset: 0.4 },
+                    { opacity: 0, transform: "scale(1.03)", offset: 1 },
+                  ];
+            el.animate(frames, {
+                duration: options.linked === true ? 2600 : 1100,
+                easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                fill: "forwards",
+            }).finished.then(() => el.remove()).catch(() => el.remove());
+        }
+
+        function relightParticipation(name, options = {}) {
+            const raw = String(name ?? "").trim().slice(0, 24);
+            const swipeCount = Math.floor(Number(options?.swipeCount));
+            if (!isRealName(raw) || !Number.isFinite(swipeCount) || swipeCount <= 0) {
+                return false;
+            }
+
+            const layerIndex = ((swipeCount - 1) % TOTAL + TOTAL) % TOTAL;
+            const p = placements[layerIndex];
+            if (!p) return false;
+
+            noteParticipationActivity();
+            const isSupporter = options.isSupporter === true || Boolean(supporterCommentFor(raw));
+            spawnOutline(p, { linked: true, isSupporter });
+            showImpactName(p, { raw, options: { ...options, isSupporter } });
+            if (isSupporter) {
+                // 支援者は同じインクと街中の電子看板の両方へ表示する。
+                billboardFlash(raw);
+            }
+            resolvePendingCompletionWithName(swipeCount);
+            return true;
+        }
+
+        function spawnImpact(layerIndex) {
+            const p = placements[layerIndex];
+            if (!p) return;
+            const meta = takeImpactMeta();
+            const isSupporter = Boolean(
+                meta?.options?.isSupporter === true ||
+                (meta?.raw && supporterCommentFor(meta.raw))
+            );
+            if (meta) showImpactName(p, {
+                ...meta,
+                options: { ...meta.options, isSupporter },
+            });
+            else spawnOutline(p);
+            if (isSupporter && meta?.raw) billboardFlash(meta.raw);
+
+            if (IMPACT_STYLE === "burst") {
+                // 中間層を作らない。窓そのものを跳ねさせる
+                burstAt.set(layerIndex, {
+                    start: performance.now(),
+                    dur: layerIndex % 2 === 0 ? BURST_MS.core : BURST_MS.full,
+                });
+                return;
+            }
+
+            const el = document.createElement("div");
+            el.className = `ink-impact is-${IMPACT_STYLE}`;
+            // 常連なら、落ちるインクをその人の色に染める。支援者なら金にする
+            if (meta?.options?.isReturning === true && hasStreakColor(meta.options)) {
+                el.classList.add("is-streak");
+                applyStreakClass(el, meta.options);
+            }
+            if (isSupporter) el.classList.add("is-supporter");
+            const css = maskCssFor([{ p, k: 1 }]);
+            for (const prop of ["webkitMaskImage", "maskImage"]) el.style[prop] = css.image;
+            for (const prop of ["webkitMaskPosition", "maskPosition"]) el.style[prop] = css.position;
+            for (const prop of ["webkitMaskSize", "maskSize"]) el.style[prop] = css.size;
+            el.style.transformOrigin = `${p.ox}% ${p.oy}%`;
+            if (IMPACT_STYLE === "window") el.appendChild(acquireImpactVideo());
+            stage.insertBefore(el, warmLayer);
+
+            const isCore = layerIndex % 2 === 0;
+            const dur = isCore ? 440 : 680;
+            // インクが窓を覆いきるまで窓のマスクを出さない（着弾→溶けて窓が現れる、の順番）。
+            // window スタイルは着地の瞬間に下の窓と同じ絵で重なるので、着地まで待つ
+            const coverAt = IMPACT_STYLE === "window" ? dur : dur * 0.42;
+            maskHoldUntil.set(layerIndex, performance.now() + coverAt);
+            spawnDroplets(p);
+
+            // blur は毎フレーム再ラスタライズになるので使わない（transform/opacity のみ）
+            const frames = isCore
+                ? [
+                    { transform: "scale(0.12) rotate(-8deg)", opacity: 0, offset: 0 },
+                    { transform: "scale(1.28) rotate(2deg)", opacity: 1, offset: 0.42 },
+                    { transform: "scale(0.94) rotate(-1deg)", opacity: 1, offset: 0.72 },
+                    { transform: "scale(1) rotate(0deg)", opacity: 1, offset: 1 },
+                  ]
+                : [
+                    { transform: "scale(0.55) rotate(-3deg)", opacity: 0, offset: 0 },
+                    { transform: "scale(1.10) rotate(1deg)", opacity: 1, offset: 0.5 },
+                    { transform: "scale(0.97) rotate(0deg)", opacity: 1, offset: 0.8 },
+                    { transform: "scale(1) rotate(0deg)", opacity: 1, offset: 1 },
+                  ];
+            el.animate(frames, {
+                duration: dur,
+                easing: "cubic-bezier(0.18, 1.25, 0.32, 1)",
+                fill: "forwards",
+            }).finished
+                .then(() => el.animate(
+                    [
+                        { opacity: 1, transform: "scale(1)" },
+                        { opacity: 0, transform: "scale(1.04)" },
+                    ],
+                    { duration: 620, delay: 160, fill: "forwards" }).finished)
+                .then(() => releaseImpact(el))
+                .catch(() => releaseImpact(el));
+        }
+
+        let lastMaskCss = "";
+        let seenRevealed = null;
+        let lastRevealedCount = 0;
+        // 起動直後は保存済みの参加数が復元されるので、それを新規参加と誤認して弾けさせない
+        const IMPACTS_LIVE_AFTER = Date.now() + 2000;
+
+        const QUIET_MS = 20_000;   // これだけ参加が無ければ「静かな時間」= 過去コメントの出番
+        const COMMENT_DELAY_MS = 1500;   // 反転してからコメントを出すまでの間
+        if (!window.__lastParticipationAt) window.__lastParticipationAt = Date.now();
+        let wasCelebrating = false;
+        let commentDelayTimer = null;
+
+        function currentSupporter() {
+            return supporterCommentRotation[supporterCommentIndex] ?? null;
+        }
+
+        function onCelebrationStart() {
+            // 過去の支援者名（例：はる）を達成時に自動選出しない。
+            billboard.classList.remove("is-lit", "is-flash");
+        }
+
+        function onCelebrationEnd() {
+            billboard.classList.remove("is-lit", "is-flash");
+            window.clearTimeout(commentDelayTimer);
+            document.body.classList.remove("comment-ready");
+        }
+
+        function syncRevealMask() {
+            const celebrating = stage.classList.contains("is-complete");
+            if (celebrating !== wasCelebrating) {
+                wasCelebrating = celebrating;
+                celebrating ? onCelebrationStart() : onCelebrationEnd();
+            }
+            const lastAt = window.__lastParticipationAt ?? 0;
+            document.body.classList.toggle("is-celebrating", celebrating);
+            const isQuiet = !celebrating && Date.now() - lastAt > QUIET_MS;
+            document.body.classList.toggle("is-quiet", isQuiet);
+            syncSupporterCommentHistory(isQuiet && !idleVideoActive);
+            if (!layout) return;
+            const onIdx = layers.map((l, i) => (l.classList.contains("is-revealed") ? i : -1))
+                .filter((i) => i >= 0);
+
+            // 1周終わって0に戻ったら、次の回の配置を引き直す
+            if (onIdx.length === 0 && lastRevealedCount > 0) planRound();
+            lastRevealedCount = onIdx.length;
+
+            if (seenRevealed === null || Date.now() < IMPACTS_LIVE_AFTER) {
+                seenRevealed = new Set(onIdx);
+            } else {
+                for (const i of onIdx) if (!seenRevealed.has(i)) spawnImpact(i);
+                seenRevealed = new Set(onIdx);
+            }
+
+            const now = performance.now();
+            for (const [i, t] of maskHoldUntil) if (t <= now) maskHoldUntil.delete(i);
+            const entries = onIdx
+                .filter((i) => placements[i] && !maskHoldUntil.has(i))
+                .map((i) => ({ p: placements[i], k: burstScale(i) }));
+            const css = entries.length ? maskCssFor(entries) : { image: "", position: "", size: "" };
+            const key = css.image + "|" + css.position + "|" + css.size;
+            if (key !== lastMaskCss) {
+                lastMaskCss = key;
+                for (const prop of ["webkitMaskImage", "maskImage"]) revealVideo.style[prop] = css.image;
+                for (const prop of ["webkitMaskPosition", "maskPosition"]) revealVideo.style[prop] = css.position;
+                for (const prop of ["webkitMaskSize", "maskSize"]) revealVideo.style[prop] = css.size;
+                revealVideo.classList.toggle("has-mask", entries.length > 0);
+                if (revealVideo.paused) revealVideo.play().catch(() => {});
+            }
+        }
+
+        (async () => {
+            document.body.classList.toggle("dooh-dev", DEV);
+            layout = await fetch("assets/ink-people/layout.json").then((r) => r.json());
+            // ここより上は同期実行。supporterCommentRotation などの宣言はまだ TDZ なので触れない
+            if (DEV && supporterCommentRotation.length === 0) {
+                setSupporterComments([
+                    { name: "さくら", comment: "新宿がまた、誰かの帰り道になりますように。" },
+                    { name: "タクミ", comment: "夜のこの街を、少しだけ明るくしたい。" },
+                    { name: "ケンタ", comment: "十年ぶりに東口に降りた。まだ好きだった。" },
+                ]);
+            }
+            // shape-NN-core.png は make-ink-people-assets.py が切断辺を修復済みの飛沫
+            // （元素材の直線カットは揺らぎ＋小滴に置き換わっている）。
+            // 芯=同じ形の 62%、完成形=100% として大小で二段階を表す。
+            shapeImgs = await Promise.all(
+                layout.shapes.map(async (_, i) => {
+                    const img = await loadImage(`assets/ink-people/shape-${String(i + 1).padStart(2, "0")}-core.png`);
+                    return { full: img, core: img };
+                })
+            );
+            await loadImage("assets/ink-people/plate.jpg");
+            planRound();
+            window.addEventListener("resize", () => {
+                lastMaskCss = "__resize__";
+                if (billboard.classList.contains("is-lit")) billboard.style.transform = billboardMatrix();
+            });
+            (function tick() { syncRevealMask(); requestAnimationFrame(tick); })();
+            console.log(`[ink] 実行時配置 ready / impact=${IMPACT_STYLE}`);
+        })();
+
+        let count = 0;          // 累計参加者
+        let revealed = 0;       // 既に出ている飛沫レイヤー数
+        let autoTimer = null;
+        let liveActive = false; // Firebaseの実カウントに連動中か
+        let celebrationTimer = null;
+        let warmTimer = null;
+        let countdownTimer = null;
+        let idleVideoTimer = null;
+        let idleVideoFinishTimer = null;
+        let warmPlayRetryTimer = null;
+        let celebrationWatchdogTimer = null;
+        let completionNameGraceTimer = null;
+        let pendingCompletionSwipeCount = 0;
+        let idleVideoActive = false;
+        let celebrationActive = false;
+        let celebrationPersistence = null;
+        let celebrationStartedAt = 0;
+        let activeChallengeNumber = 0;
+        let liveCountInitialized = false;
+        let visualizedLiveCount = 0;
+        let liveVisualTimer = null;
+        let queuedRevealCount = 0;
+        let queuedReplayTimer = null;
+        let queuedReplayHoldTimer = null;
+        let resetCheckTimer = null;
+        let resetCheckAddTimer = null;
+        let crowdTestTimer = null;
+        let donorNameTestIndex = 0;
+        const SCENE_TIME_SCALE = params.has("fast") ? 0.1 : 1;
+        const CLEAN_SCENE_MS = 7_000 * SCENE_TIME_SCALE;
+        const COMPLETION_NAME_GRACE_MS = 20_000 * SCENE_TIME_SCALE;
+        const COMPLETION_NAME_REVEAL_MS = 3_200 * SCENE_TIME_SCALE;
+        const LIVE_REVEAL_INTERVAL_MS = 260;
+        const QUEUED_REPLAY_HOLD_MS = 5_000 * SCENE_TIME_SCALE;
+        const QUEUED_REPLAY_INTERVAL_MS = 700 * SCENE_TIME_SCALE;
+        const CLEAN_VIDEO_FALLBACK_MS = 10_000;
+        const CLEAN_VIDEO_MAX_MS = 11_000 * SCENE_TIME_SCALE;
+        const IDLE_VIDEO_DELAY_MS = params.has("fast") ? 6_000 : 60_000;
+        const IDLE_VIDEO_FALLBACK_MS = 6_500;
+        const AUTO_COUNT_INTERVAL_MS = Math.max(
+            400,
+            Math.min(10_000, Number(params.get("autoInterval") || params.get("interval")) || 1400)
+        );
+        const AUTO_COUNT_START_DELAY_MS = Math.max(
+            0,
+            Math.min(30_000, Number(params.get("autoStartDelay") || params.get("startDelay")) || 900)
+        );
+        let activeCleanSceneMs = CLEAN_SCENE_MS;
+        const CTA_ROTATION_ITEMS = [
+            {
+                title: "スマホで応援に参加",
+                caption: "無料の参加アクションで反映",
+            },
+            {
+                title: "スマホをかざして参加",
+                caption: "あなたの1スワイプが画面に反映",
+            },
+            {
+                title: "スマホで参加",
+                caption: "新宿への応援を届ける",
+            },
+            {
+                title: "Scan to join",
+                caption: "Your swipe lights up Shinjuku",
+            },
+        ];
+        let ctaRotationIndex = 0;
+        let ctaRotationTimer = null;
+        const demoDebugLog = [];
+
+        function recordDemoEvent(type, detail = {}) {
+            const entry = {
+                type,
+                detail,
+                count,
+                revealed,
+                visualizedLiveCount,
+                queuedRevealCount,
+                celebrationActive,
+                idleVideoActive,
+                at: new Date().toISOString(),
+            };
+            demoDebugLog.push(entry);
+            if (demoDebugLog.length > 120) {
+                demoDebugLog.splice(0, demoDebugLog.length - 120);
+            }
+            if (params.has("debug") || params.has("log")) {
+                console.info("[demo]", type, entry);
+            }
+        }
+
+        function playVideoSafely(video, options = {}) {
+            if (!video || typeof video.play !== "function") return;
+            if (options.restartEnded && video.ended) {
+                try {
+                    video.currentTime = 0;
+                } catch {}
+            }
+            const promise = video.play();
+            if (promise?.catch) {
+                promise.catch((error) => {
+                    recordDemoEvent("video:play-rejected", {
+                        className: video.className,
+                        reason: error?.message ?? String(error),
+                    });
+                });
+            }
+        }
+
+        function playWarmLayerSafely(attempt = 0) {
+            warmLayer.muted = true;
+            warmLayer.playsInline = true;
+            playVideoSafely(warmLayer);
+            if (attempt >= 5) return;
+            if (warmPlayRetryTimer) clearTimeout(warmPlayRetryTimer);
+            warmPlayRetryTimer = setTimeout(() => {
+                warmPlayRetryTimer = null;
+                if (
+                    celebrationActive
+                    && warmLayer.classList.contains("is-revealed")
+                    && warmLayer.paused
+                ) {
+                    playWarmLayerSafely(attempt + 1);
+                }
+            }, 320 + attempt * 420);
+        }
+
+        // load()は読み込みを最初からやり直すため、監視のたびに発行すると
+        // pending中のplay()を中断し続けて再生開始をかえって妨げる。3秒に1回まで。
+        const BASE_VIDEO_LOAD_COOLDOWN_MS = 3_000;
+        let lastBaseVideoLoadAt = 0;
+
+        function keepBaseVideoMoving() {
+            if (!baseVideo) return;
+            baseVideo.muted = true;
+            baseVideo.loop = true;
+            baseVideo.playsInline = true;
+            if (baseVideo.ended) {
+                try {
+                    baseVideo.currentTime = 0;
+                } catch {}
+            }
+            if (baseVideo.paused || baseVideo.readyState < 2 || baseVideo.ended) {
+                if (baseVideo.readyState < 2 && Date.now() - lastBaseVideoLoadAt >= BASE_VIDEO_LOAD_COOLDOWN_MS) {
+                    lastBaseVideoLoadAt = Date.now();
+                    try {
+                        baseVideo.load();
+                    } catch {}
+                }
+                playVideoSafely(baseVideo, { restartEnded: true });
+            }
+        }
+
+        if (baseVideo) {
+            keepBaseVideoMoving();
+            ["pause", "ended", "stalled", "suspend", "waiting", "emptied"].forEach((eventName) => {
+                baseVideo.addEventListener(eventName, () => {
+                    window.setTimeout(keepBaseVideoMoving, 120);
+                });
+            });
+            window.addEventListener("pageshow", keepBaseVideoMoving);
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) keepBaseVideoMoving();
+            });
+            window.setInterval(keepBaseVideoMoving, LIVE_BROADCAST_MODE ? 1200 : 2400);
+        }
+
+        function clearIdleVideoTimers() {
+            if (idleVideoTimer) window.clearTimeout(idleVideoTimer);
+            if (idleVideoFinishTimer) window.clearTimeout(idleVideoFinishTimer);
+            idleVideoTimer = null;
+            idleVideoFinishTimer = null;
+        }
+
+        function setIdleVideoMode(active) {
+            idleVideoActive = active;
+            document.body.classList.toggle("is-idle-video", active);
+            if (active) {
+                document.body.classList.remove("supporter-comment-history-active");
+                if (!document.body.classList.contains("supporter-comment-active") && supporterCommentWall) {
+                    supporterCommentWall.hidden = true;
+                }
+            }
+        }
+
+        function finishIdleVideo() {
+            clearIdleVideoTimers();
+            setIdleVideoMode(false);
+            idleLayer.onended = null;
+            idleLayer.classList.remove("is-visible");
+            try {
+                idleLayer.pause();
+                idleLayer.currentTime = 0;
+            } catch {}
+            scheduleIdleVideo();
+        }
+
+        function playIdleVideo() {
+            idleVideoTimer = null;
+            if (celebrationActive || queuedReplayHoldTimer || queuedReplayTimer || liveVisualTimer) {
+                scheduleIdleVideo();
+                return;
+            }
+            setIdleVideoMode(true);
+            try {
+                idleLayer.currentTime = 0;
+            } catch {}
+            idleLayer.classList.add("is-visible");
+            idleLayer.onended = finishIdleVideo;
+            playVideoSafely(idleLayer, { restartEnded: true });
+            window.setTimeout(() => {
+                if (idleVideoActive && idleLayer.paused) {
+                    playVideoSafely(idleLayer, { restartEnded: true });
+                }
+            }, 320);
+            idleVideoFinishTimer = window.setTimeout(finishIdleVideo, IDLE_VIDEO_FALLBACK_MS);
+        }
+
+        function scheduleIdleVideo() {
+            if (idleVideoTimer) window.clearTimeout(idleVideoTimer);
+            idleVideoTimer = null;
+            if (idleVideoActive || celebrationActive) return;
+            idleVideoTimer = window.setTimeout(playIdleVideo, IDLE_VIDEO_DELAY_MS);
+        }
+
+        function noteParticipationActivity() {
+            window.__lastParticipationAt = Date.now();
+            document.body.classList.remove("supporter-comment-history-active");
+            if (!document.body.classList.contains("supporter-comment-active") && supporterCommentWall) {
+                supporterCommentWall.hidden = true;
+            }
+            if (idleVideoActive) {
+                clearIdleVideoTimers();
+                setIdleVideoMode(false);
+                idleLayer.onended = null;
+                idleLayer.classList.remove("is-visible");
+                try {
+                    idleLayer.pause();
+                    idleLayer.currentTime = 0;
+                } catch {}
+            }
+            scheduleIdleVideo();
+        }
+
+        // インクが飛び散る「ポップ」アニメーション
+        function splat(el) {
+            el.animate(
+                [
+                    { transform: "scale(0.28) rotate(-7deg)", filter: "blur(14px)", opacity: 0, offset: 0 },
+                    { transform: "scale(1.12) rotate(2deg)", filter: "blur(1px)", opacity: 1, offset: 0.55 },
+                    { transform: "scale(0.97) rotate(-1deg)", filter: "blur(0px)", opacity: 1, offset: 0.78 },
+                    { transform: "scale(1) rotate(0deg)", filter: "blur(0px)", opacity: 1, offset: 1 },
+                ],
+                { duration: 720, easing: "cubic-bezier(0.18, 1.25, 0.32, 1)", fill: "none" }
+            );
+        }
+
+        function updateHud() {
+            // 金額(人数×¥100)ではなく人数をそのまま表示する
+            countNum.textContent = `${count.toLocaleString("ja-JP")}人`;
+            const remaining = Math.max(0, TOTAL - revealed);
+            const done = revealed >= TOTAL || celebrationActive;
+            if (challengeLabel) {
+                const challengeNumber = celebrationActive
+                    ? activeChallengeNumber
+                    : Math.floor(getVisualParticipantCount() / TOTAL) + 1;
+                challengeLabel.textContent = `第${challengeNumber}回 彩リレー`;
+            }
+            progressBar.style.width = `${(revealed / TOTAL) * 100}%`;
+            progressText.classList.toggle("is-complete", done);
+            stage.classList.toggle("is-complete", done);
+            progressText.textContent = queuedReplayHoldTimer && queuedRevealCount > 0 && !celebrationActive
+                ? "次の参加をまもなく反映します"
+                : warmLayer.classList.contains("is-revealed")
+                ? "みんなの関心が、新宿への応援として重なりました"
+                : done
+                ? "新宿で続く取り組みが見えてきました"
+                : `あと${remaining}スワイプで彩が戻ってくる`;
+        }
+
+        function updateTransitionCountdown() {
+            if (transitionCountdown) transitionCountdown.textContent = "";
+        }
+
+        function getVisualParticipantCount() {
+            if (queuedRevealCount > 0) {
+                return Math.max(0, count - queuedRevealCount);
+            }
+            if (liveCountInitialized) {
+                return Math.max(0, visualizedLiveCount);
+            }
+            return Math.max(0, count);
+        }
+
+        function startCountdownTimer() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            updateTransitionCountdown();
+            countdownTimer = null;
+        }
+
+        function clearCelebrationTimers() {
+            if (celebrationTimer) clearTimeout(celebrationTimer);
+            if (warmTimer) clearTimeout(warmTimer);
+            if (countdownTimer) clearInterval(countdownTimer);
+            if (warmPlayRetryTimer) clearTimeout(warmPlayRetryTimer);
+            if (celebrationWatchdogTimer) clearInterval(celebrationWatchdogTimer);
+            if (completionNameGraceTimer) clearTimeout(completionNameGraceTimer);
+            celebrationTimer = null;
+            warmTimer = null;
+            countdownTimer = null;
+            warmPlayRetryTimer = null;
+            celebrationWatchdogTimer = null;
+            completionNameGraceTimer = null;
+            warmLayer.onended = null;
+            if (transitionCountdown) transitionCountdown.textContent = "";
+        }
+
+        function startPendingCompletion() {
+            if (celebrationActive || completionNameGraceTimer) return;
+            pendingCompletionSwipeCount = Math.max(1, Math.floor(getVisualParticipantCount()));
+            completionNameGraceTimer = window.setTimeout(() => {
+                completionNameGraceTimer = null;
+                pendingCompletionSwipeCount = 0;
+                startCelebration();
+            }, COMPLETION_NAME_GRACE_MS);
+        }
+
+        function resolvePendingCompletionWithName(swipeCount) {
+            const linkedCount = Math.floor(Number(swipeCount));
+            if (
+                !completionNameGraceTimer ||
+                !Number.isFinite(linkedCount) ||
+                linkedCount !== pendingCompletionSwipeCount
+            ) {
+                return false;
+            }
+            window.clearTimeout(completionNameGraceTimer);
+            completionNameGraceTimer = window.setTimeout(() => {
+                completionNameGraceTimer = null;
+                pendingCompletionSwipeCount = 0;
+                startCelebration();
+            }, COMPLETION_NAME_REVEAL_MS);
+            return true;
+        }
+
+        function setSceneFocus(active) {
+            document.body.classList.toggle("is-scene-focus", active);
+        }
+
+        function clearQueuedReplayTimer() {
+            if (queuedReplayTimer) window.clearInterval(queuedReplayTimer);
+            if (queuedReplayHoldTimer) window.clearTimeout(queuedReplayHoldTimer);
+            queuedReplayTimer = null;
+            queuedReplayHoldTimer = null;
+        }
+
+        function replayQueuedReveals() {
+            if (queuedRevealCount <= 0 || queuedReplayTimer || queuedReplayHoldTimer) {
+                return;
+            }
+
+            queuedReplayTimer = window.setInterval(() => {
+                if (celebrationActive) {
+                    return;
+                }
+
+                if (queuedRevealCount <= 0) {
+                    clearQueuedReplayTimer();
+                    return;
+                }
+
+                queuedRevealCount -= 1;
+                triggerSplat({ force: true });
+            }, QUEUED_REPLAY_INTERVAL_MS);
+        }
+
+        function holdThenReplayQueuedReveals() {
+            if (queuedRevealCount <= 0 || queuedReplayHoldTimer || queuedReplayTimer) {
+                return;
+            }
+
+            if (progressText) {
+                progressText.textContent = "次の参加をまもなく反映します";
+            }
+            queuedReplayHoldTimer = window.setTimeout(() => {
+                queuedReplayHoldTimer = null;
+                if (transitionCountdown) transitionCountdown.textContent = "";
+                replayQueuedReveals();
+            }, QUEUED_REPLAY_HOLD_MS);
+        }
+
+        function finishCelebration() {
+            recordDemoEvent("celebration:finish");
+            clearCelebrationTimers();
+            warmLayer.onended = null;
+            celebrationActive = false;
+            pendingCompletionSwipeCount = 0;
+            setSceneFocus(false);
+            celebrationStartedAt = 0;
+            activeChallengeNumber = 0;
+            warmLayer.classList.remove("is-revealed");
+            finalLayer.classList.remove("is-revealed");
+            finalLayer.style.opacity = "0";
+            try {
+                warmLayer.pause();
+                warmLayer.currentTime = 0;
+            } catch {}
+            // 達成演出中に参加が重なっても、次の回は荒廃状態から始める。
+            rebuildReveal(0);
+            updateHud();
+            holdThenReplayQueuedReveals();
+            scheduleIdleVideo();
+        }
+
+        function startCelebration() {
+            const celebrationCount = Math.max(0, Math.floor(getVisualParticipantCount()));
+            if (celebrationPersistence && celebrationCount > 0 && celebrationCount % TOTAL === 0) {
+                try {
+                    const persistenceResult = celebrationPersistence(celebrationCount);
+                    persistenceResult?.catch?.((error) => {
+                        console.info("[demo] celebration state write skipped:", error);
+                    });
+                } catch (error) {
+                    console.info("[demo] celebration state write skipped:", error);
+                }
+            }
+            recordDemoEvent("celebration:start");
+            clearCelebrationTimers();
+            clearIdleVideoTimers();
+            noteParticipationActivity();
+            warmLayer.onended = null;
+            // キュー再生中に達成した場合も、次の回は必ず荒廃状態を数秒見せてから再開する。
+            clearQueuedReplayTimer();
+            celebrationActive = true;
+            pendingCompletionSwipeCount = 0;
+            setSceneFocus(true);
+            celebrationStartedAt = Date.now();
+            const videoDurationMs = Number.isFinite(warmLayer.duration) && warmLayer.duration > 0
+                ? warmLayer.duration * 1000
+                : CLEAN_VIDEO_FALLBACK_MS;
+            activeCleanSceneMs = Math.min(videoDurationMs, CLEAN_VIDEO_MAX_MS);
+            activeChallengeNumber = Math.max(1, Math.ceil(getVisualParticipantCount() / TOTAL));
+            finalLayer.style.opacity = "";
+            finalLayer.classList.add("is-revealed");
+            splat(finalLayer);
+            try {
+                warmLayer.currentTime = 0;
+            } catch {}
+            warmLayer.classList.add("is-revealed");
+            warmLayer.onended = finishCelebration;
+            playWarmLayerSafely();
+            updateHud();
+            startCountdownTimer();
+
+            celebrationTimer = setTimeout(finishCelebration, activeCleanSceneMs + 1200);
+            celebrationWatchdogTimer = setInterval(() => {
+                if (!celebrationActive) return;
+                const elapsed = Date.now() - celebrationStartedAt;
+                if (elapsed >= activeCleanSceneMs + 1500) {
+                    recordDemoEvent("celebration:watchdog-finish", { elapsed, activeCleanSceneMs });
+                    finishCelebration();
+                }
+            }, 800);
+        }
+
+        function skipScene() {
+            if (!celebrationActive) {
+                return;
+            }
+
+            finishCelebration();
+        }
+
+        const thanks = document.getElementById("thanks");
+        const supporterCommentWall = document.getElementById("supporterCommentWall");
+        const supporterCommentText = document.getElementById("supporterCommentText");
+        const supporterCommentName = document.getElementById("supporterCommentName");
+
+        function setCtaCopy(item, { animate = true } = {}) {
+            if (!ctaTitle || !qrCaption || !item) return;
+            if (!animate || !ctaCopy) {
+                ctaTitle.textContent = item.title;
+                qrCaption.textContent = item.caption;
+                return;
+            }
+            ctaCopy.classList.add("is-changing");
+            window.setTimeout(() => {
+                ctaTitle.textContent = item.title;
+                qrCaption.textContent = item.caption;
+                ctaCopy.classList.remove("is-changing");
+            }, 220);
+        }
+
+        function startCtaRotation() {
+            setCtaCopy(CTA_ROTATION_ITEMS[0], { animate: false });
+            if (ctaRotationTimer || CTA_ROTATION_ITEMS.length < 2) return;
+            ctaRotationTimer = window.setInterval(() => {
+                ctaRotationIndex = (ctaRotationIndex + 1) % CTA_ROTATION_ITEMS.length;
+                setCtaCopy(CTA_ROTATION_ITEMS[ctaRotationIndex]);
+            }, 6000);
+        }
+
+        if (LIVE_BROADCAST_MODE) {
+            if (liveLabel) liveLabel.textContent = "累計参加者";
+            if (liveUnit) liveUnit.textContent = "";
+            if (hint) hint.textContent = "LIVE配信中：スマホの応援アクションで画面が変化します";
+        }
+        startCtaRotation();
+
+        // 参加ページが名前未入力時に自動採番する「サポーター#XXXX」等は本名扱いしない
+        const AUTO_NAME_RE = /^サポーター#/;
+        const PLACEHOLDER_NAMES = new Set(["匿名サポーター", "匿名", "Guest", "参加者"]);
+        function isRealName(raw) {
+            return raw.length > 0 && !AUTO_NAME_RE.test(raw) && !PLACEHOLDER_NAMES.has(raw);
+        }
+
+        const donorNameRotation = [];
+        const STREAK_CLASS_NAMES = ["streak-2", "streak-3", "streak-4", "streak-5", "streak-6", "streak-7"];
+        const NAME_NOTIFICATION_MS = 3400;
+        const NAME_TO_TICKER_DELAY_MS = 3200;
+        const NAME_EFFECT_DEDUPE_MS = 10_000;
+        const PARTICIPATION_STACK_VISIBLE_MS = 7000;
+        const PARTICIPATION_STACK_MAX_VISIBLE = 6;
+        const PARTICIPATION_STACK_ARRIVAL_MS = 380;
+        let latestDonorEntry = null;
+        const nameNotificationQueue = [];
+        const recentNameEffectAt = new Map();
+        let nameNotificationTimer = null;
+        const participationStackQueue = [];
+        let participationStackTimer = null;
+        const SUPPORTER_COMMENT_ROTATION_MS = 6500;
+        const SUPPORTER_COMMENT_WAIT_MS = 15_000;
+        const supporterCommentRotation = [];
+        let supporterCommentIndex = 0;
+        let supporterCommentTimer = null;
+        let supporterEventTimer = null;
+        let pendingSupporterCommentRequest = null;
+
+        function getStreakClass(options = {}) {
+            // 色は「連続日数」ではなく「通算参加日数」で決める。連続でなくても日数が増えれば色が進む。
+            // 旧イベント（totalDays 未保持）は streakDays で補完する。
+            const totalDays = Math.max(1, Number(options.totalDays) || Number(options.streakDays) || 1);
+            if (totalDays < 2) return "";
+            return `streak-${Math.min(7, totalDays)}`;
+        }
+
+        function hasStreakColor(options = {}) {
+            return getStreakClass(options) !== "";
+        }
+
+        function applyStreakClass(element, options = {}) {
+            element.classList.remove(...STREAK_CLASS_NAMES);
+            const streakClass = getStreakClass(options);
+            if (streakClass) element.classList.add(streakClass);
+        }
+
+        function addToDonorNameRotation(name, options = {}) {
+            const entry = {
+                name,
+                visitorId: typeof options.visitorId === "string" ? options.visitorId : "",
+                isReturning: options.isReturning === true,
+                isSupporter: options.isSupporter === true,
+                streakDays: Math.max(1, Number(options.streakDays) || 1),
+                totalDays: Math.max(1, Number(options.totalDays) || Number(options.streakDays) || 1),
+                tickerFont: typeof options.tickerFont === "string" ? options.tickerFont : "",
+                createdAt: Number(options.createdAt) || 0,
+                swipeEventId: typeof options.swipeEventId === "string" ? options.swipeEventId : "",
+                swipeCount: Math.max(0, Math.floor(Number(options.swipeCount) || 0)),
+            };
+            const existingIndex = donorNameRotation.findIndex((current) => {
+                const sameVisitor = Boolean(entry.visitorId && current.visitorId === entry.visitorId);
+                const sameDisplayName = String(current.name).trim() === String(entry.name).trim();
+                return sameVisitor || sameDisplayName;
+            });
+            if (existingIndex >= 0) {
+                donorNameRotation.splice(existingIndex, 1);
+            }
+            donorNameRotation.push(entry);
+            donorNameRotation.sort((a, b) =>
+                b.totalDays - a.totalDays ||
+                b.createdAt - a.createdAt
+            );
+            return entry;
+        }
+
+        const TICKER_FONT_CLASSES = [
+            "ticker-font-noto",
+            "ticker-font-rounded",
+            "ticker-font-mincho",
+            "ticker-font-dot",
+            "ticker-font-yusei",
+        ];
+
+        function getTickerFontClass(entry) {
+            const requested = String(entry.tickerFont || "").trim();
+            const requestedClass = `ticker-font-${requested}`;
+            if (TICKER_FONT_CLASSES.includes(requestedClass)) {
+                return requestedClass;
+            }
+            const source = String(entry.visitorId || entry.name || "supporter");
+            let hash = 0;
+            for (let index = 0; index < source.length; index += 1) {
+                hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+            }
+            return TICKER_FONT_CLASSES[hash % TICKER_FONT_CLASSES.length];
+        }
+
+        function appendTickerItems(group, entries, priorityEntry = null) {
+            entries.forEach((entry) => {
+                const name = document.createElement("span");
+                name.className = `ticker-name ${getTickerFontClass(entry)}`;
+                name.classList.toggle("is-returning", entry.isReturning && hasStreakColor(entry));
+                name.classList.toggle("is-latest", entry === priorityEntry);
+                name.classList.toggle("is-supporter", entry.isSupporter === true || Boolean(supporterCommentFor(entry.name)));
+                applyStreakClass(name, entry);
+                name.textContent = `${entry.name}さん`;
+                group.appendChild(name);
+
+                const separator = document.createElement("span");
+                separator.className = "ticker-separator";
+                separator.textContent = "◆";
+                group.appendChild(separator);
+            });
+        }
+
+        function renderDonorTicker(priorityEntry = null) {
+            if (!thanks || donorNameRotation.length === 0) {
+                thanks?.replaceChildren();
+                return;
+            }
+
+            const orderedEntriesWithDuplicates = priorityEntry
+                ? [priorityEntry, ...donorNameRotation.filter((entry) => entry !== priorityEntry)]
+                : donorNameRotation;
+            const seenNames = new Set();
+            const entries = orderedEntriesWithDuplicates.filter((entry) => {
+                const normalizedName = String(entry?.name ?? "").trim();
+                if (!normalizedName || seenNames.has(normalizedName)) return false;
+                seenNames.add(normalizedName);
+                return true;
+            });
+            const track = document.createElement("span");
+            track.className = "thanks-track";
+            track.style.setProperty("--ticker-duration", `${Math.max(24, entries.length * 2.1)}s`);
+
+            for (let i = 0; i < 2; i += 1) {
+                const group = document.createElement("span");
+                group.className = "thanks-group";
+                appendTickerItems(group, entries, priorityEntry);
+                track.appendChild(group);
+            }
+            thanks.replaceChildren(track);
+        }
+
+        function resumeDonorTicker() {
+            if (donorNameRotation.length === 0) return;
+            renderDonorTicker();
+        }
+
+        function processNameNotificationQueue() {
+            if (nameNotificationTimer || nameNotificationQueue.length === 0) return;
+            const next = nameNotificationQueue.shift();
+            latestDonorEntry = next;
+            renderDonorTicker(latestDonorEntry);
+            nameNotificationTimer = window.setTimeout(() => {
+                nameNotificationTimer = null;
+                latestDonorEntry = null;
+                renderDonorTicker();
+                processNameNotificationQueue();
+            }, NAME_NOTIFICATION_MS);
+        }
+
+        function showThanks(name, options = {}) {
+            if (LIVE_BROADCAST_MODE) {
+                showParticipationThanks("", options);
+                return;
+            }
+            const raw = String(name ?? "").trim().slice(0, 24);
+            if (!isRealName(raw)) return;
+            const swipeEventId = String(options?.swipeEventId ?? "").trim();
+            const swipeCount = Math.floor(Number(options?.swipeCount));
+            const effectKey = swipeEventId
+                ? `swipe:${swipeEventId}`
+                : `name:${raw}:${Number.isFinite(swipeCount) ? swipeCount : ""}`;
+            const now = Date.now();
+            const previousEffectAt = recentNameEffectAt.get(effectKey) ?? 0;
+            if (now - previousEffectAt < NAME_EFFECT_DEDUPE_MS) return;
+            recentNameEffectAt.set(effectKey, now);
+            for (const [key, createdAt] of recentNameEffectAt) {
+                if (now - createdAt >= NAME_EFFECT_DEDUPE_MS) recentNameEffectAt.delete(key);
+            }
+            // 新着名は最初にインク（支援者は電子看板も）へ出し、消えてから名前ロールへ移す。
+            // 同じ名前が同時に2人いるように見える状態を防ぐ。
+            relightParticipation(raw, options);
+            showSupporterCommentForParticipant(raw, options);
+            window.setTimeout(() => {
+                const entry = addToDonorNameRotation(raw, options);
+                nameNotificationQueue.push(entry);
+                if (nameNotificationQueue.length > 120) {
+                    nameNotificationQueue.splice(0, nameNotificationQueue.length - 120);
+                }
+                renderDonorTicker(latestDonorEntry);
+                processNameNotificationQueue();
+            }, NAME_TO_TICKER_DELAY_MS);
+        }
+
+        function setDonorNameRotation(names) {
+            donorNameRotation.length = 0;
+            latestDonorEntry = null;
+            window.clearTimeout(nameNotificationTimer);
+            nameNotificationTimer = null;
+            nameNotificationQueue.length = 0;
+            if (LIVE_BROADCAST_MODE) {
+                thanks?.replaceChildren();
+                return;
+            }
+            names.forEach((entry) => {
+                const raw = String(entry?.name ?? entry ?? "").trim().slice(0, 24);
+                if (isRealName(raw)) addToDonorNameRotation(raw, entry);
+            });
+            renderDonorTicker();
+        }
+
+        function removeParticipationThanksItem(item) {
+            if (!item?.isConnected || item.classList.contains("is-leaving")) return;
+            item.classList.add("is-leaving");
+            window.setTimeout(() => item.remove(), 480);
+        }
+
+        function renderParticipationThanks(name, options = {}) {
+            if (!participationThanks) return;
+            const raw = String(name ?? "").trim().slice(0, 24);
+            const liveBroadcastText = "応援アクションが届きました";
+            const isReturning = options.isReturning === true;
+            const shouldColorReturning = isReturning && hasStreakColor(options);
+            const item = document.createElement("div");
+            item.className = "participation-thanks-item";
+            item.classList.toggle("is-returning", shouldColorReturning);
+            applyStreakClass(item, options);
+            applyStreakClass(stage, options);
+            item.textContent = LIVE_BROADCAST_MODE
+                ? liveBroadcastText
+                : isRealName(raw)
+                    ? `${raw}さん、ご参加ありがとうございます`
+                    : "ご参加ありがとうございます";
+            participationThanks.appendChild(item);
+            const visibleItems = [...participationThanks.children]
+                .filter((child) => !child.classList.contains("is-leaving"));
+            if (visibleItems.length > PARTICIPATION_STACK_MAX_VISIBLE) {
+                removeParticipationThanksItem(visibleItems[0]);
+            }
+            stage.classList.remove("is-returning-pulse");
+            if (shouldColorReturning) {
+                void stage.offsetWidth;
+                stage.classList.add("is-returning-pulse");
+                window.setTimeout(() => stage.classList.remove("is-returning-pulse"), 2700);
+            }
+            window.setTimeout(() => removeParticipationThanksItem(item), PARTICIPATION_STACK_VISIBLE_MS);
+        }
+
+        function processParticipationStackQueue() {
+            if (participationStackTimer || participationStackQueue.length === 0) return;
+            const next = participationStackQueue.shift();
+            renderParticipationThanks(next.name, next.options);
+            participationStackTimer = window.setTimeout(() => {
+                participationStackTimer = null;
+                processParticipationStackQueue();
+            }, PARTICIPATION_STACK_ARRIVAL_MS);
+        }
+
+        function showParticipationThanks(name, options = {}) {
+            // 着弾エフェクトへ名前を渡す。購読が二重に発火してもズレないよう
+            // 「直近の1件だけ・鮮度つき」で持つ（FIFOだとイベント数と飛沫数がずれる）
+            if (options?.skipImpact !== true) {
+                window.__setImpactName?.(name, options);
+            }
+            showSupporterCommentForParticipant(name);
+            participationStackQueue.push({ name, options });
+            if (participationStackQueue.length > 120) {
+                participationStackQueue.splice(0, participationStackQueue.length - 120);
+            }
+            processParticipationStackQueue();
+        }
+
+        function normalizeSupporterCommentForDisplay(entry = {}) {
+            const comment = String(entry?.comment ?? "").trim().slice(0, 60);
+            const name = String(entry?.name ?? "").trim().slice(0, 24);
+            if (!comment) {
+                return null;
+            }
+            return {
+                comment,
+                name: isRealName(name) ? name : "",
+                swipeEventId: String(entry?.swipeEventId ?? "").trim(),
+                swipeCount: Math.max(0, Math.floor(Number(entry?.swipeCount) || 0)),
+                createdAt: Number(entry?.createdAt) || 0,
+                id: String(entry?.id ?? entry?.codeHash ?? comment),
+            };
+        }
+
+        function renderSupporterComment() {
+            if (!supporterCommentWall || !supporterCommentText || supporterCommentRotation.length === 0) {
+                if (supporterCommentWall) supporterCommentWall.hidden = true;
+                return;
+            }
+
+            const entry = supporterCommentRotation[supporterCommentIndex % supporterCommentRotation.length];
+            supporterCommentText.textContent = entry.comment;
+            supporterCommentName.textContent = entry.name ? `${entry.name}さんより` : "";
+            supporterCommentWall.hidden = false;
+            supporterCommentWall.classList.remove("is-switching");
+            void supporterCommentWall.offsetWidth;
+            supporterCommentWall.classList.add("is-switching");
+        }
+
+        function startSupporterCommentTicker() {
+            if (supporterCommentTimer) {
+                window.clearInterval(supporterCommentTimer);
+                supporterCommentTimer = null;
+            }
+            if (supporterCommentRotation.length === 0) {
+                if (supporterCommentWall) supporterCommentWall.hidden = true;
+                return;
+            }
+            supporterCommentIndex = Math.min(supporterCommentIndex, supporterCommentRotation.length - 1);
+            renderSupporterComment();
+            if (supporterCommentRotation.length > 1) {
+                supporterCommentTimer = window.setInterval(() => {
+                    // 画面に出ていない間は順番を進めない（見えない秒で持ち時間を消費させない）
+                    const visible = document.body.classList.contains("supporter-comment-history-active");
+                    if (!visible) return;
+                    supporterCommentIndex = (supporterCommentIndex + 1) % supporterCommentRotation.length;
+                    renderSupporterComment();
+                }, SUPPORTER_COMMENT_ROTATION_MS);
+            }
+        }
+
+        function syncSupporterCommentHistory(active) {
+            const shouldShow = Boolean(
+                active &&
+                !idleVideoActive &&
+                supporterCommentRotation.length > 0 &&
+                !document.body.classList.contains("supporter-comment-active")
+            );
+            const wasShowing = document.body.classList.contains("supporter-comment-history-active");
+            document.body.classList.toggle("supporter-comment-history-active", shouldShow);
+            if (shouldShow && !wasShowing) {
+                startSupporterCommentTicker();
+            } else if (!shouldShow && wasShowing && supporterCommentWall) {
+                supporterCommentWall.hidden = true;
+            }
+        }
+
+        function setSupporterComments(comments = []) {
+            supporterCommentRotation.length = 0;
+            if (LIVE_BROADCAST_MODE) {
+                supporterCommentIndex = 0;
+                if (supporterCommentWall) supporterCommentWall.hidden = true;
+                return;
+            }
+            const normalized = comments
+                .map(normalizeSupporterCommentForDisplay)
+                .filter(Boolean)
+                .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id))
+                .slice(0, 20);
+            supporterCommentRotation.push(...normalized);
+            supporterCommentIndex = 0;
+            if (supporterCommentWall) supporterCommentWall.hidden = true;
+            renderDonorTicker(latestDonorEntry);
+            syncSupporterCommentHistory(
+                document.body.classList.contains("is-quiet") && !idleVideoActive,
+            );
+            if (pendingSupporterCommentRequest) {
+                if (Date.now() <= pendingSupporterCommentRequest.expiresAt) {
+                    showSupporterCommentForParticipant(
+                        pendingSupporterCommentRequest.name,
+                        pendingSupporterCommentRequest.options,
+                    );
+                } else {
+                    pendingSupporterCommentRequest = null;
+                }
+            }
+        }
+
+        function showSupporterCommentForParticipant(name, options = {}) {
+            const normalizedName = String(name ?? "").trim().slice(0, 24);
+            const swipeEventId = String(options?.swipeEventId ?? "").trim();
+            const index = supporterCommentRotation.findIndex(
+                (entry) => entry?.comment && (
+                    (swipeEventId && entry?.swipeEventId === swipeEventId) ||
+                    (!swipeEventId && normalizedName && entry?.name === normalizedName)
+                )
+            );
+            if (index < 0) {
+                if (options?.isSupporter === true && (swipeEventId || normalizedName)) {
+                    pendingSupporterCommentRequest = {
+                        name: normalizedName,
+                        options: { ...options, swipeEventId },
+                        expiresAt: Date.now() + SUPPORTER_COMMENT_WAIT_MS,
+                    };
+                }
+                return false;
+            }
+            pendingSupporterCommentRequest = null;
+            supporterCommentIndex = index;
+            renderSupporterComment();
+            document.body.classList.add("supporter-comment-active");
+            window.clearTimeout(supporterEventTimer);
+            supporterEventTimer = window.setTimeout(() => {
+                document.body.classList.remove("supporter-comment-active");
+                if (supporterCommentWall) supporterCommentWall.hidden = true;
+            }, SUPPORTER_COMMENT_ROTATION_MS);
+            return true;
+        }
+
+        // カウントを軽く弾ませてライブ感を出す
+        function pulseCount() {
+            countNum.animate(
+                [
+                    { transform: "scale(1)" },
+                    { transform: "scale(1.16)", offset: 0.3 },
+                    { transform: "scale(1)" },
+                ],
+                { duration: 650, easing: "cubic-bezier(0.18, 1.2, 0.32, 1)" }
+            );
+        }
+
+        // 飛沫を1つ飛ばす（人数カウントとは独立）
+        function triggerSplat(options = {}) {
+            if (!options.force && celebrationActive) {
+                queuedRevealCount += 1;
+                splat(finalLayer);
+                return;
+            }
+            if (!options.force && completionNameGraceTimer) {
+                queuedRevealCount += 1;
+                splat(finalLayer);
+                return;
+            }
+            if (!options.force && queuedReplayHoldTimer) {
+                queuedRevealCount += 1;
+                return;
+            }
+
+            if (revealed < TOTAL) {
+                // 次の飛沫を飛び散らせて新しい範囲を出す
+                const el = layers[revealed];
+                el.classList.add("is-revealed");
+                if (revealed % 2 === 1) {
+                    // 完成形が出たら同じ飛沫の芯は差し替えて消す（screen二重合成で白飛びするため）
+                    layers[revealed - 1].classList.remove("is-revealed");
+                }
+                splat(el);
+                revealed += 1;
+                if (revealed >= TOTAL) {
+                    // 最後のスワイプへ名前を後付けできる猶予を置いてから完成映像へ進む。
+                    startPendingCompletion();
+                }
+                updateHud(); // 進捗バー/テキストを飛沫ごとに更新（ライブ連動の連続表示にも対応）
+            } else {
+                // 全点灯後も参加するたびに既存の飛沫（完成形）を弾けさせて反応させる
+                splat(layers[Math.floor(Math.random() * (TOTAL / 2)) * 2 + 1]);
+            }
+        }
+
+        // 手動トリガー（オフラインデモ用）。Firebase連動中は無効。
+        function addParticipant() {
+            if (liveActive && !MANUAL_MODE) return;
+            noteParticipationActivity();
+            const persona = DEV ? createRandomDevPersona() : null;
+            count += 1;
+            triggerSplat();
+            updateHud();
+            pulseCount();
+            if (persona) {
+                showThanks(persona.name, {
+                    ...persona,
+                    swipeCount: count,
+                    createdAt: Date.now(),
+                });
+            } else {
+                showParticipationThanks();
+            }
+            if (hint && count === 1) hint.style.opacity = "0";
+        }
+
+        function completeCurrentChallenge() {
+            if (celebrationActive) {
+                return;
+            }
+
+            noteParticipationActivity();
+            const remaining = Math.max(1, TOTAL - revealed);
+            count += remaining;
+            for (let i = 0; i < remaining; i += 1) {
+                triggerSplat();
+            }
+            updateHud();
+            pulseCount();
+        }
+
+        // 飛沫の出方を target 枚に合わせる（実カウントのリセット/巻き戻し対応）
+        function rebuildReveal(target) {
+            revealed = Math.max(0, Math.min(TOTAL, target));
+            layers.forEach((el, i) => {
+                el.getAnimations().forEach((a) => a.cancel());
+                // 芯(偶数index)は「最新ステップのときだけ」表示。完成形(奇数index)は出たら残る
+                const visible = i % 2 === 0 ? i === revealed - 1 : i < revealed;
+                el.classList.toggle("is-revealed", visible);
+            });
+            finalLayer.getAnimations().forEach((a) => a.cancel());
+            finalLayer.classList.toggle("is-revealed", revealed >= TOTAL || celebrationActive);
+            finalLayer.style.opacity = revealed >= TOTAL || celebrationActive ? "" : "0";
+        }
+
+        // Firebaseの実カウントを反映：増えた分だけ飛沫を飛ばす
+        function applyLiveCount(next, options = {}) {
+            const n = Math.max(0, Number(next) || 0);
+            const delta = n - count;
+            recordDemoEvent("live-count", { next: n, delta });
+            // DEVモードでは手動操作中の表示を、低い/同値のライブ値で巻き戻さない
+            if (MANUAL_MODE && delta <= 0) return;
+
+            if (delta > 0) {
+                noteParticipationActivity();
+            }
+
+            // 初回同期は基本的に過去の参加を再演せず、累計人数から現在の回と進捗を直接復元する。
+            // ただし「直近の参加でちょうど18人達成した」ケースは、DOOH側の接続遅れや再読み込みで
+            // 達成演出を取り逃がすため、一度だけ完成映像を再生する。
+            if (!liveCountInitialized) {
+                liveCountInitialized = true;
+                count = n;
+                visualizedLiveCount = n;
+                clearCelebrationTimers();
+                celebrationActive = false;
+                setSceneFocus(false);
+                celebrationStartedAt = 0;
+                activeChallengeNumber = 0;
+                warmLayer.classList.remove("is-revealed");
+                finalLayer.classList.remove("is-revealed");
+                rebuildReveal(n % TOTAL);
+                updateHud();
+                if (options.replayInitialCompletion === true && n > 0 && n % TOTAL === 0) {
+                    window.setTimeout(() => {
+                        if (!celebrationActive && count === n) {
+                            startCelebration();
+                        }
+                    }, 450);
+                }
+                return;
+            }
+
+            count = n;
+
+            if (delta > 0) {
+                pulseCount();
+                if (!liveVisualTimer) {
+                    liveVisualTimer = window.setInterval(() => {
+                        if (visualizedLiveCount >= count) {
+                            window.clearInterval(liveVisualTimer);
+                            liveVisualTimer = null;
+                            if (hint && !DEV) hint.textContent = "● LIVE — 参加証投影中";
+                            return;
+                        }
+                        if (celebrationActive || completionNameGraceTimer || queuedReplayHoldTimer) {
+                            if (hint && !DEV) {
+                                const pending = Math.max(0, count - visualizedLiveCount);
+                                hint.textContent = pending > 0
+                                    ? `● LIVE — あと${pending}人の参加を待機中`
+                                    : "● LIVE — 参加証投影中";
+                            }
+                            return;
+                        }
+                        visualizedLiveCount += 1;
+                        triggerSplat();
+                        if (hint && !DEV) {
+                            const pending = Math.max(0, count - visualizedLiveCount);
+                            hint.textContent = pending > 0
+                                ? `● LIVE — あと${pending}人の参加を順番に反映中`
+                                : "● LIVE — 参加証投影中";
+                        }
+                    }, LIVE_REVEAL_INTERVAL_MS);
+                }
+            } else if (delta < 0) {
+                if (liveVisualTimer) window.clearInterval(liveVisualTimer);
+                liveVisualTimer = null;
+                visualizedLiveCount = n;
+                queuedRevealCount = 0;
+                clearQueuedReplayTimer();
+                clearCelebrationTimers();
+                celebrationActive = false;
+                setSceneFocus(false);
+                celebrationStartedAt = 0;
+                activeChallengeNumber = 0;
+                warmLayer.classList.remove("is-revealed");
+                try {
+                    warmLayer.pause();
+                    warmLayer.currentTime = 0;
+                } catch {}
+                rebuildReveal(n % TOTAL); // サーバ側でカウントがリセットされた場合
+            }
+
+            updateHud();
+        }
+
+        // 連動開始：手動ツールを隠して実カウント主導に切り替え
+        function activateLive() {
+            if (liveActive) return;
+            liveActive = true;
+            if (!DEV && autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = null;
+            }
+            if (!CONTROL_TOOLS_MODE) document.querySelector(".tools")?.style.setProperty("display", "none");
+            if (hint) {
+                hint.textContent = DEV
+                    ? "● LIVE（DEV：手動 / 📡本番+1 で確認）"
+                    : "● LIVE — 参加証投影中";
+                hint.style.opacity = "1";
+            }
+        }
+
+        function clearOperationTimers() {
+            if (resetCheckTimer) window.clearTimeout(resetCheckTimer);
+            if (resetCheckAddTimer) window.clearInterval(resetCheckAddTimer);
+            if (crowdTestTimer) window.clearInterval(crowdTestTimer);
+            resetCheckTimer = null;
+            resetCheckAddTimer = null;
+            crowdTestTimer = null;
+        }
+
+        function setOperationStatus(message) {
+            if (!hint || !message) return;
+            hint.textContent = message;
+            hint.style.opacity = "1";
+        }
+
+        function returnVisualToWaitingState({
+            resetCount = false,
+            resetLiveState = false,
+            message = "映像を待機状態に戻しました",
+        } = {}) {
+            clearOperationTimers();
+            if (autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = null;
+                autoBtn.classList.remove("is-on");
+                autoBtn.textContent = "▶ 自動";
+            }
+            if (liveVisualTimer) window.clearInterval(liveVisualTimer);
+            liveVisualTimer = null;
+            clearQueuedReplayTimer();
+            clearCelebrationTimers();
+            clearIdleVideoTimers();
+            if (resetCount) {
+                count = 0;
+            }
+            liveCountInitialized = resetLiveState ? false : liveCountInitialized;
+            visualizedLiveCount = count;
+            queuedRevealCount = 0;
+            setIdleVideoMode(false);
+            celebrationActive = false;
+            setSceneFocus(false);
+            celebrationStartedAt = 0;
+            activeChallengeNumber = 0;
+            layers.forEach((el) => {
+                el.getAnimations().forEach((a) => a.cancel());
+                el.classList.remove("is-revealed");
+            });
+            finalLayer.getAnimations().forEach((a) => a.cancel());
+            finalLayer.classList.remove("is-revealed");
+            finalLayer.style.opacity = "0";
+            warmLayer.classList.remove("is-revealed");
+            idleLayer.classList.remove("is-visible");
+            try {
+                warmLayer.pause();
+                warmLayer.currentTime = 0;
+                idleLayer.pause();
+                idleLayer.currentTime = 0;
+            } catch {}
+            rebuildReveal(0);
+            keepBaseVideoMoving();
+            updateHud();
+            scheduleIdleVideo();
+            setOperationStatus(message);
+        }
+
+        function reset() {
+            returnVisualToWaitingState({
+                resetCount: true,
+                resetLiveState: true,
+                message: "リセットしました。画面クリック / スペースキー で参加者 +1",
+            });
+        }
+
+        function stopAutoCountDemo() {
+            if (!autoTimer) return;
+            clearInterval(autoTimer);
+            autoTimer = null;
+            autoBtn.classList.remove("is-on");
+            autoBtn.textContent = "▶ 自動";
+        }
+
+        function startAutoCountDemo({ immediate = true } = {}) {
+            if (autoTimer) return;
+            autoBtn.classList.add("is-on");
+            autoBtn.textContent = "⏸ 停止";
+            if (AUTO_COUNT_MODE && hint) {
+                hint.textContent = `● AUTO DEMO — ${Math.round(AUTO_COUNT_INTERVAL_MS / 100) / 10}秒ごとに自動参加`;
+                hint.style.opacity = "1";
+            }
+            if (immediate) addParticipant();
+            autoTimer = setInterval(addParticipant, AUTO_COUNT_INTERVAL_MS);
+        }
+
+        function toggleAuto() {
+            if (autoTimer) {
+                stopAutoCountDemo();
+                return;
+            }
+            startAutoCountDemo();
+        }
+
+        // 操作：ステージのどこでも参加 +1。配信モードでは視聴用画面なので無効化する。
+        if (!LIVE_BROADCAST_MODE) {
+            stage.addEventListener("click", addParticipant);
+        }
+
+        addBtn.addEventListener("click", (e) => { e.stopPropagation(); addParticipant(); });
+        completeBtn.addEventListener("click", (e) => { e.stopPropagation(); completeCurrentChallenge(); });
+        skipSceneBtn.addEventListener("click", (e) => { e.stopPropagation(); skipScene(); });
+        newParticipantTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const testNames = ["タクヤ", "ミナ", "はる", "あおい"];
+            showThanks(testNames[donorNameTestIndex % testNames.length], { isReturning: false, streakDays: 1, totalDays: 1 });
+            donorNameTestIndex += 1;
+        });
+        let returningParticipantTestDay = 2;
+        returningParticipantTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            showThanks("さくら", {
+                isReturning: true,
+                // 連続ではなく通算日数で色が進むことを確認するため streak はリセット相当にする。
+                isConsecutiveReturn: false,
+                streakDays: 1,
+                totalDays: returningParticipantTestDay,
+            });
+            returningParticipantTestDay = returningParticipantTestDay >= 7
+                ? 2
+                : returningParticipantTestDay + 1;
+        });
+        linkedNameTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            relightParticipation("太郎", {
+                swipeCount: Math.max(1, count),
+                isSupporter: true,
+            });
+        });
+        function simulateCrowd(size = 50) {
+            const safeSize = Math.max(1, Math.min(100, Math.floor(Number(size) || 50)));
+            clearOperationTimers();
+            crowdTestBtn.classList.add("is-running");
+            crowdTestBtn.disabled = true;
+            setOperationStatus(`${safeSize}人同時参加を再現中：順番に映像へ反映します`);
+            if (!liveCountInitialized) {
+                liveCountInitialized = true;
+                visualizedLiveCount = count;
+            }
+            applyLiveCount(count + safeSize);
+            for (let index = 1; index <= safeSize; index += 1) {
+                showThanks(`テスト${String(index).padStart(2, "0")}`, {
+                    isReturning: index % 5 === 0,
+                    streakDays: index % 5 === 0 ? 2 : 1,
+                    totalDays: index % 5 === 0 ? 2 : 1,
+                    createdAt: Date.now() + index,
+                });
+            }
+            crowdTestTimer = window.setInterval(() => {
+                const pending = Math.max(0, count - visualizedLiveCount);
+                if (pending <= 0 && !celebrationActive && !queuedReplayHoldTimer && !queuedReplayTimer) {
+                    window.clearInterval(crowdTestTimer);
+                    crowdTestTimer = null;
+                    crowdTestBtn.classList.remove("is-running");
+                    crowdTestBtn.disabled = false;
+                    setOperationStatus(`${safeSize}人同時参加の再現完了：映像は待機状態へ戻りました`);
+                } else {
+                    setOperationStatus(`${safeSize}人同時参加を再現中：未反映 ${pending}人`);
+                }
+            }, 700);
+        }
+
+        function runResetCycleCheck() {
+            resetCheckBtn.classList.add("is-running");
+            resetCheckBtn.disabled = true;
+            returnVisualToWaitingState({
+                resetCount: true,
+                resetLiveState: true,
+                message: "映像リセット確認中：18人達成演出を再生します",
+            });
+            let added = 0;
+            resetCheckAddTimer = window.setInterval(() => {
+                added += 1;
+                addParticipant();
+                if (added >= TOTAL) {
+                    window.clearInterval(resetCheckAddTimer);
+                    resetCheckAddTimer = null;
+                }
+            }, 120);
+            resetCheckTimer = window.setTimeout(() => {
+                const ok = !celebrationActive
+                    && revealed === 0
+                    && !warmLayer.classList.contains("is-revealed")
+                    && !finalLayer.classList.contains("is-revealed")
+                    && !queuedReplayHoldTimer
+                    && !queuedReplayTimer;
+                resetCheckBtn.classList.remove("is-running");
+                resetCheckBtn.disabled = false;
+                resetCheckTimer = null;
+                if (ok) {
+                    setOperationStatus("映像リセットOK：達成後に荒廃した新宿へ戻っています");
+                } else {
+                    returnVisualToWaitingState({
+                        message: "映像リセットNGを検知したため、待機状態へ復帰しました",
+                    });
+                }
+            }, (TOTAL * 140) + CLEAN_VIDEO_MAX_MS + 2600);
+        }
+
+        function emergencyStop() {
+            crowdTestBtn.classList.remove("is-running");
+            crowdTestBtn.disabled = false;
+            resetCheckBtn.classList.remove("is-running");
+            resetCheckBtn.disabled = false;
+            returnVisualToWaitingState({
+                resetCount: false,
+                resetLiveState: false,
+                message: "緊急停止：カウントは維持したまま待機画面へ戻しました",
+            });
+        }
+
+        crowdTestBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            simulateCrowd(50);
+        });
+        resetCheckBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            runResetCycleCheck();
+        });
+        emergencyStopBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            emergencyStop();
+        });
+        autoBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuto(); });
+        resetBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
+
+        document.addEventListener("keydown", (e) => {
+            if (LIVE_BROADCAST_MODE) {
+                return;
+            }
+            if (DEV && e.code === "KeyH") {
+                e.preventDefault();
+                setDevUiHidden(!document.body.classList.contains("dev-ui-hidden"));
+            } else if (e.code === "Space" || e.code === "Enter" || e.code === "ArrowRight") {
+                e.preventDefault();
+                addParticipant();
+            } else if (e.code === "KeyA") {
+                toggleAuto();
+            } else if (e.code === "KeyR") {
+                reset();
+            }
+        });
+
+        updateHud();
+        scheduleIdleVideo();
+        if (AUTO_COUNT_MODE) {
+            window.setTimeout(() => {
+                startAutoCountDemo({ immediate: true });
+            }, AUTO_COUNT_START_DELAY_MS);
+        }
+
+        // Firebase連動スクリプト（module）から呼べるように公開
+        window.__inkDemo = {
+            activateLive,
+            applyLiveCount,
+            showThanks,
+            showParticipationThanks,
+            relightParticipation,
+            setDonorNameRotation,
+            resumeDonorTicker,
+            setSupporterComments,
+            simulateCrowd,
+            emergencyStop,
+            runResetCycleCheck,
+            startAutoCountDemo,
+            stopAutoCountDemo,
+            skipScene,
+            completeCurrentChallenge,
+            setCelebrationPersistence: (callback) => {
+                celebrationPersistence = typeof callback === "function" ? callback : null;
+            },
+            getDebugLog: () => demoDebugLog.slice(),
+            getDebugState: () => ({
+                count,
+                revealed,
+                visualizedLiveCount,
+                queuedRevealCount,
+                celebrationActive,
+                idleVideoActive,
+            }),
+        };
+    </script>
+
+    <script type="module">
+        // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
+        import { getLastCelebratedCount, getRecentNameAnnouncements, setLastCelebratedCount, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260714-linked-ink-1";
+        import { isInappropriateName } from "./src/name-filter.js";
+        import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
+
+        const theme = resolveTheme({ defaultTheme: "day" });
+        const searchParams = new URLSearchParams(location.search);
+        const isDevMode = searchParams.has("dev");
+        const isDoohPhonePreview = searchParams.has("phone") || searchParams.has("phone-dooh") || searchParams.has("mobile-dooh");
+        const isAutoCountMode = searchParams.has("autoCount") || searchParams.has("auto-count") || searchParams.has("autoplay");
+        const isManualOnlyMode = searchParams.has("manual") || searchParams.has("offline") || isAutoCountMode;
+        const isLiveBroadcastMode = searchParams.has("live") || searchParams.has("youtube") || searchParams.has("broadcast");
+        const channel = isLiveBroadcastMode
+            ? "youtube"
+            : searchParams.get("channel") === "research" && searchParams.get("team-test") === "1"
+                ? "research"
+                : getChannelForTheme(theme, "default");
+        let initialCountHandled = false;
+
+        async function shouldReplayInitialCompletion(liveCount) {
+            const count = Math.max(0, Number(liveCount) || 0);
+            if (count <= 0 || count % 18 !== 0) {
+                return false;
+            }
+            try {
+                // swipeイベントは連番countを持たない(participantCountをincrementで採番)ため、
+                // 「直近1時間以内に最後のスワイプがあったか」だけで判定する
+                const lastCelebratedCount = await getLastCelebratedCount({ channel });
+                return count > lastCelebratedCount;
+            } catch (error) {
+                console.info("[demo] celebration replay state read skipped:", error);
+                return false;
+            }
+        }
+
+        // ?dev のときだけ「本番+1」ボタンを出す：QRと同じFirebaseイベントを1件送って連動確認できる
+        window.__inkDemo?.setCelebrationPersistence((count) =>
+            setLastCelebratedCount(count, { channel }).catch((error) => {
+                console.info("[demo] celebration state write skipped:", error);
+            })
+        );
+
+        if (isDevMode) {
+            const tools = document.querySelector(".tools");
+            const liveBtn = document.createElement("button");
+            liveBtn.type = "button";
+            liveBtn.textContent = "📡 本番+1";
+            liveBtn.title = "実際のQR参加と同じFirebaseイベントをDEV用に1件送る";
+            liveBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                publishSwipeComplete({ channel, source: "dev-demo", donationAmountYen: 100 })
+                    .catch((error) => console.warn("[demo] dev swipe failed:", error));
+            });
+            tools?.appendChild(liveBtn);
+        }
+
+        if (!isManualOnlyMode) {
+            subscribeToParticipantCount(async (liveCount) => {
+                // 最初のスナップショットが届いた＝Firebase接続済み → 連動モードへ
+                // カウント＋インクはスワイプ時に即反応
+                window.__inkDemo?.activateLive();
+                const isInitialCount = !initialCountHandled;
+                initialCountHandled = true;
+                const replayInitialCompletion = isInitialCount
+                    ? await shouldReplayInitialCompletion(liveCount)
+                    : false;
+                window.__inkDemo?.applyLiveCount(liveCount, { replayInitialCompletion });
+            }, { channel }).catch((error) => {
+                console.info("[demo] live sync disabled (offline/manual):", error);
+            });
+
+        }
+
+        if (!isLiveBroadcastMode && !isManualOnlyMode) {
+            getRecentNameAnnouncements({ channel, all: true })
+                .then((events) => {
+                    const validEvents = events
+                        .map((event) => ({ ...event, name: String(event?.name ?? "").trim() }))
+                        .filter((event) => event.name && !isInappropriateName(event.name));
+                    window.__inkDemo?.setDonorNameRotation(validEvents);
+                })
+                .catch((error) => {
+                    console.info("[demo] donor history disabled (offline/manual):", error);
+                });
+
+            // 新しい寄付者名は巡回表示より優先し、以後の巡回リストにも追加する。
+            subscribeToNameAnnouncements((event) => {
+                if (!isInappropriateName(String(event?.name ?? ""))) {
+                    window.__inkDemo?.showThanks(event?.name, event);
+                }
+            }, { channel }).catch((error) => {
+                console.info("[demo] name feed disabled (offline/manual):", error);
+            });
+
+            subscribeToSupporterComments((comments) => {
+                const validComments = comments.filter((event) =>
+                    !isInappropriateName(String(event?.comment ?? "")) &&
+                    !isInappropriateName(String(event?.name ?? ""))
+                );
+                window.__inkDemo?.setSupporterComments(validComments);
+            }, { channel }).catch((error) => {
+                console.info("[demo] supporter comment feed disabled (offline/manual):", error);
+            });
+        }
+
+        if (!isManualOnlyMode) {
+            subscribeToSwipeCompletes((event) => {
+                window.__inkDemo?.showParticipationThanks(event?.name, event);
+            }, { channel }).catch((error) => {
+                console.info("[demo] returning participant feed disabled (offline/manual):", error);
+            });
+        }
+    </script>
+
+    <script type="module">
+        // 男女共通の参加入口へ統一。本番とRSでホストが混ざらないよう、
+        // DOOH画面を開いているホストに合わせて /join を生成する。
+        const PARTICIPANT_ORIGIN = /^https?:$/.test(location.protocol)
+            && /^(dooh-ca9c2|shinjuku-dooh-live|shinjuku-dooh-rs)\.web\.app$/.test(location.hostname)
+            ? location.origin
+            : "https://shinjuku-dooh-live.web.app";
+        const JOIN_URL = `${PARTICIPANT_ORIGIN}/join`;
+        const qrSearchParams = new URLSearchParams(location.search);
+        const QR_YOUTUBE_MODE = qrSearchParams.has("youtube") || qrSearchParams.has("live") || qrSearchParams.has("broadcast");
+        const qrCode = document.getElementById("qrCode");
+        const urlNote = document.getElementById("urlNote");
+
+        const { default: QRCode } = await import("https://cdn.skypack.dev/qrcode@1.5.3");
+
+        function pickParticipantUrl() {
+            const baseUrl = JOIN_URL;
+            if (!QR_YOUTUBE_MODE) {
+                return baseUrl;
+            }
+            const url = new URL(baseUrl);
+            url.searchParams.set("mode", "youtube");
+            return url.toString();
+        }
+
+        async function renderQr() {
+            const url = pickParticipantUrl();
+            if (urlNote) urlNote.textContent = url;
+            try {
+                const canvas = await QRCode.toCanvas(url, {
+                    width: 240,
+                    margin: 1,
+                    errorCorrectionLevel: "M",
+                    color: { dark: "#151919", light: "#ffffff" },
+                });
+                qrCode?.replaceChildren(canvas);
+            } catch (error) {
+                console.warn("QR generation failed:", error);
+            }
+        }
+
+        function scheduleNextHourly() {
+            const now = new Date();
+            const next = new Date(now);
+            next.setHours(now.getHours() + 1, 0, 0, 50);
+            const delay = next.getTime() - now.getTime();
+            setTimeout(async () => {
+                await renderQr();
+                scheduleNextHourly();
+            }, delay);
+        }
+
+        await renderQr();
+        scheduleNextHourly();
+    </script>
+</body>
+</html>

@@ -9,6 +9,10 @@
         ".write": "(!data.exists() && newData.val() === 1) || newData.val() === data.val() + 1",
         ".validate": "newData.isNumber() && newData.val() >= 0"
       },
+      "lastCelebratedCount": {
+        ".write": "auth != null || !data.exists() || (data.isNumber() && newData.isNumber() && newData.val() >= data.val())",
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
       "swipes": {
         "$eventId": {
           ".write": "!data.exists()",
@@ -38,6 +42,10 @@
       ".write": "auth != null",
       "participantCount": {
         ".write": "(!data.exists() && newData.val() === 1) || newData.val() === data.val() + 1",
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "lastCelebratedCount": {
+        ".write": "auth != null || !data.exists() || (data.isNumber() && newData.isNumber() && newData.val() >= data.val())",
         ".validate": "newData.isNumber() && newData.val() >= 0"
       },
       "swipes": {
@@ -71,6 +79,10 @@
         ".write": "(!data.exists() && newData.val() === 1) || newData.val() === data.val() + 1",
         ".validate": "newData.isNumber() && newData.val() >= 0"
       },
+      "lastCelebratedCount": {
+        ".write": "auth != null || !data.exists() || (data.isNumber() && newData.isNumber() && newData.val() >= data.val())",
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
       "swipes": {
         "$eventId": {
           ".write": "!data.exists()",
@@ -102,6 +114,10 @@
         ".write": "(!data.exists() && newData.val() === 1) || newData.val() === data.val() + 1",
         ".validate": "newData.isNumber() && newData.val() >= 0"
       },
+      "lastCelebratedCount": {
+        ".write": "auth != null || !data.exists() || (data.isNumber() && newData.isNumber() && newData.val() >= data.val())",
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
       "swipes": {
         "$eventId": {
           ".write": "!data.exists()",
@@ -131,6 +147,10 @@
       ".write": "auth != null",
       "participantCount": {
         ".write": "(!data.exists() && newData.val() === 1) || newData.val() === data.val() + 1",
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "lastCelebratedCount": {
+        ".write": "auth != null || !data.exists() || (data.isNumber() && newData.isNumber() && newData.val() >= data.val())",
         ".validate": "newData.isNumber() && newData.val() >= 0"
       },
       "swipes": {

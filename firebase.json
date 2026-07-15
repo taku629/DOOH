@@ -3,12 +3,14 @@
     "rules": "database.rules.json"
   },
   "hosting": {
+    "site": "shinjuku-dooh-live",
     "public": ".",
     "predeploy": [
       "npm run build:admin"
     ],
     "ignore": [
       "firebase.json",
+      "index.html",
       "**/.*",
       ".git",
       ".git/**",
@@ -29,6 +31,7 @@
       "*.pptx",
       "firebase-rs.json",
       "firebase.research.json",
+      "firebase.loadtest.json",
       "**/*.py",
       "**/__pycache__/**",
       "**/*.log",
@@ -62,6 +65,24 @@
         ]
       },
       {
+        "source": "/showcase",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/demo_v2",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "/research",
         "headers": [
           {
@@ -105,9 +126,35 @@
             "value": "no-cache, no-store, must-revalidate"
           }
         ]
+      },
+      {
+        "source": "/supporter/women",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/supporter/men",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
       }
     ],
     "rewrites": [
+      {
+        "source": "/",
+        "destination": "/demo_v2.html"
+      },
+      {
+        "source": "/join",
+        "destination": "/web/participant-flow-shared.html"
+      },
       {
         "source": "/v1",
         "destination": "/index.html"
@@ -119,6 +166,14 @@
       {
         "source": "/demo",
         "destination": "/demo.html"
+      },
+      {
+        "source": "/showcase",
+        "destination": "/showcase-demo.html"
+      },
+      {
+        "source": "/demo_v2",
+        "destination": "/demo_v2.html"
       },
       {
         "source": "/research",
@@ -147,6 +202,14 @@
       {
         "source": "/women",
         "destination": "/web/participant-flow-shared.html"
+      },
+      {
+        "source": "/supporter/men",
+        "destination": "/web/participant-flow-supporter.html"
+      },
+      {
+        "source": "/supporter/women",
+        "destination": "/web/participant-flow-supporter.html"
       },
       {
         "source": "/participant-v1-women",

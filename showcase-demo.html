@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d0f10" />
+    <title>新宿DOOH 連動デモ</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0d0f10;
+            --panel: #171a1c;
+            --line: rgba(255, 255, 255, 0.14);
+            --muted: rgba(255, 255, 255, 0.62);
+            --accent: #f06a4f;
+            --accent-2: #5eb5d4;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            margin: 0;
+            background:
+                radial-gradient(circle at 12% 0%, rgba(240, 106, 79, 0.12), transparent 32%),
+                radial-gradient(circle at 92% 100%, rgba(94, 181, 212, 0.1), transparent 34%),
+                var(--bg);
+            color: #fff;
+            font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+        }
+
+        body {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            min-height: 54px;
+            padding: 7px 14px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(13, 15, 16, 0.92);
+            backdrop-filter: blur(18px);
+        }
+
+        .brand {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            min-width: 250px;
+            margin-right: auto;
+        }
+
+        .brand-mark {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #f1c75b 45%, var(--accent-2));
+            box-shadow: 0 0 20px rgba(240, 106, 79, 0.7);
+        }
+
+        .brand strong {
+            display: block;
+            font-size: 0.98rem;
+            letter-spacing: 0.05em;
+        }
+
+        .brand small {
+            display: block;
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 0.7rem;
+        }
+
+        .flow-status {
+            display: none;
+            align-items: center;
+            gap: 9px;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .flow-status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #7d8588;
+            transition: 240ms ease;
+        }
+
+        .flow-status.is-active .flow-status-dot {
+            background: #79e7b0;
+            box-shadow: 0 0 18px rgba(121, 231, 176, 0.75);
+        }
+
+        button {
+            min-height: 40px;
+            padding: 0 15px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #24282a;
+            color: #fff;
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        button:hover { border-color: rgba(255, 255, 255, 0.42); }
+
+        #liveRandomBtn {
+            border-color: rgba(121, 231, 176, 0.5);
+            background: linear-gradient(135deg, #1d4939, #195263);
+            box-shadow: 0 10px 26px rgba(61, 190, 156, 0.18);
+        }
+
+        #liveRandomBtn:disabled {
+            cursor: wait;
+            opacity: 0.58;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(300px, 0.32fr) minmax(0, 0.68fr);
+            gap: 14px;
+            min-height: 0;
+            padding: 14px;
+        }
+
+        .panel {
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            background: rgba(23, 26, 28, 0.88);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+        }
+
+        .panel-header {
+            display: none;
+            position: absolute;
+            inset: 14px 16px auto;
+            z-index: 4;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .panel-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 30px;
+            padding: 0 12px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 999px;
+            background: rgba(7, 9, 10, 0.78);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            backdrop-filter: blur(14px);
+        }
+
+        .panel-label::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-2);
+        }
+
+        .dooh-panel .panel-label::before { background: var(--accent); }
+
+        .frame-viewport {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+        }
+
+        .phone-shell {
+            position: absolute;
+            top: 0;
+            left: 0;
+            flex: none;
+            width: 430px;
+            height: 860px;
+            overflow: hidden;
+            border: 8px solid #050607;
+            border-radius: 38px;
+            background: #fff;
+            box-shadow: 0 26px 80px rgba(0, 0, 0, 0.48);
+            transform-origin: top left;
+        }
+
+        .phone-shell::before {
+            content: "";
+            position: absolute;
+            z-index: 3;
+            top: 8px;
+            left: 50%;
+            width: 92px;
+            height: 20px;
+            border-radius: 999px;
+            background: #050607;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+
+        .phone-shell iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #fff;
+        }
+
+        .dooh-shell {
+            position: absolute;
+            top: 0;
+            left: 0;
+            flex: none;
+            width: 1280px;
+            height: 720px;
+            overflow: hidden;
+            border-radius: 14px;
+            background: #080909;
+            box-shadow: 0 26px 80px rgba(0, 0, 0, 0.46);
+            transform-origin: top left;
+        }
+
+        .dooh-shell iframe {
+            width: 1280px;
+            height: 720px;
+            border: 0;
+        }
+
+        .signal {
+            position: absolute;
+            z-index: 5;
+            top: 50%;
+            left: calc(32% - 8px);
+            width: 56px;
+            height: 56px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            background: #171a1c;
+            color: var(--muted);
+            font-size: 1.35rem;
+            transform: translate(-50%, -50%);
+            transition: 240ms ease;
+            pointer-events: none;
+        }
+
+        .signal.is-active {
+            color: #fff;
+            border-color: rgba(121, 231, 176, 0.72);
+            background: #1d3b31;
+            box-shadow: 0 0 34px rgba(121, 231, 176, 0.3);
+            animation: signal-pulse 800ms ease both;
+        }
+
+        @keyframes signal-pulse {
+            0% { transform: translate(-50%, -50%) scale(0.82); opacity: 0; }
+            45% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 980px) {
+            body { height: auto; min-height: 100vh; overflow: auto; }
+            .toolbar { position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
+            .brand { flex: 1 1 100%; }
+            .flow-status { margin-right: auto; }
+            .workspace { grid-template-columns: 1fr; grid-template-rows: 76vh 56vw; min-height: 1180px; }
+            .signal { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header class="toolbar">
+        <div class="brand">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span>
+                <strong>新宿DOOH 連動デモ</strong>
+                <small id="modeDescription">本番DBとリアルタイム連動します</small>
+            </span>
+        </div>
+        <div class="flow-status" id="flowStatus" aria-live="polite">
+            <span class="flow-status-dot" aria-hidden="true"></span>
+            <span id="flowStatusText">左のスマホでスワイプしてください</span>
+        </div>
+        <button id="liveRandomBtn" type="button">＋1人（本番DB）</button>
+        <button id="previewBtn" type="button">演出だけ確認</button>
+        <button id="fullscreenBtn" type="button">全画面</button>
+        <button id="resetBtn" type="button">最初から</button>
+    </header>
+
+    <main class="workspace">
+        <section class="panel phone-panel" aria-label="スマホ参加画面">
+            <div class="panel-header"><span class="panel-label">SMARTPHONE</span></div>
+            <div class="frame-viewport" id="phoneViewport">
+                <div class="phone-shell" id="phoneShell">
+                    <iframe id="participantFrame" title="スマホ参加画面" allow="clipboard-write"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <div class="signal" id="signal" aria-hidden="true">→</div>
+
+        <section class="panel dooh-panel" aria-label="DOOH画面">
+            <div class="panel-header"><span class="panel-label">DOOH SCREEN</span></div>
+            <div class="frame-viewport" id="doohViewport">
+                <div class="dooh-shell" id="doohShell">
+                    <iframe id="doohFrame" title="DOOH画面"></iframe>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const participantFrame = document.getElementById("participantFrame");
+        const doohFrame = document.getElementById("doohFrame");
+        const phoneViewport = document.getElementById("phoneViewport");
+        const doohViewport = document.getElementById("doohViewport");
+        const phoneShell = document.getElementById("phoneShell");
+        const doohShell = document.getElementById("doohShell");
+        const flowStatus = document.getElementById("flowStatus");
+        const flowStatusText = document.getElementById("flowStatusText");
+        const signal = document.getElementById("signal");
+        const resetBtn = document.getElementById("resetBtn");
+        const liveRandomBtn = document.getElementById("liveRandomBtn");
+        const previewBtn = document.getElementById("previewBtn");
+        const fullscreenBtn = document.getElementById("fullscreenBtn");
+        const modeDescription = document.getElementById("modeDescription");
+        const showcaseParams = new URLSearchParams(location.search);
+        const DEV_MODE = showcaseParams.has("dev");
+        let signalTimer = null;
+        let relightTimer = null;
+        let demoVisualCount = 0;
+        let latestDemoVisualCount = 0;
+        const demoVisualCountBySwipeId = new Map();
+        previewBtn.hidden = !DEV_MODE;
+        liveRandomBtn.hidden = DEV_MODE;
+        if (DEV_MODE) {
+            document.title = "新宿DOOH 連動デモ（DEBUG）";
+            modeDescription.textContent = "DEBUG：本番DBを変更せず、何度でも再現できます";
+        }
+
+        function setStatus(text, active = false) {
+            flowStatusText.textContent = text;
+            flowStatus.classList.toggle("is-active", active);
+        }
+
+        function pulseSignal() {
+            window.clearTimeout(signalTimer);
+            signal.classList.remove("is-active");
+            requestAnimationFrame(() => signal.classList.add("is-active"));
+            signalTimer = window.setTimeout(() => signal.classList.remove("is-active"), 1700);
+        }
+
+        function resizeFrames() {
+            const phoneScale = Math.min(
+                (phoneViewport.clientWidth - 26) / 430,
+                (phoneViewport.clientHeight - 26) / 860,
+                1
+            );
+            phoneShell.style.transform = `scale(${Math.max(0.2, phoneScale)})`;
+            phoneShell.style.left = `${Math.max(0, (phoneViewport.clientWidth - 430 * phoneScale) / 2)}px`;
+            phoneShell.style.top = `${Math.max(0, (phoneViewport.clientHeight - 860 * phoneScale) / 2)}px`;
+
+            const doohScale = Math.min(
+                (doohViewport.clientWidth - 26) / 1280,
+                (doohViewport.clientHeight - 26) / 720,
+                1
+            );
+            doohShell.style.transform = `scale(${Math.max(0.2, doohScale)})`;
+            doohShell.style.left = `${Math.max(0, (doohViewport.clientWidth - 1280 * doohScale) / 2)}px`;
+            doohShell.style.top = `${Math.max(0, (doohViewport.clientHeight - 720 * doohScale) / 2)}px`;
+        }
+
+        function loadDemo() {
+            window.clearTimeout(relightTimer);
+            demoVisualCount = 0;
+            latestDemoVisualCount = 0;
+            demoVisualCountBySwipeId.clear();
+            const cacheBust = Date.now();
+            const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
+            const participantUrl = new URL(
+                isLocal ? "/web/participant-flow-shared.html" : "/join",
+                location.origin
+            );
+            participantUrl.searchParams.set("demo-showcase", "1");
+            if (DEV_MODE) participantUrl.searchParams.set("debug", "1");
+            participantUrl.searchParams.set("t", cacheBust);
+            participantFrame.src = participantUrl.href;
+
+            const doohUrl = new URL("/demo_v2.html", location.origin);
+            doohUrl.searchParams.set("demo-showcase", "1");
+            if (DEV_MODE) {
+                doohUrl.searchParams.set("dev", "1");
+                doohUrl.searchParams.set("clean", "1");
+                doohUrl.searchParams.set("manual", "1");
+            }
+            doohUrl.searchParams.set("t", cacheBust);
+            doohFrame.src = doohUrl.href;
+            setStatus("左のスマホでスワイプしてください");
+        }
+
+        function replaySwipe(data) {
+            const inkDemo = doohFrame.contentWindow?.__inkDemo;
+            const originalSwipeCount = Math.max(1, Number(data.swipeCount) || Number(data.participantCount) || 1);
+            const swipeEventId = String(data.swipeEventId || "");
+            const swipeCount = DEV_MODE
+                ? demoVisualCount + 1
+                : originalSwipeCount;
+            if (!inkDemo?.applyLiveCount) {
+                window.setTimeout(() => replaySwipe(data), 250);
+                return;
+            }
+            if (DEV_MODE) {
+                demoVisualCount = swipeCount;
+                latestDemoVisualCount = swipeCount;
+                if (swipeEventId) demoVisualCountBySwipeId.set(swipeEventId, swipeCount);
+            }
+            pulseSignal();
+            setStatus("スワイプを受信：DOOHにインクを反映中", true);
+            inkDemo.applyLiveCount(Math.max(0, swipeCount - 1));
+            window.setTimeout(() => {
+                doohFrame.contentWindow?.__inkDemo?.applyLiveCount(swipeCount);
+                setStatus("インクを反映しました。任意で名前を追加できます", true);
+            }, 420);
+        }
+
+        function replayLinkedName(data) {
+            const displayName = String(data.displayName || "").trim().slice(0, 24);
+            const swipeEventId = String(data.swipeEventId || "");
+            const linkedSwipeCount = DEV_MODE
+                ? demoVisualCountBySwipeId.get(swipeEventId) || latestDemoVisualCount || 1
+                : Math.max(1, Number(data.swipeCount) || Number(data.participantCount) || 1);
+            if (!displayName) {
+                setStatus("名前なしの参加証を作成しました", true);
+                return;
+            }
+            pulseSignal();
+            setStatus("同じインクに名前を追加しています", true);
+            window.clearTimeout(relightTimer);
+            relightTimer = window.setTimeout(() => {
+                doohFrame.contentWindow?.__inkDemo?.showThanks?.(displayName, {
+                    swipeEventId,
+                    swipeCount: linkedSwipeCount,
+                    isSupporter: data.isSupporter === true,
+                    isReturning: Number(data.totalDays) > 1,
+                    streakDays: 1,
+                    totalDays: Math.max(1, Number(data.totalDays) || 1),
+                });
+                setStatus(`${displayName}さんの名前が同じインクに付きました`, true);
+            }, 260);
+        }
+
+        window.addEventListener("message", (event) => {
+            if (event.origin !== location.origin || event.source !== participantFrame.contentWindow) return;
+            if (event.data?.type === "dooh-research-participation-complete") {
+                if (DEV_MODE) {
+                    replaySwipe(event.data);
+                } else {
+                    pulseSignal();
+                    setStatus("本番DBへ送信しました。DOOHにインクを反映中", true);
+                }
+            }
+            if (event.data?.type === "dooh-research-card-complete") {
+                if (DEV_MODE) {
+                    replayLinkedName(event.data);
+                } else {
+                    const displayName = String(event.data.displayName || "").trim();
+                    pulseSignal();
+                    if (displayName) {
+                        replayLinkedName(event.data);
+                    }
+                    setStatus(
+                        displayName
+                            ? `${displayName}さんの名前を本番DOOHへ送信しました`
+                            : "参加証を作成しました",
+                        true
+                    );
+                }
+            }
+        });
+
+        resetBtn.addEventListener("click", loadDemo);
+        previewBtn.addEventListener("click", () => {
+            const productionLikeCount = 666;
+            const previewSwipeId = `preview-${Date.now()}`;
+            replaySwipe({
+                participantCount: productionLikeCount,
+                swipeCount: productionLikeCount,
+                swipeEventId: previewSwipeId,
+            });
+            window.setTimeout(() => replayLinkedName({
+                participantCount: productionLikeCount,
+                swipeCount: productionLikeCount,
+                swipeEventId: previewSwipeId,
+                displayName: "太郎",
+                isSupporter: true,
+            }), 1800);
+        });
+        fullscreenBtn.addEventListener("click", async () => {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+                return;
+            }
+            await document.documentElement.requestFullscreen();
+        });
+        document.addEventListener("fullscreenchange", () => {
+            fullscreenBtn.textContent = document.fullscreenElement ? "全画面を終了" : "全画面";
+            window.setTimeout(resizeFrames, 100);
+        });
+        window.addEventListener("resize", resizeFrames);
+        doohFrame.addEventListener("load", resizeFrames);
+        participantFrame.addEventListener("load", resizeFrames);
+
+        loadDemo();
+        resizeFrames();
+    </script>
+    <script type="module">
+        import {
+            getParticipantCount,
+            publishNameAnnouncement,
+            publishSwipeComplete,
+        } from "./src/firebase-bridge.js?v=20260714-showcase-live-random-1";
+
+        const randomButton = document.getElementById("liveRandomBtn");
+        const participantFrame = document.getElementById("participantFrame");
+        const status = document.getElementById("flowStatus");
+        const statusText = document.getElementById("flowStatusText");
+        const params = new URLSearchParams(location.search);
+        const names = [
+            "さくら", "ゆうと", "あかり", "ケンタ",
+            "みなみ", "はる", "タクミ", "あおい",
+            "ひろと", "りん", "まこと", "こはる",
+            "そうた", "めい", "なお", "ひなた",
+        ];
+        const tickerFonts = ["noto", "rounded", "mincho", "dot", "yusei"];
+        let lastNameIndex = -1;
+
+        function setLiveStatus(text, active = false) {
+            statusText.textContent = text;
+            status.classList.toggle("is-active", active);
+        }
+
+        function createRandomParticipant() {
+            let index = Math.floor(Math.random() * names.length);
+            if (names.length > 1 && index === lastNameIndex) {
+                index = (index + 1 + Math.floor(Math.random() * (names.length - 1))) % names.length;
+            }
+            lastNameIndex = index;
+            const totalDays = 1 + Math.floor(Math.random() * 7);
+            return {
+                name: names[index],
+                totalDays,
+                tickerFont: tickerFonts[Math.floor(Math.random() * tickerFonts.length)],
+            };
+        }
+
+        async function addLiveRandomParticipant() {
+            if (params.has("dev") || randomButton.disabled) return;
+            randomButton.disabled = true;
+            randomButton.textContent = "本番DBへ追加中…";
+            const participant = createRandomParticipant();
+            setLiveStatus(`${participant.name}さんを本番DBへ追加しています`, true);
+
+            try {
+                const swipeResult = await publishSwipeComplete({
+                    source: "showcase-live-random",
+                    name: null,
+                    tickerFont: participant.tickerFont,
+                });
+                if (swipeResult?.failed === true || swipeResult?.accepted !== true) {
+                    throw swipeResult?.error || new Error("参加データを追加できませんでした。");
+                }
+
+                const participantCount = Number.isFinite(Number(swipeResult.count))
+                    ? Number(swipeResult.count)
+                    : Number(await getParticipantCount()) || 1;
+                const swipeEventId = String(swipeResult.eventRef?.key || "");
+                const nameResult = await publishNameAnnouncement({
+                    source: "showcase-live-random",
+                    name: participant.name,
+                    isReturning: participant.totalDays > 1,
+                    isConsecutiveReturn: false,
+                    streakDays: 1,
+                    totalDays: participant.totalDays,
+                    tickerFont: participant.tickerFont,
+                    swipeEventId,
+                    swipeCount: participantCount,
+                });
+                if (nameResult?.failed === true || nameResult?.blocked === true || nameResult?.fallback === true) {
+                    throw nameResult?.error || new Error("名前を追加できませんでした。");
+                }
+
+                setLiveStatus(
+                    `${participant.name}さん（通算${participant.totalDays}日）をDOOHへ反映しました`,
+                    true
+                );
+            } catch (error) {
+                console.error("[showcase] live random participant failed:", error);
+                setLiveStatus("本番DBへの追加に失敗しました。通信を確認してください", false);
+            } finally {
+                randomButton.disabled = false;
+                randomButton.textContent = "＋1人（本番DB）";
+            }
+        }
+
+        randomButton.addEventListener("click", addLiveRandomParticipant);
+    </script>
+</body>
+</html>
