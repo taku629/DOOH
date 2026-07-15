@@ -969,6 +969,7 @@
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
 
+    <script src="./src/supporter-comment-rotation.js?v=20260715-fair-cycle-1"></script>
     <script>
         // 1チャレンジ=18人。飛沫9種×2段階（芯で着弾→広がって完成）で18ステップを構成する
         const TOTAL = 18;
@@ -1544,7 +1545,26 @@
         const SUPPORTER_COMMENT_ROTATION_MS = 6500;
         const supporterCommentRotation = [];
         let supporterCommentIndex = 0;
+        const supporterCommentRotationStorageKey = `shinjuku-dooh-supporter-comment-rotation-v1:${location.pathname}:${params.get("theme") || "default"}`;
+        let supporterCommentFairState = loadSupporterCommentRotationState();
         let supporterCommentTimer = null;
+
+        function loadSupporterCommentRotationState() {
+            try {
+                return JSON.parse(localStorage.getItem(supporterCommentRotationStorageKey) || "{}");
+            } catch {
+                return {};
+            }
+        }
+
+        function saveSupporterCommentRotationState() {
+            try {
+                const serialized = window.SupporterCommentRotation.serialize(supporterCommentFairState);
+                localStorage.setItem(supporterCommentRotationStorageKey, JSON.stringify(serialized));
+            } catch {
+                // Fair rotation still works in-memory when storage is unavailable.
+            }
+        }
 
         function getStreakClass(options = {}) {
             // 色は「連続日数」ではなく「通算参加日数」で決める。連続でなくても日数が増えれば色が進む。
@@ -1778,13 +1798,25 @@
             };
         }
 
-        function renderSupporterComment() {
+        function renderSupporterComment(priorityEntry = null) {
             if (!supporterCommentWall || !supporterCommentText || supporterCommentRotation.length === 0) {
                 if (supporterCommentWall) supporterCommentWall.hidden = true;
                 return;
             }
 
-            const entry = supporterCommentRotation[supporterCommentIndex % supporterCommentRotation.length];
+            let entry = priorityEntry;
+            if (!entry) {
+                const next = window.SupporterCommentRotation.takeNext(supporterCommentFairState);
+                supporterCommentFairState = next.state;
+                entry = next.entry;
+                supporterCommentRotation.length = 0;
+                supporterCommentRotation.push(...supporterCommentFairState.order);
+                supporterCommentIndex = Math.max(0, supporterCommentFairState.cursor - 1);
+                saveSupporterCommentRotationState();
+            } else {
+                supporterCommentIndex = Math.max(0, supporterCommentRotation.findIndex((item) => item.id === entry.id));
+            }
+            if (!entry) return;
             supporterCommentText.textContent = entry.comment;
             supporterCommentName.textContent = entry.name ? `${entry.name}さんより` : "";
             supporterCommentWall.hidden = false;
@@ -1793,7 +1825,7 @@
             supporterCommentWall.classList.add("is-switching");
         }
 
-        function startSupporterCommentTicker() {
+        function startSupporterCommentTicker(priorityEntry = null) {
             if (supporterCommentTimer) {
                 window.clearInterval(supporterCommentTimer);
                 supporterCommentTimer = null;
@@ -1802,11 +1834,9 @@
                 if (supporterCommentWall) supporterCommentWall.hidden = true;
                 return;
             }
-            supporterCommentIndex = Math.min(supporterCommentIndex, supporterCommentRotation.length - 1);
-            renderSupporterComment();
+            renderSupporterComment(priorityEntry);
             if (supporterCommentRotation.length > 1) {
                 supporterCommentTimer = window.setInterval(() => {
-                    supporterCommentIndex = (supporterCommentIndex + 1) % supporterCommentRotation.length;
                     renderSupporterComment();
                 }, SUPPORTER_COMMENT_ROTATION_MS);
             }
@@ -1823,9 +1853,18 @@
                 .map(normalizeSupporterCommentForDisplay)
                 .filter(Boolean)
                 .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
-            supporterCommentRotation.push(...normalized);
-            supporterCommentIndex = 0;
-            startSupporterCommentTicker();
+            const knownIds = new Set((supporterCommentFairState.order || []).map((entry) => String(entry?.id ?? entry)));
+            const priorityEntry = knownIds.size > 0
+                ? normalized.find((entry) => !knownIds.has(entry.id)) || null
+                : null;
+            supporterCommentFairState = window.SupporterCommentRotation.reconcile(
+                supporterCommentFairState,
+                normalized
+            );
+            supporterCommentRotation.push(...supporterCommentFairState.order);
+            supporterCommentIndex = Math.max(0, supporterCommentFairState.cursor - 1);
+            saveSupporterCommentRotationState();
+            startSupporterCommentTicker(priorityEntry);
         }
 
         // カウントを軽く弾ませてライブ感を出す
