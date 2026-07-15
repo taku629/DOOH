@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260713-ranking-live-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260714-linked-ink-1";
 import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -67,6 +67,8 @@ const CERTIFICATE_CITY_COLORS = [
 
 const NAME_CHECKING_MESSAGE = "\u8868\u793a\u540d\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const NAME_BLOCKED_MESSAGE = "\u3053\u306e\u8868\u793a\u540d\u306f\u516c\u958b\u3067\u304d\u307e\u305b\u3093\u3002\u5225\u306e\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u306b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
+const NAME_LINKED_MESSAGE = "同じインクに名前を追加しました。";
+const NAME_LINK_FAILED_MESSAGE = "DOOHへの名前反映に失敗しました。通信を確認して、もう一度お試しください。";
 const SUPPORTER_CHECKING_MESSAGE = "\u30af\u30e9\u30d5\u30a1\u30f3\u652f\u63f4\u8005\u30b3\u30e1\u30f3\u30c8\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const SUPPORTER_PASSCODE_ERROR = "4\u6841\u306e\u30d1\u30b9\u30b3\u30fc\u30c9\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
 const SUPPORTER_COMMENT_ERROR = "\u3053\u306e\u30b3\u30e1\u30f3\u30c8\u306f\u8868\u793a\u3067\u304d\u307e\u305b\u3093\u3002\u8868\u73fe\u3092\u5909\u3048\u3066\u304f\u3060\u3055\u3044\u3002";
@@ -151,6 +153,30 @@ const participationStorageOptions = PARTICIPATION_CHANNEL === "youtube"
     };
 const TICKER_FONT_IDS = new Set(["noto", "rounded", "mincho", "dot", "yusei"]);
 const tickerFontStorageKey = `shinjuku-dooh-ticker-font-${PARTICIPATION_CHANNEL}`;
+const swipeLinkSessionKey = `shinjuku-dooh-swipe-link-${PARTICIPATION_CHANNEL}`;
+function rememberSwipeLink(eventId, count) {
+  const normalizedId = String(eventId ?? "").trim();
+  const normalizedCount = Math.floor(Number(count));
+  if (!normalizedId || !Number.isFinite(normalizedCount) || normalizedCount <= 0) return;
+  try {
+    sessionStorage.setItem(swipeLinkSessionKey, JSON.stringify({
+      eventId: normalizedId,
+      count: normalizedCount,
+      savedAt: Date.now(),
+    }));
+  } catch {}
+}
+function restoreSwipeLink() {
+  try {
+    const value = JSON.parse(sessionStorage.getItem(swipeLinkSessionKey) || "null");
+    if (!value || Date.now() - Number(value.savedAt) > 30 * 60 * 1000) return null;
+    const eventId = String(value.eventId ?? "").trim();
+    const count = Math.floor(Number(value.count));
+    return eventId && Number.isFinite(count) && count > 0 ? { eventId, count } : null;
+  } catch {
+    return null;
+  }
+}
 const pendingParticipationVisit = getParticipationVisit({
   today: participationDateOverride,
   storageKey: participationStorageOptions.storageKey,
@@ -165,6 +191,12 @@ const isDebugReplay =
   participationSearchParams.has("dev") ||
   participationSearchParams.has("debug") ||
   isLocalHost;
+// 統合デモは本番DBへ書き込むが、端末の「1日1回」ロックは適用しない。
+const isLiveShowcaseDemo = participationSearchParams.has("demo-showcase") && !isDebugReplay;
+const SHOWCASE_DEMO_NAMES = [
+  "さくら", "ゆうと", "あかり", "ケンタ", "みなみ", "はる", "タクミ", "あおい",
+  "ひろと", "りん", "まこと", "こはる", "そうた", "めい", "なお", "ひなた",
+];
 
 const DEMO_DONATION_YEN = 100;
 const MONTHLY_PARTICIPANT_GOAL = 3000;
@@ -388,7 +420,7 @@ const UI_TEXT = {
     displayNameLabel: "表示名（任意）",
     nameTab: "ここに入力",
     nicknamePlaceholder: "例：さくら",
-    nicknameHelp: "ニックネームで入力。参加証・DOOH・ランキングに表示されます。",
+    nicknameHelp: "名前を追加すると、同じインクが光ります。参加証・名前ロールにも表示されます。",
     rankingTitle: "参加者ランキング",
     rankingKicker: "通算参加日数の多い順",
     rankingOpen: "参加者ランキングを見る",
@@ -459,7 +491,7 @@ const UI_TEXT = {
     certificateDescAll: "この参加は無料です。集まったお金から、誰もが過ごしやすい新宿を支える支援先へ¥{amount}を届けます。",
     certificateDescDefault: "この参加は無料です。集まったお金から、新宿を応援する支援先へ¥{amount}を届けます。",
     certificateLabelSupporter: "FOUNDING SUPPORTER",
-    certificateDescSupporter: "クラウドファンディングであなたが灯した光が、この街の色になりました。あなたの応援コメントはDOOHに表示されます。",
+    certificateDescSupporter: "応援コメントはDOOHに表示されます。",
     certificateSerial: "SERIAL No.{serial}",
     storyThanks: "ありがとうございます。支援先のストーリーを表示しています。",
   },
@@ -564,7 +596,7 @@ const UI_TEXT = {
     certificateDescAll: "This action is free. Sponsored funds will send ¥{amount} to a destination that supports a more welcoming Shinjuku.",
     certificateDescDefault: "This action is free. Sponsored funds will send ¥{amount} to a support destination for Shinjuku.",
     certificateLabelSupporter: "FOUNDING SUPPORTER",
-    certificateDescSupporter: "The light you funded on the crowdfunding campaign became this city's colour. Your message will appear on the DOOH screen.",
+    certificateDescSupporter: "Your message will appear on the DOOH screen.",
     certificateSerial: "SERIAL No.{serial}",
     storyThanks: "Thank you. Showing one of the actions your support connects to.",
   },
@@ -588,6 +620,9 @@ let currentStep = 0;
 let participantCount = FALLBACK_COUNTER_TARGET;
 let hasCountedParticipation = false;
 let hasAcceptedParticipation = false;
+const restoredSwipeLink = restoreSwipeLink();
+let completedSwipeEventId = restoredSwipeLink?.eventId ?? "";
+let completedSwipeCount = restoredSwipeLink?.count ?? 0;
 let hasShownSwipeReadyEffect = false;
 let hasAnimatedCounter = false;
 let isFinalCardBuilt = false;
@@ -597,6 +632,7 @@ let isRegisteringParticipation = false;
 let isAutoCompletingSwipe = false;
 let swipeChargeValue = 0;
 let counterAnimationFrame = null;
+let counterAnimationDelayTimer = null;
 let storyCardDismissTimer = null;
 let youtubeCooldownTimer = null;
 let copyFeedbackTimer = null;
@@ -1108,6 +1144,8 @@ async function publishOptionalSupporterComment(displayName = "") {
     comment: input.comment,
     name: displayName,
     visitorId: completedParticipationVisit?.visitorId ?? null,
+    swipeEventId: completedSwipeEventId || null,
+    swipeCount: completedSwipeCount || null,
     source: isAllExperience
       ? "participant-flow-all"
       : isMenExperience
@@ -1131,6 +1169,18 @@ async function validateTypedDisplayName() {
   if (!typed) {
     restoreNicknameHelp();
     return { ok: true, name: "" };
+  }
+
+  if (isLiveShowcaseDemo) {
+    if (isInappropriateName(typed)) {
+      setNicknameHelp(NAME_BLOCKED_MESSAGE, "error");
+      nickname.setAttribute("aria-invalid", "true");
+      nickname.focus();
+      return { ok: false, reason: "blocked" };
+    }
+    nickname.removeAttribute("aria-invalid");
+    restoreNicknameHelp();
+    return { ok: true, name: typed };
   }
 
   setNicknameHelp(NAME_CHECKING_MESSAGE, "checking");
@@ -1542,11 +1592,24 @@ function paintRanking() {
 }
 
 function showStep(index) {
+  const previousStepIndex = currentStep;
+  const isReturningToCount = index === 1 && previousStepIndex > 1;
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
 
+  if (index !== 1) {
+    window.clearTimeout(counterAnimationDelayTimer);
+    counterAnimationDelayTimer = null;
+  }
+  if (isReturningToCount) {
+    hasAnimatedCounter = false;
+  }
+
   currentStep = index;
+  if (isLiveShowcaseDemo && index === 2) {
+    window.setTimeout(applyShowcaseDemoName, 0);
+  }
   viewport.classList.toggle("is-participation-step", index === 0);
   steps.forEach((step, stepIndex) => {
     const isCurrent = stepIndex === index;
@@ -1590,7 +1653,12 @@ function showStep(index) {
       // ロールアップ開始前のプレースホルダも0から（HTML初期値の名残の100を見せない）
       counterValue.textContent = "0";
     }
-    window.setTimeout(() => animateCounter(participantCount), delay);
+    counterAnimationDelayTimer = window.setTimeout(() => {
+      counterAnimationDelayTimer = null;
+      if (currentStep === 1) {
+        animateCounter(participantCount);
+      }
+    }, delay);
   }
 }
 
@@ -1882,6 +1950,25 @@ function animateCounter(target) {
   counterAnimationFrame = requestAnimationFrame(tick);
 }
 
+function restoreParticipantCounterImmediately() {
+  if (!counterValue || !counterBox) {
+    return;
+  }
+
+  window.clearTimeout(counterAnimationDelayTimer);
+  counterAnimationDelayTimer = null;
+  if (counterAnimationFrame) {
+    cancelAnimationFrame(counterAnimationFrame);
+    counterAnimationFrame = null;
+  }
+
+  hasAnimatedCounter = true;
+  counterValue.textContent = participantCount.toLocaleString(isEnglish() ? "en-US" : "ja-JP");
+  updateCounterGoalProgress(participantCount);
+  counterBox.classList.remove("is-counting");
+  counterBox.classList.add("is-counted");
+}
+
 function nextStep() {
   if (currentStep < totalSteps - 1) {
     showStep(currentStep + 1);
@@ -1959,13 +2046,6 @@ function decorateFoundingSupporterCard(labelNode, nameNode) {
     city.append(building);
   });
   nameNode.before(city);
-
-  const lightCaption = document.createElement("p");
-  lightCaption.className = "certificate-light-caption";
-  lightCaption.textContent = isEnglish()
-    ? "This light is your support."
-    : "この一灯が、あなたの支援です";
-  city.after(lightCaption);
 
   if (foundingSupporterComment) {
     const message = document.createElement("blockquote");
@@ -2202,13 +2282,14 @@ function playSupporterCeremony() {
   overlay.classList.remove("is-converging", "is-lifting", "is-bursting");
   void overlay.offsetWidth;
   overlay.classList.add("is-active");
+  // 幕の裏を先に参加証へ切り替え、旧スワイプ画面の一瞬の露出を防ぐ。
+  nextStep();
 
   afterCeremonyBeat(430, () => overlay.classList.add("is-converging"));
 
   afterCeremonyBeat(980, () => overlay.classList.add("is-bursting"));
 
   afterCeremonyBeat(2250, () => {
-    nextStep();
     finalCard.classList.add("is-arriving");
     overlay.classList.add("is-lifting");
   });
@@ -2239,6 +2320,11 @@ function finalizeCard() {
       type: "dooh-research-card-complete",
       participantCount,
       hasDisplayName: Boolean(nickname.value.trim()),
+      displayName: nickname.value.trim().slice(0, 24),
+      swipeEventId: completedSwipeEventId || "",
+      swipeCount: completedSwipeCount || participantCount,
+      isSupporter: isFoundingSupporter,
+      totalDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.totalDays ?? 1,
       surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
     }, location.origin);
   }
@@ -2276,18 +2362,18 @@ async function announceDonorName() {
     return true;
   }
 
-  saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
-  hasAnnouncedName = true;
-
   const payload = {
     name: typed,
     channel: PARTICIPATION_CHANNEL,
     visitorId: completedParticipationVisit?.visitorId ?? null,
-    isReturning: completedParticipationVisit?.isReturning === true,
-    isConsecutiveReturn: completedParticipationVisit?.isConsecutiveReturn === true,
-    streakDays: completedParticipationVisit?.streakDays ?? 1,
-    totalDays: completedParticipationVisit?.totalDays ?? 1,
+    isReturning: isLiveShowcaseDemo ? false : completedParticipationVisit?.isReturning === true,
+    isSupporter: isFoundingSupporter,
+    isConsecutiveReturn: isLiveShowcaseDemo ? false : completedParticipationVisit?.isConsecutiveReturn === true,
+    streakDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.streakDays ?? 1,
+    totalDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.totalDays ?? 1,
     tickerFont: selectedTickerFont,
+    swipeEventId: completedSwipeEventId || null,
+    swipeCount: completedSwipeCount || null,
   };
   if (isAllExperience) {
     payload.source = "participant-flow-all";
@@ -2297,7 +2383,19 @@ async function announceDonorName() {
     payload.source = "participant-flow-women";
   }
 
-  publishNameAnnouncement(payload).catch(() => {});
+  const announcementResult = await publishNameAnnouncement(payload);
+  if (
+    announcementResult?.failed === true ||
+    announcementResult?.fallback === true ||
+    announcementResult?.blocked === true
+  ) {
+    setNicknameHelp(NAME_LINK_FAILED_MESSAGE, "error");
+    return false;
+  }
+
+  saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
+  hasAnnouncedName = true;
+  setNicknameHelp(NAME_LINKED_MESSAGE, "success");
   return true;
 }
 
@@ -2446,11 +2544,23 @@ async function registerParticipation() {
       storageKey: participationStorageOptions.storageKey,
     });
     participantCount += 1;
+    completedSwipeEventId = `debug-${Date.now()}`;
+    completedSwipeCount = participantCount;
+    rememberSwipeLink(completedSwipeEventId, completedSwipeCount);
     updateCounterGoalProgress(participantCount);
     updateMilestonePreview(participantCount);
     hasCountedParticipation = true;
     hasAcceptedParticipation = true;
     hasAnimatedCounter = false;
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: "dooh-research-participation-complete",
+        participantCount,
+        swipeEventId: completedSwipeEventId,
+        swipeCount: completedSwipeCount,
+        isDemoReplay: true,
+      }, location.origin);
+    }
     return true;
   }
 
@@ -2496,6 +2606,9 @@ async function registerParticipation() {
       participantCount = Number.isFinite(committedCount)
         ? committedCount
         : participantCount + 1;
+      completedSwipeEventId = String(result?.eventRef?.key ?? "");
+      completedSwipeCount = participantCount;
+      rememberSwipeLink(completedSwipeEventId, completedSwipeCount);
       updateCounterGoalProgress(participantCount);
       updateMilestonePreview(participantCount);
       hasCountedParticipation = true;
@@ -2508,6 +2621,45 @@ async function registerParticipation() {
       return true;
     }
 
+    if (isLiveShowcaseDemo) {
+      const result = await publishSwipeComplete({
+        name: null,
+        donationAmountYen: DEMO_DONATION_YEN,
+        visitorId: null,
+        participationDate: null,
+        source: "showcase-smartphone-swipe",
+      });
+      if (result?.failed === true || result?.accepted === false) {
+        if (swipeHint) swipeHint.textContent = text("busy");
+        return false;
+      }
+      participantCount = Number.isFinite(Number(result?.count))
+        ? Number(result.count)
+        : participantCount + 1;
+      completedParticipationVisit = {
+        visitorId: null,
+        isReturning: false,
+        isConsecutiveReturn: false,
+        streakDays: 1,
+        totalDays: 1,
+      };
+      completedSwipeEventId = String(result?.eventRef?.key ?? "");
+      completedSwipeCount = participantCount;
+      rememberSwipeLink(completedSwipeEventId, completedSwipeCount);
+      updateCounterGoalProgress(participantCount);
+      updateMilestonePreview(participantCount);
+      hasCountedParticipation = true;
+      hasAcceptedParticipation = true;
+      hasAnimatedCounter = false;
+      window.parent.postMessage({
+        type: "dooh-research-participation-complete",
+        participantCount,
+        swipeEventId: completedSwipeEventId,
+        swipeCount: completedSwipeCount,
+      }, location.origin);
+      return true;
+    }
+
     const visit = getParticipationVisit({
       today: participationDateOverride,
       storageKey: participationStorageOptions.storageKey,
@@ -2517,7 +2669,9 @@ async function registerParticipation() {
       return true;
     }
     const payload = {
-      name: getDisplayName(),
+      // 手軽さを保つため、スワイプ時は匿名で即時反映する。
+      // 名前は参加証作成時に同じ swipeEventId / swipeCount へ後付けする。
+      name: null,
       donationAmountYen: DEMO_DONATION_YEN,
       visitorId: visit.visitorId,
       participationDate: visit.participationDate,
@@ -2564,6 +2718,9 @@ async function registerParticipation() {
     participantCount = Number.isFinite(committedCount)
       ? committedCount
       : participantCount + 1;
+    completedSwipeEventId = String(result?.eventRef?.key ?? "");
+    completedSwipeCount = participantCount;
+    rememberSwipeLink(completedSwipeEventId, completedSwipeCount);
     updateCounterGoalProgress(participantCount);
     updateMilestonePreview(participantCount);
     hasCountedParticipation = true;
@@ -2946,11 +3103,6 @@ function drawSupporterVideoFrame(ctx, ceremonyImage, signatureImage, elapsedMs) 
   ctx.lineWidth = 3;
   drawRoundedRect(ctx, 62, 232, 956, 538, 34);
   ctx.stroke();
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
-  ctx.font = "700 25px 'Noto Sans JP', sans-serif";
-  ctx.letterSpacing = "1px";
-  ctx.fillText(isEnglish() ? "This light is your support." : "この一灯が、あなたの支援です", 94, 728);
-
   ctx.save();
   ctx.globalAlpha = cardReveal;
   ctx.translate(0, (1 - cardReveal) * 80);
@@ -2990,8 +3142,8 @@ function drawSupporterVideoFrame(ctx, ceremonyImage, signatureImage, elapsedMs) 
   ctx.fillStyle = "rgba(255,243,208,0.74)";
   ctx.font = "500 32px 'Noto Sans JP', sans-serif";
   drawWrappedText(ctx, isEnglish()
-    ? "The light you funded became part of this city."
-    : "クラウドファンディングであなたが灯した光が、この街の色になりました。", 112, 1170, 850, 50, 3);
+    ? "Your message will appear on the DOOH screen."
+    : "応援コメントはDOOHに表示されます。", 112, 1170, 850, 50, 3);
 
   ctx.globalAlpha = messageReveal;
   drawRoundedRect(ctx, 108, 1310, 864, 260, 28);
@@ -3541,9 +3693,11 @@ function startPointer(event) {
   if (activePointerId !== null) {
     return;
   }
-  const isParticipationBlocked = isYouTubeParticipation
-    ? getYouTubeCooldownState().blocked
-    : pendingParticipationVisit.alreadyParticipatedToday;
+  const isParticipationBlocked = isLiveShowcaseDemo
+    ? false
+    : isYouTubeParticipation
+      ? getYouTubeCooldownState().blocked
+      : pendingParticipationVisit.alreadyParticipatedToday;
   if ((!isDebugReplay && isParticipationBlocked) || hasCountedParticipation) {
     return;
   }
@@ -3714,6 +3868,21 @@ const syncPreviewName = () => {
   restoreNicknameHelp();
 };
 
+function applyShowcaseDemoName(preferredName = "") {
+  if (!isLiveShowcaseDemo) return;
+  const currentName = nickname.value.trim();
+  const displayName = String(preferredName || currentName || SHOWCASE_DEMO_NAMES[
+    Math.floor(Math.random() * SHOWCASE_DEMO_NAMES.length)
+  ]).trim().slice(0, 20);
+  if (!displayName || isInappropriateName(displayName)) return;
+  nickname.value = displayName;
+  nickname.dispatchEvent(new Event("input", { bubbles: true }));
+  if (createCardButton) {
+    createCardButton.disabled = false;
+    createCardButton.setAttribute("aria-busy", "false");
+  }
+}
+
 function syncSupporterCommentInput() {
   if (!supporterPasscode || !supporterComment) {
     return;
@@ -3816,6 +3985,23 @@ if (!isYouTubeParticipation) {
 }
 
 createCardButton?.addEventListener("click", async () => {
+  applyShowcaseDemoName();
+  const defaultCreateLabel = createCardButton.textContent;
+  if (isLiveShowcaseDemo) {
+    createCardButton.textContent = "作成中…";
+  }
+  const showcaseSupporterInput = getSupporterCommentInput();
+  if (isLiveShowcaseDemo && !showcaseSupporterInput.code && !showcaseSupporterInput.comment) {
+    // 録画デモは通信を待たず即座に参加証を完成させる。
+    // DOOHへの即時反映は finalizeCard の postMessage、DB保存は裏側で継続する。
+    finalizeCard();
+    setNameChecking(false);
+    createCardButton.textContent = defaultCreateLabel;
+    announceDonorName().catch((error) => {
+      console.warn("[showcase] name publish continued in background:", error);
+    });
+    return;
+  }
   setNameChecking(true);
   try {
     const canCreate = await announceDonorName();
@@ -3825,6 +4011,7 @@ createCardButton?.addEventListener("click", async () => {
     finalizeCard();
   } finally {
     setNameChecking(false);
+    createCardButton.textContent = defaultCreateLabel;
   }
 });
 // 表示名を出さない支援者でも、パスコードを入れていれば認証して支援者証を出す。
@@ -3960,7 +4147,7 @@ if (isYouTubeParticipation && !isDebugReplay) {
 // debug（host/ローカル）では「今日は参加済み」ロックを無視して、毎回スワイプから試せるようにする。
 if (!isDebugReplay && isYouTubeParticipation && getYouTubeCooldownState().blocked) {
   markYouTubeCooldown();
-} else if (!isDebugReplay && !isYouTubeParticipation && pendingParticipationVisit.alreadyParticipatedToday) {
+} else if (!isDebugReplay && !isLiveShowcaseDemo && !isYouTubeParticipation && pendingParticipationVisit.alreadyParticipatedToday) {
   markAlreadyParticipatedToday(pendingParticipationVisit);
 }
 mountDebugReplayButton();
@@ -3980,6 +4167,33 @@ subscribeToParticipantCount((count) => {
   syncParticipantCount(count, { preserveLocal: hasCountedParticipation });
 }, { channel: PARTICIPATION_CHANNEL }).catch((error) => {
   console.warn("[firebase] participant count subscription failed:", error);
+});
+
+// Returning from the separate supporter route can restore this page from the
+// back-forward cache while the roll-up animation is still showing its initial
+// zero. Paint the known value immediately, then confirm it with Firebase.
+window.addEventListener("pageshow", (event) => {
+  if (!event.persisted) {
+    return;
+  }
+
+  if (currentStep === 1 && hasCountedParticipation) {
+    restoreParticipantCounterImmediately();
+  }
+
+  getParticipantCount({ channel: PARTICIPATION_CHANNEL })
+    .then((count) => {
+      syncParticipantCount(count, {
+        preserveLocal: hasCountedParticipation,
+        forceCounter: true,
+      });
+      if (currentStep === 1 && hasCountedParticipation) {
+        restoreParticipantCounterImmediately();
+      }
+    })
+    .catch((error) => {
+      console.warn("[firebase] participant count restore failed:", error);
+    });
 });
 
 function applyThemeCopy() {

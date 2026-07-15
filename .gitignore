@@ -4,5 +4,6 @@
 *.pptx
 node_modules/
 web/admin-dist/
+artifacts/
 shinjuku-dooh-demo/
 *:Zone.Identifier

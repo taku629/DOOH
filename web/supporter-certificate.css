@@ -336,11 +336,12 @@
   display: grid;
   place-items: center;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 420ms var(--ease-out);
+  visibility: hidden;
+  opacity: 1;
 }
 
 #supporterCeremony.is-active {
+  visibility: visible;
   opacity: 1;
   pointer-events: auto;
 }

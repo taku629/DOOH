@@ -199,28 +199,37 @@ html:not([data-theme="morning"]) .step[data-step="0"] .spark-c {
 /* メーターバー：初期は完全モノクロ（participant-flow.css:848 の
    橙→赤グラデーションによる色漏れをここで遮断する） */
 html:not([data-theme="morning"]) .step[data-step="0"] .swipe-stage {
+  flex: 0 0 auto;
+  height: 14px;
+  min-height: 14px;
   background: linear-gradient(90deg, #2c2c2e 0%, #6e6e73 45%, #b9bcc2 100%);
 }
 
-/* 進捗に合わせて、バーに左から彩が戻る */
+/* 進捗に合わせて、バーに左から彩が戻る。
+   疑似要素の width と background-size の両方に進捗率を掛けると
+   50%スワイプが25%に見えるため、全面の彩を clip-path で一度だけ切り取る。 */
 html:not([data-theme="morning"]) .step[data-step="0"] .swipe-stage::before {
   content: "";
   position: absolute;
   inset: 0;
+  width: 100%;
   pointer-events: none;
   background: linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--flow-accent, #e0684b) 55%, #2c2c2e),
-      color-mix(in srgb, var(--flow-accent, #e0684b) 80%, #ffffff)
-    )
-    0 0 / var(--swipe-fill, 0%) 100% no-repeat;
-  transition: background-size 90ms linear;
+    90deg,
+    #e45652 0%,
+    #efa548 24%,
+    #82ad73 48%,
+    #5b8fb5 72%,
+    #8b7db4 100%
+  );
+  clip-path: inset(0 calc(100% - var(--swipe-fill, 0%)) 0 0 round 999px);
+  transition: clip-path 90ms linear;
 }
 
 /* 完了後は彩が残る（スワイプ量に関わらず全面カラー） */
 html:not([data-theme="morning"]) body.has-color-participation
   .step[data-step="0"] .swipe-stage::before {
-  background-size: 100% 100%;
+  clip-path: inset(0 0 0 0 round 999px);
 }
 
 /* --- 3) 完了時：昼光が差し、あなたの一色が加わる ----------------------- */
