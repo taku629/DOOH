@@ -2300,7 +2300,7 @@
 
     <script type="module">
         // 実際のスマホ参加（Firebase）に連動：index.html と同じチャンネルを購読
-        import { getLatestSwipeComplete, getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260708-increment-1";
+        import { getLatestSwipeComplete, getRecentNameAnnouncements, subscribeToParticipantCount, subscribeToNameAnnouncements, subscribeToSwipeCompletes, subscribeToSupporterComments, publishSwipeComplete } from "./src/firebase-bridge.js?v=20260715-name-delivery-1";
         import { isInappropriateName } from "./src/name-filter.js";
         import { getChannelForTheme, resolveTheme } from "./src/theme-router.js";
 
@@ -2370,21 +2370,39 @@
         }
 
         if (!isLiveBroadcastMode) {
+            let donorHistoryReady = false;
+            const pendingLiveDonorEvents = [];
+            const showOrQueueLiveDonor = (event) => {
+                if (!donorHistoryReady) {
+                    pendingLiveDonorEvents.push(event);
+                    return;
+                }
+                window.__inkDemo?.showThanks(event?.name, event);
+            };
+            const finishDonorHistoryLoad = () => {
+                donorHistoryReady = true;
+                pendingLiveDonorEvents.splice(0).forEach((event) => {
+                    window.__inkDemo?.showThanks(event?.name, event);
+                });
+            };
+
             getRecentNameAnnouncements({ channel, all: true })
                 .then((events) => {
                     const validEvents = events
                         .map((event) => ({ ...event, name: String(event?.name ?? "").trim() }))
                         .filter((event) => event.name && !isInappropriateName(event.name));
                     window.__inkDemo?.setDonorNameRotation(validEvents);
+                    finishDonorHistoryLoad();
                 })
                 .catch((error) => {
                     console.info("[demo] donor history disabled (offline/manual):", error);
+                    finishDonorHistoryLoad();
                 });
 
             // 新しい寄付者名は巡回表示より優先し、以後の巡回リストにも追加する。
             subscribeToNameAnnouncements((event) => {
                 if (!isInappropriateName(String(event?.name ?? ""))) {
-                    window.__inkDemo?.showThanks(event?.name, event);
+                    showOrQueueLiveDonor(event);
                 }
             }, { channel }).catch((error) => {
                 console.info("[demo] name feed disabled (offline/manual):", error);

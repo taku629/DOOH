@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260714-linked-ink-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260715-name-feed-race-1";
 import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -107,7 +107,7 @@ thanksFastTrackAction?.addEventListener("click", () => {
   }
   setSupporterCertificateIntent(true);
   showStep(2);
-  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("certificateTitle")));
+  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
 });
 
 thanksPrimaryAction?.addEventListener("click", () => setSupporterCertificateIntent(false));
@@ -4322,10 +4322,35 @@ if (isYouTubeParticipation && !isDebugReplay) {
     experience: isMenExperience ? "men" : "women",
   });
 }
+
+const shouldResumeSupporterAfterSwipe =
+  isSupporterFlow &&
+  new URLSearchParams(window.location.search).get("entry") === "swiped";
+
+function consumeSupporterResumeParam() {
+  if (!shouldResumeSupporterAfterSwipe || typeof history?.replaceState !== "function") {
+    return;
+  }
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("entry");
+    history.replaceState(history.state, "", url.toString());
+  } catch {
+    // URL cleanup only controls refresh behavior; the flow can continue without it.
+  }
+}
+
 // debug（host/ローカル）では「今日は参加済み」ロックを無視して、毎回スワイプから試せるようにする。
 if (!isDebugReplay && isYouTubeParticipation && getYouTubeCooldownState().blocked) {
   markYouTubeCooldown();
-} else if (!isDebugReplay && !isLiveShowcaseDemo && !isYouTubeParticipation && pendingParticipationVisit.alreadyParticipatedToday) {
+} else if (
+  !isDebugReplay &&
+  !isLiveShowcaseDemo &&
+  !isYouTubeParticipation &&
+  pendingParticipationVisit.alreadyParticipatedToday &&
+  !shouldResumeSupporterAfterSwipe
+) {
   markAlreadyParticipatedToday(pendingParticipationVisit);
 }
 mountDebugReplayButton();
@@ -4333,8 +4358,7 @@ showStep(0);
 // 合体導線: 通常ページでスワイプ→「クラファン支援者版」から遷移してきた場合は、
 // スワイプをやり直させず「参加証に名前を残す」の先頭から始める（直接アクセス時は従来どおりスワイプから）。
 if (
-  document.body.dataset.flowMode === "supporter" &&
-  new URLSearchParams(window.location.search).get("entry") === "swiped"
+  shouldResumeSupporterAfterSwipe
 ) {
   // 入口ページでスワイプ済み。参加済み状態を引き継がないと announceDonorName が
   // 早期returnし、名前つき作成でコード検証＝支援者版参加証・演出が丸ごと飛ばされる。
@@ -4342,6 +4366,7 @@ if (
   // The swipe was counted on the standard route before this navigation.
   // Carry only the local display state; do not publish or increment again.
   hasCountedParticipation = true;
+  hasAnnouncedName = false;
   if (!completedParticipationVisit) {
     completedParticipationVisit = getParticipationVisit({
       today: participationDateOverride,
@@ -4351,6 +4376,7 @@ if (
   setSupporterCertificateIntent(true);
   // ステップ先頭の見出し「参加証に名前を残す」が見える位置で止める（自動スクロールしない）
   showStep(2);
+  consumeSupporterResumeParam();
 }
 updateMilestonePreview(participantCount);
 loadRelightPlaylist();
