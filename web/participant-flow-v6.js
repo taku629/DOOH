@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260713-ranking-live-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260715-name-delivery-1";
 import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -389,6 +389,7 @@ const UI_TEXT = {
     nameTab: "ここに入力",
     nicknamePlaceholder: "例：さくら",
     nicknameHelp: "ニックネームで入力。参加証・DOOH・ランキングに表示されます。",
+    namePublishError: "DOOHへの名前送信に失敗しました。通信を確認して、もう一度作成してください。",
     rankingTitle: "参加者ランキング",
     rankingKicker: "通算参加日数の多い順",
     rankingOpen: "参加者ランキングを見る",
@@ -494,6 +495,7 @@ const UI_TEXT = {
     nameTab: "Enter here",
     nicknamePlaceholder: "e.g. Sakura",
     nicknameHelp: "Your name may appear on the certificate, the DOOH screen and the participant ranking.\nPlease use a nickname, not your real name.",
+    namePublishError: "We could not send your name to the DOOH. Check your connection and try again.",
     rankingTitle: "Participant ranking",
     rankingKicker: "By total days taken part",
     rankingOpen: "View participant ranking",
@@ -2276,9 +2278,6 @@ async function announceDonorName() {
     return true;
   }
 
-  saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
-  hasAnnouncedName = true;
-
   const payload = {
     name: typed,
     channel: PARTICIPATION_CHANNEL,
@@ -2297,7 +2296,17 @@ async function announceDonorName() {
     payload.source = "participant-flow-women";
   }
 
-  publishNameAnnouncement(payload).catch(() => {});
+  const publishResult = await publishNameAnnouncement(payload);
+  if (!publishResult?.key) {
+    setNicknameHelp(text("namePublishError"), "error");
+    nickname.setAttribute("aria-invalid", "true");
+    nickname.focus();
+    return false;
+  }
+
+  saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
+  hasAnnouncedName = true;
+  nickname.removeAttribute("aria-invalid");
   return true;
 }
 
