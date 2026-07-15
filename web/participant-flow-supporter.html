@@ -98,10 +98,15 @@
         <link rel="stylesheet" href="web/theme-morning.css" />
         <link rel="stylesheet" href="web/outro.css?v=20260608-2" />
         <link rel="stylesheet" href="web/supporter-certificate.css?v=20260712-card-fx-2" />
-        <link rel="stylesheet" href="web/ranking.css?v=20260713-ranking-2" />
-        <link rel="stylesheet" href="web/mobile-fit.css?v=20260713-separated-flows-11" />
+        <link rel="stylesheet" href="web/ranking.css?v=20260710-ranking-1" />
+        <link rel="stylesheet" href="web/mobile-fit.css?v=20260713-separated-flows-10" />
     </head>
-    <body data-flow-mode="supporter">
+    <body
+        data-flow-mode="supporter"
+        data-post-flow-form="https://forms.gle/wjinG48Eg5UJf1wa7"
+        data-post-flow-lead="2600"
+        data-post-flow-delay="10000"
+    >
         <div class="sparkle-pattern" aria-hidden="true"></div>
         <div class="sparkle-particles" aria-hidden="true">
             <span>diamond</span>
@@ -249,10 +254,10 @@
                         <div class="thanks-actions thanks-action-portal" aria-label="作成する参加証を選ぶ">
                             <p>作成する参加証を選ぶ</p>
                             <button class="primary" type="button" data-next>
-                                <span>通常参加証</span>
+                                <span>通常参加証</span><small>名前あり・なしを選べます</small>
                             </button>
                             <button class="ghost supporter-fast-track" type="button" id="supporterFastTrack">
-                                <span>クラファン参加証</span>
+                                <span>クラファン支援者版</span><small>パスコードと一言で豪華な参加証を作る</small>
                             </button>
                         </div>
                     </section>
@@ -267,21 +272,28 @@
                         <h2 id="certificateTitle">参加証に名前を残す</h2>
                         <aside class="supporter-route-hero" aria-label="クラファン支援者限定機能">
                             <span>クラファン支援者限定</span>
-                            <strong>パスコードと一言で、特別な参加証を作れます</strong>
+                            <strong>4桁のパスコードと一言コメントで、豪華な参加証を作れます</strong>
+                            <p>取組やグラフなど通常サイトの内容も、このページ内ですべて確認できます。</p>
                         </aside>
                         <div class="section-skip-actions" aria-label="入力欄へのショートカット">
-                            <button class="section-skip-button is-overview" type="button" data-jump-target="supportChoiceSection">取組・グラフ</button>
-                            <button class="section-skip-button" type="button" data-jump-target="nickname">名前入力</button>
-                            <button class="section-skip-button is-supporter" type="button" data-jump-target="supporterCommentEntry">クラファン参加証</button>
+                            <button class="section-skip-button is-overview" type="button" data-jump-target="supportChoiceSection">取組・グラフを見る</button>
+                            <button class="section-skip-button" type="button" data-jump-target="nickname">参加証を作るところまで移動</button>
+                            <button class="section-skip-button is-supporter" type="button" data-jump-target="supporterCommentEntry">クラファン支援者版を作る</button>
                         </div>
                         <section
                             class="support-choice"
                             id="supportChoiceSection"
                             aria-labelledby="supportChoiceTitle"
                         >
+                            <p class="support-choice-kicker">
+                                何に使われているの？
+                            </p>
                             <h3 id="supportChoiceTitle">
-                                応援先を選ぶ（任意）
+                                応援したい取り組みを見る
                             </h3>
+                            <p class="support-choice-lead">
+                                任意です。タップすると取り組みの概要を確認できます。
+                            </p>
                             <div
                                 class="support-choice-options"
                                 role="group"
@@ -344,6 +356,7 @@
                                 <h3 id="supportTrendTitle">
                                     犯罪件数は減少傾向
                                 </h3>
+                                <p>一方で、不安感はまだ残っています。</p>
                             </div>
                             <svg
                                 class="support-trend-chart"
@@ -376,8 +389,11 @@
                                 <text x="18" y="88">2009年</text>
                                 <text class="support-trend-label-now" x="170" y="90">2024年</text>
                             </svg>
+                            <p class="support-trend-stat">
+                                刑法犯認知件数：2009年 10,968件 → 2024年 6,025件
+                            </p>
                             <p class="support-trend-note">
-                                出典：警視庁公開データ
+                                出典：警視庁公開データ。詳細は参加証作成後に確認できます。
                             </p>
                         </section>
                         <label class="sparkle-field-label" for="nickname"
@@ -400,10 +416,11 @@
                             />
                         </div>
                         <p class="field-helper" id="nicknameHelp">
-                            ニックネームで入力。参加証・DOOH・ランキングに表示されます。
+                            入力した名前は参加証とDOOH、参加者ランキングに表示されます。<br />本名でなくニックネームを入力してください。
                         </p>
-                        <fieldset class="ticker-font-picker">
+                        <fieldset class="ticker-font-picker" aria-describedby="tickerFontHelp">
                             <legend>名前の見た目を選ぶ</legend>
+                            <p id="tickerFontHelp">好きな見た目を選べます</p>
                             <div class="ticker-font-options" role="group" aria-label="名前の見た目を選ぶ">
                                 <button type="button" class="ticker-font-option is-selected" data-ticker-font="noto" aria-pressed="true">標準</button>
                                 <button type="button" class="ticker-font-option" data-ticker-font="rounded" aria-pressed="false">まる</button>
@@ -425,7 +442,7 @@
                                 DOOHに一言コメントを表示
                             </h3>
                             <p class="supporter-comment-lead">
-                                パスコードと一言を入力
+                                4桁のパスコードを入力して<br />新宿への応援コメントをしましょう！
                             </p>
                             <div class="supporter-comment-fields">
                                 <label
@@ -462,8 +479,9 @@
                                 class="field-helper supporter-comment-help"
                                 id="supporterCommentHelp"
                             >
-                                支援時の4桁を入力。URL・個人情報は書けません。
+                                パスコードはクラファン支援時にお渡しした4桁の数字です。コメントにURLや個人情報は書けません。
                             </p>
+                            <p class="supporter-create-guide">パスコードと一言コメントを入力したら、画面下の支援者版ボタンから参加証を作れます。</p>
                         </section>
                         <article
                             class="card"
@@ -500,6 +518,12 @@
                             id="finalCard"
                             aria-live="polite"
                         ></article>
+                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
+                            <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
+                            <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
+                            <ol class="ranking-list" id="rankingList"></ol>
+                            <p class="ranking-note" id="rankingNote"></p>
+                        </section>
                         <div class="actions stacked">
                             <button class="primary" type="button" id="shareBtn">
                                 シェアする
@@ -527,18 +551,6 @@
                             </button>
                         </div>
                         <p id="shareStatus" aria-live="polite"></p>
-                        <section class="ranking" id="rankingPanel" aria-labelledby="rankingTitle" hidden>
-                            <button class="ranking-toggle" id="rankingToggle" type="button" aria-expanded="false" aria-controls="rankingBody">
-                                <span id="rankingToggleLabel">参加者ランキングを見る</span>
-                                <span class="ranking-toggle-icon" aria-hidden="true">＋</span>
-                            </button>
-                            <div class="ranking-body" id="rankingBody" hidden>
-                                <h3 class="ranking-title" id="rankingTitle">参加者ランキング</h3>
-                                <p class="ranking-kicker" id="rankingKicker">通算参加日数の多い順</p>
-                                <ol class="ranking-list" id="rankingList"></ol>
-                                <p class="ranking-note" id="rankingNote"></p>
-                            </div>
-                        </section>
 
                     </section>
                 </div>
@@ -1127,7 +1139,7 @@
 
         <script
             type="module"
-            src="web/participant-flow.js?v=20260713-separated-flows-21"
+            src="web/participant-flow.js?v=20260715-name-delivery-1"
         ></script>
     </body>
 </html>

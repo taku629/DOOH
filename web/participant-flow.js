@@ -1,5 +1,5 @@
 import { getDonationMilestoneGoal } from "../src/condition-manager.js";
-import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToNameAnnouncements, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260713-ranking-live-1";
+import { getLatestNameAnnouncementForVisitor, getParticipantCount, getRecentNameAnnouncements, getSupporterComments, publishNameAnnouncement, publishSupporterComment, publishSwipeComplete, subscribeToParticipantCount } from "../src/firebase-bridge.js?v=20260715-name-delivery-1";
 import { logAnalyticsEvent } from "../src/analytics-bridge.js?v=20260626-youtube-analytics-1";
 import { triggerCompletionHaptic, triggerProgressHaptic } from "../src/haptic.js";
 import { isInappropriateName } from "../src/name-filter.js";
@@ -107,7 +107,7 @@ thanksFastTrackAction?.addEventListener("click", () => {
   }
   setSupporterCertificateIntent(true);
   showStep(2);
-  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("certificateTitle")));
+  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
 });
 
 thanksPrimaryAction?.addEventListener("click", () => setSupporterCertificateIntent(false));
@@ -486,19 +486,19 @@ const THANKS_STORIES = [
 const SUPPORT_CHOICE_DETAILS = {
   patrol: {
     title: "新宿の再編",
-    description: "新宿駅周辺をつなぐ再整備の取り組みです。",
+    description: "駅・駅前広場・駅ビルを一体的に整備する、新宿グランドターミナルの取り組みを確認できます。",
     linkLabel: "新宿駅直近地区の取り組みを見る",
     url: "https://www.city.shinjuku.lg.jp/kusei/toshikei01_000001_00018.html",
   },
   graffiti: {
     title: "歩きやすい街へ",
-    description: "歩いて楽しめる西新宿を目指す取り組みです。",
+    description: "人が憩い、楽しく歩ける都市空間を目指す、西新宿地区の再整備を確認できます。",
     linkLabel: "西新宿地区の取り組みを見る",
     url: "https://www.city.shinjuku.lg.jp/kusei/toshikei01_000001_00048.html",
   },
   outreach: {
     title: "地域活性化",
-    description: "歌舞伎町の文化と賑わいを育てる取り組みです。",
+    description: "文化の創造・発信と賑わいづくりを進める、歌舞伎町ルネッサンスの取り組みを確認できます。",
     linkLabel: "歌舞伎町ルネッサンスを見る",
     url: "https://www.city.shinjuku.lg.jp/kusei/tokumei01_001037.html",
   },
@@ -546,37 +546,36 @@ const UI_TEXT = {
     thanksBody: "あなたの参加で、新宿に静かな光が重なりました。",
     certificateTitle: "参加証に名前を残す",
     supportKicker: "何に使われているの？",
-    supportTitle: "応援先を選ぶ（任意）",
-    supportLead: "",
+    supportTitle: "応援したい取り組みを見る",
+    supportLead: "任意です。タップすると取り組みの概要を確認できます。",
     supportAria: "応援したい取り組み",
     detail: "詳しく見る",
     supportNote: "※このデモでは寄付は実行されません。",
     trendKicker: "新宿の治安のいま",
     trendTitle: "犯罪件数は減少傾向",
-    trendBody: "",
-    trendStat: "",
-    trendNote: "出典：警視庁公開データ",
+    trendBody: "一方で、不安感はまだ残っています。",
+    trendStat: "刑法犯認知件数：2009年 10,968件 → 2024年 6,025件",
+    trendNote: "出典：警視庁公開データ。詳細は参加証作成後に確認できます。",
     displayNameLabel: "表示名（任意）",
     nameTab: "ここに入力",
     nicknamePlaceholder: "例：さくら",
-    nicknameHelp: "ニックネームで入力。参加証・DOOH・ランキングに表示されます。",
+    nicknameHelp: "入力した名前は参加証とDOOH、参加者ランキングに表示されます。\n本名でなくニックネームを入力してください。",
+    namePublishError: "DOOHへの名前送信に失敗しました。通信を確認して、もう一度作成してください。",
     rankingTitle: "参加者ランキング",
     rankingKicker: "通算参加日数の多い順",
-    rankingOpen: "参加者ランキングを見る",
-    rankingClose: "ランキングを閉じる",
     rankingDays: "{days}日",
     rankingSelfNote: "あなたは{rank}位です。",
     rankingAnonymousNote: "名前を入力するとランキングに載ります。",
     rankingEmpty: "まだランキングを作れるほど参加がありません。",
     fontLegend: "名前の見た目を選ぶ",
-    fontHelp: "",
+    fontHelp: "好きな見た目を選べます",
     supporterKicker: "クラファン支援者の方へ",
     supporterTitle: "DOOHに一言コメントを表示",
-    supporterLead: "パスコードと一言を入力",
+    supporterLead: "4桁のパスコードを入力して\n新宿への応援コメントをしましょう！",
     passcode: "パスコード",
     comment: "一言コメント",
     commentPlaceholder: "例：新宿が、誰かの居場所であり続けますように",
-    supporterHelp: "支援時の4桁を入力。URL・個人情報は書けません。",
+    supporterHelp: "パスコードはクラファン支援時にお渡しした4桁の数字です。コメントにURLや個人情報は書けません。",
     createCard: "この名前で作成",
     skipName: "名前なしで作成",
     shareTitle: "参加証が届きました。",
@@ -665,10 +664,9 @@ const UI_TEXT = {
     nameTab: "Enter here",
     nicknamePlaceholder: "e.g. Sakura",
     nicknameHelp: "Your name may appear on the certificate, the DOOH screen and the participant ranking.\nPlease use a nickname, not your real name.",
+    namePublishError: "We could not send your name to the DOOH. Check your connection and try again.",
     rankingTitle: "Participant ranking",
     rankingKicker: "By total days taken part",
-    rankingOpen: "View participant ranking",
-    rankingClose: "Close ranking",
     rankingDays: "{days} days",
     rankingSelfNote: "You are ranked #{rank}.",
     rankingAnonymousNote: "Enter a name to appear in the ranking.",
@@ -898,7 +896,6 @@ function applyLanguage() {
   setElementText("#shareTitle", text("shareTitle"));
   setElementText("#rankingTitle", text("rankingTitle"));
   setElementText("#rankingKicker", text("rankingKicker"));
-  updateRankingToggleLabel();
   paintRanking();   // 行と注記は言語ごとに作り直す
   setElementText("#shareBtn", text("share"));
   setElementText("#shareLineBtn", text("shareLine"));
@@ -1234,6 +1231,11 @@ function getSupporterCommentInput() {
   };
 }
 
+function hasSupporterCommentDraft() {
+  const input = getSupporterCommentInput();
+  return Boolean(input.code || input.comment);
+}
+
 async function publishOptionalSupporterComment(displayName = "") {
   if (!supporterPasscode || !supporterComment) {
     return true;
@@ -1464,16 +1466,6 @@ function syncParticipantCount(count, options = {}) {
     updateCounterGoalProgress(participantCount);
   }
 
-  // The supporter route can reach the certificate before the initial Firebase
-  // count has arrived. If the count screen is open, replay with the live value
-  // instead of leaving the placeholder at zero.
-  if (currentStep === 1 && hasAnimatedCounter && counterValue) {
-    const displayedCount = Number(counterValue.textContent.replace(/[^0-9]/g, "")) || 0;
-    if (displayedCount !== participantCount) {
-      animateCounter(participantCount);
-    }
-  }
-
   updateMilestonePreview(participantCount);
 }
 
@@ -1547,73 +1539,11 @@ function setTrackPosition(index, dragPercent = 0) {
 // visitorId で突き合わせた結果が getRecentNameAnnouncements から返る。
 const RANKING_TOP = 10;
 const rankingPanel = document.getElementById("rankingPanel");
-const rankingToggle = document.getElementById("rankingToggle");
-const rankingToggleLabel = document.getElementById("rankingToggleLabel");
-const rankingBody = document.getElementById("rankingBody");
 const rankingList = document.getElementById("rankingList");
 const rankingNote = document.getElementById("rankingNote");
 let rankingLoaded = false;
 let rankingData = null;    // 言語を切り替えたときに描き直せるよう保持する
 let rankingSelfIndex = -1;
-let rankingAnnouncements = [];
-let rankingLiveUnsubscribe = null;
-let rankingLiveStarting = false;
-let rankingRefreshTimer = null;
-
-function updateRankingToggleLabel() {
-  if (!rankingToggle || !rankingToggleLabel) return;
-  const isOpen = rankingToggle.getAttribute("aria-expanded") === "true";
-  rankingToggleLabel.textContent = text(isOpen ? "rankingClose" : "rankingOpen");
-  const icon = rankingToggle.querySelector(".ranking-toggle-icon");
-  if (icon) icon.textContent = isOpen ? "−" : "＋";
-}
-
-rankingToggle?.addEventListener("click", () => {
-  const willOpen = rankingToggle.getAttribute("aria-expanded") !== "true";
-  rankingToggle.setAttribute("aria-expanded", String(willOpen));
-  if (rankingBody) rankingBody.hidden = !willOpen;
-  updateRankingToggleLabel();
-});
-
-function refreshLiveRanking() {
-  rankingRefreshTimer = null;
-  const ranking = buildRanking(rankingAnnouncements);
-  if (ranking.length === 0) return;
-  const myVisitorId = completedParticipationVisit?.visitorId ?? null;
-  rankingData = ranking;
-  rankingSelfIndex = myVisitorId ? ranking.findIndex((entry) => entry.visitorId === myVisitorId) : -1;
-  paintRanking();
-}
-
-function queueLiveRankingEntry(entry) {
-  if (!entry?.id) return;
-  const existingIndex = rankingAnnouncements.findIndex((current) => current.id === entry.id);
-  if (existingIndex >= 0) rankingAnnouncements.splice(existingIndex, 1);
-  rankingAnnouncements.push(entry);
-  window.clearTimeout(rankingRefreshTimer);
-  rankingRefreshTimer = window.setTimeout(refreshLiveRanking, 300);
-}
-
-async function startLiveRanking(knownIds) {
-  if (rankingLiveUnsubscribe || rankingLiveStarting) return;
-  rankingLiveStarting = true;
-  try {
-    rankingLiveUnsubscribe = await subscribeToNameAnnouncements(queueLiveRankingEntry, {
-      channel: PARTICIPATION_CHANNEL,
-      knownIds,
-    });
-  } catch (error) {
-    console.info("[participant] live ranking unavailable:", error);
-  } finally {
-    rankingLiveStarting = false;
-  }
-}
-
-window.addEventListener("pagehide", () => {
-  rankingLiveUnsubscribe?.();
-  rankingLiveUnsubscribe = null;
-  window.clearTimeout(rankingRefreshTimer);
-});
 
 function buildRanking(announcements) {
   // 同じ人が複数回名乗っているので、最新の名前と最大の通算日数にまとめる
@@ -1668,9 +1598,7 @@ async function renderRanking() {
   let ranking = [];
   try {
     const announcements = await getRecentNameAnnouncements({ all: true, channel: PARTICIPATION_CHANNEL });
-    rankingAnnouncements = announcements;
     ranking = buildRanking(announcements);
-    startLiveRanking(announcements.map((entry) => entry.id).filter(Boolean));
   } catch (error) {
     console.info("[participant] ranking unavailable:", error);
     rankingLoaded = false;
@@ -2069,11 +1997,7 @@ function nextStep() {
 
 function previousStep() {
   if (currentStep > 1 && currentStep < totalSteps - 1) {
-    const previousIndex = currentStep - 1;
-    if (previousIndex === 1) {
-      hasAnimatedCounter = false;
-    }
-    showStep(previousIndex);
+    showStep(currentStep - 1);
   }
 }
 
@@ -2430,6 +2354,17 @@ let hasAnnouncedName = false;
 let completedParticipationVisit = null;
 async function announceDonorName() {
   if (hasAnnouncedName || !hasAcceptedParticipation) {
+    if (isSupporterFlow && supporterCertificateIntent && hasSupporterCommentDraft()) {
+      const typed = nickname.value.trim();
+      if (typed) {
+        const validation = await validateTypedDisplayName();
+        if (!validation.ok) {
+          return false;
+        }
+        return publishOptionalSupporterComment(validation.name);
+      }
+      return publishOptionalSupporterComment("");
+    }
     return true;
   }
 
@@ -2455,9 +2390,6 @@ async function announceDonorName() {
     return true;
   }
 
-  saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
-  hasAnnouncedName = true;
-
   const payload = {
     name: typed,
     channel: PARTICIPATION_CHANNEL,
@@ -2476,7 +2408,17 @@ async function announceDonorName() {
     payload.source = "participant-flow-women";
   }
 
-  publishNameAnnouncement(payload).catch(() => {});
+  const publishResult = await publishNameAnnouncement(payload);
+  if (!publishResult?.key) {
+    setNicknameHelp(text("namePublishError"), "error");
+    nickname.setAttribute("aria-invalid", "true");
+    nickname.focus();
+    return false;
+  }
+
+  saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
+  hasAnnouncedName = true;
+  nickname.removeAttribute("aria-invalid");
   return true;
 }
 
@@ -4136,10 +4078,34 @@ if (isYouTubeParticipation && !isDebugReplay) {
     experience: isMenExperience ? "men" : "women",
   });
 }
+
+const shouldResumeSupporterAfterSwipe =
+  isSupporterFlow &&
+  participationSearchParams.get("entry") === "swiped";
+
+function consumeSupporterResumeParam() {
+  if (!shouldResumeSupporterAfterSwipe || typeof history?.replaceState !== "function") {
+    return;
+  }
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("entry");
+    history.replaceState(history.state, "", url.toString());
+  } catch {
+    // URL cleanup is only for refresh behavior; the flow can continue without it.
+  }
+}
+
 // debug（host/ローカル）では「今日は参加済み」ロックを無視して、毎回スワイプから試せるようにする。
 if (!isDebugReplay && isYouTubeParticipation && getYouTubeCooldownState().blocked) {
   markYouTubeCooldown();
-} else if (!isDebugReplay && !isYouTubeParticipation && pendingParticipationVisit.alreadyParticipatedToday) {
+} else if (
+  !isDebugReplay &&
+  !isYouTubeParticipation &&
+  pendingParticipationVisit.alreadyParticipatedToday &&
+  !shouldResumeSupporterAfterSwipe
+) {
   markAlreadyParticipatedToday(pendingParticipationVisit);
 }
 mountDebugReplayButton();
@@ -4147,12 +4113,12 @@ showStep(0);
 // 合体導線: 通常ページでスワイプ→「クラファン支援者版」から遷移してきた場合は、
 // スワイプをやり直させず「参加証に名前を残す」の先頭から始める（直接アクセス時は従来どおりスワイプから）。
 if (
-  document.body.dataset.flowMode === "supporter" &&
-  new URLSearchParams(window.location.search).get("entry") === "swiped"
+  shouldResumeSupporterAfterSwipe
 ) {
   // 入口ページでスワイプ済み。参加済み状態を引き継がないと announceDonorName が
   // 早期returnし、名前つき作成でコード検証＝支援者版参加証・演出が丸ごと飛ばされる。
   hasAcceptedParticipation = true;
+  hasAnnouncedName = false;
   if (!completedParticipationVisit) {
     completedParticipationVisit = getParticipationVisit({
       today: participationDateOverride,
@@ -4162,6 +4128,7 @@ if (
   setSupporterCertificateIntent(true);
   // ステップ先頭の見出し「参加証に名前を残す」が見える位置で止める（自動スクロールしない）
   showStep(2);
+  consumeSupporterResumeParam();
 }
 updateMilestonePreview(participantCount);
 loadRelightPlaylist();
