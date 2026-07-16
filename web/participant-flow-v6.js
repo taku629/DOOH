@@ -8,9 +8,8 @@ import { getDemoSupporterPasscodes, verifySupporterPasscode } from "../src/suppo
 import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-4";
 import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-2";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
-import { renderInkLocationMap, setInkLocationStatus } from "./ink-location-map.js?v=20260716-1";
-import { mountDoohGazePrompt } from "./dooh-gaze-prompt.js?v=20260716-1";
-import { mountNameThrowCard } from "./name-throw-card.js?v=20260716-1";
+import { renderInkLocationMap, setInkLocationStatus } from "./ink-location-map.js?v=20260716-v1-2";
+import { mountDoohGazePrompt } from "./dooh-gaze-prompt.js?v=20260716-v1-2";
 
 const steps = [...document.querySelectorAll(".step")];
 const progressText = document.getElementById("progressText");
@@ -53,7 +52,6 @@ const tickerFontButtons = [...document.querySelectorAll("[data-ticker-font]")];
 const defaultNicknameHelpText = nicknameHelp?.textContent ?? "";
 const defaultSupporterCommentHelpText = supporterCommentHelp?.textContent ?? "";
 const doohGazePrompt = mountDoohGazePrompt(steps[1], { language: "ja" });
-let nameThrowCard = null;
 
 // Location confirmation and naming are one action; keep optional details below them.
 if (inkLocationCard && nicknameLabel && nicknameField && nicknameHelp && tickerFontPicker && createCardButton && skipNameButton) {
@@ -451,12 +449,12 @@ const UI_TEXT = {
     nicknamePlaceholder: "例：さくら",
     nicknameHelp: "名前を追加すると、同じインクが光ります。参加証・名前ロールにも表示されます。",
     inkLocationTitle: "着弾しました。この彩は、まだ名無しです",
-    inkLocationMessage: "名前を入れて、上へ投げてください。",
-    nameLookUpTitle: "上を見て。あなたの彩が名乗ります",
-    nameLookUpBody: "大画面で、あなたの窓が光ります。",
+    inkLocationMessage: "この名前が大画面に表示されます。",
+    nameLookUpTitle: "名前を受け付けました",
+    nameLookUpBody: "大画面に注目してください。",
     nameLookUpClose: "参加証を見る",
-    nameThrowGesture: "上へフリックして、名前を投げる",
-    nameThrowFallback: "下のボタンでも送れます",
+    nameQuietTitle: "ご参加ありがとうございました",
+    nameQuietBody: "参加証は完成しています。",
     namePublishError: "インクが届きませんでした。もう一度お試しください。",
     supportSummary: "あなたのスワイプは、新宿の再編・歩きやすい街・地域活性化を応援します",
     supportDetailsOpen: "応援先を詳しく見る",
@@ -477,7 +475,7 @@ const UI_TEXT = {
     comment: "一言コメント",
     commentPlaceholder: "例：新宿が、誰かの居場所であり続けますように",
     supporterHelp: "入力は任意です。URLや個人情報は表示できません。",
-    createCard: "名前を投げる",
+    createCard: "この名前を送る",
     skipName: "このまま見守る",
     shareTitle: "参加証が届きました。",
     share: "シェアする",
@@ -566,12 +564,12 @@ const UI_TEXT = {
     nicknamePlaceholder: "e.g. Sakura",
     nicknameHelp: "Your name may appear on the certificate, the DOOH screen and the participant ranking.\nPlease use a nickname, not your real name.",
     inkLocationTitle: "Landed. This color still has no name.",
-    inkLocationMessage: "Add a name, then throw it upward.",
-    nameLookUpTitle: "Look up. Your color is about to say your name.",
-    nameLookUpBody: "Your window is lighting up on the big screen.",
+    inkLocationMessage: "This name will appear on the big screen.",
+    nameLookUpTitle: "We received your name",
+    nameLookUpBody: "Please watch the big screen.",
     nameLookUpClose: "View your certificate",
-    nameThrowGesture: "Flick up to throw your name",
-    nameThrowFallback: "The button below works too.",
+    nameQuietTitle: "Thank you for taking part",
+    nameQuietBody: "Your certificate is ready.",
     supportSummary: "Your swipe supports Shinjuku renewal, walkable streets and local vitality.",
     supportDetailsOpen: "Explore where your support goes",
     namePublishError: "The ink did not arrive. Please try again.",
@@ -592,7 +590,7 @@ const UI_TEXT = {
     comment: "Short message",
     commentPlaceholder: "e.g. May Shinjuku stay welcoming for everyone",
     supporterHelp: "Optional. URLs and personal information cannot be shown.",
-    createCard: "Throw your name",
+    createCard: "Send this name",
     skipName: "Leave it unnamed",
     shareTitle: "Your certificate is ready.",
     share: "Share",
@@ -777,8 +775,9 @@ function applyLanguage() {
     overlayTitle: text("nameLookUpTitle"),
     overlayBody: text("nameLookUpBody"),
     close: text("nameLookUpClose"),
+    quietTitle: text("nameQuietTitle"),
+    quietBody: text("nameQuietBody"),
   });
-  nameThrowCard?.update();
   document.title = text("pageTitle");
   steps.forEach((step, index) => {
     const label = text("progressLabels")[index];
@@ -4140,17 +4139,30 @@ if (!isYouTubeParticipation) {
   setupSavedNameChoice();
 }
 
-async function submitThrownName() {
+async function submitDisplayName() {
   applyShowcaseDemoName();
   const defaultCreateLabel = createCardButton.textContent;
   if (isLiveShowcaseDemo) createCardButton.textContent = text("sending");
   setNameChecking(true);
   try {
+    const ackStartedAt = performance.now();
     const canCreate = await announceDonorName();
     if (!canCreate) {
       return false;
     }
-    if (nickname.value.trim()) doohGazePrompt?.show();
+    if (nickname.value.trim()) {
+      logAnalyticsEvent("name_announcement_ack", {
+        ackAt: Date.now(),
+        ackDurationMs: Math.round(performance.now() - ackStartedAt),
+      });
+      const guidanceTimeoutMs = isDebugReplay
+        ? Math.max(100, Number(new URLSearchParams(location.search).get("guidanceTimeout")) || 30_000)
+        : 30_000;
+      doohGazePrompt?.show({
+        timeoutMs: guidanceTimeoutMs,
+        onQuietExit: () => logAnalyticsEvent("name_guidance_quiet_exit", { timeoutMs: guidanceTimeoutMs }),
+      });
+    }
     finalizeCard();
     return true;
   } finally {
@@ -4158,12 +4170,7 @@ async function submitThrownName() {
     createCardButton.textContent = defaultCreateLabel;
   }
 }
-nameThrowCard = mountNameThrowCard({
-  card: inkLocationCard,
-  button: createCardButton,
-  submit: submitThrownName,
-  getCopy: () => ({ gesture: text("nameThrowGesture"), fallback: text("nameThrowFallback"), label: text("createCard") }),
-});
+createCardButton?.addEventListener("click", submitDisplayName);
 // 表示名を出さない支援者でも、パスコードを入れていれば認証して支援者証を出す。
 skipNameButton?.addEventListener("click", async () => {
   const { code, comment } = getSupporterCommentInput();

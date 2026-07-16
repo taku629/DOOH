@@ -149,7 +149,7 @@
             .thanks-choice > button.thanks-choice-supporter small { color: rgba(255, 255, 255, 0.88) !important; }
         </style>
         <link rel="stylesheet" href="web/color-return-ui-prototype.css?v=20260716-4" />
-        <link rel="stylesheet" href="web/ink-location-map.css?v=20260716-1" />
+        <link rel="stylesheet" href="web/ink-location-map.css?v=20260716-v1-2" />
     </head>
     <body class="color-return-ui">
         <div class="sparkle-pattern" aria-hidden="true"></div>
@@ -319,10 +319,6 @@
                     >
                         <span class="step-count">03</span>
                         <h2 id="certificateTitle">参加証に名前を残す</h2>
-                        <p class="ink-link-note" aria-live="polite">
-                            <strong>あなたのインクは反映済み</strong>
-                            <span>名前を追加すると、同じインクが光ります。</span>
-                        </p>
                         <section class="ink-location-card" id="inkLocationCard" aria-live="polite" hidden>
                             <div class="ink-location-copy">
                                 <strong data-ink-location-title></strong>
@@ -1169,7 +1165,7 @@
 
         <script
             type="module"
-                    src="web/participant-flow-v6.js?v=20260716-color-ticket-issuer-2"
+                    src="web/participant-flow-v6.js?v=20260716-name-v1-1"
         ></script>
             <script>
             // クラファン支援者版は別サイトへ。スワイプ済みなので遷移先では entry=swiped でスワイプを再要求しない。
