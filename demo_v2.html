@@ -630,10 +630,7 @@
             opacity: 0;
             transform: translateY(10px);
             pointer-events: none;
-            transition: opacity 320ms ease, filter 320ms ease;
         }
-
-        body.is-linked-name-reveal .thanks { opacity: 0.22; filter: saturate(0.55); }
 
         body.is-idle-video .cta {
             opacity: 1;
@@ -1996,7 +1993,7 @@
                     { opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.76 },
                     { opacity: 0, transform: "translate(-50%, -62%) scale(1.02)", offset: 1 },
                 ],
-                { duration: comment ? 8000 : (options?.linked === true ? 5500 : 2800), easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
+                { duration: comment ? 6500 : (options?.linked === true ? 5000 : 2800), easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
             ).finished
                 .then(() => {
                     const i = activeNames.indexOf(el);
@@ -2082,7 +2079,6 @@
             const isSupporter = options.isSupporter === true || Boolean(supporterCommentFor(raw));
             spawnNameBeacon(p);
             window.setTimeout(() => {
-                beginLinkedNameReveal(isSupporter ? 8000 : 5500);
                 spawnOutline(p, { linked: true, isSupporter });
                 showImpactName(p, { raw, options: { ...options, linked: true, isSupporter } });
                 if (isSupporter) {
@@ -2090,16 +2086,6 @@
                     billboardFlash(raw);
                 }
             }, 2000);
-        }
-
-        let linkedNameRevealDepth = 0;
-        function beginLinkedNameReveal(durationMs) {
-            linkedNameRevealDepth += 1;
-            document.body.classList.add("is-linked-name-reveal");
-            window.setTimeout(() => {
-                linkedNameRevealDepth = Math.max(0, linkedNameRevealDepth - 1);
-                if (linkedNameRevealDepth === 0) document.body.classList.remove("is-linked-name-reveal");
-            }, durationMs);
         }
 
         function spawnNameBeacon(p) {
