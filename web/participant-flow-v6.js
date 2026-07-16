@@ -8,6 +8,9 @@ import { getDemoSupporterPasscodes, verifySupporterPasscode } from "../src/suppo
 import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-4";
 import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-2";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
+import { renderInkLocationMap, setInkLocationStatus } from "./ink-location-map.js?v=20260716-1";
+import { mountDoohGazePrompt } from "./dooh-gaze-prompt.js?v=20260716-1";
+import { mountNameThrowCard } from "./name-throw-card.js?v=20260716-1";
 
 const steps = [...document.querySelectorAll(".step")];
 const progressText = document.getElementById("progressText");
@@ -23,6 +26,10 @@ const counterBadge = counterBox?.querySelector("em");
 const counterDetail = counterParticipants?.closest("small") || counterBox?.querySelector("small");
 const nickname = document.getElementById("nickname");
 const nicknameHelp = document.getElementById("nicknameHelp");
+const inkLocationCard = document.getElementById("inkLocationCard");
+const nicknameLabel = document.querySelector("label[for='nickname']");
+const nicknameField = nickname?.closest(".sparkle-name-field");
+const tickerFontPicker = document.querySelector(".ticker-font-picker");
 const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
 const shareStatus = document.getElementById("shareStatus");
@@ -45,6 +52,28 @@ const supporterCommentHelp = document.getElementById("supporterCommentHelp");
 const tickerFontButtons = [...document.querySelectorAll("[data-ticker-font]")];
 const defaultNicknameHelpText = nicknameHelp?.textContent ?? "";
 const defaultSupporterCommentHelpText = supporterCommentHelp?.textContent ?? "";
+const doohGazePrompt = mountDoohGazePrompt(steps[1], { language: "ja" });
+let nameThrowCard = null;
+
+// Location confirmation and naming are one action; keep optional details below them.
+if (inkLocationCard && nicknameLabel && nicknameField && nicknameHelp && tickerFontPicker && createCardButton && skipNameButton) {
+  inkLocationCard.append(nicknameLabel, nicknameField, nicknameHelp, tickerFontPicker, createCardButton.closest(".actions"));
+}
+
+const supportDetailsDisclosure = (() => {
+  const supportChoice = document.querySelector(".support-choice");
+  const supportTrend = document.querySelector(".support-trend");
+  const certificateActions = steps[2]?.querySelector(":scope > .actions");
+  if (!tickerFontPicker || !supportChoice || !supportTrend) return null;
+  const details = document.createElement("details");
+  details.className = "support-details-disclosure";
+  const summary = document.createElement("summary");
+  summary.innerHTML = '<span data-support-summary></span><strong data-support-details-open></strong>';
+  details.append(summary, supportChoice, supportTrend);
+  inkLocationCard.after(details);
+  if (certificateActions) details.after(certificateActions);
+  return details;
+})();
 
 // パスコード認証を通ったクラファン支援者だけ、参加証と発行演出が別物になる。
 let isFoundingSupporter = false;
@@ -398,11 +427,11 @@ const UI_TEXT = {
     eyebrow: "Donation Action",
     campaignTitle: "新宿DOOH",
     lead: "白と黒のコントラストで、静かに参加を届けるデモ体験です。",
-    swipeTitle: "新宿を<br />応援しよう",
-    fundingNote: "日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。",
+    swipeTitle: "モノクロの新宿に<br /><span class=\"title-color-word\">彩を取り戻す</span>",
+    fundingNote: "あなたの1スワイプが、託された100円分の応援を新宿へ届けます。",
     donationLabel: "参加者の負担",
     free: "無料",
-    swipeInstruction: "指のエリアを上にスワイプしてください。",
+    swipeInstruction: "画面を上へなぞって、モノクロの街に彩を戻してください。",
     thanksTitle: "ありがとうございます！",
     thanksBody: "あなたの参加で、新宿に静かな光が重なりました。",
     certificateTitle: "参加証に名前を残す",
@@ -421,6 +450,16 @@ const UI_TEXT = {
     nameTab: "ここに入力",
     nicknamePlaceholder: "例：さくら",
     nicknameHelp: "名前を追加すると、同じインクが光ります。参加証・名前ロールにも表示されます。",
+    inkLocationTitle: "着弾しました。この彩は、まだ名無しです",
+    inkLocationMessage: "名前を入れて、上へ投げてください。",
+    nameLookUpTitle: "上を見て。あなたの彩が名乗ります",
+    nameLookUpBody: "大画面で、あなたの窓が光ります。",
+    nameLookUpClose: "参加証を見る",
+    nameThrowGesture: "上へフリックして、名前を投げる",
+    nameThrowFallback: "下のボタンでも送れます",
+    namePublishError: "インクが届きませんでした。もう一度お試しください。",
+    supportSummary: "あなたのスワイプは、新宿の再編・歩きやすい街・地域活性化を応援します",
+    supportDetailsOpen: "応援先を詳しく見る",
     rankingTitle: "参加者ランキング",
     rankingKicker: "通算参加日数の多い順",
     rankingOpen: "参加者ランキングを見る",
@@ -438,8 +477,8 @@ const UI_TEXT = {
     comment: "一言コメント",
     commentPlaceholder: "例：新宿が、誰かの居場所であり続けますように",
     supporterHelp: "入力は任意です。URLや個人情報は表示できません。",
-    createCard: "この名前で作成",
-    skipName: "名前なしで作成",
+    createCard: "名前を投げる",
+    skipName: "このまま見守る",
     shareTitle: "参加証が届きました。",
     share: "シェアする",
     shareLine: "LINEで送る",
@@ -503,11 +542,11 @@ const UI_TEXT = {
     eyebrow: "Donation Action",
     campaignTitle: "SHINJUKU DOOH",
     lead: "A web prototype where your swipe visualizes support for Shinjuku.",
-    swipeTitle: "Support<br />Shinjuku",
-    fundingNote: "Your free swipe turns sponsored funds from across Japan into support for Shinjuku.",
+    swipeTitle: "Bring color back<br />to monochrome Shinjuku",
+    fundingNote: "Your swipe delivers ¥100 of entrusted support to Shinjuku.",
     donationLabel: "Your cost",
     free: "Free",
-    swipeInstruction: "Swipe up inside the finger area.",
+    swipeInstruction: "Swipe upward to bring color back to the monochrome city.",
     thanksTitle: "Thank you!",
     thanksBody: "Your action added another light to Shinjuku.",
     certificateTitle: "Create your supporter certificate",
@@ -526,7 +565,16 @@ const UI_TEXT = {
     nameTab: "Enter here",
     nicknamePlaceholder: "e.g. Sakura",
     nicknameHelp: "Your name may appear on the certificate, the DOOH screen and the participant ranking.\nPlease use a nickname, not your real name.",
-    namePublishError: "We could not send your name to the DOOH. Check your connection and try again.",
+    inkLocationTitle: "Landed. This color still has no name.",
+    inkLocationMessage: "Add a name, then throw it upward.",
+    nameLookUpTitle: "Look up. Your color is about to say your name.",
+    nameLookUpBody: "Your window is lighting up on the big screen.",
+    nameLookUpClose: "View your certificate",
+    nameThrowGesture: "Flick up to throw your name",
+    nameThrowFallback: "The button below works too.",
+    supportSummary: "Your swipe supports Shinjuku renewal, walkable streets and local vitality.",
+    supportDetailsOpen: "Explore where your support goes",
+    namePublishError: "The ink did not arrive. Please try again.",
     rankingTitle: "Participant ranking",
     rankingKicker: "By total days taken part",
     rankingOpen: "View participant ranking",
@@ -544,8 +592,8 @@ const UI_TEXT = {
     comment: "Short message",
     commentPlaceholder: "e.g. May Shinjuku stay welcoming for everyone",
     supporterHelp: "Optional. URLs and personal information cannot be shown.",
-    createCard: "Create with this name",
-    skipName: "Create without a name",
+    createCard: "Throw your name",
+    skipName: "Leave it unnamed",
     shareTitle: "Your certificate is ready.",
     share: "Share",
     shareLine: "Send on LINE",
@@ -657,6 +705,14 @@ function text(key, replacements = {}) {
   return value;
 }
 
+function syncInkLocationMap() {
+  renderInkLocationMap(inkLocationCard, completedSwipeCount, {
+    language: currentLanguage,
+    title: text("inkLocationTitle"),
+    message: text("inkLocationMessage"),
+  });
+}
+
 function supportChoiceDetailFor(choiceId) {
   const choices = SUPPORT_CHOICE_TRANSLATIONS[currentLanguage] || SUPPORT_CHOICE_TRANSLATIONS.ja;
   return choices[choiceId] || SUPPORT_CHOICE_DETAILS[choiceId];
@@ -717,6 +773,12 @@ function setMultilineText(element, value) {
 
 function applyLanguage() {
   document.documentElement.lang = currentLanguage;
+  doohGazePrompt?.update(currentLanguage, {
+    overlayTitle: text("nameLookUpTitle"),
+    overlayBody: text("nameLookUpBody"),
+    close: text("nameLookUpClose"),
+  });
+  nameThrowCard?.update();
   document.title = text("pageTitle");
   steps.forEach((step, index) => {
     const label = text("progressLabels")[index];
@@ -750,6 +812,9 @@ function applyLanguage() {
   setElementText(".sparkle-name-tab", text("nameTab"));
   if (nickname) nickname.placeholder = text("nicknamePlaceholder");
   setMultilineText(nicknameHelp, text("nicknameHelp"));
+  syncInkLocationMap();
+  setElementText("[data-support-summary]", text("supportSummary"));
+  setElementText("[data-support-details-open]", text("supportDetailsOpen"));
   setElementText(".ticker-font-picker legend", text("fontLegend"));
   setElementText("#tickerFontHelp", text("fontHelp"));
   setElementText(".supporter-comment-kicker", text("supporterKicker"));
@@ -974,6 +1039,9 @@ function restoreNicknameHelp() {
 }
 
 function setNameChecking(isChecking) {
+  if (isChecking && nickname?.value.trim()) {
+    setInkLocationStatus(inkLocationCard, "sending", currentLanguage);
+  }
   if (createCardButton) {
     createCardButton.disabled = isChecking;
     createCardButton.setAttribute("aria-busy", String(isChecking));
@@ -1742,7 +1810,7 @@ function resetFlowForDebug() {
   // これを戻さないと announceDonorName が即 return し、2周目以降は認証自体が走らない。
   hasAnnouncedName = false;
   ceremonyOverlay?.classList.remove("is-active", "is-converging", "is-lifting", "is-bursting");
-  finalCard?.classList.remove("is-founding-supporter", "is-arriving");
+  finalCard?.classList.remove("is-founding-supporter", "is-arriving", "has-color-ticket", "is-issuing");
   document.querySelectorAll("[data-supporter-keepsake]").forEach((button) => {
     button.hidden = true;
   });
@@ -2065,6 +2133,74 @@ function decorateFoundingSupporterCard(labelNode, nameNode) {
   finalCard.append(serial);
 }
 
+function buildColorTicketIssuer(content) {
+  const issuer = document.createElement("section");
+  issuer.className = "color-ticket-issuer";
+  issuer.setAttribute(
+    "aria-label",
+    isEnglish() ? "Issuing your Shinjuku color certificate" : "新宿の彩の参加証を発行中",
+  );
+
+  const slot = document.createElement("div");
+  slot.className = "color-ticket-slot";
+  slot.setAttribute("aria-hidden", "true");
+  const slotColors = document.createElement("i");
+  slotColors.className = "color-ticket-slot-colors";
+  slot.append(slotColors);
+
+  const mask = document.createElement("div");
+  mask.className = "color-ticket-mask";
+  const travel = document.createElement("div");
+  travel.className = "color-ticket-travel";
+  const float = document.createElement("div");
+  float.className = "color-ticket-float";
+  const flip = document.createElement("div");
+  flip.className = "color-ticket-flip";
+
+  const back = document.createElement("div");
+  back.className = "color-ticket-face color-ticket-back";
+  const backMark = document.createElement("strong");
+  backMark.textContent = "彩";
+  const backCopy = document.createElement("span");
+  backCopy.textContent = isEnglish() ? "MONOCHROME TO COLOR" : "モノクロから彩へ";
+  const backCity = document.createElement("small");
+  backCity.textContent = "SHINJUKU DOOH";
+  back.append(backMark, backCopy, backCity);
+
+  const front = document.createElement("div");
+  front.className = "color-ticket-face color-ticket-front";
+  const reflex = document.createElement("i");
+  reflex.className = "color-ticket-reflex";
+  reflex.setAttribute("aria-hidden", "true");
+  const header = document.createElement("header");
+  const label = document.createElement("p");
+  label.textContent = content.label;
+  const barcode = document.createElement("i");
+  barcode.className = "color-ticket-barcode";
+  barcode.setAttribute("aria-hidden", "true");
+  header.append(label, barcode);
+  const name = document.createElement("h3");
+  name.textContent = content.name;
+  const amount = document.createElement("strong");
+  amount.className = "color-ticket-amount";
+  amount.textContent = isEnglish() ? "1 SWIPE · ¥100 → SHINJUKU" : "1 SWIPE · ¥100 → 新宿";
+  const footer = document.createElement("footer");
+  const serial = document.createElement("span");
+  const issueNumber = Math.max(1, Number(completedSwipeCount || participantCount || 1));
+  serial.textContent = `#${String(issueNumber).padStart(4, "0")}`;
+  const theme = document.createElement("span");
+  theme.textContent = isEnglish() ? "COLOR RETURN PASS" : "彩を取り戻す参加証";
+  footer.append(serial, theme);
+  front.append(reflex, header, name, amount, footer);
+
+  flip.append(back, front);
+  float.append(flip);
+  travel.append(float);
+  mask.append(travel);
+  issuer.append(slot, mask);
+  return issuer;
+}
+
 function buildFinalCard() {
   if (isFinalCardBuilt) {
     return;
@@ -2082,14 +2218,19 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = content.description;
 
-  finalCard.append(label, name, description);
-  decorateFoundingSupporterCard(label, name);
   if (isFoundingSupporter) {
+    finalCard.classList.remove("has-color-ticket", "is-issuing");
+    finalCard.append(label, name, description);
+    decorateFoundingSupporterCard(label, name);
     const keepsake = document.createElement("section");
     keepsake.className = "certificate-keepsake";
     keepsake.setAttribute("aria-label", isEnglish() ? "Founding supporter certificate" : "クラウドファンディング支援者参加証");
     keepsake.append(...finalCard.childNodes);
     finalCard.append(keepsake);
+  } else {
+    finalCard.classList.remove("is-founding-supporter");
+    finalCard.classList.add("has-color-ticket");
+    finalCard.append(buildColorTicketIssuer(content));
   }
   ensureSupporterKeepsakeActions();
 
@@ -2315,6 +2456,11 @@ function finalizeCard() {
     playSupporterCeremony();
   } else {
     nextStep();
+    if (!isFoundingSupporter && finalCard.classList.contains("has-color-ticket")) {
+      finalCard.classList.remove("is-issuing");
+      void finalCard.offsetWidth;
+      finalCard.classList.add("is-issuing");
+    }
   }
   if (window.parent !== window) {
     window.parent.postMessage({
@@ -2358,8 +2504,11 @@ async function announceDonorName() {
 
   // In debug/local replay, keep the saved name locally and avoid publishing to the live DOOH.
   if (isDebugReplay) {
+    const debugAckDelayMs = Math.min(5000, Math.max(0, Number(new URLSearchParams(location.search).get("ackDelay")) || 0));
+    if (debugAckDelayMs) await new Promise((resolve) => window.setTimeout(resolve, debugAckDelayMs));
     saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
     hasAnnouncedName = true;
+    setInkLocationStatus(inkLocationCard, "sent", currentLanguage);
     return true;
   }
 
@@ -2390,7 +2539,8 @@ async function announceDonorName() {
     announcementResult?.fallback === true ||
     announcementResult?.blocked === true
   ) {
-    setNicknameHelp(NAME_LINK_FAILED_MESSAGE, "error");
+    setNicknameHelp(text("namePublishError"), "error");
+    setInkLocationStatus(inkLocationCard, "error", currentLanguage);
     nickname.setAttribute("aria-invalid", "true");
     nickname.focus();
     return false;
@@ -2400,6 +2550,7 @@ async function announceDonorName() {
   hasAnnouncedName = true;
   nickname.removeAttribute("aria-invalid");
   setNicknameHelp(NAME_LINKED_MESSAGE, "success");
+  setInkLocationStatus(inkLocationCard, "sent", currentLanguage);
   return true;
 }
 
@@ -2766,6 +2917,7 @@ async function registerParticipation() {
 async function markParticipationComplete() {
   const didComplete = await registerParticipation();
   if (didComplete) {
+    syncInkLocationMap();
     if (isYouTubeParticipation) {
       showYouTubeCompletion();
       return true;
@@ -3988,35 +4140,29 @@ if (!isYouTubeParticipation) {
   setupSavedNameChoice();
 }
 
-createCardButton?.addEventListener("click", async () => {
+async function submitThrownName() {
   applyShowcaseDemoName();
   const defaultCreateLabel = createCardButton.textContent;
-  if (isLiveShowcaseDemo) {
-    createCardButton.textContent = "作成中…";
-  }
-  const showcaseSupporterInput = getSupporterCommentInput();
-  if (isLiveShowcaseDemo && !showcaseSupporterInput.code && !showcaseSupporterInput.comment) {
-    // 録画デモは通信を待たず即座に参加証を完成させる。
-    // DOOHへの即時反映は finalizeCard の postMessage、DB保存は裏側で継続する。
-    finalizeCard();
-    setNameChecking(false);
-    createCardButton.textContent = defaultCreateLabel;
-    announceDonorName().catch((error) => {
-      console.warn("[showcase] name publish continued in background:", error);
-    });
-    return;
-  }
+  if (isLiveShowcaseDemo) createCardButton.textContent = text("sending");
   setNameChecking(true);
   try {
     const canCreate = await announceDonorName();
     if (!canCreate) {
-      return;
+      return false;
     }
+    if (nickname.value.trim()) doohGazePrompt?.show();
     finalizeCard();
+    return true;
   } finally {
     setNameChecking(false);
     createCardButton.textContent = defaultCreateLabel;
   }
+}
+nameThrowCard = mountNameThrowCard({
+  card: inkLocationCard,
+  button: createCardButton,
+  submit: submitThrownName,
+  getCopy: () => ({ gesture: text("nameThrowGesture"), fallback: text("nameThrowFallback"), label: text("createCard") }),
 });
 // 表示名を出さない支援者でも、パスコードを入れていれば認証して支援者証を出す。
 skipNameButton?.addEventListener("click", async () => {

@@ -100,8 +100,10 @@
         <link rel="stylesheet" href="web/supporter-certificate.css?v=20260714-ceremony-flash-fix-1" />
         <link rel="stylesheet" href="web/ranking.css?v=20260713-ranking-2" />
         <link rel="stylesheet" href="web/mobile-fit.css?v=20260714-linked-ink-1" />
+        <link rel="stylesheet" href="web/color-return-ui-prototype.css?v=20260716-5" />
+        <link rel="stylesheet" href="web/ink-location-map.css?v=20260716-1" />
     </head>
-    <body data-flow-mode="supporter">
+    <body class="color-return-ui" data-flow-mode="supporter">
         <div class="sparkle-pattern" aria-hidden="true"></div>
         <div class="sparkle-particles" aria-hidden="true">
             <span>diamond</span>
@@ -269,6 +271,13 @@
                             <strong>あなたのインクは反映済み</strong>
                             <span>名前を追加すると、同じインクが光ります。</span>
                         </p>
+                        <section class="ink-location-card" id="inkLocationCard" aria-live="polite" hidden>
+                            <div class="ink-location-copy">
+                                <strong data-ink-location-title></strong>
+                                <span data-ink-location-position></span>
+                                <small data-ink-location-message></small>
+                            </div>
+                        </section>
                         <aside class="supporter-route-hero" aria-label="クラファン支援者限定機能">
                             <span>クラファン支援者限定</span>
                             <strong>パスコードと一言で、特別な参加証を作れます</strong>
@@ -1131,7 +1140,7 @@
 
         <script
             type="module"
-            src="web/participant-flow.js?v=20260715-supporter-resume-2"
+            src="web/participant-flow.js?v=20260716-supporter-ticket-1"
         ></script>
     </body>
 </html>

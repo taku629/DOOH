@@ -291,6 +291,40 @@
                 drop-shadow(0 0 32px rgba(255, 197, 72, 0.78));
         }
 
+        .ink-name-beacon {
+            position: absolute;
+            z-index: 5;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.96);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.35);
+            box-shadow: 0 0 18px rgba(77, 212, 255, 0.9);
+        }
+
+        .ink-name-beacon::before,
+        .ink-name-beacon::after {
+            content: "";
+            position: absolute;
+            inset: -3px;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            animation: ink-name-beacon-ring 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .ink-name-beacon::after { animation-delay: 110ms; }
+
+        @keyframes ink-name-beacon-ring {
+            from { opacity: 0.95; transform: scale(0.4); }
+            to { opacity: 0; transform: scale(7); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ink-name-beacon::before,
+            .ink-name-beacon::after { animation: none; opacity: 0.55; transform: scale(2.2); }
+        }
+
         /* 支援者は文言ラベルではなく、彩のシンボルとラインで見分ける。 */
         .supporter-sigil {
             display: block;
@@ -1903,6 +1937,8 @@
 
         const activeNames = [];
         const MAX_NAMES = 3;   // 同時に立てる名前の上限
+        const queuedLinkedNames = [];
+        let queuedLinkedNameTimer = null;
 
         function dismissName(el, fast = true) {
             const i = activeNames.indexOf(el);
@@ -1957,7 +1993,7 @@
                     { opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.76 },
                     { opacity: 0, transform: "translate(-50%, -62%) scale(1.02)", offset: 1 },
                 ],
-                { duration: comment ? 6500 : 2800, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
+                { duration: comment ? 6500 : (options?.linked === true ? 5000 : 2800), easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
             ).finished
                 .then(() => {
                     const i = activeNames.indexOf(el);
@@ -2031,15 +2067,51 @@
             if (!p) return false;
 
             noteParticipationActivity();
-            const isSupporter = options.isSupporter === true || Boolean(supporterCommentFor(raw));
-            spawnOutline(p, { linked: true, isSupporter });
-            showImpactName(p, { raw, options: { ...options, isSupporter } });
-            if (isSupporter) {
-                // 支援者は同じインクと街中の電子看板の両方へ表示する。
-                billboardFlash(raw);
-            }
+            // データ側の完了処理は待たせない。直列化するのは共有画面の視覚演出だけ。
             resolvePendingCompletionWithName(swipeCount);
+            queuedLinkedNames.push({ name: raw, options: { ...options }, p });
+            if (queuedLinkedNames.length > 30) queuedLinkedNames.shift();
+            flushQueuedLinkedNames();
             return true;
+        }
+
+        function playQueuedLinkedName({ name: raw, options, p }) {
+            const isSupporter = options.isSupporter === true || Boolean(supporterCommentFor(raw));
+            spawnNameBeacon(p);
+            window.setTimeout(() => {
+                spawnOutline(p, { linked: true, isSupporter });
+                showImpactName(p, { raw, options: { ...options, linked: true, isSupporter } });
+                if (isSupporter) {
+                    // 支援者は同じインクと街中の電子看板の両方へ表示する。
+                    billboardFlash(raw);
+                }
+            }, 2000);
+        }
+
+        function spawnNameBeacon(p) {
+            const el = document.createElement("div");
+            el.className = "ink-name-beacon";
+            el.style.left = `${p.ox}%`;
+            el.style.top = `${p.oy}%`;
+            stage.appendChild(el);
+            window.setTimeout(() => {
+                if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                    const echo = el.cloneNode(true);
+                    stage.appendChild(echo);
+                    window.setTimeout(() => echo.remove(), 760);
+                }
+            }, 900);
+            window.setTimeout(() => el.remove(), 760);
+        }
+
+        function flushQueuedLinkedNames() {
+            if (celebrationActive || queuedLinkedNameTimer || queuedLinkedNames.length === 0) return;
+            const next = queuedLinkedNames.shift();
+            playQueuedLinkedName(next);
+            queuedLinkedNameTimer = window.setTimeout(() => {
+                queuedLinkedNameTimer = null;
+                flushQueuedLinkedNames();
+            }, 2000);
         }
 
         function spawnImpact(layerIndex) {
@@ -2615,6 +2687,7 @@
             clearCelebrationTimers();
             warmLayer.onended = null;
             celebrationActive = false;
+            flushQueuedLinkedNames();
             pendingCompletionSwipeCount = 0;
             setSceneFocus(false);
             celebrationStartedAt = 0;
