@@ -99,7 +99,7 @@
         <link rel="stylesheet" href="web/outro.css?v=20260608-2" />
         <link rel="stylesheet" href="web/supporter-certificate.css?v=20260714-ceremony-flash-fix-1" />
         <link rel="stylesheet" href="web/ranking.css?v=20260713-ranking-2" />
-            <style>
+        <style>
             /* 通常ページ: クラファン入力欄は出さない（支援者版は別サイトへ誘導） */
             #supporterCommentEntry { display: none !important; }
             .thanks-choice {
@@ -148,8 +148,10 @@
             }
             .thanks-choice > button.thanks-choice-supporter small { color: rgba(255, 255, 255, 0.88) !important; }
         </style>
+        <link rel="stylesheet" href="web/color-return-ui-prototype.css?v=20260716-4" />
+        <link rel="stylesheet" href="web/ink-location-map.css?v=20260716-1" />
     </head>
-    <body>
+    <body class="color-return-ui">
         <div class="sparkle-pattern" aria-hidden="true"></div>
         <div class="sparkle-particles" aria-hidden="true">
             <span>diamond</span>
@@ -225,9 +227,11 @@
                         aria-labelledby="swipeTitle"
                     >
                         <span class="step-count">01</span>
-                        <h2 id="swipeTitle">新宿を<br />応援しよう</h2>
+                        <h2 id="swipeTitle">
+                            モノクロの新宿に<br /><span class="title-color-word">彩を取り戻す</span>
+                        </h2>
                         <p class="funding-note">
-                            日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。
+                            あなたの1スワイプが、託された100円分の応援を新宿へ届けます。
                         </p>
                         <div
                             class="donation-preview sparkle-total"
@@ -237,7 +241,7 @@
                             <strong>無料</strong>
                         </div>
                         <p class="swipe-instruction">
-                            指のエリアを上にスワイプしてください。
+                            画面を上へなぞって、モノクロの街に彩を戻してください。
                         </p>
                         <div
                             class="swipe-stage sparkle-meter"
@@ -261,13 +265,15 @@
                                 class="send-beam"
                                 aria-hidden="true"
                             ></span>
-                            <img
-                                class="heart-core swipe-gesture-icon"
-                                src="/assets/swipe-finger.png"
-                                alt=""
-                                aria-hidden="true"
-                                draggable="false"
-                            />
+                            <span class="swipe-thumb" aria-hidden="true">
+                                <img
+                                    class="heart-core swipe-gesture-icon"
+                                    src="/assets/swipe-finger.png"
+                                    alt=""
+                                    aria-hidden="true"
+                                    draggable="false"
+                                />
+                            </span>
                         </div>
                         <p class="hint" id="swipeHint"></p>
                     </section>
@@ -317,6 +323,21 @@
                             <strong>あなたのインクは反映済み</strong>
                             <span>名前を追加すると、同じインクが光ります。</span>
                         </p>
+                        <section class="ink-location-card" id="inkLocationCard" aria-live="polite" hidden>
+                            <div class="ink-location-copy">
+                                <strong data-ink-location-title></strong>
+                                <span data-ink-location-position></span>
+                                <small data-ink-location-message></small>
+                            </div>
+                        </section>
+                        <article
+                            class="card"
+                            id="certificatePreview"
+                            aria-live="polite"
+                        >
+                            <p>CERTIFICATE OF SUPPORT</p>
+                            <h3 id="previewName">匿名サポーター</h3>
+                        </article>
                         <section
                             class="support-choice"
                             aria-labelledby="supportChoiceTitle"
@@ -507,14 +528,6 @@
                                 入力は任意です。URLや個人情報は表示できません。
                             </p>
                         </section>
-                        <article
-                            class="card"
-                            id="certificatePreview"
-                            aria-live="polite"
-                        >
-                            <p>CERTIFICATE OF SUPPORT</p>
-                            <h3 id="previewName">匿名サポーター</h3>
-                        </article>
                         <div class="actions">
                             <button
                                 class="primary"
@@ -1156,7 +1169,11 @@
 
         <script
             type="module"
-                    src="web/participant-flow-v6.js?v=20260715-name-feed-race-1"
+                    src="web/participant-flow-v6.js?v=20260718-mini-dooh-1"
+        ></script>
+        <script
+            type="module"
+            src="web/mini-dooh.js?v=20260718-mini-dooh-1"
         ></script>
             <script>
             // クラファン支援者版は別サイトへ。スワイプ済みなので遷移先では entry=swiped でスワイプを再要求しない。

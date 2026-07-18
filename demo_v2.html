@@ -97,6 +97,57 @@
         /* 実行時配置版: 18枚のimgは「どの飛沫が出ているか」の状態だけを持つ */
         img.ink-layer:not(.final-layer) { display: none; }
 
+        /* 配置確認オーバーレイ（?slots 指定時のみDOMに入る） */
+        .slot-debug {
+            position: absolute;
+            inset: 0;
+            z-index: 60;
+            pointer-events: none;
+            font-family: ui-monospace, monospace;
+        }
+        .slot-debug-rect {
+            position: absolute;
+            border: 2px dashed rgba(120, 200, 255, 0.85);
+            background: rgba(120, 200, 255, 0.08);
+            box-sizing: border-box;
+        }
+        .slot-debug-tag {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 13px;
+            line-height: 1.3;
+            color: #dff2ff;
+            background: rgba(10, 30, 50, 0.75);
+            padding: 1px 5px;
+            white-space: nowrap;
+        }
+        .slot-debug-dot {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 150, 60, 0.95);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            display: grid;
+            place-items: center;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+        }
+        .slot-debug-name {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-size: 13px;
+            font-weight: 700;
+            color: #0a1e32;
+            background: rgba(190, 255, 190, 0.9);
+            border-radius: 4px;
+            padding: 1px 5px;
+        }
+        .slot-debug .is-dim { opacity: 0.16; }
+
         .reveal-video {
             position: absolute;
             inset: 0;
@@ -289,6 +340,49 @@
             background: linear-gradient(135deg, #fff7c8 0%, #ffd56a 48%, #ff8fd0 100%);
             filter: drop-shadow(0 0 12px rgba(255, 245, 190, 0.96))
                 drop-shadow(0 0 32px rgba(255, 197, 72, 0.78));
+        }
+
+        /* 達成の点呼: 完成映像の立ち上がりで、この回の18個の輪郭を着弾順に再点灯する。
+           完成を18人目個人ではなく全員に帰属させるための一拍（映像z:3より上） */
+        .ink-outline.is-celebration {
+            z-index: 4;
+            background: linear-gradient(135deg, #ffffff 0%, #fff3b8 45%, #ffd56a 100%);
+            filter: drop-shadow(0 0 10px rgba(255, 250, 220, 0.9))
+                drop-shadow(0 0 24px rgba(255, 214, 106, 0.6));
+        }
+
+        .ink-name-beacon {
+            position: absolute;
+            z-index: 5;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.96);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.35);
+            box-shadow: 0 0 18px rgba(77, 212, 255, 0.9);
+        }
+
+        .ink-name-beacon::before,
+        .ink-name-beacon::after {
+            content: "";
+            position: absolute;
+            inset: -3px;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            animation: ink-name-beacon-ring 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .ink-name-beacon::after { animation-delay: 110ms; }
+
+        @keyframes ink-name-beacon-ring {
+            from { opacity: 0.95; transform: scale(0.4); }
+            to { opacity: 0; transform: scale(7); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ink-name-beacon::before,
+            .ink-name-beacon::after { animation: none; opacity: 0.55; transform: scale(2.2); }
         }
 
         /* 支援者は文言ラベルではなく、彩のシンボルとラインで見分ける。 */
@@ -1468,20 +1562,16 @@
             skipSceneBtn.hidden = false;
         }
 
-        // 飛沫レイヤーを生成（黒地は screen 合成で透過 → 明部だけ累積）
-        // 偶数index=芯(XX-core.jpg)、奇数index=完成形(XX.jpg)。完成形が出たら芯は差し替えて消す
+        // 飛沫レイヤーを生成（「どのスロットが出ているか」の状態だけを持つ。1参加=1スロット）
         const layers = [];
-        for (let i = 1; i <= TOTAL / 2; i++) {
-            for (const variant of ["-core", ""]) {
-                const img = document.createElement("img");
-                img.className = "ink-layer";
-                img.alt = "";
-                img.decoding = "async";
-                img.dataset.shape = String(i - 1);          // 形の番号 0..8
-                img.dataset.core = variant === "-core" ? "1" : "";
-                stage.appendChild(img);
-                layers.push(img);
-            }
+        for (let i = 0; i < TOTAL; i++) {
+            const img = document.createElement("img");
+            img.className = "ink-layer";
+            img.alt = "";
+            img.decoding = "async";
+            img.dataset.slot = String(i);          // layerIndex 0..17（placements と同順）
+            stage.appendChild(img);
+            layers.push(img);
         }
 
         // 全飛沫が出揃った最後に重ねる仕上げの一枚
@@ -1546,10 +1636,7 @@
                 history.replaceState(null, "", u);
             });
         });
-        const BURST_MS = { core: 420, full: 620 };
-        const TARGET_NEW = 0.045;   // 1人ぶん(芯+完成形)で新しく開く面積 / 画面比
-        const MIN_DIST = 240;       // 狙い同士の最小距離(フレームpx)
-        const SOLVE_W = 240, SOLVE_H = 135;
+        const BURST_MS = 620;       // burstスタイルの窓バウンド時間
 
         const revealVideo = document.createElement("video");
         revealVideo.className = "reveal-video";
@@ -1622,113 +1709,135 @@
                 im.src = src;
             });
 
-        function weightedPick(map, count, minDist, FW, FH, GX, GY) {
-            const cells = [];
-            for (let gy = 0; gy < GY; gy++)
-                for (let gx = 0; gx < GX; gx++)
-                    if (map[gy][gx] > 0.01) cells.push({ gx, gy, w: map[gy][gx] });
-            const chosen = [];
-            let guard = 0;
-            while (chosen.length < count && guard++ < 800) {
-                const total = cells.reduce((a, c) => a + c.w, 0);
-                if (total <= 0) break;
-                let r = Math.random() * total;
-                let cell = cells[0];
-                for (const c of cells) { r -= c.w; if (r <= 0) { cell = c; break; } }
-                const x = (cell.gx + Math.random()) * (FW / GX);
-                const y = (cell.gy + Math.random()) * (FH / GY);
-                if (chosen.every((c) => Math.hypot(c.x - x, c.y - y) >= minDist)) chosen.push({ x, y });
-            }
-            // 距離条件で埋まらなければ緩めて補充
-            while (chosen.length < count && cells.length) {
-                const c = cells[Math.floor(Math.random() * cells.length)];
-                chosen.push({ x: (c.gx + 0.5) * (FW / GX), y: (c.gy + 0.5) * (FH / GY) });
-            }
-            return chosen;
-        }
-
-        function planRound() {
-            if (!layout) return;
+        // 18固定スロット（layout.json の slots）から placements を決定的に構築する。
+        // 乱数は使わない：同じ layout.json なら、リロード・challenge更新・relight の
+        // どのタイミングでも placements[layerIndex] は常に同じ位置・同じ形になる。
+        // スロット座標は画面%（ox/oy=着弾中心、widthPct=幅。高さはshapeの縦横比に従属）。
+        function buildPlacements() {
+            if (!layout?.slots) return;
             const [FW, FH] = layout.frame;
-            const [GX, GY] = layout.grid;
-            const people = weightedPick(layout.peopleMap, 6, MIN_DIST, FW, FH, GX, GY);
-            const vines = weightedPick(layout.vineMap, 3, MIN_DIST, FW, FH, GX, GY);
-
-            // 直前に開いた窓からいちばん遠い的を次に選ぶ。
-            // 連続スワイプでも窓と名前が画面の反対側に出るので、名前が重なりにくい。
-            const pool = [
-                ...people.map((t) => ({ ...t, lift: 0.3, kind: "people" })),
-                ...vines.map((t) => ({ ...t, lift: 0, kind: "scar" })),
-            ];
-            const targets = [pool.splice(Math.floor(Math.random() * pool.length), 1)[0]];
-            while (pool.length) {
-                const prev = targets[targets.length - 1];
-                let bi = 0, bd = -1;
-                pool.forEach((t, i) => {
-                    const d = Math.hypot(t.x - prev.x, t.y - prev.y);
-                    if (d > bd) { bd = d; bi = i; }
-                });
-                targets.push(pool.splice(bi, 1)[0]);
-            }
-            const order = [...layout.shapes.keys()].sort(() => Math.random() - 0.5);
-
-            // 既に開いた窓を差し引いた正味の新規面積が一定になるよう scale を二分探索
-            const cv = document.createElement("canvas");
-            cv.width = SOLVE_W; cv.height = SOLVE_H;
-            const ctx = cv.getContext("2d", { willReadFrequently: true });
-            const sx = SOLVE_W / FW, sy = SOLVE_H / FH;
-            const acc = new Uint8Array(SOLVE_W * SOLVE_H);
-            const targetPx = TARGET_NEW * SOLVE_W * SOLVE_H;
-
-            const rect = (shape, t, s) => ({
-                w: shape.w * s, h: shape.h * s,
-                x: t.x - shape.cx * s,
-                y: t.y - shape.cy * s - shape.h * s * t.lift,
-            });
-            const newPixels = (img, shape, t, s) => {
-                ctx.clearRect(0, 0, SOLVE_W, SOLVE_H);
-                const r = rect(shape, t, s);
-                ctx.drawImage(img, r.x * sx, r.y * sy, r.w * sx, r.h * sy);
-                const d = ctx.getImageData(0, 0, SOLVE_W, SOLVE_H).data;
-                let n = 0;
-                for (let i = 0, p = 3; i < acc.length; i++, p += 4)
-                    if (d[p] > 128 && !acc[i]) n++;
-                return n;
-            };
-            const commit = (img, shape, t, s) => {
-                ctx.clearRect(0, 0, SOLVE_W, SOLVE_H);
-                const r = rect(shape, t, s);
-                ctx.drawImage(img, r.x * sx, r.y * sy, r.w * sx, r.h * sy);
-                const d = ctx.getImageData(0, 0, SOLVE_W, SOLVE_H).data;
-                for (let i = 0, p = 3; i < acc.length; i++, p += 4) if (d[p] > 128) acc[i] = 1;
-            };
-
-            placements = [];
-            targets.forEach((t, j) => {
-                const si = order[j];
-                const shape = layout.shapes[si];
-                let lo = 0.05, hi = 2.6;
-                for (let it = 0; it < 14; it++) {
-                    const mid = (lo + hi) / 2;
-                    if (newPixels(shapeImgs[si].full, shape, t, mid) < targetPx) lo = mid; else hi = mid;
-                }
-                const s = hi;
-                const r = rect(shape, t, s);
-                commit(shapeImgs[si].core, shape, t, s);
-                commit(shapeImgs[si].full, shape, t, s);
-                const kind = t.kind;
-                for (const which of ["core", "full"]) {
-                    const k = which === "core" ? 0.62 : 1;       // 芯は同じ形の小さい版
-                    const w = r.w * k, h = r.h * k;
-                    placements.push({
-                        url: shapeImgs[si][which].src,
-                        x: r.x + (r.w - w) / 2, y: r.y + (r.h - h) / 2, w, h,
-                        ox: (t.x / FW) * 100, oy: (t.y / FH) * 100,
-                        kind,
-                    });
-                }
+            placements = layout.slots.map((slot) => {
+                const shape = layout.shapes[slot.shape];
+                const s = (slot.widthPct / 100 * FW) / shape.w;
+                const w = shape.w * s, h = shape.h * s;
+                return {
+                    url: shapeImgs[slot.shape].full.src,
+                    // 着弾中心(ox/oy)にshapeのインク重心(cx/cy)を合わせる
+                    x: slot.ox / 100 * FW - shape.cx * s,
+                    y: slot.oy / 100 * FH - shape.cy * s,
+                    w, h,
+                    ox: slot.ox, oy: slot.oy,
+                    id: slot.id,
+                    kind: slot.meaning,
+                    nameAnchor: slot.nameAnchor,
+                    sizeClass: slot.sizeClass,
+                    safeAt: slot.safeAt,
+                };
             });
             lastMaskCss = "__replan__";
+        }
+
+        // ===== 着弾順モード（案C: 決定的シャッフル）=====
+        // fixed  : layout.slots の記載順そのまま（1人目=slots[0]…）
+        // shuffle: challenge番号（swipeCountだけから導出）をseedにした決定的シャッフル。
+        //          回ごとに並びが変わるが、同じswipeCountは何度でも・リロード後でも
+        //          同じスロットへ戻る。seed付き乱数なので全端末・全時刻で同一。
+        const SLOT_ORDER_OVERRIDE = ["fixed", "shuffle"].includes(params.get("order")) ? params.get("order") : null;
+        const slotOrderMode = () => SLOT_ORDER_OVERRIDE ?? (layout?.slotsOrder === "shuffle" ? "shuffle" : "fixed");
+
+        const mulberry32 = (seed) => () => {
+            seed = (seed + 0x6D2B79F5) >>> 0;
+            let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+
+        const orderCache = new Map();   // challenge番号 → [着弾順pos] = スロットindex
+        function orderForChallenge(ch) {
+            if (slotOrderMode() === "fixed") return [...placements.keys()];
+            if (orderCache.has(ch)) return orderCache.get(ch);
+            const dist = (a, b) => Math.hypot(placements[a].ox - placements[b].ox, placements[a].oy - placements[b].oy);
+            let perm = null;
+            // 連続する2人の着弾が画面上で近接しない並びを引くまで副seedを進める（決定的）
+            for (let k = 0; k < 50 && !perm; k++) {
+                const rand = mulberry32((ch * 101 + k) >>> 0);
+                const cand = [...placements.keys()];
+                for (let i = cand.length - 1; i > 0; i--) {
+                    const j = Math.floor(rand() * (i + 1));
+                    [cand[i], cand[j]] = [cand[j], cand[i]];
+                }
+                if (cand.every((s, i) => i === 0 || dist(cand[i - 1], s) >= 20)) perm = cand;
+            }
+            // 保険: 記載順の回転（設計時の連続間隔の品質をそのまま保つ）
+            if (!perm) perm = [...placements.keys()].map((_, i) => (i + ch) % placements.length);
+            orderCache.set(ch, perm);
+            return perm;
+        }
+
+        // いま進行中の回のchallenge番号（0始まり）。参加数だけから決まる
+        function currentRoundChallenge() {
+            const c = Math.max(0, Math.floor(getVisualParticipantCount()));
+            return Math.max(0, Math.ceil(c / TOTAL) - 1);
+        }
+
+        function placementForLayer(layerIndex) {
+            if (!placements.length) return undefined;
+            return placements[orderForChallenge(currentRoundChallenge())[layerIndex]];
+        }
+
+        // swipeCount（通算）から本人のスロットを復元する。challenge = floor((sc-1)/18)、
+        // 回内の何人目か = (sc-1)%18。過去の回のrelightも当時と同じ場所に戻る
+        function placementForSwipeCount(swipeCount) {
+            if (!placements.length) return undefined;
+            const sc = Math.floor(swipeCount);
+            const pos = ((sc - 1) % TOTAL + TOTAL) % TOTAL;
+            const ch = Math.max(0, Math.floor((sc - 1) / TOTAL));
+            return placements[orderForChallenge(ch)[pos]];
+        }
+
+        // 配置確認用オーバーレイ。?slots で18枠すべてに番号を表示、?slots=7 なら7番だけ強調。
+        // 本番URLにはパラメータが付かないので表示されない
+        function renderSlotOverlay() {
+            document.querySelector(".slot-debug")?.remove();
+            if (!params.has("slots") || !layout?.slots || placements.length === 0) return;
+            const only = Math.floor(Number(params.get("slots"))) || 0;   // 1-based
+            const [FW, FH] = layout.frame;
+            const box = document.createElement("div");
+            box.className = "slot-debug";
+            box.setAttribute("aria-hidden", "true");
+            // 番号は「いま進行中の回の着弾順」（shuffleモードでは回ごとに変わる）
+            const order = orderForChallenge(currentRoundChallenge());
+            const posOf = [];
+            order.forEach((slotIdx, pos) => { posOf[slotIdx] = pos + 1; });
+            placements.forEach((p, i) => {
+                const n = posOf[i];
+                const dim = only > 0 && n !== only ? " is-dim" : "";
+                const r = document.createElement("div");
+                r.className = `slot-debug-rect${dim}`;
+                r.style.left = `${(p.x / FW) * 100}%`;
+                r.style.top = `${(p.y / FH) * 100}%`;
+                r.style.width = `${(p.w / FW) * 100}%`;
+                r.style.height = `${(p.h / FH) * 100}%`;
+                const tag = document.createElement("span");
+                tag.className = "slot-debug-tag";
+                tag.textContent = `${n} ${p.id}`;
+                r.appendChild(tag);
+                const dot = document.createElement("div");
+                dot.className = `slot-debug-dot${dim}`;
+                dot.style.left = `${p.ox}%`;
+                dot.style.top = `${p.oy}%`;
+                dot.textContent = String(n);
+                const na = document.createElement("div");
+                na.className = `slot-debug-name${dim}`;
+                if (p.nameAnchor) {
+                    na.style.left = `${p.nameAnchor.x}%`;
+                    na.style.top = `${p.nameAnchor.y}%`;
+                    na.textContent = "名";
+                }
+                box.append(r, dot);
+                if (p.nameAnchor) box.appendChild(na);
+            });
+            stage.appendChild(box);
         }
 
         const frameScale = () => {
@@ -1903,6 +2012,8 @@
 
         const activeNames = [];
         const MAX_NAMES = 3;   // 同時に立てる名前の上限
+        const queuedLinkedNames = [];
+        let queuedLinkedNameTimer = null;
 
         function dismissName(el, fast = true) {
             const i = activeNames.indexOf(el);
@@ -1943,11 +2054,15 @@
             }
             stage.appendChild(el);
             activeNames.push(el);
-            if (!placeNameAvoidingHud(el, p.ox, p.oy - 7)) {
+            // 第一候補はスロットごとに設計した nameAnchor（HUD・ticker帯を避けた位置）。
+            // 埋まっていれば placeNameAvoidingHud が近傍の空きを探す（従来フォールバック）
+            const nx = p.nameAnchor?.x ?? p.ox;
+            const ny = p.nameAnchor?.y ?? (p.oy - 7);
+            if (!placeNameAvoidingHud(el, nx, ny)) {
                 // どこにも置けない＝古い名前が塞いでいる。いちばん古いのを畳んでやり直す
                 if (activeNames.length > 1) {
                     dismissName(activeNames[0]);
-                    placeNameAvoidingHud(el, p.ox, p.oy - 7);
+                    placeNameAvoidingHud(el, nx, ny);
                 }
             }
             el.animate(
@@ -1957,7 +2072,7 @@
                     { opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.76 },
                     { opacity: 0, transform: "translate(-50%, -62%) scale(1.02)", offset: 1 },
                 ],
-                { duration: comment ? 6500 : 2800, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
+                { duration: comment ? 6500 : (options?.linked === true ? 5000 : 2800), easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" }
             ).finished
                 .then(() => {
                     const i = activeNames.indexOf(el);
@@ -1982,6 +2097,7 @@
             const el = document.createElement("div");
             el.className = "ink-outline";
             el.classList.toggle("is-name-linked", options.linked === true);
+            el.classList.toggle("is-celebration", options.celebration === true);
             el.classList.toggle("is-supporter", options.isSupporter === true);
             const [kx, ky] = frameScale();
             const w = p.w * kx, h = p.h * ky, x = p.x * kx, y = p.y * ky;
@@ -1998,7 +2114,10 @@
             el.style.transformOrigin = `${p.ox}% ${p.oy}%`;
             stage.insertBefore(el, warmLayer);
 
-            const frames = options.linked === true
+            // 達成の点呼はreduced-motionでは脈動させず、静かな単発フェードに落とす
+            const lively = options.linked === true ||
+                (options.celebration === true && !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+            const frames = lively
                 ? [
                     { opacity: 0, transform: "scale(0.94)", offset: 0 },
                     { opacity: 1, transform: "scale(1.035)", offset: 0.16 },
@@ -2013,7 +2132,7 @@
                     { opacity: 0, transform: "scale(1.03)", offset: 1 },
                   ];
             el.animate(frames, {
-                duration: options.linked === true ? 2600 : 1100,
+                duration: lively ? 2600 : 1100,
                 easing: "cubic-bezier(0.22, 1, 0.36, 1)",
                 fill: "forwards",
             }).finished.then(() => el.remove()).catch(() => el.remove());
@@ -2026,24 +2145,59 @@
                 return false;
             }
 
-            const layerIndex = ((swipeCount - 1) % TOTAL + TOTAL) % TOTAL;
-            const p = placements[layerIndex];
+            const p = placementForSwipeCount(swipeCount);
             if (!p) return false;
 
             noteParticipationActivity();
-            const isSupporter = options.isSupporter === true || Boolean(supporterCommentFor(raw));
-            spawnOutline(p, { linked: true, isSupporter });
-            showImpactName(p, { raw, options: { ...options, isSupporter } });
-            if (isSupporter) {
-                // 支援者は同じインクと街中の電子看板の両方へ表示する。
-                billboardFlash(raw);
-            }
+            // データ側の完了処理は待たせない。直列化するのは共有画面の視覚演出だけ。
             resolvePendingCompletionWithName(swipeCount);
+            queuedLinkedNames.push({ name: raw, options: { ...options }, p });
+            if (queuedLinkedNames.length > 30) queuedLinkedNames.shift();
+            flushQueuedLinkedNames();
             return true;
         }
 
+        function playQueuedLinkedName({ name: raw, options, p }) {
+            const isSupporter = options.isSupporter === true || Boolean(supporterCommentFor(raw));
+            spawnNameBeacon(p);
+            window.setTimeout(() => {
+                spawnOutline(p, { linked: true, isSupporter });
+                showImpactName(p, { raw, options: { ...options, linked: true, isSupporter } });
+                if (isSupporter) {
+                    // 支援者は同じインクと街中の電子看板の両方へ表示する。
+                    billboardFlash(raw);
+                }
+            }, 2000);
+        }
+
+        function spawnNameBeacon(p) {
+            const el = document.createElement("div");
+            el.className = "ink-name-beacon";
+            el.style.left = `${p.ox}%`;
+            el.style.top = `${p.oy}%`;
+            stage.appendChild(el);
+            window.setTimeout(() => {
+                if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                    const echo = el.cloneNode(true);
+                    stage.appendChild(echo);
+                    window.setTimeout(() => echo.remove(), 760);
+                }
+            }, 900);
+            window.setTimeout(() => el.remove(), 760);
+        }
+
+        function flushQueuedLinkedNames() {
+            if (celebrationActive || queuedLinkedNameTimer || queuedLinkedNames.length === 0) return;
+            const next = queuedLinkedNames.shift();
+            playQueuedLinkedName(next);
+            queuedLinkedNameTimer = window.setTimeout(() => {
+                queuedLinkedNameTimer = null;
+                flushQueuedLinkedNames();
+            }, 2000);
+        }
+
         function spawnImpact(layerIndex) {
-            const p = placements[layerIndex];
+            const p = placementForLayer(layerIndex);
             if (!p) return;
             const meta = takeImpactMeta();
             const isSupporter = Boolean(
@@ -2061,7 +2215,7 @@
                 // 中間層を作らない。窓そのものを跳ねさせる
                 burstAt.set(layerIndex, {
                     start: performance.now(),
-                    dur: layerIndex % 2 === 0 ? BURST_MS.core : BURST_MS.full,
+                    dur: BURST_MS,
                 });
                 return;
             }
@@ -2082,26 +2236,30 @@
             if (IMPACT_STYLE === "window") el.appendChild(acquireImpactVideo());
             stage.insertBefore(el, warmLayer);
 
-            const isCore = layerIndex % 2 === 0;
-            const dur = isCore ? 440 : 680;
+            // 芯(72%)で着弾→ひと呼吸おいて完成形(100%)へ弾ける二拍を、1参加の中で完結させる。
+            // 以前は芯と完成形を別indexの2参加で表していたが、固定スロット制では1参加=1地点。
+            const CORE_K = 0.72;
+            const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            const dur = reduceMotion ? 480 : 1060;
             // インクが窓を覆いきるまで窓のマスクを出さない（着弾→溶けて窓が現れる、の順番）。
-            // window スタイルは着地の瞬間に下の窓と同じ絵で重なるので、着地まで待つ
-            const coverAt = IMPACT_STYLE === "window" ? dur : dur * 0.42;
+            // 二拍演出では完成形へ広がりきる頃まで待つ。windowスタイルは着地の絵と重なるので終端まで
+            const coverAt = IMPACT_STYLE === "window" ? dur : dur * 0.85;
             maskHoldUntil.set(layerIndex, performance.now() + coverAt);
-            spawnDroplets(p);
+            if (!reduceMotion) spawnDroplets(p);
 
             // blur は毎フレーム再ラスタライズになるので使わない（transform/opacity のみ）
-            const frames = isCore
+            // reduced-motion では拡大バウンドと二拍を省き、静かに定着させる
+            const frames = reduceMotion
                 ? [
-                    { transform: "scale(0.12) rotate(-8deg)", opacity: 0, offset: 0 },
-                    { transform: "scale(1.28) rotate(2deg)", opacity: 1, offset: 0.42 },
-                    { transform: "scale(0.94) rotate(-1deg)", opacity: 1, offset: 0.72 },
-                    { transform: "scale(1) rotate(0deg)", opacity: 1, offset: 1 },
+                    { transform: "scale(0.97)", opacity: 0, offset: 0 },
+                    { transform: "scale(1)", opacity: 1, offset: 1 },
                   ]
                 : [
-                    { transform: "scale(0.55) rotate(-3deg)", opacity: 0, offset: 0 },
-                    { transform: "scale(1.10) rotate(1deg)", opacity: 1, offset: 0.5 },
-                    { transform: "scale(0.97) rotate(0deg)", opacity: 1, offset: 0.8 },
+                    { transform: "scale(0.12) rotate(-8deg)", opacity: 0, offset: 0 },
+                    { transform: `scale(${CORE_K * 1.18}) rotate(2deg)`, opacity: 1, offset: 0.26 },
+                    { transform: `scale(${CORE_K}) rotate(-1deg)`, opacity: 1, offset: 0.44 },
+                    { transform: `scale(${CORE_K}) rotate(-1deg)`, opacity: 1, offset: 0.58 },
+                    { transform: "scale(1.08) rotate(1deg)", opacity: 1, offset: 0.82 },
                     { transform: "scale(1) rotate(0deg)", opacity: 1, offset: 1 },
                   ];
             el.animate(frames, {
@@ -2161,8 +2319,7 @@
             const onIdx = layers.map((l, i) => (l.classList.contains("is-revealed") ? i : -1))
                 .filter((i) => i >= 0);
 
-            // 1周終わって0に戻ったら、次の回の配置を引き直す
-            if (onIdx.length === 0 && lastRevealedCount > 0) planRound();
+            // 配置は固定スロット制なので、周回しても引き直さない（relight再現性を守る）
             lastRevealedCount = onIdx.length;
 
             if (seenRevealed === null || Date.now() < IMPACTS_LIVE_AFTER) {
@@ -2175,8 +2332,8 @@
             const now = performance.now();
             for (const [i, t] of maskHoldUntil) if (t <= now) maskHoldUntil.delete(i);
             const entries = onIdx
-                .filter((i) => placements[i] && !maskHoldUntil.has(i))
-                .map((i) => ({ p: placements[i], k: burstScale(i) }));
+                .filter((i) => placementForLayer(i) && !maskHoldUntil.has(i))
+                .map((i) => ({ p: placementForLayer(i), k: burstScale(i) }));
             const css = entries.length ? maskCssFor(entries) : { image: "", position: "", size: "" };
             const key = css.image + "|" + css.position + "|" + css.size;
             if (key !== lastMaskCss) {
@@ -2191,7 +2348,9 @@
 
         (async () => {
             document.body.classList.toggle("dooh-dev", DEV);
-            layout = await fetch("assets/ink-people/layout.json").then((r) => r.json());
+            // 配置チューニングが通常リロードで反映されるよう、常にサーバーへ再検証させる
+            // （未変更なら304で済む。ブラウザ／CDNの経験則キャッシュに配置が固定されるのを防ぐ）
+            layout = await fetch("assets/ink-people/layout.json", { cache: "no-cache" }).then((r) => r.json());
             // ここより上は同期実行。supporterCommentRotation などの宣言はまだ TDZ なので触れない
             if (DEV && supporterCommentRotation.length === 0) {
                 setSupporterComments([
@@ -2202,7 +2361,7 @@
             }
             // shape-NN-core.png は make-ink-people-assets.py が切断辺を修復済みの飛沫
             // （元素材の直線カットは揺らぎ＋小滴に置き換わっている）。
-            // 芯=同じ形の 62%、完成形=100% として大小で二段階を表す。
+            // 芯→完成の二拍は spawnImpact のアニメーション内で表現する（レイヤーは1参加=1枚）。
             shapeImgs = await Promise.all(
                 layout.shapes.map(async (_, i) => {
                     const img = await loadImage(`assets/ink-people/shape-${String(i + 1).padStart(2, "0")}-core.png`);
@@ -2210,7 +2369,8 @@
                 })
             );
             await loadImage("assets/ink-people/plate.jpg");
-            planRound();
+            buildPlacements();
+            renderSlotOverlay();
             window.addEventListener("resize", () => {
                 lastMaskCss = "__resize__";
                 if (billboard.classList.contains("is-lit")) billboard.style.transform = billboardMatrix();
@@ -2539,6 +2699,8 @@
         function startPendingCompletion() {
             if (celebrationActive || completionNameGraceTimer) return;
             pendingCompletionSwipeCount = Math.max(1, Math.floor(getVisualParticipantCount()));
+            // 18人目の着弾に応えて即・点呼（名前猶予の間、無反応に見えるのを防ぐ）
+            flashCelebrationRollCall();
             completionNameGraceTimer = window.setTimeout(() => {
                 completionNameGraceTimer = null;
                 pendingCompletionSwipeCount = 0;
@@ -2615,6 +2777,7 @@
             clearCelebrationTimers();
             warmLayer.onended = null;
             celebrationActive = false;
+            flushQueuedLinkedNames();
             pendingCompletionSwipeCount = 0;
             setSceneFocus(false);
             celebrationStartedAt = 0;
@@ -2631,6 +2794,20 @@
             updateHud();
             holdThenReplayQueuedReveals();
             scheduleIdleVideo();
+        }
+
+        // 達成の点呼: 完成は18人全員のもの。18人目の着弾直後に、この回の18個の輪郭を
+        // 着弾順の波(60ms刻み)で再点灯する。「17→18人目で全員の窓が完成した」を
+        // 名前猶予(最大20秒)の前にその場で見せる。視覚演出のみ（データ・タイマー不干渉）
+        let lastRollCallAt = 0;
+        function flashCelebrationRollCall() {
+            if (!placements.length) return;
+            lastRollCallAt = Date.now();
+            const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            placements.forEach((p, i) => {
+                if (reduce) { spawnOutline(p, { celebration: true }); return; }
+                window.setTimeout(() => spawnOutline(p, { celebration: true }), i * 60);
+            });
         }
 
         function startCelebration() {
@@ -2670,6 +2847,9 @@
             warmLayer.classList.add("is-revealed");
             warmLayer.onended = finishCelebration;
             playWarmLayerSafely();
+            // 点呼は通常18人目の着弾時に済んでいる。リロード復元などで celebration へ
+            // 直接入った場合だけ、ここで補完する
+            if (Date.now() - lastRollCallAt > 30_000) flashCelebrationRollCall();
             updateHud();
             startCountdownTimer();
 
@@ -3197,13 +3377,9 @@
             }
 
             if (revealed < TOTAL) {
-                // 次の飛沫を飛び散らせて新しい範囲を出す
+                // 次の飛沫を飛び散らせて新しい範囲を出す（1参加=1スロット。出た飛沫は残り続ける）
                 const el = layers[revealed];
                 el.classList.add("is-revealed");
-                if (revealed % 2 === 1) {
-                    // 完成形が出たら同じ飛沫の芯は差し替えて消す（screen二重合成で白飛びするため）
-                    layers[revealed - 1].classList.remove("is-revealed");
-                }
                 splat(el);
                 revealed += 1;
                 if (revealed >= TOTAL) {
@@ -3212,8 +3388,9 @@
                 }
                 updateHud(); // 進捗バー/テキストを飛沫ごとに更新（ライブ連動の連続表示にも対応）
             } else {
-                // 全点灯後も参加するたびに既存の飛沫（完成形）を弾けさせて反応させる
-                splat(layers[Math.floor(Math.random() * (TOTAL / 2)) * 2 + 1]);
+                // 全点灯後も参加するたびに既存の飛沫を弾けさせて反応させる
+                // （どれを弾けさせるかは演出のみ。位置・割り当てには乱数を使っていない）
+                splat(layers[Math.floor(Math.random() * TOTAL)]);
             }
         }
 
@@ -3258,9 +3435,8 @@
             revealed = Math.max(0, Math.min(TOTAL, target));
             layers.forEach((el, i) => {
                 el.getAnimations().forEach((a) => a.cancel());
-                // 芯(偶数index)は「最新ステップのときだけ」表示。完成形(奇数index)は出たら残る
-                const visible = i % 2 === 0 ? i === revealed - 1 : i < revealed;
-                el.classList.toggle("is-revealed", visible);
+                // 1参加=1スロット。出た飛沫はそのまま残る
+                el.classList.toggle("is-revealed", i < revealed);
             });
             finalLayer.getAnimations().forEach((a) => a.cancel());
             finalLayer.classList.toggle("is-revealed", revealed >= TOTAL || celebrationActive);
@@ -3662,6 +3838,10 @@
                 celebrationActive,
                 idleVideoActive,
             }),
+            // 配置確認用（?slots オーバーレイと同じデータ。検証・ツール用の読み取り専用コピー）
+            getPlacements: () => placements.map((p) => ({ ...p })),
+            getSlotOrder: (ch) => orderForChallenge(Math.max(0, Math.floor(Number(ch) || 0))).slice(),
+            renderSlotOverlay,
         };
     </script>
 
@@ -3702,11 +3882,15 @@
         }
 
         // ?dev のときだけ「本番+1」ボタンを出す：QRと同じFirebaseイベントを1件送って連動確認できる
-        window.__inkDemo?.setCelebrationPersistence((count) =>
-            setLastCelebratedCount(count, { channel }).catch((error) => {
-                console.info("[demo] celebration state write skipped:", error);
-            })
-        );
+        // manual/offline は完全ローカル完結のデモ。celebration到達時でも本番の
+        // lastCelebratedCount を書き換えない（ローカルのcount=18で本番値を潰す事故防止）
+        if (!isManualOnlyMode) {
+            window.__inkDemo?.setCelebrationPersistence((count) =>
+                setLastCelebratedCount(count, { channel }).catch((error) => {
+                    console.info("[demo] celebration state write skipped:", error);
+                })
+            );
+        }
 
         if (isDevMode) {
             const tools = document.querySelector(".tools");
