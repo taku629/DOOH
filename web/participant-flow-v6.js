@@ -187,6 +187,8 @@ function rememberSwipeLink(eventId, count) {
   const normalizedId = String(eventId ?? "").trim();
   const normalizedCount = Math.floor(Number(count));
   if (!normalizedId || !Number.isFinite(normalizedCount) || normalizedCount <= 0) return;
+  // ミニチュア同期（web/mini-dooh.js）。モジュール未読込でもフローは動く
+  window.__miniDooh?.onSwipeComplete?.(normalizedCount);
   try {
     sessionStorage.setItem(swipeLinkSessionKey, JSON.stringify({
       eventId: normalizedId,
@@ -2508,6 +2510,7 @@ async function announceDonorName() {
     if (debugAckDelayMs) await new Promise((resolve) => window.setTimeout(resolve, debugAckDelayMs));
     saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
     hasAnnouncedName = true;
+    window.__miniDooh?.onNameThrown?.(typed);
     setInkLocationStatus(inkLocationCard, "sent", currentLanguage);
     return true;
   }
@@ -2548,6 +2551,7 @@ async function announceDonorName() {
 
   saveDisplayName(typed, { storageKey: participationStorageOptions.displayNameStorageKey });
   hasAnnouncedName = true;
+  window.__miniDooh?.onNameThrown?.(typed);
   nickname.removeAttribute("aria-invalid");
   setNicknameHelp(NAME_LINKED_MESSAGE, "success");
   setInkLocationStatus(inkLocationCard, "sent", currentLanguage);
