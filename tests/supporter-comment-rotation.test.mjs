@@ -3,7 +3,7 @@ import test from "node:test";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { reconcile, serialize, takeNext } = require("../src/supporter-comment-rotation.js");
+const { dedupeBySupporter, reconcile, serialize, takeNext } = require("../src/supporter-comment-rotation.js");
 
 const comments = (count) => Array.from({ length: count }, (_, index) => ({
     id: `comment-${index + 1}`,
@@ -53,6 +53,40 @@ test("serialized progress resumes the same cycle after reload", () => {
     const next = takeNext(restored, () => 0.5);
 
     assert.notEqual(next.entry.id, first.entry.id);
+});
+
+test("repeat posts from one supporter keep only the latest comment", () => {
+    const deduped = dedupeBySupporter([
+        { id: "comment-1", codeHash: "a".repeat(64), comment: "first", createdAt: 100 },
+        { id: "comment-2", codeHash: "a".repeat(64), comment: "second", createdAt: 300 },
+        { id: "comment-3", codeHash: "a".repeat(64), comment: "third", createdAt: 200 },
+        { id: "comment-4", codeHash: "b".repeat(64), comment: "other", createdAt: 150 },
+    ]);
+
+    assert.deepEqual(
+        deduped.map((entry) => entry.id).sort(),
+        ["comment-2", "comment-4"]
+    );
+});
+
+test("entries without a codeHash are kept individually", () => {
+    const deduped = dedupeBySupporter([
+        { id: "comment-1", comment: "no hash a", createdAt: 100 },
+        { id: "comment-2", comment: "no hash b", createdAt: 200 },
+        { id: "comment-3", codeHash: "", comment: "empty hash", createdAt: 300 },
+    ]);
+
+    assert.equal(deduped.length, 3);
+});
+
+test("equal timestamps fall back to the id ordering deterministically", () => {
+    const deduped = dedupeBySupporter([
+        { id: "comment-1", codeHash: "c".repeat(64), comment: "first", createdAt: 100 },
+        { id: "comment-9", codeHash: "c".repeat(64), comment: "later id", createdAt: 100 },
+    ]);
+
+    assert.equal(deduped.length, 1);
+    assert.equal(deduped[0].id, "comment-9");
 });
 
 test("a new cycle does not immediately repeat the last item", () => {
