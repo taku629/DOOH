@@ -25,6 +25,10 @@ const nickname = document.getElementById("nickname");
 const nicknameHelp = document.getElementById("nicknameHelp");
 const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
+const colorMembraneFrame = document.getElementById("colorMembraneFrame");
+const colorMembraneStep = colorMembraneFrame?.closest(".color-membrane-step");
+const colorMembraneHome = colorMembraneStep?.parentElement;
+const colorMembraneNextStep = colorMembraneStep?.nextElementSibling;
 const shareStatus = document.getElementById("shareStatus");
 const shareCopyButton = document.getElementById("shareCopyBtn");
 const swipeControl = document.querySelector(".slider-wrap");
@@ -50,6 +54,20 @@ const sectionJumpToggle = document.getElementById("sectionJumpToggle");
 const sectionJumpMenu = document.getElementById("sectionJumpMenu");
 const sectionJumpButtons = [...document.querySelectorAll("[data-jump-target]")];
 const isSupporterFlow = document.body?.dataset.flowMode === "supporter";
+
+function syncColorMembraneFullscreen(index) {
+  const shouldFillScreen = index === 3;
+  if (shouldFillScreen && colorMembraneStep?.parentElement !== document.body) {
+    document.body.append(colorMembraneStep);
+  } else if (
+    !shouldFillScreen
+    && colorMembraneStep?.parentElement === document.body
+    && colorMembraneHome
+  ) {
+    colorMembraneHome.insertBefore(colorMembraneStep, colorMembraneNextStep || null);
+  }
+  document.body.classList.toggle("has-color-membrane-active", shouldFillScreen);
+}
 
 function syncVisibleViewportHeight() {
   const height = window.visualViewport?.height || window.innerHeight;
@@ -238,7 +256,7 @@ const CERTIFICATE_CITY_COLORS = [
 
 const NAME_CHECKING_MESSAGE = "\u8868\u793a\u540d\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const NAME_BLOCKED_MESSAGE = "\u3053\u306e\u8868\u793a\u540d\u306f\u516c\u958b\u3067\u304d\u307e\u305b\u3093\u3002\u5225\u306e\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u306b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
-const NAME_LINKED_MESSAGE = "同じインクに名前を追加しました。";
+const NAME_LINKED_MESSAGE = "参加証に名前を追加しました。";
 const NAME_LINK_FAILED_MESSAGE = "DOOHへの名前反映に失敗しました。通信を確認して、もう一度お試しください。";
 const SUPPORTER_CHECKING_MESSAGE = "\u30af\u30e9\u30d5\u30a1\u30f3\u652f\u63f4\u8005\u30b3\u30e1\u30f3\u30c8\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const SUPPORTER_PASSCODE_ERROR = "4\u6841\u306e\u30d1\u30b9\u30b3\u30fc\u30c9\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
@@ -565,11 +583,11 @@ const UI_TEXT = {
     pageTitle: "新宿DOOH 参加体験",
     about: "この企画について",
     back: "前の画面へ",
-    progressLabels: ["応援", "感謝", "取組", "参加証"],
+    progressLabels: ["応援", "感謝", "取組", "彩り", "参加証"],
     eyebrow: "Donation Action",
     campaignTitle: "新宿DOOH",
     lead: "白と黒のコントラストで、静かに参加を届けるデモ体験です。",
-    swipeTitle: "新宿を<br />応援しよう",
+    swipeTitle: "あなたのスワイプで、<br /><span class=\"title-color-word\">新宿を応援。</span>",
     fundingNote: "日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。",
     donationLabel: "参加者の負担",
     free: "無料",
@@ -591,7 +609,7 @@ const UI_TEXT = {
     displayNameLabel: "表示名（任意）",
     nameTab: "ここに入力",
     nicknamePlaceholder: "例：さくら",
-    nicknameHelp: "名前を追加すると、同じインクが光ります。参加証・名前ロールにも表示されます。",
+    nicknameHelp: "名前は次の画面で、あなたの彩りと一緒に街へ届きます。参加証・名前ロールにも表示されます。",
     rankingTitle: "参加者ランキング",
     rankingKicker: "通算参加日数の多い順",
     rankingOpen: "参加者ランキングを見る",
@@ -670,7 +688,7 @@ const UI_TEXT = {
     pageTitle: "Shinjuku DOOH Experience",
     about: "About",
     back: "Back",
-    progressLabels: ["Support", "Thanks", "Action", "Certificate"],
+    progressLabels: ["Support", "Thanks", "Action", "Color", "Certificate"],
     eyebrow: "Donation Action",
     campaignTitle: "SHINJUKU DOOH",
     lead: "A web prototype where your swipe visualizes support for Shinjuku.",
@@ -788,6 +806,7 @@ const shouldUseStoryThanksCard = Boolean(
 );
 
 let currentStep = 0;
+let colorMembraneCompleted = false;
 let participantCount = FALLBACK_COUNTER_TARGET;
 let hasCountedParticipation = false;
 let hasAcceptedParticipation = false;
@@ -1763,9 +1782,45 @@ function paintRanking() {
   rankingPanel.hidden = false;
 }
 
+function prepareColorMembrane() {
+  if (!colorMembraneFrame) return;
+
+  const source = colorMembraneFrame.dataset.src;
+  if (!source) return;
+
+  const url = new URL(source, window.location.href);
+  url.searchParams.set("name", getDisplayName().trim().slice(0, 24));
+  url.searchParams.set("embedded", "1");
+  const nextSource = url.toString();
+
+  if (colorMembraneFrame.src !== nextSource) {
+    colorMembraneFrame.src = nextSource;
+  }
+}
+
+window.addEventListener("message", (event) => {
+  if (
+    event.origin !== window.location.origin ||
+    event.source !== colorMembraneFrame?.contentWindow ||
+    event.data?.type !== "dooh-color-membrane-complete"
+  ) {
+    return;
+  }
+
+  colorMembraneCompleted = true;
+  if (currentStep === 3) {
+    if (isFoundingSupporter && !prefersReducedMotion) {
+      playSupporterCeremony();
+    } else {
+      showStep(4);
+    }
+  }
+});
+
 function showStep(index) {
   const previousStepIndex = currentStep;
   const isReturningToCount = index === 1 && previousStepIndex > 1;
+  syncColorMembraneFullscreen(index);
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
@@ -1779,6 +1834,9 @@ function showStep(index) {
   }
 
   currentStep = index;
+  if (index === 3) {
+    prepareColorMembrane();
+  }
   if (isLiveShowcaseDemo && index === 2) {
     window.setTimeout(applyShowcaseDemoName, 0);
   }
@@ -2202,29 +2260,16 @@ function getCertificateContent() {
 
 // 金の縁・刻印・色づく街並み・通し番号。支援者証だけに足す。
 function decorateFoundingSupporterCard(labelNode, nameNode) {
-  finalCard.classList.toggle("is-founding-supporter", isFoundingSupporter);
+  finalCard.classList.remove("is-founding-supporter");
+  finalCard.classList.toggle("is-crowdfunding-edition", isFoundingSupporter);
   if (!isFoundingSupporter) {
     return;
   }
-
-  labelNode.textContent = `✦ ${labelNode.textContent} ✦`;
 
   const edition = document.createElement("span");
   edition.className = "certificate-edition";
   edition.textContent = isEnglish() ? "CROWDFUNDING EDITION" : "クラウドファンディング支援者限定";
   labelNode.after(edition);
-
-  const city = document.createElement("div");
-  city.className = "certificate-city";
-  city.setAttribute("aria-hidden", "true");
-  CERTIFICATE_CITY_COLORS.forEach((color, index) => {
-    const building = document.createElement("i");
-    building.style.setProperty("--c", color);
-    building.style.setProperty("--h", `${34 + ((index * 37) % 58)}%`);
-    building.style.setProperty("--d", `${index * 0.18}s`);
-    city.append(building);
-  });
-  nameNode.before(city);
 
   if (foundingSupporterComment) {
     const message = document.createElement("blockquote");
@@ -2262,13 +2307,6 @@ function buildFinalCard() {
 
   finalCard.append(label, name, description);
   decorateFoundingSupporterCard(label, name);
-  if (isFoundingSupporter) {
-    const keepsake = document.createElement("section");
-    keepsake.className = "certificate-keepsake";
-    keepsake.setAttribute("aria-label", isEnglish() ? "Founding supporter certificate" : "クラウドファンディング支援者参加証");
-    keepsake.append(...finalCard.childNodes);
-    finalCard.append(keepsake);
-  }
   ensureSupporterKeepsakeActions();
 
   const projectNote = document.createElement("section");
@@ -2489,11 +2527,8 @@ function finalizeCard() {
 
   isFinalCardBuilt = false;
   buildFinalCard();
-  if (isFoundingSupporter && !prefersReducedMotion) {
-    playSupporterCeremony();
-  } else {
-    nextStep();
-  }
+  colorMembraneCompleted = false;
+  nextStep();
   if (window.parent !== window) {
     window.parent.postMessage({
       type: "dooh-research-card-complete",
@@ -3800,6 +3835,9 @@ function canAdvanceFrom(index) {
   if (index === 2) {
     return true;
   }
+  if (index === 3) {
+    return colorMembraneCompleted;
+  }
   return true;
 }
 
@@ -4119,7 +4157,8 @@ async function setupSavedNameChoice() {
   const savedName = await resolveSavedNameChoice();
   const nameField = nickname.closest(".sparkle-name-field") ?? nickname;
   const nameStep = nickname.closest(".step");
-  if (!savedName || !nameStep) {
+  const choiceParent = nameField.parentNode;
+  if (!savedName || !nameStep || !choiceParent) {
     return;
   }
 
@@ -4143,7 +4182,7 @@ async function setupSavedNameChoice() {
   changeButton.textContent = "名前を変更";
   actions.append(reuseButton, changeButton);
   choice.append(copy, actions);
-  nameStep.insertBefore(choice, nameField);
+  choiceParent.insertBefore(choice, nameField);
 
   reuseButton.addEventListener("click", () => {
     nickname.value = savedName;
