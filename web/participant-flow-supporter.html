@@ -99,9 +99,13 @@
         <link rel="stylesheet" href="web/outro.css?v=20260608-2" />
         <link rel="stylesheet" href="web/supporter-certificate.css?v=20260714-ceremony-flash-fix-1" />
         <link rel="stylesheet" href="web/ranking.css?v=20260713-ranking-2" />
+        <link rel="stylesheet" href="web/color-membrane-flow.css?v=20260720-fullscreen-1" />
+        <link rel="stylesheet" href="web/name-entry-refined.css?v=20260720-1" />
         <link rel="stylesheet" href="web/mobile-fit.css?v=20260714-linked-ink-1" />
+        <link rel="stylesheet" href="web/color-return-ui-prototype.css?v=20260720-crowdfunding-ticket-1" />
+        <link rel="stylesheet" href="web/ink-location-map.css?v=20260716-1" />
     </head>
-    <body data-flow-mode="supporter">
+    <body class="color-return-ui" data-flow-mode="supporter">
         <div class="sparkle-pattern" aria-hidden="true"></div>
         <div class="sparkle-particles" aria-hidden="true">
             <span>diamond</span>
@@ -177,7 +181,9 @@
                         aria-labelledby="swipeTitle"
                     >
                         <span class="step-count">01</span>
-                        <h2 id="swipeTitle">新宿を<br />応援しよう</h2>
+                        <h2 id="swipeTitle">
+                            あなたのスワイプで、<br /><span class="title-color-word">新宿を応援。</span>
+                        </h2>
                         <p class="funding-note">
                             日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。
                         </p>
@@ -266,15 +272,22 @@
                         <span class="step-count">03</span>
                         <h2 id="certificateTitle">参加証に名前を残す</h2>
                         <p class="ink-link-note" aria-live="polite">
-                            <strong>あなたのインクは反映済み</strong>
-                            <span>名前を追加すると、同じインクが光ります。</span>
+                            <strong>あなたの参加証をつくります</strong>
+                            <span>名前は次の画面で、あなたの彩りと一緒に街へ届きます。</span>
                         </p>
+                        <section class="ink-location-card" id="inkLocationCard" aria-live="polite" hidden>
+                            <div class="ink-location-copy">
+                                <strong data-ink-location-title></strong>
+                                <span data-ink-location-position></span>
+                                <small data-ink-location-message></small>
+                            </div>
+                        </section>
                         <aside class="supporter-route-hero" aria-label="クラファン支援者限定機能">
                             <span>クラファン支援者限定</span>
                             <strong>パスコードと一言で、特別な参加証を作れます</strong>
                         </aside>
                         <div class="section-skip-actions" aria-label="入力欄へのショートカット">
-                            <button class="section-skip-button is-overview" type="button" data-jump-target="supportChoiceSection">取組・グラフ</button>
+                            <button class="section-skip-button is-overview" type="button" data-jump-target="supportChoiceSection">応援先</button>
                             <button class="section-skip-button" type="button" data-jump-target="nickname">名前入力</button>
                             <button class="section-skip-button is-supporter" type="button" data-jump-target="supporterCommentEntry">クラファン参加証</button>
                         </div>
@@ -337,51 +350,6 @@
                             ></div>
                             <p class="support-choice-note">
                                 ※このデモでは寄付は実行されません。
-                            </p>
-                        </section>
-                        <section
-                            class="support-trend"
-                            aria-labelledby="supportTrendTitle"
-                        >
-                            <div>
-                                <p class="support-trend-kicker">新宿の治安のいま</p>
-                                <h3 id="supportTrendTitle">
-                                    犯罪件数は減少傾向
-                                </h3>
-                            </div>
-                            <svg
-                                class="support-trend-chart"
-                                viewBox="0 0 220 92"
-                                role="img"
-                                aria-label="新宿区の刑法犯認知件数が2009年の10968件から2024年の6025件へ減少したことを示すグラフ"
-                            >
-                                <path
-                                    class="support-trend-grid"
-                                    d="M18 18H202M18 46H202M18 74H202"
-                                />
-                                <path
-                                    class="support-trend-line"
-                                    d="M22 24C58 28 74 40 104 42C138 44 150 58 198 68"
-                                />
-                                <circle
-                                    class="support-trend-dot"
-                                    cx="22"
-                                    cy="24"
-                                    r="4"
-                                />
-                                <circle
-                                    class="support-trend-dot is-now"
-                                    cx="198"
-                                    cy="68"
-                                    r="5"
-                                />
-                                <text class="support-trend-value" x="18" y="14">10,968件</text>
-                                <text class="support-trend-value is-now" x="154" y="58">6,025件</text>
-                                <text x="18" y="88">2009年</text>
-                                <text class="support-trend-label-now" x="170" y="90">2024年</text>
-                            </svg>
-                            <p class="support-trend-note">
-                                出典：警視庁公開データ
                             </p>
                         </section>
                         <label class="sparkle-field-label" for="nickname"
@@ -492,12 +460,28 @@
                     </section>
 
                     <section
-                        class="step"
+                        class="step color-membrane-step"
                         data-step="3"
+                        data-label="彩り"
+                        aria-label="名前の彩りを街へ届ける"
+                    >
+                        <span class="step-count">04</span>
+                        <iframe
+                            class="color-membrane-frame"
+                            id="colorMembraneFrame"
+                            title="名前の彩りを街へ届ける"
+                            data-src="/dooh-light-membrane-integrated-study.html?v=20260720-fullscreen-2"
+                            allow="vibrate"
+                        ></iframe>
+                    </section>
+
+                    <section
+                        class="step"
+                        data-step="4"
                         data-label="参加証"
                         aria-labelledby="shareTitle"
                     >
-                        <span class="step-count">04</span>
+                        <span class="step-count">05</span>
                         <h2 id="shareTitle">参加証が届きました。</h2>
                         <article
                             class="card done"
@@ -1131,7 +1115,7 @@
 
         <script
             type="module"
-            src="web/participant-flow.js?v=20260715-supporter-resume-2"
+            src="web/participant-flow.js?v=20260720-support-title-1"
         ></script>
     </body>
 </html>
