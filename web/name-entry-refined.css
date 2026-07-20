@@ -1,0 +1,114 @@
+.ink-link-note {
+  padding: 18px 20px !important;
+  border: 1px solid rgba(23, 35, 31, 0.12) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 253, 0.9) !important;
+  box-shadow: 0 12px 30px rgba(23, 35, 31, 0.05) !important;
+}
+
+.ink-link-note strong {
+  color: #17231f !important;
+  font-size: 1rem !important;
+}
+
+.ink-link-note span {
+  margin-top: 6px !important;
+  color: rgba(23, 35, 31, 0.7) !important;
+  line-height: 1.7 !important;
+}
+
+.ink-location-card {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 18px !important;
+  padding: 22px !important;
+  border: 1px solid rgba(23, 35, 31, 0.12) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 253, 0.94) !important;
+  box-shadow: 0 16px 38px rgba(23, 35, 31, 0.06) !important;
+}
+
+.ink-location-card[hidden] {
+  display: none !important;
+}
+
+.ink-window-silhouette {
+  display: none !important;
+}
+
+.ink-location-copy {
+  display: grid !important;
+  gap: 7px !important;
+  padding: 0 !important;
+}
+
+.ink-location-copy strong {
+  color: #17231f !important;
+  font-size: 1.08rem !important;
+  line-height: 1.55 !important;
+}
+
+.ink-location-copy small {
+  color: rgba(23, 35, 31, 0.68) !important;
+  font-size: 0.86rem !important;
+  line-height: 1.7 !important;
+}
+
+.saved-name-choice {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  border: 1px solid rgba(23, 35, 31, 0.12) !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+}
+
+.saved-name-choice p {
+  margin: 0 !important;
+  color: rgba(23, 35, 31, 0.76) !important;
+  font-size: 0.86rem !important;
+  line-height: 1.65 !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.saved-name-choice p strong {
+  color: #a93f58 !important;
+  font-size: inherit !important;
+}
+
+.saved-name-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 9px !important;
+}
+
+.saved-name-actions button {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 46px !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  writing-mode: horizontal-tb !important;
+  white-space: normal !important;
+}
+
+#createCard {
+  background: #17231f !important;
+  color: #fff !important;
+}
+
+button[aria-label^="デバッグ用"] {
+  right: 12px !important;
+  bottom: 12px !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+@media (max-width: 420px) {
+  .saved-name-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
