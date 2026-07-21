@@ -119,7 +119,7 @@ thanksFastTrackAction?.addEventListener("click", () => {
     params.set("entry", "swiped");
     const dest = window.location.pathname.includes("participant-flow-shared.html")
       ? window.location.pathname.replace("participant-flow-shared.html", "participant-flow-supporter.html")
-      : (isMenExperience ? "/supporter/men" : "/supporter/women");
+      : (isAllExperience ? "/supporter" : isMenExperience ? "/supporter/men" : "/supporter/women");
     window.location.href = `${dest}?${params.toString()}`;
     return;
   }
@@ -409,6 +409,7 @@ const experience = document.documentElement.dataset.experience || "default";
 const isSparkleExperience = experience === "sparkle";
 const isMenExperience = experience === "men";
 const isAllExperience = experience === "all";
+const experienceAnalyticsValue = isAllExperience ? "all" : isMenExperience ? "men" : "women";
 const isStoryExperience = isSparkleExperience || isMenExperience || isAllExperience;
 
 function shouldShowExternalBrowserGuide() {
@@ -1573,7 +1574,7 @@ function updateSwipeCharge(value) {
     hasTrackedYouTubeSwipeStart = true;
     logAnalyticsEvent("youtube_swipe_start", {
       channel: "youtube",
-      experience: isMenExperience ? "men" : "women",
+      experience: experienceAnalyticsValue,
     });
   }
   setSwipeFill(normalized);
@@ -2830,7 +2831,7 @@ async function registerParticipation() {
       hasAnimatedCounter = false;
       logAnalyticsEvent("youtube_swipe_complete", {
         channel: "youtube",
-        experience: isMenExperience ? "men" : "women",
+        experience: experienceAnalyticsValue,
       });
       return true;
     }
@@ -2959,7 +2960,7 @@ async function registerParticipation() {
       hasAnimatedCounter = false;
       logAnalyticsEvent("youtube_swipe_complete_local_fallback", {
         channel: "youtube",
-        experience: isMenExperience ? "men" : "women",
+        experience: experienceAnalyticsValue,
       });
       return true;
     }
@@ -4358,7 +4359,7 @@ applyLanguage();
 if (isYouTubeParticipation && !isDebugReplay) {
   logAnalyticsEvent("youtube_page_open", {
     channel: "youtube",
-    experience: isMenExperience ? "men" : "women",
+    experience: experienceAnalyticsValue,
   });
 }
 
