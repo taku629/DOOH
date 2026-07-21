@@ -58,6 +58,7 @@ const colorMembraneStep = colorMembraneFrame?.closest(".color-membrane-step");
 const colorMembraneHome = colorMembraneStep?.parentElement;
 const colorMembraneNextStep = colorMembraneStep?.nextElementSibling;
 let colorMembraneCompleted = false;
+let hasNotifiedParentCardComplete = false;
 
 function syncColorMembraneFullscreen(index) {
   const shouldFillScreen = index === 3;
@@ -82,6 +83,7 @@ window.addEventListener("message", (event) => {
     return;
   }
   colorMembraneCompleted = true;
+  notifyParentCardComplete();
   if (currentStep === 3) {
     showStep(4);
   }
@@ -2504,6 +2506,7 @@ function finalizeCard() {
   isFinalCardBuilt = false;
   buildFinalCard();
   colorMembraneCompleted = false;
+  hasNotifiedParentCardComplete = false;
   if (isFoundingSupporter && !prefersReducedMotion) {
     playSupporterCeremony();
   } else {
@@ -2514,21 +2517,25 @@ function finalizeCard() {
       finalCard.classList.add("is-issuing");
     }
   }
-  if (window.parent !== window) {
-    window.parent.postMessage({
-      type: "dooh-research-card-complete",
-      participantCount,
-      hasDisplayName: Boolean(nickname.value.trim()),
-      displayName: nickname.value.trim().slice(0, 24),
-      swipeEventId: completedSwipeEventId || "",
-      swipeCount: completedSwipeCount || participantCount,
-      isSupporter: isFoundingSupporter,
-      totalDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.totalDays ?? 1,
-      surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
-    }, location.origin);
-  }
-
   return true;
+}
+
+function notifyParentCardComplete() {
+  if (hasNotifiedParentCardComplete || window.parent === window) {
+    return;
+  }
+  hasNotifiedParentCardComplete = true;
+  window.parent.postMessage({
+    type: "dooh-research-card-complete",
+    participantCount,
+    hasDisplayName: Boolean(nickname.value.trim()),
+    displayName: nickname.value.trim().slice(0, 24),
+    swipeEventId: completedSwipeEventId || "",
+    swipeCount: completedSwipeCount || participantCount,
+    isSupporter: isFoundingSupporter,
+    totalDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.totalDays ?? 1,
+    surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
+  }, location.origin);
 }
 
 // 寄付デモ完了後、公開に同意して入力された表示名だけをDOOHへ一度通知する。
