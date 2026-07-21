@@ -25,14 +25,21 @@
                     men: "men",
                     women: "sparkle",
                     sparkle: "sparkle",
+                    all: "all",
+                    join: "all",
                 };
                 let experience = aliases[requested];
                 if (!experience) {
-                    experience = /(^|\/)(men|participant-v1-men)\/?$/.test(
-                        location.pathname,
-                    )
-                        ? "men"
-                        : "sparkle";
+                    const pathname = location.pathname;
+                    if (/(^|\/)(men|participant-v1-men)\/?$/.test(pathname)) {
+                        experience = "men";
+                    } else if (/(^|\/)(women|participant-v1-women)\/?$/.test(pathname)) {
+                        experience = "sparkle";
+                    } else if (/(^|\/)join\/?$/.test(pathname)) {
+                        experience = "all";
+                    } else {
+                        experience = "sparkle";
+                    }
                 }
                 document.documentElement.dataset.experience = experience;
             })();
@@ -77,7 +84,7 @@
         <link rel="stylesheet" href="web/theme.css" />
         <link
             rel="stylesheet"
-            href="web/participant-flow.css?v=20260714-linked-ink-1"
+            href="web/participant-flow.css?v=20260721-color-language-1"
         />
         <link
             rel="stylesheet"
@@ -87,6 +94,7 @@
             rel="stylesheet"
             href="web/theme-men.css?v=20260706-github-mono-1"
         />
+        <link rel="stylesheet" href="web/theme-all.css?v=20260721-neutral-swipe-1" />
         <link
             rel="stylesheet"
             href="web/color-flow.css?v=20260708-certificate-light-note-1"
@@ -99,7 +107,9 @@
         <link rel="stylesheet" href="web/outro.css?v=20260608-2" />
         <link rel="stylesheet" href="web/supporter-certificate.css?v=20260714-ceremony-flash-fix-1" />
         <link rel="stylesheet" href="web/ranking.css?v=20260713-ranking-2" />
-            <style>
+        <link rel="stylesheet" href="web/color-membrane-flow.css?v=20260720-fullscreen-1" />
+        <link rel="stylesheet" href="web/name-entry-refined.css?v=20260721-i18n-1" />
+        <style>
             /* 通常ページ: クラファン入力欄は出さない（支援者版は別サイトへ誘導） */
             #supporterCommentEntry { display: none !important; }
             .thanks-choice {
@@ -148,8 +158,10 @@
             }
             .thanks-choice > button.thanks-choice-supporter small { color: rgba(255, 255, 255, 0.88) !important; }
         </style>
+        <link rel="stylesheet" href="web/color-return-ui-prototype.css?v=20260721-neutral-swipe-1" />
+        <link rel="stylesheet" href="web/ink-location-map.css?v=20260720-gradient-ripple-1" />
     </head>
-    <body>
+    <body class="color-return-ui">
         <div class="sparkle-pattern" aria-hidden="true"></div>
         <div class="sparkle-particles" aria-hidden="true">
             <span>diamond</span>
@@ -225,9 +237,11 @@
                         aria-labelledby="swipeTitle"
                     >
                         <span class="step-count">01</span>
-                        <h2 id="swipeTitle">新宿を<br />応援しよう</h2>
+                        <h2 id="swipeTitle">
+                            あなたのスワイプで、<br /><span class="title-color-word">新宿を応援</span>
+                        </h2>
                         <p class="funding-note">
-                            日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。
+                            あなたの1スワイプが、託された100円分の応援を新宿へ届けます。
                         </p>
                         <div
                             class="donation-preview sparkle-total"
@@ -237,7 +251,7 @@
                             <strong>無料</strong>
                         </div>
                         <p class="swipe-instruction">
-                            指のエリアを上にスワイプしてください。
+                            画面を上へなぞって、あなたの応援を新宿へ届けてください。
                         </p>
                         <div
                             class="swipe-stage sparkle-meter"
@@ -261,13 +275,15 @@
                                 class="send-beam"
                                 aria-hidden="true"
                             ></span>
-                            <img
-                                class="heart-core swipe-gesture-icon"
-                                src="/assets/swipe-finger.png"
-                                alt=""
-                                aria-hidden="true"
-                                draggable="false"
-                            />
+                            <span class="swipe-thumb" aria-hidden="true">
+                                <img
+                                    class="heart-core swipe-gesture-icon"
+                                    src="/assets/swipe-finger.png"
+                                    alt=""
+                                    aria-hidden="true"
+                                    draggable="false"
+                                />
+                            </span>
                         </div>
                         <p class="hint" id="swipeHint"></p>
                     </section>
@@ -314,9 +330,24 @@
                         <span class="step-count">03</span>
                         <h2 id="certificateTitle">参加証に名前を残す</h2>
                         <p class="ink-link-note" aria-live="polite">
-                            <strong>あなたのインクは反映済み</strong>
-                            <span>名前を追加すると、同じインクが光ります。</span>
+                            <strong>あなたの参加証をつくります</strong>
+                            <span>名前は次の画面で、あなたの彩りと一緒に街へ届きます。</span>
                         </p>
+                        <section class="ink-location-card" id="inkLocationCard" aria-live="polite" hidden>
+                            <div class="ink-location-copy">
+                                <strong data-ink-location-title></strong>
+                                <span data-ink-location-position></span>
+                                <small data-ink-location-message></small>
+                            </div>
+                        </section>
+                        <article
+                            class="card"
+                            id="certificatePreview"
+                            aria-live="polite"
+                        >
+                            <p>CERTIFICATE OF SUPPORT</p>
+                            <h3 id="previewName">匿名サポーター</h3>
+                        </article>
                         <section
                             class="support-choice"
                             aria-labelledby="supportChoiceTitle"
@@ -422,24 +453,23 @@
                                 出典：警視庁公開データ
                             </p>
                         </section>
-                        <label class="sparkle-field-label" for="nickname"
-                            >表示名（任意）</label
-                        >
-                        <div class="sparkle-name-field">
-                            <span class="sparkle-name-tab">ここに入力</span>
-                            <span
-                                class="material-symbols-outlined sparkle-name-icon"
-                                aria-hidden="true"
-                                >edit</span
-                            >
+                        <div class="sparkle-name-field color-wave-field">
                             <input
                                 id="nickname"
                                 type="text"
                                 maxlength="20"
-                                placeholder="例：さくら"
+                                placeholder=" "
                                 autocomplete="nickname"
                                 aria-describedby="nicknameHelp"
                             />
+                            <label for="nickname" aria-label="表示名（任意）">
+                                <span style="--wave-index: 0">表</span
+                                ><span style="--wave-index: 1">示</span
+                                ><span style="--wave-index: 2">名</span
+                                ><span class="wave-optional" style="--wave-index: 3"
+                                    >（任意）</span
+                                >
+                            </label>
                         </div>
                         <p class="field-helper" id="nicknameHelp">
                             ニックネームで入力。参加証・DOOH・ランキングに表示されます。
@@ -507,35 +537,43 @@
                                 入力は任意です。URLや個人情報は表示できません。
                             </p>
                         </section>
-                        <article
-                            class="card"
-                            id="certificatePreview"
-                            aria-live="polite"
-                        >
-                            <p>CERTIFICATE OF SUPPORT</p>
-                            <h3 id="previewName">匿名サポーター</h3>
-                        </article>
                         <div class="actions">
                             <button
                                 class="primary"
                                 type="button"
                                 id="createCard"
                             >
-                                この名前で作成
+                                光の弓で彩りを届ける
                             </button>
                             <button class="ghost" type="button" id="skipName">
-                                名前なしで作成
+                                演出をスキップして参加証へ
                             </button>
                         </div>
                     </section>
 
                     <section
-                        class="step"
+                        class="step color-membrane-step"
                         data-step="3"
+                        data-label="彩り"
+                        aria-label="名前の彩りを街へ届ける"
+                    >
+                        <span class="step-count">04</span>
+                        <iframe
+                            class="color-membrane-frame"
+                            id="colorMembraneFrame"
+                            title="名前の彩りを街へ届ける"
+                            data-src="/dooh-light-membrane-integrated-study.html?v=20260721-i18n-1"
+                            allow="vibrate"
+                        ></iframe>
+                    </section>
+
+                    <section
+                        class="step"
+                        data-step="4"
                         data-label="参加証"
                         aria-labelledby="shareTitle"
                     >
-                        <span class="step-count">04</span>
+                        <span class="step-count">05</span>
                         <h2 id="shareTitle">参加証が届きました。</h2>
                         <article
                             class="card done"
@@ -1156,7 +1194,11 @@
 
         <script
             type="module"
-                    src="web/participant-flow-v6.js?v=20260715-name-feed-race-1"
+                    src="web/participant-flow-v6.js?v=20260721-color-language-1"
+        ></script>
+        <script
+            type="module"
+            src="web/mini-dooh.js?v=20260718-mini-dooh-1"
         ></script>
             <script>
             // クラファン支援者版は別サイトへ。スワイプ済みなので遷移先では entry=swiped でスワイプを再要求しない。
@@ -1170,8 +1212,16 @@
                     if (location.pathname.includes("participant-flow-shared.html")) {
                         dest = location.pathname.replace("participant-flow-shared.html", "participant-flow-supporter.html");
                     } else {
-                        const isMen = /\/men$/.test(location.pathname) || params.get("exp") === "men";
-                        dest = isMen ? "/supporter/men" : "/supporter/women";
+                        const experience = document.documentElement.dataset.experience;
+                        dest = experience === "men"
+                            ? "/supporter/men"
+                            : experience === "sparkle"
+                                ? "/supporter/women"
+                                : "/supporter";
+                        params.set(
+                            "exp",
+                            experience === "sparkle" ? "women" : experience || "all",
+                        );
                     }
                     location.href = `${dest}?${params.toString()}`;
                 });

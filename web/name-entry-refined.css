@@ -1,0 +1,238 @@
+.ink-link-note {
+  padding: 18px 20px !important;
+  border: 1px solid rgba(23, 35, 31, 0.12) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 253, 0.9) !important;
+  box-shadow: 0 12px 30px rgba(23, 35, 31, 0.05) !important;
+}
+
+.ink-link-note strong {
+  color: #17231f !important;
+  font-size: 1rem !important;
+}
+
+.ink-link-note span {
+  margin-top: 6px !important;
+  color: rgba(23, 35, 31, 0.7) !important;
+  line-height: 1.7 !important;
+}
+
+.ink-location-card {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 18px !important;
+  padding: 22px !important;
+  border: 1px solid rgba(23, 35, 31, 0.12) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 253, 0.94) !important;
+  box-shadow: 0 16px 38px rgba(23, 35, 31, 0.06) !important;
+}
+
+.ink-location-card[hidden] {
+  display: none !important;
+}
+
+.ink-window-silhouette {
+  display: none !important;
+}
+
+.ink-location-copy {
+  display: grid !important;
+  gap: 7px !important;
+  padding: 0 !important;
+}
+
+.ink-location-copy strong {
+  color: #17231f !important;
+  font-size: 1.08rem !important;
+  line-height: 1.55 !important;
+}
+
+.ink-location-copy small {
+  color: rgba(23, 35, 31, 0.68) !important;
+  font-size: 0.86rem !important;
+  line-height: 1.7 !important;
+}
+
+.saved-name-choice {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  border: 1px solid rgba(23, 35, 31, 0.12) !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+}
+
+.saved-name-choice p {
+  margin: 0 !important;
+  color: rgba(23, 35, 31, 0.76) !important;
+  font-size: 0.86rem !important;
+  line-height: 1.65 !important;
+  writing-mode: horizontal-tb !important;
+}
+
+.saved-name-choice p strong {
+  color: #a93f58 !important;
+  font-size: inherit !important;
+}
+
+.saved-name-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 9px !important;
+}
+
+.saved-name-actions button {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 46px !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  writing-mode: horizontal-tb !important;
+  white-space: normal !important;
+}
+
+#createCard {
+  background: #17231f !important;
+  color: #fff !important;
+}
+
+button[aria-label^="デバッグ用"] {
+  right: 12px !important;
+  bottom: 12px !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+@media (max-width: 420px) {
+  .saved-name-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Name entry: monochrome at rest, color emerging through interaction. */
+.color-wave-field {
+  position: relative;
+  width: 100%;
+  margin: 24px 0 10px;
+  padding-top: 10px;
+}
+
+.color-wave-field::before,
+.color-wave-field::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  content: "";
+  pointer-events: none;
+}
+
+.color-wave-field::before {
+  background: rgba(21, 25, 25, 0.34);
+}
+
+.color-wave-field::after {
+  background: linear-gradient(
+    90deg,
+    var(--flow-accent, #c94d3f),
+    var(--flow-accent-2, #d78948),
+    var(--flow-accent-3, #5d748f)
+  );
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html .color-wave-field input[type="text"] {
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  padding: 18px 2px 9px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink, #151919);
+  font-size: 1.05rem;
+  box-shadow: none !important;
+}
+
+html .color-wave-field input[type="text"]:focus {
+  background: transparent;
+  box-shadow: none !important;
+}
+
+.color-wave-field label {
+  position: absolute;
+  top: 28px;
+  left: 2px;
+  display: flex;
+  align-items: baseline;
+  color: var(--ink-tertiary, rgba(21, 25, 25, 0.58));
+  pointer-events: none;
+}
+
+.color-wave-field label > span {
+  display: inline-block;
+  min-width: 0.35em;
+  transition:
+    transform 320ms cubic-bezier(0.22, 1.35, 0.36, 1),
+    color 280ms ease;
+  transition-delay: calc(var(--wave-index) * 42ms);
+}
+
+.color-wave-field .wave-optional {
+  min-width: auto;
+  margin-left: 0.35em;
+  font-size: 0.76rem;
+}
+
+html[lang="en"] .color-wave-field label {
+  gap: 0.28em;
+}
+
+html[lang="en"] .color-wave-field .wave-optional {
+  margin-left: 0;
+}
+
+.color-wave-field:focus-within::after,
+.color-wave-field:has(input:not(:placeholder-shown))::after {
+  transform: scaleX(1);
+}
+
+.color-wave-field:focus-within label > span,
+.color-wave-field:has(input:not(:placeholder-shown)) label > span {
+  transform: translateY(-27px);
+}
+
+.color-wave-field:focus-within label > span:nth-child(1),
+.color-wave-field:has(input:not(:placeholder-shown)) label > span:nth-child(1) {
+  color: var(--flow-accent, #c94d3f);
+}
+
+.color-wave-field:focus-within label > span:nth-child(2),
+.color-wave-field:has(input:not(:placeholder-shown)) label > span:nth-child(2) {
+  color: var(--flow-accent-2, #d78948);
+}
+
+.color-wave-field:focus-within label > span:nth-child(n + 3),
+.color-wave-field:has(input:not(:placeholder-shown)) label > span:nth-child(n + 3) {
+  color: var(--flow-accent-3, #5d748f);
+}
+
+.color-wave-field:has(input[aria-invalid="true"])::after {
+  background: #b3261e;
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .color-wave-field::after,
+  .color-wave-field label > span {
+    transition: none !important;
+  }
+}

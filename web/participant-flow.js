@@ -23,8 +23,13 @@ const counterBadge = counterBox?.querySelector("em");
 const counterDetail = counterParticipants?.closest("small") || counterBox?.querySelector("small");
 const nickname = document.getElementById("nickname");
 const nicknameHelp = document.getElementById("nicknameHelp");
+const nicknameLabel = document.querySelector("label[for='nickname']");
 const previewName = document.getElementById("previewName");
 const finalCard = document.getElementById("finalCard");
+const colorMembraneFrame = document.getElementById("colorMembraneFrame");
+const colorMembraneStep = colorMembraneFrame?.closest(".color-membrane-step");
+const colorMembraneHome = colorMembraneStep?.parentElement;
+const colorMembraneNextStep = colorMembraneStep?.nextElementSibling;
 const shareStatus = document.getElementById("shareStatus");
 const shareCopyButton = document.getElementById("shareCopyBtn");
 const swipeControl = document.querySelector(".slider-wrap");
@@ -36,6 +41,8 @@ const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
 const swipeStep = steps[0];
 const supportChoiceButtons = [...document.querySelectorAll("[data-support-choice]")];
+
+viewport?.style.setProperty("overflow-anchor", "none");
 const supportChoiceDetail = document.getElementById("supportChoiceDetail");
 const createCardButton = document.getElementById("createCard");
 const skipNameButton = document.getElementById("skipName");
@@ -51,6 +58,20 @@ const sectionJumpMenu = document.getElementById("sectionJumpMenu");
 const sectionJumpButtons = [...document.querySelectorAll("[data-jump-target]")];
 const isSupporterFlow = document.body?.dataset.flowMode === "supporter";
 
+function syncColorMembraneFullscreen(index) {
+  const shouldFillScreen = index === 3;
+  if (shouldFillScreen && colorMembraneStep?.parentElement !== document.body) {
+    document.body.append(colorMembraneStep);
+  } else if (
+    !shouldFillScreen
+    && colorMembraneStep?.parentElement === document.body
+    && colorMembraneHome
+  ) {
+    colorMembraneHome.insertBefore(colorMembraneStep, colorMembraneNextStep || null);
+  }
+  document.body.classList.toggle("has-color-membrane-active", shouldFillScreen);
+}
+
 function syncVisibleViewportHeight() {
   const height = window.visualViewport?.height || window.innerHeight;
   document.documentElement.style.setProperty("--visible-viewport-height", `${Math.round(height)}px`);
@@ -60,8 +81,6 @@ syncVisibleViewportHeight();
 window.visualViewport?.addEventListener("resize", syncVisibleViewportHeight, { passive: true });
 window.addEventListener("orientationchange", syncVisibleViewportHeight, { passive: true });
 
-const certificateStep = steps[2];
-const certificateActions = certificateStep?.querySelector(":scope > .actions");
 const thanksStep = steps[1];
 const thanksActionPortal = thanksStep?.querySelector(":scope > .thanks-actions");
 const thanksPrimaryAction = thanksActionPortal?.querySelector(":scope > .primary");
@@ -77,18 +96,6 @@ function syncMobileCertificateActions(stepIndex = currentStep) {
     thanksActionPortal.classList.remove("is-mobile");
     thanksStep.append(thanksActionPortal);
   }
-
-  if (!certificateStep || !certificateActions) {
-    return;
-  }
-  const shouldPortal = stepIndex === 2 && isMobile;
-  if (shouldPortal && certificateActions.parentElement !== document.body) {
-    certificateActions.classList.add("is-mobile-action-portal");
-    document.body.append(certificateActions);
-  } else if (!shouldPortal && certificateActions.parentElement === document.body) {
-    certificateActions.classList.remove("is-mobile-action-portal");
-    certificateStep.append(certificateActions);
-  }
 }
 
 window.addEventListener("resize", () => syncMobileCertificateActions(), { passive: true });
@@ -101,7 +108,7 @@ thanksFastTrackAction?.addEventListener("click", () => {
     params.set("entry", "swiped");
     const dest = window.location.pathname.includes("participant-flow-shared.html")
       ? window.location.pathname.replace("participant-flow-shared.html", "participant-flow-supporter.html")
-      : (isMenExperience ? "/supporter/men" : "/supporter/women");
+      : (isAllExperience ? "/supporter" : isMenExperience ? "/supporter/men" : "/supporter/women");
     window.location.href = `${dest}?${params.toString()}`;
     return;
   }
@@ -118,14 +125,14 @@ function setSupporterCertificateIntent(isSupporter) {
   supporterCertificateIntent = isSupporter;
   document.body.classList.toggle("is-supporter-certificate-intent", isSupporter);
   if (createCardButton) {
-    createCardButton.textContent = isSupporter
-      ? (isEnglish() ? "Supporter certificate" : "この名前で支援者版")
-      : (isEnglish() ? "Create with this name" : "この名前で作成");
+    createCardButton.textContent = isEnglish()
+      ? "Send color with the light bow"
+      : "光の弓で彩りを届ける";
   }
   if (skipNameButton) {
-    skipNameButton.textContent = isSupporter
-      ? (isEnglish() ? "Supporter certificate without name" : "名前なしで支援者版")
-      : (isEnglish() ? "Create without a name" : "名前なしで作成");
+    skipNameButton.textContent = isEnglish()
+      ? "Skip animation and view certificate"
+      : "演出をスキップして参加証へ";
   }
 }
 
@@ -238,7 +245,7 @@ const CERTIFICATE_CITY_COLORS = [
 
 const NAME_CHECKING_MESSAGE = "\u8868\u793a\u540d\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const NAME_BLOCKED_MESSAGE = "\u3053\u306e\u8868\u793a\u540d\u306f\u516c\u958b\u3067\u304d\u307e\u305b\u3093\u3002\u5225\u306e\u30cb\u30c3\u30af\u30cd\u30fc\u30e0\u306b\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
-const NAME_LINKED_MESSAGE = "同じインクに名前を追加しました。";
+const NAME_LINKED_MESSAGE = "参加証に名前を追加しました。";
 const NAME_LINK_FAILED_MESSAGE = "DOOHへの名前反映に失敗しました。通信を確認して、もう一度お試しください。";
 const SUPPORTER_CHECKING_MESSAGE = "\u30af\u30e9\u30d5\u30a1\u30f3\u652f\u63f4\u8005\u30b3\u30e1\u30f3\u30c8\u3092\u78ba\u8a8d\u3057\u3066\u3044\u307e\u3059...";
 const SUPPORTER_PASSCODE_ERROR = "4\u6841\u306e\u30d1\u30b9\u30b3\u30fc\u30c9\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002";
@@ -391,6 +398,7 @@ const experience = document.documentElement.dataset.experience || "default";
 const isSparkleExperience = experience === "sparkle";
 const isMenExperience = experience === "men";
 const isAllExperience = experience === "all";
+const experienceAnalyticsValue = isAllExperience ? "all" : isMenExperience ? "men" : "women";
 const isStoryExperience = isSparkleExperience || isMenExperience || isAllExperience;
 
 function shouldShowExternalBrowserGuide() {
@@ -565,15 +573,15 @@ const UI_TEXT = {
     pageTitle: "新宿DOOH 参加体験",
     about: "この企画について",
     back: "前の画面へ",
-    progressLabels: ["応援", "感謝", "取組", "参加証"],
+    progressLabels: ["応援", "感謝", "取組", "彩り", "参加証"],
     eyebrow: "Donation Action",
     campaignTitle: "新宿DOOH",
     lead: "白と黒のコントラストで、静かに参加を届けるデモ体験です。",
-    swipeTitle: "新宿を<br />応援しよう",
+    swipeTitle: "あなたのスワイプで、<br /><span class=\"title-color-word\">新宿を応援</span>",
     fundingNote: "日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。",
     donationLabel: "参加者の負担",
     free: "無料",
-    swipeInstruction: "指のエリアを上にスワイプしてください。",
+    swipeInstruction: "画面を上へなぞって、あなたの応援を新宿へ届けてください。",
     thanksTitle: "ありがとうございます！",
     thanksBody: "あなたの参加で、新宿に静かな光が重なりました。",
     certificateTitle: "参加証に名前を残す",
@@ -591,7 +599,7 @@ const UI_TEXT = {
     displayNameLabel: "表示名（任意）",
     nameTab: "ここに入力",
     nicknamePlaceholder: "例：さくら",
-    nicknameHelp: "名前を追加すると、同じインクが光ります。参加証・名前ロールにも表示されます。",
+    nicknameHelp: "名前は次の画面で、あなたの彩りと一緒に街へ届きます。参加証・名前ロールにも表示されます。",
     rankingTitle: "参加者ランキング",
     rankingKicker: "通算参加日数の多い順",
     rankingOpen: "参加者ランキングを見る",
@@ -609,8 +617,8 @@ const UI_TEXT = {
     comment: "一言コメント",
     commentPlaceholder: "例：新宿が、誰かの居場所であり続けますように",
     supporterHelp: "支援時の4桁を入力。URL・個人情報は書けません。",
-    createCard: "この名前で作成",
-    skipName: "名前なしで作成",
+    createCard: "光の弓で彩りを届ける",
+    skipName: "演出をスキップして参加証へ",
     shareTitle: "参加証が届きました。",
     share: "シェアする",
     shareLine: "LINEで送る",
@@ -670,7 +678,7 @@ const UI_TEXT = {
     pageTitle: "Shinjuku DOOH Experience",
     about: "About",
     back: "Back",
-    progressLabels: ["Support", "Thanks", "Action", "Certificate"],
+    progressLabels: ["Support", "Thanks", "Action", "Color", "Certificate"],
     eyebrow: "Donation Action",
     campaignTitle: "SHINJUKU DOOH",
     lead: "A web prototype where your swipe visualizes support for Shinjuku.",
@@ -714,8 +722,8 @@ const UI_TEXT = {
     comment: "Short message",
     commentPlaceholder: "e.g. May Shinjuku stay welcoming for everyone",
     supporterHelp: "The passcode is the 4-digit number you received as a supporter. URLs and personal info cannot be shown.",
-    createCard: "Create with this name",
-    skipName: "Create without a name",
+    createCard: "Send color with the light bow",
+    skipName: "Skip animation and view certificate",
     shareTitle: "Your certificate is ready.",
     share: "Share",
     shareLine: "Send on LINE",
@@ -788,6 +796,8 @@ const shouldUseStoryThanksCard = Boolean(
 );
 
 let currentStep = 0;
+let colorMembraneCompleted = false;
+let hasNotifiedParentCardComplete = false;
 let participantCount = FALLBACK_COUNTER_TARGET;
 let hasCountedParticipation = false;
 let hasAcceptedParticipation = false;
@@ -846,6 +856,25 @@ function setElementHtml(selector, value) {
   }
 }
 
+function renderNicknameLabel() {
+  if (!nicknameLabel?.closest(".color-wave-field")) return;
+  const mainParts = isEnglish() ? ["Display", "name"] : ["表", "示", "名"];
+  const optional = isEnglish() ? "(optional)" : "（任意）";
+  nicknameLabel.replaceChildren();
+  mainParts.forEach((part, index) => {
+    const span = document.createElement("span");
+    span.style.setProperty("--wave-index", String(index));
+    span.textContent = part;
+    nicknameLabel.append(span);
+  });
+  const optionalSpan = document.createElement("span");
+  optionalSpan.className = "wave-optional";
+  optionalSpan.style.setProperty("--wave-index", String(mainParts.length));
+  optionalSpan.textContent = optional;
+  nicknameLabel.append(optionalSpan);
+  nicknameLabel.setAttribute("aria-label", text("displayNameLabel"));
+}
+
 function ensureLanguageToggle() {
   const appbar = document.querySelector(".sparkle-appbar");
   if (!appbar || appbar.querySelector("[data-language-toggle]")) {
@@ -855,8 +884,28 @@ function ensureLanguageToggle() {
   button.type = "button";
   button.className = "language-toggle";
   button.dataset.languageToggle = "1";
+  button.innerHTML = `
+    <span class="language-toggle__wash" aria-hidden="true"></span>
+    <span class="language-toggle__thumb" aria-hidden="true"></span>
+    <span class="language-toggle__option" data-language-option="ja">
+      <span class="language-toggle__name" lang="ja">日本語</span>
+      <small>JA</small>
+    </span>
+    <span class="language-toggle__option" data-language-option="en">
+      <span class="language-toggle__name" lang="en">English</span>
+      <small>EN</small>
+    </span>`;
   button.addEventListener("click", () => {
-    setLanguage(isEnglish() ? "ja" : "en", { persist: true });
+    const nextLanguage = isEnglish() ? "ja" : "en";
+    button.dataset.nextLanguage = nextLanguage;
+    button.classList.remove("is-color-transitioning");
+    void button.offsetWidth;
+    button.classList.add("is-color-transitioning");
+    setLanguage(nextLanguage, { persist: true });
+    window.setTimeout(() => {
+      button.classList.remove("is-color-transitioning");
+      delete button.dataset.nextLanguage;
+    }, prefersReducedMotion ? 0 : 760);
   });
   const aboutLink = appbar.querySelector("[data-about-link]");
   if (aboutLink) {
@@ -869,8 +918,11 @@ function ensureLanguageToggle() {
 function syncLanguageToggle() {
   const toggle = document.querySelector("[data-language-toggle]");
   if (toggle) {
-    toggle.textContent = isEnglish() ? "JA" : "EN";
+    toggle.dataset.language = currentLanguage;
     toggle.setAttribute("aria-label", isEnglish() ? "日本語に切り替え" : "Switch to English");
+    toggle.querySelectorAll("[data-language-option]").forEach((option) => {
+      option.setAttribute("aria-hidden", String(option.dataset.languageOption !== currentLanguage));
+    });
   }
 }
 
@@ -916,9 +968,17 @@ function applyLanguage() {
   setElementText(".support-trend div > p:not(.support-trend-kicker)", text("trendBody"));
   setElementText(".support-trend-stat", text("trendStat"));
   setElementText(".support-trend-note", text("trendNote"));
-  setElementText("label[for='nickname']", text("displayNameLabel"));
+  if (nicknameLabel?.closest(".color-wave-field")) {
+    renderNicknameLabel();
+  } else {
+    setElementText("label[for='nickname']", text("displayNameLabel"));
+  }
   setElementText(".sparkle-name-tab", text("nameTab"));
-  if (nickname) nickname.placeholder = text("nicknamePlaceholder");
+  if (nickname) {
+    nickname.placeholder = nickname.closest(".color-wave-field")
+      ? " "
+      : text("nicknamePlaceholder");
+  }
   setMultilineText(nicknameHelp, text("nicknameHelp"));
   setElementText(".ticker-font-picker legend", text("fontLegend"));
   setElementText("#tickerFontHelp", text("fontHelp"));
@@ -1554,7 +1614,7 @@ function updateSwipeCharge(value) {
     hasTrackedYouTubeSwipeStart = true;
     logAnalyticsEvent("youtube_swipe_start", {
       channel: "youtube",
-      experience: isMenExperience ? "men" : "women",
+      experience: experienceAnalyticsValue,
     });
   }
   setSwipeFill(normalized);
@@ -1763,9 +1823,47 @@ function paintRanking() {
   rankingPanel.hidden = false;
 }
 
+function prepareColorMembrane() {
+  if (!colorMembraneFrame) return;
+
+  const source = colorMembraneFrame.dataset.src;
+  if (!source) return;
+
+  const url = new URL(source, window.location.href);
+  url.searchParams.set("name", getDisplayName().trim().slice(0, 24));
+  url.searchParams.set("lang", currentLanguage);
+  url.searchParams.set("embedded", "1");
+  const nextSource = url.toString();
+
+  if (colorMembraneFrame.src !== nextSource) {
+    colorMembraneFrame.src = nextSource;
+  }
+}
+
+window.addEventListener("message", (event) => {
+  if (
+    event.origin !== window.location.origin ||
+    event.source !== colorMembraneFrame?.contentWindow ||
+    event.data?.type !== "dooh-color-membrane-complete"
+  ) {
+    return;
+  }
+
+  colorMembraneCompleted = true;
+  if (currentStep === 3) {
+    showStep(4);
+    postCardCompleteToParent();
+  }
+});
+
 function showStep(index) {
   const previousStepIndex = currentStep;
   const isReturningToCount = index === 1 && previousStepIndex > 1;
+  syncColorMembraneFullscreen(index);
+  if (viewport) {
+    viewport.scrollTop = 0;
+    viewport.scrollLeft = 0;
+  }
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
@@ -1779,6 +1877,9 @@ function showStep(index) {
   }
 
   currentStep = index;
+  if (index === 3) {
+    prepareColorMembrane();
+  }
   if (isLiveShowcaseDemo && index === 2) {
     window.setTimeout(applyShowcaseDemoName, 0);
   }
@@ -1799,6 +1900,7 @@ function showStep(index) {
   setTrackPosition(index);
   updateProgress(index);
   app.classList.toggle("is-post-participation", index >= 1);
+  document.body.classList.toggle("is-initial-swipe", index === 0);
   document.body.classList.toggle("has-color-participation", index >= 1);
   app.classList.toggle("is-share-ready", index === totalSteps - 1);
   if (index === totalSteps - 1) {
@@ -2202,29 +2304,16 @@ function getCertificateContent() {
 
 // 金の縁・刻印・色づく街並み・通し番号。支援者証だけに足す。
 function decorateFoundingSupporterCard(labelNode, nameNode) {
-  finalCard.classList.toggle("is-founding-supporter", isFoundingSupporter);
+  finalCard.classList.remove("is-founding-supporter");
+  finalCard.classList.toggle("is-crowdfunding-edition", isFoundingSupporter);
   if (!isFoundingSupporter) {
     return;
   }
-
-  labelNode.textContent = `✦ ${labelNode.textContent} ✦`;
 
   const edition = document.createElement("span");
   edition.className = "certificate-edition";
   edition.textContent = isEnglish() ? "CROWDFUNDING EDITION" : "クラウドファンディング支援者限定";
   labelNode.after(edition);
-
-  const city = document.createElement("div");
-  city.className = "certificate-city";
-  city.setAttribute("aria-hidden", "true");
-  CERTIFICATE_CITY_COLORS.forEach((color, index) => {
-    const building = document.createElement("i");
-    building.style.setProperty("--c", color);
-    building.style.setProperty("--h", `${34 + ((index * 37) % 58)}%`);
-    building.style.setProperty("--d", `${index * 0.18}s`);
-    city.append(building);
-  });
-  nameNode.before(city);
 
   if (foundingSupporterComment) {
     const message = document.createElement("blockquote");
@@ -2241,6 +2330,74 @@ function decorateFoundingSupporterCard(labelNode, nameNode) {
   serial.className = "certificate-serial";
   serial.textContent = text("certificateSerial", { serial: foundingSupporterSerial });
   finalCard.append(serial);
+}
+
+function buildColorTicketIssuer(content) {
+  const issuer = document.createElement("section");
+  issuer.className = "color-ticket-issuer";
+  issuer.setAttribute(
+    "aria-label",
+    isEnglish() ? "Issuing your Shinjuku support certificate" : "新宿を応援する参加証を発行中",
+  );
+
+  const slot = document.createElement("div");
+  slot.className = "color-ticket-slot";
+  slot.setAttribute("aria-hidden", "true");
+  const slotColors = document.createElement("i");
+  slotColors.className = "color-ticket-slot-colors";
+  slot.append(slotColors);
+
+  const mask = document.createElement("div");
+  mask.className = "color-ticket-mask";
+  const travel = document.createElement("div");
+  travel.className = "color-ticket-travel";
+  const float = document.createElement("div");
+  float.className = "color-ticket-float";
+  const flip = document.createElement("div");
+  flip.className = "color-ticket-flip";
+
+  const back = document.createElement("div");
+  back.className = "color-ticket-face color-ticket-back";
+  const backMark = document.createElement("strong");
+  backMark.textContent = "彩";
+  const backCopy = document.createElement("span");
+  backCopy.textContent = isEnglish() ? "YOUR SWIPE SUPPORTS SHINJUKU" : "あなたのスワイプで、新宿を応援。";
+  const backCity = document.createElement("small");
+  backCity.textContent = "SHINJUKU DOOH";
+  back.append(backMark, backCopy, backCity);
+
+  const front = document.createElement("div");
+  front.className = "color-ticket-face color-ticket-front";
+  const reflex = document.createElement("i");
+  reflex.className = "color-ticket-reflex";
+  reflex.setAttribute("aria-hidden", "true");
+  const header = document.createElement("header");
+  const label = document.createElement("p");
+  label.textContent = content.label;
+  const barcode = document.createElement("i");
+  barcode.className = "color-ticket-barcode";
+  barcode.setAttribute("aria-hidden", "true");
+  header.append(label, barcode);
+  const name = document.createElement("h3");
+  name.textContent = content.name;
+  const amount = document.createElement("strong");
+  amount.className = "color-ticket-amount";
+  amount.textContent = isEnglish() ? "1 SWIPE · ¥100 → SHINJUKU" : "1 SWIPE · ¥100 → 新宿";
+  const footer = document.createElement("footer");
+  const serial = document.createElement("span");
+  const issueNumber = Math.max(1, Number(completedSwipeCount || participantCount || 1));
+  serial.textContent = `#${String(issueNumber).padStart(4, "0")}`;
+  const theme = document.createElement("span");
+  theme.textContent = isEnglish() ? "SHINJUKU SUPPORT PASS" : "新宿を応援する参加証";
+  footer.append(serial, theme);
+  front.append(reflex, header, name, amount, footer);
+
+  flip.append(back, front);
+  float.append(flip);
+  travel.append(float);
+  mask.append(travel);
+  issuer.append(slot, mask);
+  return issuer;
 }
 
 function buildFinalCard() {
@@ -2260,14 +2417,11 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = content.description;
 
-  finalCard.append(label, name, description);
-  decorateFoundingSupporterCard(label, name);
+  finalCard.classList.remove("is-founding-supporter", "is-issuing");
+  finalCard.classList.add("has-color-ticket");
+  finalCard.append(buildColorTicketIssuer(content));
   if (isFoundingSupporter) {
-    const keepsake = document.createElement("section");
-    keepsake.className = "certificate-keepsake";
-    keepsake.setAttribute("aria-label", isEnglish() ? "Founding supporter certificate" : "クラウドファンディング支援者参加証");
-    keepsake.append(...finalCard.childNodes);
-    finalCard.append(keepsake);
+    decorateFoundingSupporterCard(label, name);
   }
   ensureSupporterKeepsakeActions();
 
@@ -2482,33 +2636,44 @@ function playSupporterCeremony() {
   });
 }
 
-function finalizeCard() {
+function finalizeCard({ skipColorMembrane = false } = {}) {
   if (!ensureSupportChoice()) {
     return false;
   }
 
   isFinalCardBuilt = false;
   buildFinalCard();
-  if (isFoundingSupporter && !prefersReducedMotion) {
-    playSupporterCeremony();
+  colorMembraneCompleted = false;
+  hasNotifiedParentCardComplete = false;
+  if (skipColorMembrane) {
+    colorMembraneCompleted = true;
+    showStep(4);
+    postCardCompleteToParent();
   } else {
     nextStep();
   }
-  if (window.parent !== window) {
-    window.parent.postMessage({
-      type: "dooh-research-card-complete",
-      participantCount,
-      hasDisplayName: Boolean(nickname.value.trim()),
-      displayName: nickname.value.trim().slice(0, 24),
-      swipeEventId: completedSwipeEventId || "",
-      swipeCount: completedSwipeCount || participantCount,
-      isSupporter: isSupporterFlow,
-      totalDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.totalDays ?? 1,
-      surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
-    }, location.origin);
+  if (finalCard.classList.contains("has-color-ticket")) {
+    finalCard.classList.remove("is-issuing");
+    void finalCard.offsetWidth;
+    finalCard.classList.add("is-issuing");
   }
-
   return true;
+}
+
+function postCardCompleteToParent() {
+  if (hasNotifiedParentCardComplete || window.parent === window) return;
+  hasNotifiedParentCardComplete = true;
+  window.parent.postMessage({
+    type: "dooh-research-card-complete",
+    participantCount,
+    hasDisplayName: Boolean(nickname.value.trim()),
+    displayName: nickname.value.trim().slice(0, 24),
+    swipeEventId: completedSwipeEventId || "",
+    swipeCount: completedSwipeCount || participantCount,
+    isSupporter: isSupporterFlow,
+    totalDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.totalDays ?? 1,
+    surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
+  }, location.origin);
 }
 
 // 寄付デモ完了後、公開に同意して入力された表示名だけをDOOHへ一度通知する。
@@ -2795,7 +2960,7 @@ async function registerParticipation() {
       hasAnimatedCounter = false;
       logAnalyticsEvent("youtube_swipe_complete", {
         channel: "youtube",
-        experience: isMenExperience ? "men" : "women",
+        experience: experienceAnalyticsValue,
       });
       return true;
     }
@@ -2924,7 +3089,7 @@ async function registerParticipation() {
       hasAnimatedCounter = false;
       logAnalyticsEvent("youtube_swipe_complete_local_fallback", {
         channel: "youtube",
-        experience: isMenExperience ? "men" : "women",
+        experience: experienceAnalyticsValue,
       });
       return true;
     }
@@ -2944,9 +3109,7 @@ async function markParticipationComplete() {
       showYouTubeCompletion();
       return true;
     }
-    if (!showStoryThanksCard()) {
-      nextStep();
-    }
+    nextStep();
   }
   return didComplete;
 }
@@ -3800,16 +3963,15 @@ function canAdvanceFrom(index) {
   if (index === 2) {
     return true;
   }
+  if (index === 3) {
+    return colorMembraneCompleted;
+  }
   return true;
 }
 
 async function handleForwardAdvance(fromIndex) {
   if (fromIndex === 0) {
-    const didRegister = await registerParticipation();
-    if (didRegister && showStoryThanksCard()) {
-      return false;
-    }
-    return didRegister;
+    return registerParticipation();
   } else if (fromIndex === 2) {
     buildFinalCard();
   }
@@ -4119,7 +4281,8 @@ async function setupSavedNameChoice() {
   const savedName = await resolveSavedNameChoice();
   const nameField = nickname.closest(".sparkle-name-field") ?? nickname;
   const nameStep = nickname.closest(".step");
-  if (!savedName || !nameStep) {
+  const choiceParent = nameField.parentNode;
+  if (!savedName || !nameStep || !choiceParent) {
     return;
   }
 
@@ -4143,7 +4306,13 @@ async function setupSavedNameChoice() {
   changeButton.textContent = "名前を変更";
   actions.append(reuseButton, changeButton);
   choice.append(copy, actions);
-  nameStep.insertBefore(choice, nameField);
+  choiceParent.insertBefore(choice, nameField);
+  if (currentStep === 0 && viewport) {
+    viewport.scrollTop = 0;
+    requestAnimationFrame(() => {
+      viewport.scrollTop = 0;
+    });
+  }
 
   reuseButton.addEventListener("click", () => {
     nickname.value = savedName;
@@ -4162,19 +4331,19 @@ if (!isYouTubeParticipation) {
   setupSavedNameChoice();
 }
 
-createCardButton?.addEventListener("click", async () => {
+async function submitCertificate({ skipColorMembrane = false, triggerButton = createCardButton } = {}) {
   applyShowcaseDemoName();
-  const defaultCreateLabel = createCardButton.textContent;
-  if (isLiveShowcaseDemo) {
-    createCardButton.textContent = "作成中…";
+  const defaultCreateLabel = triggerButton?.textContent || "";
+  if (isLiveShowcaseDemo && triggerButton) {
+    triggerButton.textContent = "作成中…";
   }
   const showcaseSupporterInput = getSupporterCommentInput();
   if (isLiveShowcaseDemo && !showcaseSupporterInput.code && !showcaseSupporterInput.comment) {
     // 録画デモは通信を待たず即座に参加証を完成させる。
     // DOOHへの即時反映は finalizeCard の postMessage、DB保存は裏側で継続する。
-    finalizeCard();
+    finalizeCard({ skipColorMembrane });
     setNameChecking(false);
-    createCardButton.textContent = defaultCreateLabel;
+    if (triggerButton) triggerButton.textContent = defaultCreateLabel;
     announceDonorName().catch((error) => {
       console.warn("[showcase] name publish continued in background:", error);
     });
@@ -4186,30 +4355,18 @@ createCardButton?.addEventListener("click", async () => {
     if (!canCreate) {
       return;
     }
-    finalizeCard();
+    finalizeCard({ skipColorMembrane });
   } finally {
     setNameChecking(false);
-    createCardButton.textContent = defaultCreateLabel;
+    if (triggerButton) triggerButton.textContent = defaultCreateLabel;
   }
-});
-// 表示名を出さない支援者でも、パスコードを入れていれば認証して支援者証を出す。
-skipNameButton?.addEventListener("click", async () => {
-  const { code, comment } = getSupporterCommentInput();
-  if (!code && !comment) {
-    finalizeCard();
-    return;
-  }
+}
 
-  setNameChecking(true);
-  try {
-    if (!await publishOptionalSupporterComment("")) {
-      return;
-    }
-    finalizeCard();
-  } finally {
-    setNameChecking(false);
-  }
-});
+createCardButton?.addEventListener("click", () => submitCertificate());
+skipNameButton?.addEventListener("click", () => submitCertificate({
+  skipColorMembrane: true,
+  triggerButton: skipNameButton,
+}));
 
 supportChoiceButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -4319,7 +4476,7 @@ applyLanguage();
 if (isYouTubeParticipation && !isDebugReplay) {
   logAnalyticsEvent("youtube_page_open", {
     channel: "youtube",
-    experience: isMenExperience ? "men" : "women",
+    experience: experienceAnalyticsValue,
   });
 }
 
@@ -4460,7 +4617,9 @@ function applyThemeCopy() {
     previewName.textContent = RANDOM_GUEST_NAME;
   }
   if (nicknameInput) {
-    nicknameInput.placeholder = RANDOM_GUEST_NAME;
+    nicknameInput.placeholder = nicknameInput.closest(".color-wave-field")
+      ? " "
+      : RANDOM_GUEST_NAME;
   }
   setText("swipeTitle", "上にスワイプして応援する");
   setText("swipeHint", "");
