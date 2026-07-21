@@ -25,14 +25,21 @@
                     men: "men",
                     women: "sparkle",
                     sparkle: "sparkle",
+                    all: "all",
+                    join: "all",
                 };
                 let experience = aliases[requested];
                 if (!experience) {
-                    experience = /(^|\/)(men|participant-v1-men)\/?$/.test(
-                        location.pathname,
-                    )
-                        ? "men"
-                        : "sparkle";
+                    const pathname = location.pathname;
+                    if (/(^|\/)(men|participant-v1-men)\/?$/.test(pathname)) {
+                        experience = "men";
+                    } else if (/(^|\/)(women|participant-v1-women)\/?$/.test(pathname)) {
+                        experience = "sparkle";
+                    } else if (/(^|\/)supporter\/?$/.test(pathname)) {
+                        experience = "all";
+                    } else {
+                        experience = "sparkle";
+                    }
                 }
                 document.documentElement.dataset.experience = experience;
             })();

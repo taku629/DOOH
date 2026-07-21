@@ -128,6 +128,24 @@
         ]
       },
       {
+        "source": "/join",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/supporter",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "/supporter/women",
         "headers": [
           {
@@ -202,6 +220,10 @@
       {
         "source": "/women",
         "destination": "/web/participant-flow-shared.html"
+      },
+      {
+        "source": "/supporter",
+        "destination": "/web/participant-flow-supporter.html"
       },
       {
         "source": "/supporter/men",
