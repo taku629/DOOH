@@ -283,6 +283,7 @@ const experience = document.documentElement.dataset.experience || "default";
 const isSparkleExperience = experience === "sparkle";
 const isMenExperience = experience === "men";
 const isAllExperience = experience === "all";
+const experienceAnalyticsValue = isAllExperience ? "all" : isMenExperience ? "men" : "women";
 const isStoryExperience = isSparkleExperience || isMenExperience || isAllExperience;
 
 function shouldShowExternalBrowserGuide() {
@@ -1485,7 +1486,7 @@ function updateSwipeCharge(value) {
     hasTrackedYouTubeSwipeStart = true;
     logAnalyticsEvent("youtube_swipe_start", {
       channel: "youtube",
-      experience: isMenExperience ? "men" : "women",
+      experience: experienceAnalyticsValue,
     });
   }
   setSwipeFill(normalized);
@@ -2824,7 +2825,7 @@ async function registerParticipation() {
       hasAnimatedCounter = false;
       logAnalyticsEvent("youtube_swipe_complete", {
         channel: "youtube",
-        experience: isMenExperience ? "men" : "women",
+        experience: experienceAnalyticsValue,
       });
       return true;
     }
@@ -2954,7 +2955,7 @@ async function registerParticipation() {
       hasAnimatedCounter = false;
       logAnalyticsEvent("youtube_swipe_complete_local_fallback", {
         channel: "youtube",
-        experience: isMenExperience ? "men" : "women",
+        experience: experienceAnalyticsValue,
       });
       return true;
     }
@@ -4346,7 +4347,7 @@ applyLanguage();
 if (isYouTubeParticipation && !isDebugReplay) {
   logAnalyticsEvent("youtube_page_open", {
     channel: "youtube",
-    experience: isMenExperience ? "men" : "women",
+    experience: experienceAnalyticsValue,
   });
 }
 // debug（host/ローカル）では「今日は参加済み」ロックを無視して、毎回スワイプから試せるようにする。

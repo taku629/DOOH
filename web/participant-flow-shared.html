@@ -25,14 +25,21 @@
                     men: "men",
                     women: "sparkle",
                     sparkle: "sparkle",
+                    all: "all",
+                    join: "all",
                 };
                 let experience = aliases[requested];
                 if (!experience) {
-                    experience = /(^|\/)(men|participant-v1-men)\/?$/.test(
-                        location.pathname,
-                    )
-                        ? "men"
-                        : "sparkle";
+                    const pathname = location.pathname;
+                    if (/(^|\/)(men|participant-v1-men)\/?$/.test(pathname)) {
+                        experience = "men";
+                    } else if (/(^|\/)(women|participant-v1-women)\/?$/.test(pathname)) {
+                        experience = "sparkle";
+                    } else if (/(^|\/)join\/?$/.test(pathname)) {
+                        experience = "all";
+                    } else {
+                        experience = "sparkle";
+                    }
                 }
                 document.documentElement.dataset.experience = experience;
             })();
@@ -1205,8 +1212,16 @@
                     if (location.pathname.includes("participant-flow-shared.html")) {
                         dest = location.pathname.replace("participant-flow-shared.html", "participant-flow-supporter.html");
                     } else {
-                        const isMen = /\/men$/.test(location.pathname) || params.get("exp") === "men";
-                        dest = isMen ? "/supporter/men" : "/supporter/women";
+                        const experience = document.documentElement.dataset.experience;
+                        dest = experience === "men"
+                            ? "/supporter/men"
+                            : experience === "sparkle"
+                                ? "/supporter/women"
+                                : "/supporter";
+                        params.set(
+                            "exp",
+                            experience === "sparkle" ? "women" : experience || "all",
+                        );
                     }
                     location.href = `${dest}?${params.toString()}`;
                 });
