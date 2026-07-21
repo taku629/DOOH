@@ -808,6 +808,7 @@ const shouldUseStoryThanksCard = Boolean(
 
 let currentStep = 0;
 let colorMembraneCompleted = false;
+let hasNotifiedParentCardComplete = false;
 let participantCount = FALLBACK_COUNTER_TARGET;
 let hasCountedParticipation = false;
 let hasAcceptedParticipation = false;
@@ -1809,6 +1810,7 @@ window.addEventListener("message", (event) => {
   }
 
   colorMembraneCompleted = true;
+  notifyParentCardComplete();
   if (currentStep === 3) {
     if (isFoundingSupporter && !prefersReducedMotion) {
       playSupporterCeremony();
@@ -2529,22 +2531,28 @@ function finalizeCard() {
   isFinalCardBuilt = false;
   buildFinalCard();
   colorMembraneCompleted = false;
+  hasNotifiedParentCardComplete = false;
   nextStep();
-  if (window.parent !== window) {
-    window.parent.postMessage({
-      type: "dooh-research-card-complete",
-      participantCount,
-      hasDisplayName: Boolean(nickname.value.trim()),
-      displayName: nickname.value.trim().slice(0, 24),
-      swipeEventId: completedSwipeEventId || "",
-      swipeCount: completedSwipeCount || participantCount,
-      isSupporter: isSupporterFlow,
-      totalDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.totalDays ?? 1,
-      surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
-    }, location.origin);
-  }
 
   return true;
+}
+
+function notifyParentCardComplete() {
+  if (hasNotifiedParentCardComplete || window.parent === window) {
+    return;
+  }
+  hasNotifiedParentCardComplete = true;
+  window.parent.postMessage({
+    type: "dooh-research-card-complete",
+    participantCount,
+    hasDisplayName: Boolean(nickname.value.trim()),
+    displayName: nickname.value.trim().slice(0, 24),
+    swipeEventId: completedSwipeEventId || "",
+    swipeCount: completedSwipeCount || participantCount,
+    isSupporter: isSupporterFlow,
+    totalDays: isLiveShowcaseDemo ? 1 : completedParticipationVisit?.totalDays ?? 1,
+    surveyUrl: (document.body?.dataset?.postFlowForm || "").trim(),
+  }, location.origin);
 }
 
 // 寄付デモ完了後、公開に同意して入力された表示名だけをDOOHへ一度通知する。
