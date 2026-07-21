@@ -1355,7 +1355,7 @@
         <button id="resetBtn" type="button">↺ リセット</button>
     </div>
 
-    <script src="./src/supporter-comment-rotation.js?v=20260715-fair-cycle-1"></script>
+    <script src="./src/supporter-comment-rotation.js?v=20260720-one-per-supporter-1"></script>
     <script>
         // 1チャレンジ=18人。飛沫9種×2段階（芯で着弾→広がって完成）で18ステップを構成する
         const TOTAL = 18;
@@ -3035,6 +3035,7 @@
                 swipeCount: Math.max(0, Math.floor(Number(entry?.swipeCount) || 0)),
                 createdAt: Number(entry?.createdAt) || 0,
                 id: String(entry?.id ?? entry?.codeHash ?? comment),
+                codeHash: String(entry?.codeHash ?? "").trim(),
             };
         }
 
@@ -3108,10 +3109,12 @@
                 if (supporterCommentWall) supporterCommentWall.hidden = true;
                 return;
             }
-            const normalized = comments
-                .map(normalizeSupporterCommentForDisplay)
-                .filter(Boolean)
-                .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
+            // 同じ支援者（パスコード）の連投は最新1件だけ巡回に載せる
+            const normalized = window.SupporterCommentRotation.dedupeBySupporter(
+                comments
+                    .map(normalizeSupporterCommentForDisplay)
+                    .filter(Boolean)
+            ).sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
             supporterCommentFairState = window.SupporterCommentRotation.reconcile(
                 supporterCommentFairState,
                 normalized

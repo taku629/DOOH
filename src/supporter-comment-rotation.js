@@ -26,6 +26,30 @@
         return entries;
     }
 
+    function dedupeBySupporter(items) {
+        const bySupporter = new Map();
+        for (const item of Array.isArray(items) ? items : []) {
+            if (!item) continue;
+            const codeHash = String(item.codeHash ?? "").trim();
+            const key = codeHash || `id:${String(item.id ?? "").trim()}`;
+            const current = bySupporter.get(key);
+            if (!current) {
+                bySupporter.set(key, item);
+                continue;
+            }
+            const itemCreatedAt = Number(item.createdAt) || 0;
+            const currentCreatedAt = Number(current.createdAt) || 0;
+            if (
+                itemCreatedAt > currentCreatedAt ||
+                (itemCreatedAt === currentCreatedAt &&
+                    String(item.id ?? "").localeCompare(String(current.id ?? "")) > 0)
+            ) {
+                bySupporter.set(key, item);
+            }
+        }
+        return [...bySupporter.values()];
+    }
+
     function reconcile(state = {}, items = [], random = Math.random) {
         const incoming = uniqueEntries(items);
         const byId = new Map(incoming.map((entry) => [entry.id, entry]));
@@ -99,7 +123,7 @@
         };
     }
 
-    const api = { reconcile, takeNext, serialize };
+    const api = { dedupeBySupporter, reconcile, takeNext, serialize };
     globalScope.SupporterCommentRotation = api;
     if (typeof module !== "undefined" && module.exports) {
         module.exports = api;
