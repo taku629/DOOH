@@ -40,6 +40,8 @@ const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
 const swipeStep = steps[0];
 const supportChoiceButtons = [...document.querySelectorAll("[data-support-choice]")];
+
+viewport?.style.setProperty("overflow-anchor", "none");
 const supportChoiceDetail = document.getElementById("supportChoiceDetail");
 const createCardButton = document.getElementById("createCard");
 const skipNameButton = document.getElementById("skipName");
@@ -592,7 +594,7 @@ const UI_TEXT = {
     fundingNote: "日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。",
     donationLabel: "参加者の負担",
     free: "無料",
-    swipeInstruction: "指のエリアを上にスワイプしてください。",
+    swipeInstruction: "画面を上へなぞって、あなたの応援を新宿へ届けてください。",
     thanksTitle: "ありがとうございます！",
     thanksBody: "あなたの参加で、新宿に静かな光が重なりました。",
     certificateTitle: "参加証に名前を残す",
@@ -1810,13 +1812,9 @@ window.addEventListener("message", (event) => {
   }
 
   colorMembraneCompleted = true;
-  notifyParentCardComplete();
   if (currentStep === 3) {
-    if (isFoundingSupporter && !prefersReducedMotion) {
-      playSupporterCeremony();
-    } else {
-      showStep(4);
-    }
+    showStep(4);
+    postCardCompleteToParent();
   }
 });
 
@@ -1824,6 +1822,10 @@ function showStep(index) {
   const previousStepIndex = currentStep;
   const isReturningToCount = index === 1 && previousStepIndex > 1;
   syncColorMembraneFullscreen(index);
+  if (viewport) {
+    viewport.scrollTop = 0;
+    viewport.scrollLeft = 0;
+  }
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
@@ -2291,6 +2293,74 @@ function decorateFoundingSupporterCard(labelNode, nameNode) {
   finalCard.append(serial);
 }
 
+function buildColorTicketIssuer(content) {
+  const issuer = document.createElement("section");
+  issuer.className = "color-ticket-issuer";
+  issuer.setAttribute(
+    "aria-label",
+    isEnglish() ? "Issuing your Shinjuku support certificate" : "新宿を応援する参加証を発行中",
+  );
+
+  const slot = document.createElement("div");
+  slot.className = "color-ticket-slot";
+  slot.setAttribute("aria-hidden", "true");
+  const slotColors = document.createElement("i");
+  slotColors.className = "color-ticket-slot-colors";
+  slot.append(slotColors);
+
+  const mask = document.createElement("div");
+  mask.className = "color-ticket-mask";
+  const travel = document.createElement("div");
+  travel.className = "color-ticket-travel";
+  const float = document.createElement("div");
+  float.className = "color-ticket-float";
+  const flip = document.createElement("div");
+  flip.className = "color-ticket-flip";
+
+  const back = document.createElement("div");
+  back.className = "color-ticket-face color-ticket-back";
+  const backMark = document.createElement("strong");
+  backMark.textContent = "彩";
+  const backCopy = document.createElement("span");
+  backCopy.textContent = isEnglish() ? "YOUR SWIPE SUPPORTS SHINJUKU" : "あなたのスワイプで、新宿を応援。";
+  const backCity = document.createElement("small");
+  backCity.textContent = "SHINJUKU DOOH";
+  back.append(backMark, backCopy, backCity);
+
+  const front = document.createElement("div");
+  front.className = "color-ticket-face color-ticket-front";
+  const reflex = document.createElement("i");
+  reflex.className = "color-ticket-reflex";
+  reflex.setAttribute("aria-hidden", "true");
+  const header = document.createElement("header");
+  const label = document.createElement("p");
+  label.textContent = content.label;
+  const barcode = document.createElement("i");
+  barcode.className = "color-ticket-barcode";
+  barcode.setAttribute("aria-hidden", "true");
+  header.append(label, barcode);
+  const name = document.createElement("h3");
+  name.textContent = content.name;
+  const amount = document.createElement("strong");
+  amount.className = "color-ticket-amount";
+  amount.textContent = isEnglish() ? "1 SWIPE · ¥100 → SHINJUKU" : "1 SWIPE · ¥100 → 新宿";
+  const footer = document.createElement("footer");
+  const serial = document.createElement("span");
+  const issueNumber = Math.max(1, Number(completedSwipeCount || participantCount || 1));
+  serial.textContent = `#${String(issueNumber).padStart(4, "0")}`;
+  const theme = document.createElement("span");
+  theme.textContent = isEnglish() ? "SHINJUKU SUPPORT PASS" : "新宿を応援する参加証";
+  footer.append(serial, theme);
+  front.append(reflex, header, name, amount, footer);
+
+  flip.append(back, front);
+  float.append(flip);
+  travel.append(float);
+  mask.append(travel);
+  issuer.append(slot, mask);
+  return issuer;
+}
+
 function buildFinalCard() {
   if (isFinalCardBuilt) {
     return;
@@ -2308,8 +2378,12 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = content.description;
 
-  finalCard.append(label, name, description);
-  decorateFoundingSupporterCard(label, name);
+  finalCard.classList.remove("is-founding-supporter", "is-issuing");
+  finalCard.classList.add("has-color-ticket");
+  finalCard.append(buildColorTicketIssuer(content));
+  if (isFoundingSupporter) {
+    decorateFoundingSupporterCard(label, name);
+  }
   ensureSupporterKeepsakeActions();
 
   const projectNote = document.createElement("section");
@@ -2533,14 +2607,16 @@ function finalizeCard() {
   colorMembraneCompleted = false;
   hasNotifiedParentCardComplete = false;
   nextStep();
-
+  if (finalCard.classList.contains("has-color-ticket")) {
+    finalCard.classList.remove("is-issuing");
+    void finalCard.offsetWidth;
+    finalCard.classList.add("is-issuing");
+  }
   return true;
 }
 
-function notifyParentCardComplete() {
-  if (hasNotifiedParentCardComplete || window.parent === window) {
-    return;
-  }
+function postCardCompleteToParent() {
+  if (hasNotifiedParentCardComplete || window.parent === window) return;
   hasNotifiedParentCardComplete = true;
   window.parent.postMessage({
     type: "dooh-research-card-complete",
@@ -2988,9 +3064,7 @@ async function markParticipationComplete() {
       showYouTubeCompletion();
       return true;
     }
-    if (!showStoryThanksCard()) {
-      nextStep();
-    }
+    nextStep();
   }
   return didComplete;
 }
@@ -3852,11 +3926,7 @@ function canAdvanceFrom(index) {
 
 async function handleForwardAdvance(fromIndex) {
   if (fromIndex === 0) {
-    const didRegister = await registerParticipation();
-    if (didRegister && showStoryThanksCard()) {
-      return false;
-    }
-    return didRegister;
+    return registerParticipation();
   } else if (fromIndex === 2) {
     buildFinalCard();
   }
@@ -4192,6 +4262,12 @@ async function setupSavedNameChoice() {
   actions.append(reuseButton, changeButton);
   choice.append(copy, actions);
   choiceParent.insertBefore(choice, nameField);
+  if (currentStep === 0 && viewport) {
+    viewport.scrollTop = 0;
+    requestAnimationFrame(() => {
+      viewport.scrollTop = 0;
+    });
+  }
 
   reuseButton.addEventListener("click", () => {
     nickname.value = savedName;

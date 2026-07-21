@@ -317,21 +317,6 @@
             touch-action: manipulation;
         }
 
-        .phone-tap-surface {
-            position: absolute;
-            z-index: 9;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            padding: 0;
-            border: 0;
-            border-radius: inherit;
-            outline: 0;
-            background: transparent;
-            cursor: pointer;
-            touch-action: manipulation;
-        }
-
         .tap-hint {
             position: absolute;
             right: 26px;
@@ -504,10 +489,9 @@
             <div class="frame-viewport" id="phoneViewport">
                 <div class="phone-shell" id="phoneShell">
                     <iframe id="participantFrame" title="スマホ参加画面" allow="clipboard-write"></iframe>
-                    <button class="phone-tap-surface" id="phoneTapSurface" type="button" aria-label="1人追加してDOOHへ名前を送る"></button>
                     <div class="phone-send-card" id="phoneSendCard" aria-hidden="true">
                         <strong id="phoneSendName">あおい</strong>
-                        <span>TO SHINJUKU DOOH</span>
+                        <span>彩りを送信中</span>
                     </div>
                 </div>
             </div>
@@ -550,7 +534,6 @@
         const countDisplay = document.getElementById("countDisplay");
         const sendButton = document.getElementById("sendButton");
         const tapSurface = document.getElementById("tapSurface");
-        const phoneTapSurface = document.getElementById("phoneTapSurface");
         const signal = document.getElementById("signal");
         const statusToast = document.getElementById("statusToast");
         const cleanButton = document.getElementById("cleanButton");
@@ -564,6 +547,8 @@
         let signalTimer = 0;
         let cardTimer = 0;
         let doohReadyTimer = 0;
+        let phoneEventSequence = 0;
+        const phoneParticipationCounts = new Map();
 
         function resizeFrames() {
             const phoneScale = Math.min(
@@ -657,7 +642,6 @@
             isSending = true;
             sendButton.disabled = true;
             tapSurface.disabled = true;
-            phoneTapSurface.disabled = true;
 
             const displayName = resolveDisplayName();
             const isSupporter = participantType.value === "supporter";
@@ -707,7 +691,6 @@
                     isSending = false;
                     sendButton.disabled = false;
                     tapSurface.disabled = false;
-                    phoneTapSurface.disabled = false;
                 }, 1900);
             } catch (error) {
                 console.error("[showcase-tap] send failed", error);
@@ -715,19 +698,26 @@
                 isSending = false;
                 sendButton.disabled = false;
                 tapSurface.disabled = false;
-                phoneTapSurface.disabled = false;
             }
         }
 
-        function loadFrames() {
+        function loadParticipantFlow() {
             const cacheBust = Date.now();
-            const participantUrl = new URL("/web/participant-flow-shared.html", location.origin);
+            const participantPath = participantType.value === "supporter"
+                ? "/web/participant-flow-supporter.html"
+                : "/web/participant-flow-shared.html";
+            const participantUrl = new URL(participantPath, location.origin);
             participantUrl.searchParams.set("debug", "1");
             participantUrl.searchParams.set("exp", "all");
             participantUrl.searchParams.set("demo-showcase", "1");
             participantUrl.searchParams.set("t", cacheBust);
+            phoneParticipationCounts.clear();
+            phoneShell.classList.remove("is-color");
             participantFrame.src = participantUrl.href;
+        }
 
+        function loadDoohFrame() {
+            const cacheBust = Date.now();
             const doohUrl = new URL("/demo_v2.html", location.origin);
             doohUrl.searchParams.set("dev", "1");
             doohUrl.searchParams.set("clean", "1");
@@ -735,6 +725,86 @@
             doohUrl.searchParams.set("demo-showcase", "1");
             doohUrl.searchParams.set("t", cacheBust);
             doohFrame.src = doohUrl.href;
+        }
+
+        function loadFrames() {
+            loadParticipantFlow();
+            loadDoohFrame();
+        }
+
+        function phoneEventId(payload, prefix) {
+            const supplied = String(payload?.swipeEventId || "").trim();
+            if (supplied) return supplied;
+            phoneEventSequence += 1;
+            return `${prefix}-${Date.now()}-${phoneEventSequence}`;
+        }
+
+        async function registerPhoneParticipation(payload = {}) {
+            const eventId = phoneEventId(payload, "phone-swipe");
+            if (phoneParticipationCounts.has(eventId)) {
+                return { eventId, count: phoneParticipationCounts.get(eventId) };
+            }
+
+            const api = await waitForDoohApi();
+            const nextCount = currentCount + 1;
+            phoneParticipationCounts.set(eventId, nextCount);
+            phoneShell.classList.add("is-color");
+            pulseSignal();
+            api.applyLiveCount(currentCount);
+            showStatus("スワイプを受信しました。名前の発射を待っています", 2600);
+
+            window.setTimeout(() => {
+                currentCount = Math.max(currentCount, nextCount);
+                getDoohApi()?.applyLiveCount?.(currentCount);
+                updateCount();
+            }, 360);
+
+            return { eventId, count: nextCount };
+        }
+
+        async function reflectPhoneCard(payload = {}) {
+            let eventId = String(payload.swipeEventId || "").trim();
+            let swipeCount = eventId ? phoneParticipationCounts.get(eventId) : null;
+            if (!swipeCount) {
+                const latest = [...phoneParticipationCounts.entries()].at(-1);
+                if (latest) {
+                    [eventId, swipeCount] = latest;
+                } else {
+                    const registered = await registerPhoneParticipation(payload);
+                    eventId = registered.eventId;
+                    swipeCount = registered.count;
+                }
+            }
+
+            const displayName = String(payload.displayName || "").trim().slice(0, 24) || resolveDisplayName();
+            const isSupporter = payload.isSupporter === true || participantType.value === "supporter";
+            const api = await waitForDoohApi();
+
+            phoneShell.classList.add("is-color");
+            pulseSignal();
+            animatePhoneName(displayName);
+            nameInput.value = displayName;
+
+            if (isSupporter) {
+                api.setSupporterComments?.([{
+                    id: eventId,
+                    name: displayName,
+                    comment: "新宿を応援しています",
+                    swipeEventId: eventId,
+                    swipeCount,
+                    createdAt: Date.now(),
+                }]);
+            }
+
+            api.showThanks?.(displayName, {
+                swipeEventId: eventId,
+                swipeCount,
+                isSupporter,
+                isReturning: false,
+                streakDays: 1,
+                totalDays: Math.max(1, Number(payload.totalDays) || 1),
+            });
+            showStatus(`${displayName}さんの名前をDOOHへ反映しました`, 3000);
         }
 
         function resetShowcase() {
@@ -759,8 +829,16 @@
         }
 
         tapSurface.addEventListener("click", sendParticipant);
-        phoneTapSurface.addEventListener("click", sendParticipant);
         sendButton.addEventListener("click", sendParticipant);
+        participantType.addEventListener("change", () => {
+            loadParticipantFlow();
+            showStatus(
+                participantType.value === "supporter"
+                    ? "クラファン支援者フローに切り替えました"
+                    : "通常参加者フローに切り替えました",
+                2000,
+            );
+        });
         cleanButton.addEventListener("click", toggleCleanMode);
         resetButton.addEventListener("click", resetShowcase);
 
@@ -789,18 +867,39 @@
         window.addEventListener("message", (event) => {
             if (event.origin !== location.origin || event.source !== participantFrame.contentWindow) return;
             if (event.data?.type === "dooh-research-participation-complete") {
-                sendParticipant();
+                registerPhoneParticipation(event.data).catch((error) => {
+                    console.error("[showcase-tap] participation sync failed", error);
+                    showStatus("DOOHとの人数同期に失敗しました", 3000);
+                });
+            }
+            if (event.data?.type === "dooh-research-card-complete") {
+                reflectPhoneCard(event.data).catch((error) => {
+                    console.error("[showcase-tap] name sync failed", error);
+                    showStatus("DOOHへの名前反映に失敗しました", 3000);
+                });
             }
         });
 
         window.addEventListener("resize", resizeFrames);
-        participantFrame.addEventListener("load", resizeFrames);
+        participantFrame.addEventListener("load", () => {
+            try {
+                const phoneViewportElement = participantFrame.contentDocument?.getElementById("viewport");
+                if (phoneViewportElement) {
+                    phoneViewportElement.scrollTop = 0;
+                    phoneViewportElement.scrollLeft = 0;
+                }
+                participantFrame.contentWindow?.scrollTo?.(0, 0);
+            } catch (error) {
+                console.warn("[showcase-tap] phone viewport reset skipped", error);
+            }
+            resizeFrames();
+        });
         doohFrame.addEventListener("load", async () => {
             resizeFrames();
             try {
                 const api = await waitForDoohApi();
                 api.applyLiveCount(currentCount);
-                showStatus("準備完了。DOOH画面をタップしてください", 2600);
+                showStatus("準備完了。スマホを操作するか、DOOH画面をタップしてください", 3000);
             } catch (error) {
                 console.warn("[showcase-tap] initial DOOH setup delayed", error);
             }

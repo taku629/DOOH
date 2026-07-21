@@ -42,6 +42,8 @@ const app = document.getElementById("app");
 const celebration = document.getElementById("celebration");
 const swipeStep = steps[0];
 const supportChoiceButtons = [...document.querySelectorAll("[data-support-choice]")];
+
+viewport?.style.setProperty("overflow-anchor", "none");
 const supportChoiceDetail = document.getElementById("supportChoiceDetail");
 const createCardButton = document.getElementById("createCard");
 const skipNameButton = document.getElementById("skipName");
@@ -83,9 +85,9 @@ window.addEventListener("message", (event) => {
     return;
   }
   colorMembraneCompleted = true;
-  notifyParentCardComplete();
   if (currentStep === 3) {
     showStep(4);
+    postCardCompleteToParent();
   }
 });
 
@@ -98,9 +100,10 @@ const supportDetailsDisclosure = (() => {
   const supportChoice = document.querySelector(".support-choice");
   const supportTrend = document.querySelector(".support-trend");
   const certificateActions = steps[2]?.querySelector(":scope > .actions");
-  if (!tickerFontPicker || !supportChoice || !supportTrend) return null;
+  if (!inkLocationCard || !supportChoice || !supportTrend) return null;
   const details = document.createElement("details");
   details.className = "support-details-disclosure";
+  details.open = false;
   const summary = document.createElement("summary");
   summary.innerHTML = '<span data-support-summary></span><strong data-support-details-open></strong>';
   details.append(summary, supportChoice, supportTrend);
@@ -468,7 +471,7 @@ const UI_TEXT = {
     fundingNote: "あなたの1スワイプが、託された100円分の応援を新宿へ届けます。",
     donationLabel: "参加者の負担",
     free: "無料",
-    swipeInstruction: "画面を上へなぞって、モノクロの街に彩を戻してください。",
+    swipeInstruction: "画面を上へなぞって、あなたの応援を新宿へ届けてください。",
     thanksTitle: "ありがとうございます！",
     thanksBody: "あなたの参加で、新宿に静かな光が重なりました。",
     certificateTitle: "参加証に名前を残す",
@@ -486,9 +489,9 @@ const UI_TEXT = {
     displayNameLabel: "表示名（任意）",
     nameTab: "ここに入力",
     nicknamePlaceholder: "例：さくら",
-    nicknameHelp: "名前を追加すると、同じインクが光ります。参加証・名前ロールにも表示されます。",
-    inkLocationTitle: "着弾しました。この彩は、まだ名無しです",
-    inkLocationMessage: "名前を入れて、上へ投げてください。",
+    nicknameHelp: "名前は次の画面で、あなたの彩りと一緒に街へ届きます。参加証・名前ロールにも表示されます。",
+    inkLocationTitle: "あなたの彩りを届ける準備ができました",
+    inkLocationMessage: "名前を添えて、上へ届けてください。",
     nameLookUpTitle: "上を見て。あなたの彩が名乗ります",
     nameLookUpBody: "大画面で、あなたの窓が光ります。",
     nameLookUpClose: "参加証を見る",
@@ -1713,6 +1716,10 @@ function showStep(index) {
   const previousStepIndex = currentStep;
   const isReturningToCount = index === 1 && previousStepIndex > 1;
   syncColorMembraneFullscreen(index);
+  if (viewport) {
+    viewport.scrollTop = 0;
+    viewport.scrollLeft = 0;
+  }
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
@@ -2215,7 +2222,7 @@ function buildColorTicketIssuer(content) {
   const backMark = document.createElement("strong");
   backMark.textContent = "彩";
   const backCopy = document.createElement("span");
-  backCopy.textContent = isEnglish() ? "MONOCHROME TO COLOR" : "モノクロから彩へ";
+  backCopy.textContent = isEnglish() ? "YOUR SWIPE SUPPORTS SHINJUKU" : "あなたのスワイプで、新宿を応援。";
   const backCity = document.createElement("small");
   backCity.textContent = "SHINJUKU DOOH";
   back.append(backMark, backCopy, backCity);
@@ -2242,7 +2249,7 @@ function buildColorTicketIssuer(content) {
   const issueNumber = Math.max(1, Number(completedSwipeCount || participantCount || 1));
   serial.textContent = `#${String(issueNumber).padStart(4, "0")}`;
   const theme = document.createElement("span");
-  theme.textContent = isEnglish() ? "COLOR RETURN PASS" : "彩を取り戻す参加証";
+  theme.textContent = isEnglish() ? "SHINJUKU SUPPORT PASS" : "新宿を応援する参加証";
   footer.append(serial, theme);
   front.append(reflex, header, name, amount, footer);
 
@@ -2271,19 +2278,11 @@ function buildFinalCard() {
   const description = document.createElement("p");
   description.textContent = content.description;
 
+  finalCard.classList.remove("is-founding-supporter", "is-issuing");
+  finalCard.classList.add("has-color-ticket");
+  finalCard.append(buildColorTicketIssuer(content));
   if (isFoundingSupporter) {
-    finalCard.classList.remove("has-color-ticket", "is-issuing");
-    finalCard.append(label, name, description);
     decorateFoundingSupporterCard(label, name);
-    const keepsake = document.createElement("section");
-    keepsake.className = "certificate-keepsake";
-    keepsake.setAttribute("aria-label", isEnglish() ? "Founding supporter certificate" : "クラウドファンディング支援者参加証");
-    keepsake.append(...finalCard.childNodes);
-    finalCard.append(keepsake);
-  } else {
-    finalCard.classList.remove("is-founding-supporter");
-    finalCard.classList.add("has-color-ticket");
-    finalCard.append(buildColorTicketIssuer(content));
   }
   ensureSupporterKeepsakeActions();
 
@@ -2507,23 +2506,17 @@ function finalizeCard() {
   buildFinalCard();
   colorMembraneCompleted = false;
   hasNotifiedParentCardComplete = false;
-  if (isFoundingSupporter && !prefersReducedMotion) {
-    playSupporterCeremony();
-  } else {
-    nextStep();
-    if (!isFoundingSupporter && finalCard.classList.contains("has-color-ticket")) {
-      finalCard.classList.remove("is-issuing");
-      void finalCard.offsetWidth;
-      finalCard.classList.add("is-issuing");
-    }
+  nextStep();
+  if (finalCard.classList.contains("has-color-ticket")) {
+    finalCard.classList.remove("is-issuing");
+    void finalCard.offsetWidth;
+    finalCard.classList.add("is-issuing");
   }
   return true;
 }
 
-function notifyParentCardComplete() {
-  if (hasNotifiedParentCardComplete || window.parent === window) {
-    return;
-  }
+function postCardCompleteToParent() {
+  if (hasNotifiedParentCardComplete || window.parent === window) return;
   hasNotifiedParentCardComplete = true;
   window.parent.postMessage({
     type: "dooh-research-card-complete",
@@ -2983,9 +2976,7 @@ async function markParticipationComplete() {
       showYouTubeCompletion();
       return true;
     }
-    if (!showStoryThanksCard()) {
-      nextStep();
-    }
+    nextStep();
   }
   return didComplete;
 }
@@ -3847,11 +3838,7 @@ function canAdvanceFrom(index) {
 
 async function handleForwardAdvance(fromIndex) {
   if (fromIndex === 0) {
-    const didRegister = await registerParticipation();
-    if (didRegister && showStoryThanksCard()) {
-      return false;
-    }
-    return didRegister;
+    return registerParticipation();
   } else if (fromIndex === 2) {
     buildFinalCard();
   }
@@ -4188,6 +4175,12 @@ async function setupSavedNameChoice() {
   actions.append(reuseButton, changeButton);
   choice.append(copy, actions);
   choiceParent.insertBefore(choice, nameField);
+  if (currentStep === 0 && viewport) {
+    viewport.scrollTop = 0;
+    requestAnimationFrame(() => {
+      viewport.scrollTop = 0;
+    });
+  }
 
   reuseButton.addEventListener("click", () => {
     nickname.value = savedName;
