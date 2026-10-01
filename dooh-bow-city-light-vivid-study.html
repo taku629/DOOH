@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>新宿DOOH — City Light Vivid Study</title>
+  <style>
+    html,body,iframe{width:100%;height:100%;margin:0;border:0;overflow:hidden;background:#f8f8f5}
+    iframe{display:block}
+  </style>
+</head>
+<body>
+  <iframe id="study" src="dooh-bow-city-light-study.html" title="新宿DOOH City Light Vivid Study"></iframe>
+  <script>
+    const frame = document.querySelector("#study");
+    const applyVividColor = () => {
+      const doc = frame.contentDocument;
+      if (!doc || doc.querySelector("#vivid-color-override")) return;
+      doc.title = "新宿DOOH — City Light Vivid Study";
+
+      const style = doc.createElement("style");
+      style.id = "vivid-color-override";
+      style.textContent = `
+        .city-canyon {
+          opacity: calc(.2 + var(--c) * .42);
+        }
+        .city-canyon img {
+          filter:
+            grayscale(calc(1 - var(--c)))
+            contrast(calc(1.08 + var(--c) * .14))
+            brightness(calc(1.46 - var(--c) * .18))
+            saturate(calc(.18 + var(--c) * 1.72));
+        }
+        .city-canyon::after {
+          opacity: calc(1 - var(--c) * .72);
+        }
+        .color-return {
+          height: calc(var(--c) * 84%);
+          opacity: calc(var(--c) * .72);
+          background:
+            radial-gradient(ellipse at 18% 82%, rgba(var(--blue),.42), transparent 40%),
+            radial-gradient(ellipse at 82% 72%, rgba(var(--gold),.4), transparent 38%),
+            radial-gradient(ellipse at 66% 50%, rgba(var(--coral),.38), transparent 42%),
+            linear-gradient(to top,
+              rgba(var(--blue),.3),
+              rgba(var(--violet),.27) 34%,
+              rgba(var(--coral),.28) 67%,
+              transparent);
+          mix-blend-mode: multiply;
+          mask-image: linear-gradient(to top, #000 0 66%, transparent 100%);
+        }
+        .light-cone {
+          opacity: calc(.02 + var(--c) * .94);
+          filter:
+            saturate(calc(.16 + var(--c) * 1.55))
+            brightness(calc(.9 + var(--c) * .38));
+        }
+        .light-cone::before {
+          background: linear-gradient(100deg,
+            rgba(var(--blue),.72),
+            rgba(var(--violet),.56) 31%,
+            rgba(255,255,255,.82) 49%,
+            rgba(var(--coral),.62) 67%,
+            rgba(var(--gold),.72));
+        }
+        .limb-color { stroke-width:3.4; }
+        .phone.ready .city-canyon img {
+          filter: grayscale(0) contrast(1.24) brightness(1.22) saturate(1.95);
+        }
+      `;
+      doc.head.appendChild(style);
+    };
+    frame.addEventListener("load", applyVividColor);
+    if (frame.contentDocument?.readyState === "complete") applyVividColor();
+  </script>
+</body>
+</html>

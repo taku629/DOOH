@@ -8,7 +8,7 @@ import { getDemoSupporterPasscodes, verifySupporterPasscode } from "../src/suppo
 import { clearParticipationVisit, getParticipationVisit, saveParticipationVisit } from "../src/returning-participant.mjs?v=20260614-4";
 import { clearSavedDisplayName, getSavedDisplayName, saveDisplayName } from "../src/saved-display-name.mjs?v=20260614-2";
 import { getChannelForTheme, resolveTheme } from "../src/theme-router.js";
-import { renderInkLocationMap, setInkLocationStatus } from "./ink-location-map.js?v=20260720-name-entry-1";
+import { renderInkLocationMap, setInkLocationName, setInkLocationStatus } from "./ink-location-map.js?v=20260722-name-landing-1";
 import { mountDoohGazePrompt } from "./dooh-gaze-prompt.js?v=20260716-1";
 
 const steps = [...document.querySelectorAll(".step")];
@@ -76,7 +76,7 @@ function syncColorMembraneFullscreen(index) {
   document.body.classList.toggle("has-color-membrane-active", shouldFillScreen);
 }
 
-window.addEventListener("message", (event) => {
+window.addEventListener("message", async (event) => {
   if (
     event.origin !== location.origin
     || event.source !== colorMembraneFrame?.contentWindow
@@ -86,6 +86,8 @@ window.addEventListener("message", (event) => {
   }
   colorMembraneCompleted = true;
   if (currentStep === 3) {
+    // Publish only after the name-arrow has completely left the phone screen.
+    await announceDonorName();
     showStep(4);
     postCardCompleteToParent();
   }
@@ -102,16 +104,16 @@ if (inkLocationCard && nicknameLabel && nicknameField && nicknameHelp && tickerF
 const supportDetailsDisclosure = (() => {
   const supportChoice = document.querySelector(".support-choice");
   const supportTrend = document.querySelector(".support-trend");
-  const certificateActions = steps[2]?.querySelector(":scope > .actions");
-  if (!inkLocationCard || !supportChoice || !supportTrend) return null;
+  if (!tickerFontPicker || !supportChoice || !supportTrend) return null;
   const details = document.createElement("details");
   details.className = "support-details-disclosure";
   details.open = false;
   const summary = document.createElement("summary");
   summary.innerHTML = '<span data-support-summary></span><strong data-support-details-open></strong>';
   details.append(summary, supportChoice, supportTrend);
-  inkLocationCard.after(details);
-  if (certificateActions) details.after(certificateActions);
+  // Keep optional project information in the original "+" disclosure below
+  // the name styling controls and above the certificate action buttons.
+  tickerFontPicker.after(details);
   return details;
 })();
 
@@ -470,13 +472,13 @@ const UI_TEXT = {
     eyebrow: "Donation Action",
     campaignTitle: "新宿DOOH",
     lead: "白と黒のコントラストで、静かに参加を届けるデモ体験です。",
-    swipeTitle: "あなたのスワイプで、<br /><span class=\"title-color-word\">新宿を応援</span>",
-    fundingNote: "あなたの1スワイプが、託された100円分の応援を新宿へ届けます。",
+    swipeTitle: "<span class=\"title-lead-line\">あなたのスワイプで、</span><span class=\"title-color-word\">新宿を応援</span>",
+    fundingNote: "1スワイプで、100円分の応援を新宿へ。",
     donationLabel: "参加者の負担",
     free: "無料",
     swipeInstruction: "画面を上へなぞって、あなたの応援を新宿へ届けてください。",
     thanksTitle: "ありがとうございます！",
-    thanksBody: "あなたの参加で、新宿に静かな光が重なりました。",
+    thanksBody: "あなたの彩りが、新宿に届きました。",
     certificateTitle: "参加証に名前を残す",
     supportKicker: "何に使われているの？",
     supportTitle: "応援先を選ぶ（任意）",
@@ -567,7 +569,7 @@ const UI_TEXT = {
     busy: "通信が混み合っています。少し時間をおいてもう一度お試しください。",
     alreadyHint: "本日はすでに参加済みです。また明日の参加をお待ちしています。",
     alreadyTitle: "本日は参加済みです",
-    certificateLabelAll: "新宿みんなのアクション証",
+    certificateLabelAll: "新宿を応援する参加証",
     certificateLabelDefault: "SHINJUKU COLOR SUPPORTER",
     certificateDescMorning: "この参加は無料です。集まったお金から、朝の新宿を応援する支援先へ¥{amount}を届けます。",
     certificateDescAll: "この参加は無料です。集まったお金から、誰もが過ごしやすい新宿を支える支援先へ¥{amount}を届けます。",
@@ -754,6 +756,10 @@ function syncInkLocationMap() {
     title: text("inkLocationTitle"),
     message: text("inkLocationMessage"),
   });
+  const landedName = inkLocationCard?.dataset.landedName || "";
+  if (landedName) {
+    setInkLocationName(inkLocationCard, landedName, currentLanguage);
+  }
 }
 
 function supportChoiceDetailFor(choiceId) {
@@ -1216,7 +1222,7 @@ async function chooseAvailableDemoSupporterCode(button) {
     supporterPasscode.dispatchEvent(new Event("input", { bubbles: true }));
     setSupporterCommentHelp(wasFallback ? SUPPORTER_DEMO_CODE_FULL : SUPPORTER_DEMO_CODE_READY, wasFallback ? "checking" : "success");
     if (supporterComment && !supporterComment.value.trim()) {
-      supporterComment.focus();
+      supporterComment.focus({ preventScroll: true });
     }
   } catch (error) {
     console.info("[supporter-passcode] demo code allocation failed:", error);
@@ -1275,12 +1281,12 @@ async function publishOptionalSupporterComment(displayName = "") {
 
   if (!/^\d{4}$/.test(input.code)) {
     setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
-    supporterPasscode.focus();
+    supporterPasscode.focus({ preventScroll: true });
     return false;
   }
   if (!input.comment || isInappropriateName(input.comment)) {
     setSupporterCommentHelp(SUPPORTER_COMMENT_ERROR, "error");
-    supporterComment.focus();
+    supporterComment.focus({ preventScroll: true });
     return false;
   }
 
@@ -1288,7 +1294,7 @@ async function publishOptionalSupporterComment(displayName = "") {
   const verification = await verifySupporterPasscode(input.code);
   if (!verification.ok) {
     setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
-    supporterPasscode.focus();
+    supporterPasscode.focus({ preventScroll: true });
     return false;
   }
 
@@ -1337,7 +1343,7 @@ async function validateTypedDisplayName() {
     if (isInappropriateName(typed)) {
       setNicknameHelp(NAME_BLOCKED_MESSAGE, "error");
       nickname.setAttribute("aria-invalid", "true");
-      nickname.focus();
+      nickname.focus({ preventScroll: true });
       return { ok: false, reason: "blocked" };
     }
     nickname.removeAttribute("aria-invalid");
@@ -1350,7 +1356,7 @@ async function validateTypedDisplayName() {
   if (!result.allowed) {
     setNicknameHelp(NAME_BLOCKED_MESSAGE, "error");
     nickname.setAttribute("aria-invalid", "true");
-    nickname.focus();
+    nickname.focus({ preventScroll: true });
     return { ok: false, reason: result.reason ?? "blocked" };
   }
 
@@ -1769,6 +1775,8 @@ function prepareColorMembrane() {
 function showStep(index) {
   const previousStepIndex = currentStep;
   const isReturningToCount = index === 1 && previousStepIndex > 1;
+  const hadTextInputFocus = document.activeElement instanceof HTMLInputElement ||
+    document.activeElement instanceof HTMLTextAreaElement;
   syncColorMembraneFullscreen(index);
   if (viewport) {
     viewport.scrollTop = 0;
@@ -1822,6 +1830,10 @@ function showStep(index) {
   };
   resetStepScroll();
   requestAnimationFrame(resetStepScroll);
+  if (hadTextInputFocus) {
+    // iOS Safari updates the visual viewport after the keyboard finishes closing.
+    window.setTimeout(resetStepScroll, 360);
+  }
 
   // 体験の最終ステップ（参加証/シェア）に到達したら、アンケートフォームへ自動遷移する。
   // 遷移は body[data-post-flow-form] が設定されたフロー（Men/Women）でのみ有効。
@@ -2656,7 +2668,7 @@ async function announceDonorName() {
     setNicknameHelp(text("namePublishError"), "error");
     setInkLocationStatus(inkLocationCard, "error", currentLanguage);
     nickname.setAttribute("aria-invalid", "true");
-    nickname.focus();
+    nickname.focus({ preventScroll: true });
     return false;
   }
 
@@ -4252,7 +4264,7 @@ async function setupSavedNameChoice() {
     nickname.value = "";
     syncPreviewName();
     choice.hidden = true;
-    nickname.focus();
+    nickname.focus({ preventScroll: true });
   });
 }
 
@@ -4266,9 +4278,24 @@ async function submitThrownName({ skipColorMembrane = false, triggerButton = cre
   if (isLiveShowcaseDemo && triggerButton) triggerButton.textContent = text("sending");
   setNameChecking(true);
   try {
-    const canCreate = await announceDonorName();
+    const canCreate = skipColorMembrane
+      ? await announceDonorName()
+      : (await validateTypedDisplayName()).ok;
     if (!canCreate) {
       return false;
+    }
+    const landedName = nickname.value.trim();
+    if (landedName) {
+      const landingDelay = prefersReducedMotion ? 0 : 520;
+      if (landingDelay) {
+        await new Promise((resolve) => window.setTimeout(resolve, landingDelay));
+      }
+      setInkLocationName(inkLocationCard, landedName, currentLanguage);
+      setInkLocationStatus(inkLocationCard, "sent", currentLanguage);
+      inkLocationCard?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "center" });
+      if (!prefersReducedMotion) {
+        await new Promise((resolve) => window.setTimeout(resolve, 680));
+      }
     }
     // The in-card launch already directs the participant toward the DOOH.
     // Keep the phone on the certificate flow instead of covering it with a
@@ -4428,6 +4455,14 @@ subscribeToParticipantCount((count) => {
 window.addEventListener("pageshow", (event) => {
   if (!event.persisted) {
     return;
+  }
+
+  const restoredName = nickname?.value.trim() || getSavedDisplayName({
+    storageKey: participationStorageOptions.displayNameStorageKey,
+  });
+  if (restoredName) {
+    setInkLocationName(inkLocationCard, restoredName, currentLanguage);
+    nameThrowCard?.update();
   }
 
   if (currentStep === 1 && hasCountedParticipation) {

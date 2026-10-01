@@ -1,9 +1,27 @@
 <!doctype html>
 <html lang="ja">
     <head>
+        <script>
+            document.documentElement.classList.add("supporter-route-booting");
+        </script>
+        <style>
+            /* The supporter route starts at step 03. Prevent step 01 from
+               flashing while the shared application module initializes. */
+            html.supporter-route-booting .step {
+                display: none !important;
+            }
+
+            html.supporter-route-booting .step[data-step="2"] {
+                display: block !important;
+            }
+        </style>
+        <link
+            rel="modulepreload"
+            href="web/participant-flow.js?v=20260722-certificate-focus-top-1"
+        />
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>新宿DOOH クラファン支援者参加体験</title>
+        <title>彩宿 クラファン支援者参加体験</title>
         <script>
             (() => {
                 if (location.protocol !== "file:") {
@@ -84,7 +102,7 @@
         <link rel="stylesheet" href="web/theme.css" />
         <link
             rel="stylesheet"
-            href="web/participant-flow.css?v=20260721-color-language-1"
+            href="web/participant-flow.css?v=20260722-pre-swipe-mono-1"
         />
         <link
             rel="stylesheet"
@@ -110,7 +128,7 @@
         <link rel="stylesheet" href="web/color-membrane-flow.css?v=20260720-fullscreen-1" />
         <link rel="stylesheet" href="web/name-entry-refined.css?v=20260721-i18n-1" />
         <link rel="stylesheet" href="web/mobile-fit.css?v=20260721-inline-certificate-actions-1" />
-        <link rel="stylesheet" href="web/color-return-ui-prototype.css?v=20260721-neutral-swipe-1" />
+        <link rel="stylesheet" href="web/color-return-ui-prototype.css?v=20260722-ticket-contrast-1" />
         <link rel="stylesheet" href="web/ink-location-map.css?v=20260716-1" />
     </head>
     <body class="color-return-ui is-initial-swipe" data-flow-mode="supporter">
@@ -130,7 +148,7 @@
             <span>horizontal_rule</span>
         </div>
 
-        <header class="sparkle-appbar" aria-label="新宿DOOH 参加体験">
+        <header class="sparkle-appbar" aria-label="彩宿 参加体験">
             <div class="sparkle-brand">
                 <img
                     class="brand-logo"
@@ -140,7 +158,7 @@
                     width="30"
                     height="30"
                 />
-                <strong>新宿DOOH</strong>
+                <strong>彩宿</strong>
             </div>
             <a class="appbar-about-link" href="/about" data-about-link>
                 この企画について
@@ -190,10 +208,10 @@
                     >
                         <span class="step-count">01</span>
                         <h2 id="swipeTitle">
-                            あなたのスワイプで、<br /><span class="title-color-word">新宿を応援</span>
+                            <span class="title-lead-line">あなたのスワイプで、</span><span class="title-color-word">新宿を応援</span>
                         </h2>
                         <p class="funding-note">
-                            日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。
+                            1スワイプで、100円分の応援を新宿へ。
                         </p>
                         <div
                             class="donation-preview sparkle-total"
@@ -247,7 +265,7 @@
                     >
                         <span class="step-count">02</span>
                         <h2 id="thanksTitle">ありがとうございます！</h2>
-                        <p>あなたの参加で、新宿に静かな光が重なりました。</p>
+                        <p>あなたのスワイプが、新宿にひとつの彩りを加えました。</p>
                         <div class="counter-box" id="counterBox">
                             <span>支援先へ届ける金額</span>
                             <strong
@@ -428,13 +446,18 @@
                                     for="supporterComment"
                                 >
                                     <span>一言コメント</span>
-                                    <textarea
-                                        id="supporterComment"
-                                        maxlength="40"
-                                        rows="2"
-                                        placeholder="例：新宿が、誰かの居場所であり続けますように"
-                                        aria-describedby="supporterCommentHelp"
-                                    ></textarea>
+                                    <span class="form-control supporter-comment-control">
+                                        <input
+                                            class="input input-alt"
+                                            id="supporterComment"
+                                            type="text"
+                                            maxlength="40"
+                                            required
+                                            placeholder="例：新宿が、誰かの居場所であり続けますように"
+                                            aria-describedby="supporterCommentHelp"
+                                        />
+                                        <span class="input-border input-border-alt" aria-hidden="true"></span>
+                                    </span>
                                 </label>
                             </div>
                             <p
@@ -477,7 +500,7 @@
                             class="color-membrane-frame"
                             id="colorMembraneFrame"
                             title="名前の彩りを街へ届ける"
-                            data-src="/dooh-light-membrane-integrated-study.html?v=20260721-i18n-1"
+                            data-src="/dooh-bow-city-restore-native-study.html?v=20260722-production-8"
                             allow="vibrate"
                         ></iframe>
                     </section>
@@ -1122,7 +1145,11 @@
 
         <script
             type="module"
-            src="web/participant-flow.js?v=20260721-color-language-1"
+          src="web/participant-flow.js?v=20260722-certificate-focus-top-1"
         ></script>
+        <script type="module">
+            document.getElementById("supporterFastTrack")?.click();
+            document.documentElement.classList.remove("supporter-route-booting");
+        </script>
     </body>
 </html>

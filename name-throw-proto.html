@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>名前を投げる — プロトタイプ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@500&family=Shippori+Mincho:wght@500&family=DotGothic16&family=Yusei+Magic&display=swap" rel="stylesheet" />
+<style>
+    :root {
+        --night: #0b0b0e;
+        --night-2: #101017;
+        --paper: #f7f6f3;
+        --ink-text: #1c1c1e;
+        --muted-on-night: rgba(255, 255, 255, 0.56);
+        --faint-on-night: rgba(255, 255, 255, 0.34);
+        --card-radius: 26px;
+        --font-sans: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+        height: 100%;
+        background: var(--paper);
+        font-family: var(--font-sans);
+        color: var(--ink-text);
+        overflow: hidden;
+    }
+
+    .phone {
+        max-width: 430px;
+        margin: 0 auto;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+        gap: 14px;
+    }
+
+    /* ---- 上部：フローの続きにいることを示す最小限の文脈 ---- */
+    .context {
+        padding: 4px 6px 0;
+    }
+    .context .kicker {
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        color: #9a978f;
+        font-weight: 500;
+    }
+    .context h1 {
+        margin-top: 6px;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    /* ---- 夜の切れ端カード ---- */
+    .night-stage {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        position: relative;
+    }
+
+    .night-card {
+        flex: 1;
+        min-height: 0;
+        background:
+            radial-gradient(120% 90% at 50% 108%, rgba(255, 196, 130, 0.10), transparent 55%),
+            radial-gradient(90% 60% at 18% -10%, rgba(150, 180, 255, 0.06), transparent 60%),
+            linear-gradient(180deg, var(--night-2), var(--night) 55%);
+        border-radius: var(--card-radius);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 24px 60px rgba(12, 12, 20, 0.35);
+        display: flex;
+        flex-direction: column;
+        padding: 22px 20px 16px;
+        position: relative;
+        overflow: hidden;
+        touch-action: pan-x;
+        will-change: transform;
+        cursor: grab;
+    }
+    .night-card.is-dragging { cursor: grabbing; transition: none; }
+    .night-card.is-return { transition: transform 420ms cubic-bezier(0.22, 1.4, 0.36, 1); }
+    .night-card.is-thrown {
+        transition: transform 720ms cubic-bezier(0.5, -0.05, 0.75, 0.4), opacity 720ms ease;
+        transform: translateY(-130vh) rotate(-7deg) scale(0.92) !important;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* 街のノイズ（微細な窓明かり） */
+    .night-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+            radial-gradient(1.5px 1.5px at 12% 78%, rgba(255,220,170,0.35), transparent 100%),
+            radial-gradient(1px 1px at 30% 88%, rgba(255,255,255,0.22), transparent 100%),
+            radial-gradient(1.5px 1.5px at 55% 82%, rgba(255,210,160,0.28), transparent 100%),
+            radial-gradient(1px 1px at 72% 90%, rgba(255,255,255,0.18), transparent 100%),
+            radial-gradient(1.5px 1.5px at 88% 79%, rgba(255,225,180,0.30), transparent 100%),
+            radial-gradient(1px 1px at 44% 92%, rgba(255,255,255,0.15), transparent 100%);
+        pointer-events: none;
+    }
+
+    .night-card .card-kicker {
+        font-size: 10px;
+        letter-spacing: 0.34em;
+        color: var(--faint-on-night);
+        font-weight: 500;
+    }
+    .night-card h2 {
+        margin-top: 8px;
+        font-size: 19px;
+        font-weight: 600;
+        color: #fff;
+        letter-spacing: 0.03em;
+        line-height: 1.4;
+        min-height: 2.8em;
+        transition: opacity 300ms ease;
+    }
+    .night-card h2 small {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--muted-on-night);
+        letter-spacing: 0.05em;
+    }
+
+    /* ---- シルエット＋名前 ---- */
+    .figure-zone {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 6px 0 2px;
+    }
+
+    .ink-figure {
+        width: min(64%, 240px);
+        aspect-ratio: 1 / 1;
+        position: relative;
+        -webkit-mask: var(--shape-url) center / contain no-repeat;
+        mask: var(--shape-url) center / contain no-repeat;
+        background:
+            radial-gradient(60% 46% at 50% 40%, rgba(255, 232, 200, 0.98), rgba(255, 214, 170, 0.85) 46%, rgba(214, 186, 156, 0.55) 72%, rgba(120, 110, 104, 0.35) 100%),
+            #14141a;
+        animation: breathe 4.2s ease-in-out infinite;
+    }
+    @keyframes breathe {
+        0%, 100% { transform: scale(1); filter: brightness(1); }
+        50%      { transform: scale(1.018); filter: brightness(1.07); }
+    }
+
+    /* シルエットの外周のにじみ */
+    .ink-halo {
+        position: absolute;
+        width: min(64%, 240px);
+        aspect-ratio: 1 / 1;
+        -webkit-mask: var(--shape-url) center / contain no-repeat;
+        mask: var(--shape-url) center / contain no-repeat;
+        background: #000;
+        filter: blur(14px);
+        opacity: 0.55;
+        transform: scale(1.06);
+        pointer-events: none;
+    }
+
+    .name-on-ink {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 2;
+    }
+    .name-text {
+        color: #fff;
+        font-size: clamp(24px, 8vw, 34px);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-shadow: 0 0 18px rgba(255, 244, 220, 0.55), 0 2px 10px rgba(0, 0, 0, 0.65);
+        max-width: 88%;
+        overflow-wrap: anywhere;
+        text-align: center;
+        line-height: 1.25;
+        min-height: 1.25em;
+    }
+    .name-text .honorific {
+        font-size: 0.5em;
+        font-weight: 400;
+        color: var(--muted-on-night);
+        margin-left: 0.15em;
+    }
+    .name-caret {
+        display: inline-block;
+        width: 2px;
+        height: 1em;
+        background: rgba(255, 255, 255, 0.85);
+        vertical-align: -0.12em;
+        margin-left: 3px;
+        animation: caret-blink 1.1s steps(1) infinite;
+    }
+    @keyframes caret-blink { 50% { opacity: 0; } }
+    .name-hint {
+        margin-top: 22px;
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.72);
+        text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85), 0 0 3px rgba(0, 0, 0, 0.6);
+        transition: opacity 240ms ease;
+    }
+    .figure-zone.has-name .name-hint { opacity: 0; }
+
+    /* 実入力（IME用）：視覚的には見せず、タップ時にJSからフォーカスする。
+       pointer-events を切ることで、同じ領域の上方向ドラッグ（投げる）と共存させる */
+    .real-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        border: none;
+        background: transparent;
+        color: transparent;
+        caret-color: transparent;
+        font-size: 16px; /* iOSのフォーカスズーム回避 */
+        text-align: center;
+        z-index: 3;
+        pointer-events: none;
+    }
+
+    /* ---- フォント選択（墨の粒） ---- */
+    .font-row {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        padding: 4px 0 12px;
+    }
+    .font-chip {
+        min-width: 52px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 13px;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+    }
+    .font-chip[aria-pressed="true"] {
+        border-color: rgba(255, 240, 214, 0.9);
+        background: rgba(255, 240, 214, 0.12);
+        color: #fff;
+    }
+    .font-chip[data-font="noto"]    { font-family: "Noto Sans JP", sans-serif; }
+    .font-chip[data-font="rounded"] { font-family: "M PLUS Rounded 1c", sans-serif; }
+    .font-chip[data-font="mincho"]  { font-family: "Shippori Mincho", serif; }
+    .font-chip[data-font="dot"]     { font-family: "DotGothic16", monospace; }
+    .font-chip[data-font="yusei"]   { font-family: "Yusei Magic", sans-serif; }
+
+    .name-text[data-font="noto"]    { font-family: "Noto Sans JP", sans-serif; }
+    .name-text[data-font="rounded"] { font-family: "M PLUS Rounded 1c", sans-serif; }
+    .name-text[data-font="mincho"]  { font-family: "Shippori Mincho", serif; font-weight: 500; }
+    .name-text[data-font="dot"]     { font-family: "DotGothic16", monospace; font-weight: 400; }
+    .name-text[data-font="yusei"]   { font-family: "Yusei Magic", sans-serif; font-weight: 400; }
+
+    /* ---- 投げる導線 ---- */
+    .throw-cue {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding-bottom: 4px;
+        color: var(--muted-on-night);
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        user-select: none;
+    }
+    .chevrons {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        line-height: 0.62;
+        margin-bottom: 6px;
+    }
+    .chevrons span {
+        font-size: 15px;
+        color: rgba(255, 240, 214, 0.9);
+        animation: rise 1.8s ease-in-out infinite;
+    }
+    .chevrons span:nth-child(1) { animation-delay: 0.30s; opacity: 0.35; }
+    .chevrons span:nth-child(2) { animation-delay: 0.15s; opacity: 0.6; }
+    .chevrons span:nth-child(3) { animation-delay: 0s;    opacity: 0.95; }
+    @keyframes rise {
+        0%, 100% { transform: translateY(0); }
+        50%      { transform: translateY(-4px); }
+    }
+
+    /* ---- カードの外：静かな脱出口 ---- */
+    .quiet-row {
+        display: flex;
+        justify-content: center;
+        gap: 26px;
+        padding: 2px 0 0;
+    }
+    .quiet-row button {
+        appearance: none;
+        border: none;
+        background: none;
+        font-family: inherit;
+        font-size: 13px;
+        color: #8a877e;
+        letter-spacing: 0.08em;
+        padding: 10px 6px;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-decoration-color: rgba(138, 135, 126, 0.4);
+    }
+
+    /* ---- 投げた後：注入 → 見上げキュー ---- */
+    .after {
+        position: fixed;
+        inset: 0;
+        background: var(--night);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        color: #fff;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 500ms ease;
+        z-index: 10;
+        text-align: center;
+        padding: 24px;
+    }
+    .after.is-visible { opacity: 1; pointer-events: auto; }
+
+    .after .pouring, .after .lookup { display: none; }
+    .after[data-phase="pouring"] .pouring { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .after[data-phase="lookup"]  .lookup  { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+    .pour-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: #fff;
+        animation: pour 1s ease-in-out infinite;
+    }
+    @keyframes pour {
+        0%   { transform: translateY(-14px) scale(0.7); opacity: 0; }
+        45%  { transform: translateY(0) scale(1); opacity: 1; }
+        100% { transform: translateY(12px) scaleX(1.5) scaleY(0.4); opacity: 0; }
+    }
+    .after p.status {
+        font-size: 14px;
+        letter-spacing: 0.14em;
+        color: var(--muted-on-night);
+    }
+
+    .lookup .up-arrow {
+        font-size: 44px;
+        line-height: 1;
+        animation: rise 1.4s ease-in-out infinite;
+        color: rgba(255, 240, 214, 0.95);
+    }
+    .lookup h2 {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+    }
+    .lookup p {
+        font-size: 14px;
+        color: var(--muted-on-night);
+        letter-spacing: 0.08em;
+    }
+    .lookup .lookup-name {
+        margin-top: 8px;
+        font-size: 18px;
+        color: #fff;
+        text-shadow: 0 0 16px rgba(255, 244, 220, 0.5);
+    }
+
+    /* デバッグ */
+    .debug {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 20;
+        display: flex;
+        gap: 6px;
+    }
+    .debug button {
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #fff;
+        cursor: pointer;
+        color: #666;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ink-figure, .chevrons span, .lookup .up-arrow, .name-caret { animation: none; }
+        .night-card.is-thrown { transition-duration: 200ms; }
+    }
+</style>
+</head>
+<body>
+<div class="phone">
+    <header class="context">
+        <p class="kicker">SHINJUKU COLOR SUPPORTER</p>
+        <h1>着弾しました</h1>
+    </header>
+
+    <section class="night-stage">
+        <div class="night-card" id="card">
+            <p class="card-kicker">YOUR COLOR — WINDOW No.<span id="windowNo">7</span></p>
+            <h2 id="cardTitle">この彩は、まだ名無しです<small>名前を入れると、大画面のこの彩が名乗ります（任意）</small></h2>
+
+            <div class="figure-zone" id="figureZone">
+                <div class="ink-halo" id="inkHalo"></div>
+                <div class="ink-figure" id="inkFigure"></div>
+                <div class="name-on-ink">
+                    <p class="name-text" id="nameText" data-font="noto"><span class="name-caret" id="nameCaret"></span></p>
+                    <p class="name-hint" id="nameHint">タップして名前を入れる</p>
+                </div>
+                <input class="real-input" id="realInput" type="text" maxlength="12"
+                       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                       aria-label="表示名（任意）" enterkeyhint="done" />
+            </div>
+
+            <div class="font-row" id="fontRow" role="group" aria-label="名前の見た目">
+                <button class="font-chip" data-font="noto" aria-pressed="true">標準</button>
+                <button class="font-chip" data-font="rounded" aria-pressed="false">まる</button>
+                <button class="font-chip" data-font="mincho" aria-pressed="false">明朝</button>
+                <button class="font-chip" data-font="dot" aria-pressed="false">ドット</button>
+                <button class="font-chip" data-font="yusei" aria-pressed="false">マジック</button>
+            </div>
+
+            <div class="throw-cue" aria-hidden="true">
+                <div class="chevrons"><span>︿</span><span>︿</span><span>︿</span></div>
+                <p id="throwLabel">上へスワイプで、新宿に投げる</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="quiet-row">
+        <button id="throwBtn">投げる</button>
+        <button id="watchBtn">名前は入れずに見守る</button>
+    </div>
+</div>
+
+<div class="after" id="after" data-phase="pouring" aria-live="polite">
+    <div class="pouring">
+        <div class="pour-dot"></div>
+        <p class="status">インクに名前を注いでいます…</p>
+    </div>
+    <div class="lookup">
+        <div class="up-arrow">↑</div>
+        <h2>上を見て</h2>
+        <p>あなたの彩が名乗ります</p>
+        <p class="lookup-name" id="lookupName"></p>
+    </div>
+</div>
+
+<div class="debug">
+    <button id="shapeBtn">形を変える</button>
+    <button id="resetBtn">リセット</button>
+</div>
+
+<script>
+(() => {
+    const card = document.getElementById("card");
+    const figureZone = document.getElementById("figureZone");
+    const inkFigure = document.getElementById("inkFigure");
+    const inkHalo = document.getElementById("inkHalo");
+    const realInput = document.getElementById("realInput");
+    const nameText = document.getElementById("nameText");
+    const nameCaret = document.getElementById("nameCaret");
+    const cardTitle = document.getElementById("cardTitle");
+    const after = document.getElementById("after");
+    const lookupName = document.getElementById("lookupName");
+    const windowNo = document.getElementById("windowNo");
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* ---- シルエット素材（本番は表示側の窓と対応させる） ---- */
+    let shapeIndex = 2;
+    function applyShape() {
+        const url = `url("assets/ink-people/shape-0${shapeIndex + 1}-core.png")`;
+        inkFigure.style.setProperty("--shape-url", url);
+        inkHalo.style.setProperty("--shape-url", url);
+        windowNo.textContent = String(shapeIndex + 1);
+    }
+    applyShape();
+
+    /* ---- 名前ミラー（IMEは実inputに任せ、表示だけ乗せる） ---- */
+    function renderName() {
+        const value = realInput.value;
+        nameText.textContent = "";
+        if (value) {
+            nameText.append(value);
+            const hon = document.createElement("span");
+            hon.className = "honorific";
+            hon.textContent = "さん";
+            nameText.appendChild(hon);
+        }
+        nameText.appendChild(nameCaret);
+        figureZone.classList.toggle("has-name", Boolean(value));
+        cardTitle.firstChild.textContent = value
+            ? "上へ投げて、新宿に名乗る"
+            : "この彩は、まだ名無しです";
+    }
+    realInput.addEventListener("input", renderName);
+    realInput.addEventListener("focus", () => nameCaret.style.display = "inline-block");
+    realInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") realInput.blur();
+    });
+    renderName();
+
+    /* ---- フォント選択 ---- */
+    document.getElementById("fontRow").addEventListener("click", (e) => {
+        const chip = e.target.closest(".font-chip");
+        if (!chip) return;
+        document.querySelectorAll(".font-chip").forEach((c) =>
+            c.setAttribute("aria-pressed", String(c === chip)));
+        nameText.dataset.font = chip.dataset.font;
+        realInput.focus({ preventScroll: true });
+    });
+
+    /* ---- 投げジェスチャ ---- */
+    const THROW_DISTANCE = 90;    // px
+    const THROW_VELOCITY = 0.55;  // px/ms
+    let dragging = false;
+    let startY = 0;
+    let lastY = 0;
+    let lastT = 0;
+    let velocity = 0;
+    let thrown = false;
+    let dragMoved = false;
+
+    function onDown(e) {
+        if (thrown) return;
+        if (e.target.closest(".font-chip")) return;
+        dragMoved = false;
+        dragging = true;
+        startY = lastY = e.clientY;
+        lastT = performance.now();
+        velocity = 0;
+        card.classList.add("is-dragging");
+        card.classList.remove("is-return");
+        card.setPointerCapture?.(e.pointerId);
+    }
+    function onMove(e) {
+        if (!dragging) return;
+        const now = performance.now();
+        const dy = e.clientY - lastY;
+        const dt = Math.max(1, now - lastT);
+        velocity = velocity * 0.7 + (-dy / dt) * 0.3;
+        lastY = e.clientY;
+        lastT = now;
+        if (Math.abs(e.clientY - startY) > 6) dragMoved = true;
+        const offset = Math.min(0, e.clientY - startY);
+        const damped = offset * 0.85;
+        card.style.transform = `translateY(${damped}px) rotate(${damped * 0.012}deg)`;
+    }
+    function onUp(e) {
+        if (!dragging) return;
+        dragging = false;
+        card.classList.remove("is-dragging");
+        const pulled = startY - e.clientY;
+        if (pulled > THROW_DISTANCE || velocity > THROW_VELOCITY) {
+            throwCard();
+        } else {
+            card.classList.add("is-return");
+            card.style.transform = "";
+        }
+    }
+    card.addEventListener("pointerdown", onDown);
+    card.addEventListener("pointermove", onMove);
+    card.addEventListener("pointerup", onUp);
+    card.addEventListener("pointercancel", onUp);
+
+    /* タップ（ドラッグでない）で入力へフォーカス。iOSのIME起動はユーザー操作内でのfocusが必須 */
+    figureZone.addEventListener("pointerup", () => {
+        if (!dragMoved && !thrown) realInput.focus({ preventScroll: true });
+    });
+
+    /* ---- 投げる → 注入 → 見上げ ---- */
+    function throwCard() {
+        if (thrown) return;
+        thrown = true;
+        realInput.blur();
+        card.classList.add("is-thrown");
+
+        const name = realInput.value.trim();
+        lookupName.textContent = name ? `${name}さん` : "";
+
+        const throwMs = prefersReducedMotion ? 200 : 620;
+        window.setTimeout(() => {
+            after.dataset.phase = "pouring";
+            after.classList.add("is-visible");
+            // 本番: ここで publishNameAnnouncement を await する。
+            // ackが返ってから "lookup" に進む（返るまで pouring のまま）。
+            window.setTimeout(() => { after.dataset.phase = "lookup"; }, 900);
+        }, throwMs);
+    }
+    document.getElementById("throwBtn").addEventListener("click", throwCard);
+    document.getElementById("watchBtn").addEventListener("click", () => {
+        realInput.value = "";
+        renderName();
+        throwCard();
+    });
+
+    /* ---- デバッグ ---- */
+    document.getElementById("shapeBtn").addEventListener("click", () => {
+        shapeIndex = (shapeIndex + 1) % 8;
+        applyShape();
+    });
+    document.getElementById("resetBtn").addEventListener("click", () => {
+        thrown = false;
+        after.classList.remove("is-visible");
+        after.dataset.phase = "pouring";
+        card.classList.remove("is-thrown", "is-return");
+        card.style.transform = "";
+        realInput.value = "";
+        renderName();
+    });
+})();
+</script>
+</body>
+</html>

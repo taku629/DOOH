@@ -165,6 +165,24 @@ export async function resetParticipantCount(options = {}) {
     });
 }
 
+// Clear event-generated data for one channel while preserving displayConfig,
+// playlists, Firebase configuration, and the ranking implementation itself.
+export async function resetEventData(options = {}) {
+    const { database } = await requireAdminContext();
+    const channel = normalizeChannel(options.channel);
+    const participationPath = getParticipationPath(channel);
+
+    await update(ref(database), {
+        [`${participationPath}/participantCount`]: 0,
+        [`${participationPath}/lastCelebratedCount`]: 0,
+        [`${participationPath}/swipes`]: null,
+        [`${participationPath}/dailyParticipants`]: null,
+        [`${participationPath}/participantHistory`]: null,
+        [`nameShouts/${channel}`]: null,
+        [`supporterComments/${channel}`]: null,
+    });
+}
+
 export async function subscribeToParticipantCount(callback, options = {}) {
     const database = await ensureDatabase();
     if (!database) {

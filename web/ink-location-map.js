@@ -17,7 +17,7 @@ export function renderInkLocationMap(root, swipeCount, options = {}) {
   if (!silhouette) {
     silhouette = document.createElement("div");
     silhouette.className = "ink-window-silhouette";
-    silhouette.setAttribute("aria-hidden", "true");
+    silhouette.innerHTML = `<span class="ink-window-target-name" data-ink-location-name></span>`;
     root.prepend(silhouette);
   }
   silhouette.dataset.windowShape = String(index);
@@ -28,6 +28,17 @@ export function renderInkLocationMap(root, swipeCount, options = {}) {
   root.querySelector("[data-ink-location-message]").textContent = options.message || (language === "en" ? "Your name and color will travel to the city on the next screen." : "名前は次の画面で、あなたの彩りと一緒に街へ届きます。");
 }
 
+export function setInkLocationName(root, name, language = "ja") {
+  if (!root) return;
+  const resolvedName = String(name || "").trim().slice(0, 20);
+  const targetName = root.querySelector("[data-ink-location-name]");
+  if (!targetName) return;
+  targetName.textContent = resolvedName;
+  targetName.setAttribute("lang", language === "en" ? "en" : "ja");
+  root.classList.toggle("has-landed-name", Boolean(resolvedName));
+  root.dataset.landedName = resolvedName;
+}
+
 export function setInkLocationStatus(root, status, language = "ja") {
   if (!root || root.hidden) return;
   const message = root.querySelector("[data-ink-location-message]");
@@ -36,7 +47,7 @@ export function setInkLocationStatus(root, status, language = "ja") {
   if (status === "sending") {
     message.textContent = language === "en" ? "Creating your certificate…" : "参加証を作成しています…";
   } else if (status === "sent") {
-    message.textContent = language === "en" ? "Certificate created. Continue to the color experience." : "参加証を作成しました。次の彩りの体験へ進みます。";
+    message.textContent = language === "en" ? "Your name appeared in the color window." : "彩りの窓にあなたの名前が表示されました。";
   } else if (status === "error") {
     message.textContent = language === "en" ? "We could not add your name. Please try again." : "名前を追加できませんでした。もう一度お試しください";
   }

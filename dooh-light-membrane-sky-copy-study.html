@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Light Membrane — Sky Copy Study</title>
+  <style>
+    html,body,iframe{width:100%;height:100%;margin:0;border:0;overflow:hidden;background:#f8f8f5}
+    iframe{display:block}
+  </style>
+</head>
+<body>
+  <iframe id="study" src="dooh-light-membrane-resonance-study.html?v=12" title="Light Membrane Sky Copy Study"></iframe>
+  <script>
+    const study = document.querySelector("#study");
+    const installSkyCopy = () => {
+      const resonanceDoc = study.contentDocument;
+      const innerFrame = resonanceDoc?.querySelector("iframe");
+      const doc = innerFrame?.contentDocument;
+      if (!doc?.querySelector("#message") || doc.readyState !== "complete" || doc.querySelector("#sky-copy-override")) return;
+
+      const style = doc.createElement("style");
+      style.id = "sky-copy-override";
+      style.textContent = `
+        .copy {
+          top:12.5% !important;
+          padding:0 26px;
+          transform:none;
+        }
+        .copy strong {
+          color:#17231f;
+          font-size:18px !important;
+          font-weight:600;
+          line-height:1.5;
+          letter-spacing:.08em;
+          -webkit-text-stroke:.2px rgba(255,255,255,.72);
+          text-shadow:0 1px 8px rgba(255,255,255,.92);
+        }
+        .copy span {
+          color:rgba(23,35,31,.76);
+          font-size:12px !important;
+          font-weight:500;
+          line-height:1.55;
+          letter-spacing:.06em;
+          text-shadow:0 1px 7px rgba(255,255,255,.95);
+        }
+        .copy .color-word {
+          color:#a93f58 !important;
+          display:inline !important;
+          font-size:1em !important;
+          font-weight:700 !important;
+          letter-spacing:inherit !important;
+          -webkit-text-stroke:0;
+          text-shadow:0 0 5px rgba(var(--gold),.28);
+        }
+        .phone.ready .copy strong { font-size:18px !important; }
+        .phone.launching .copy,.phone.arrived .copy { top:12.5% !important; }
+      `;
+      doc.head.appendChild(style);
+    };
+    study.addEventListener("load",installSkyCopy);
+    window.setInterval(installSkyCopy,120);
+  </script>
+</body>
+</html>

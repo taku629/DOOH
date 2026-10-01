@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { getDonationMilestoneVideo, getDonationTotalYen } from "../../src/condition-manager.js";
 import {
   publishDisplayPlaylist,
-  resetParticipantCount,
+  resetEventData,
   signInAdmin,
   signOutAdmin,
   subscribeToAdminAuth,
@@ -320,15 +320,20 @@ function AdminApp() {
 
   const resetCount = useCallback(async () => {
     const label = getChannelLabel(channel);
-    if (!window.confirm(`${label} の参加数を0にしますか？`)) {
+    if (!window.confirm(
+      `${label} の参加データを空にします。\n\n` +
+      "削除: 参加数、スワイプ履歴、日別参加、ランキング履歴、名前、コメント\n" +
+      "保持: 画面、動画、プレイリスト、表示設定、ランキング機能\n\n" +
+      "この操作は元に戻せません。実行しますか？"
+    )) {
       return;
     }
 
     try {
-      await resetParticipantCount({ channel });
-      showStatus("参加数を0にしました。", "success");
+      await resetEventData({ channel });
+      showStatus("参加データを空にしました。画面とランキング機能は保持されています。", "success");
     } catch (error) {
-      showStatus(error.message || "参加数のリセットに失敗しました。", "error");
+      showStatus(error.message || "参加データの初期化に失敗しました。", "error");
     }
   }, [channel, showStatus]);
 
@@ -616,7 +621,7 @@ function AdminApp() {
                 className: "danger-button",
                 disabled: !user,
                 onClick: resetCount,
-              }, "参加数を0にする"),
+              }, "参加データを空にする"),
             ),
             h("textarea", { rows: 8, readOnly: true, value: exportOutput }),
             h(StatusMessage, { status }),

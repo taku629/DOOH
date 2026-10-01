@@ -33,7 +33,10 @@
 }
 
 .ink-window-silhouette {
-  display: none !important;
+  display: grid !important;
+  width: min(160px, 62%) !important;
+  justify-self: center !important;
+  margin: 2px auto 4px !important;
 }
 
 .ink-location-copy {

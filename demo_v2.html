@@ -453,7 +453,8 @@
             filter: sepia(0.12) saturate(1.12) brightness(1.02) contrast(1.04);
         }
 
-        .idle-layer {
+        .idle-layer,
+        .idle-intro-layer {
             position: absolute;
             inset: 0;
             width: 100%;
@@ -466,7 +467,8 @@
             transition: opacity 900ms ease;
         }
 
-        .idle-layer.is-visible {
+        .idle-layer.is-visible,
+        .idle-intro-layer.is-visible {
             opacity: 1;
         }
 
@@ -1505,7 +1507,7 @@
 
         const idleLayer = document.createElement("video");
         idleLayer.className = "idle-layer";
-        idleLayer.src = "assets/video/yellow-idle.mp4";
+        idleLayer.src = "assets/video/yellow-idle-clean.mp4?v=20260722-idle-clean-1";
         idleLayer.muted = true;
         idleLayer.loop = false;
         idleLayer.playsInline = true;
@@ -2425,8 +2427,8 @@
             try {
                 idleLayer.currentTime = 0;
             } catch {}
-            idleLayer.classList.add("is-visible");
             idleLayer.onended = finishIdleVideo;
+            idleLayer.classList.add("is-visible");
             playVideoSafely(idleLayer, { restartEnded: true });
             window.setTimeout(() => {
                 if (idleVideoActive && idleLayer.paused) {

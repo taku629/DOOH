@@ -1,0 +1,204 @@
+Exit code: 0
+Wall time: 2.3 seconds
+Output:
+Exit code: 0
+Wall time: 3.2 seconds
+Output:
+Exit code: 0
+Wall time: 2.5 seconds
+Output:
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>新宿DOOH — City Canyon Study</title>
+  <style>
+    :root {
+      font-family: "Helvetica Neue","Hiragino Sans","Yu Gothic",sans-serif;
+      color: #242825;
+      --p: 0px;
+      --c: 0;
+      --blue: 76,132,202;
+      --violet: 132,91,185;
+      --coral: 226,100,78;
+      --gold: 231,173,73;
+    }
+    * { box-sizing: border-box; }
+    html,body { min-height:100%; margin:0; overscroll-behavior:none; }
+    body {
+      display:grid; min-height:100svh; place-items:center; padding:16px; overflow:hidden;
+      background:radial-gradient(circle at 20% 16%,#fff,transparent 32%),linear-gradient(135deg,#eeede8,#f8f7f3 55%,#e9e8e2);
+    }
+    .phone {
+      position:relative; width:min(100%,430px); height:min(890px,calc(100svh - 32px)); min-height:640px;
+      overflow:hidden; border:1px solid rgba(28,33,30,.11); border-radius:clamp(30px,8vw,44px);
+      background:#fbfbf9; box-shadow:0 38px 100px rgba(30,35,32,.15); isolation:isolate;
+      user-select:none; touch-action:none;
+    }
+    .phone::before {
+      position:absolute; inset:0; z-index:-1; content:""; opacity:calc(var(--c)*.27);
+      background:radial-gradient(ellipse at 48% 69%,rgba(var(--blue),.35),transparent 24%),
+      radial-gradient(ellipse at 55% 66%,rgba(var(--coral),.3),transparent 27%); transition:opacity .3s;
+    }
+    .grain { position:absolute; inset:0; z-index:20; opacity:.017; pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+    .city-canyon { position:absolute; z-index:-1; right:-5%; bottom:-3%; left:-5%; height:67%; overflow:hidden; pointer-events:none; opacity:calc(.18 + var(--c)*.15); mask-image:linear-gradient(to bottom,transparent 0,#000 24%,#000 82%,transparent 100%); }
+    .city-canyon img { width:100%; height:100%; object-fit:cover; object-position:center bottom; filter:grayscale(calc(1 - var(--c))) contrast(1.08) brightness(1.48) saturate(calc(.35 + var(--c)*.65)); transform:scale(1.06); transition:filter .35s ease; }
+    .city-canyon::after { position:absolute; inset:0; content:""; background:linear-gradient(90deg,rgba(251,251,249,.18),transparent 22% 78%,rgba(251,251,249,.18)),radial-gradient(ellipse at 50% 49%,rgba(251,251,249,.94),transparent 26%); }
+    header { position:absolute; z-index:8; top:24px; right:23px; left:23px; display:flex; justify-content:space-between; align-items:center; font-size:9px; letter-spacing:.18em; }
+    .brand,.live { display:flex; align-items:center; gap:9px; }
+    .brand { font-weight:700; }
+    .brand i { width:15px; height:15px; border:1px solid #252927; border-radius:50%; }
+    .live { color:#7d827f; }
+    .live i { width:5px; height:5px; border-radius:50%; background:#879985; box-shadow:0 0 0 4px rgba(135,153,133,.1); }
+    .portal { position:absolute; z-index:12; top:0; right:0; left:0; height:19px; overflow:hidden; pointer-events:none; }
+    .portal::before { position:absolute; top:0; left:50%; width:54px; height:1px; content:""; background:rgba(41,46,43,.18); transform:translateX(-50%); transition:.4s; }
+    .portal::after { position:absolute; top:-5px; left:50%; width:12px; height:13px; border-radius:50%; content:""; opacity:0; background:#fff; filter:blur(5px); transform:translateX(-50%); }
+    .link { position:absolute; z-index:5; top:77px; right:0; left:0; text-align:center; color:#989c99; font-size:8px; letter-spacing:.18em; }
+    .link::before { display:inline-block; width:26px; height:1px; margin:0 10px 3px 0; content:""; background:#d5d7d4; }
+    .link::after { display:inline-block; width:26px; height:1px; margin:0 0 3px 10px; content:""; background:#d5d7d4; }
+    .axis { position:absolute; top:95px; bottom:225px; left:50%; width:1px; background:linear-gradient(#d9dbd8,rgba(217,219,216,.25),transparent); }
+    .axis i { position:absolute; top:31%; left:50%; width:7px; height:7px; border:1px solid #d7d9d6; border-radius:50%; background:#fbfbf9; transform:translate(-50%,-50%); }
+    .copy { position:absolute; z-index:6; top:43%; right:0; left:0; text-align:center; pointer-events:none; }
+    .copy strong { display:block; font-size:12px; font-weight:600; letter-spacing:.1em; }
+    .copy span { display:block; margin-top:8px; color:#9b9f9c; font-size:8px; letter-spacing:.12em; }
+    .interaction { position:absolute; z-index:10; right:0; bottom:0; left:0; height:350px; cursor:grab; touch-action:none; }
+    .draw-meter { position:absolute; z-index:3; top:61px; left:26px; color:#9a9e9b; font-size:7px; letter-spacing:.12em; pointer-events:none; }
+    .draw-meter::before { display:block; width:1px; height:116px; margin:7px 0 7px 7px; content:""; background:linear-gradient(to top,rgba(var(--coral),calc(var(--c)*.65)),rgba(var(--gold),calc(var(--c)*.4)) calc(var(--c)*100%),#dfe1de calc(var(--c)*100%)); }
+    .trajectory { position:absolute; z-index:2; top:-285px; bottom:224px; left:50%; width:34px; opacity:calc(.04 + var(--c)*.55); transform:translateX(-50%); pointer-events:none; background:repeating-linear-gradient(to top,transparent 0 18px,rgba(55,60,57,.28) 18px 20px,transparent 20px 38px); mask-image:linear-gradient(to top,#000,transparent); }
+    .aura { position:absolute; z-index:1; top:8px; left:50%; width:300px; height:230px; opacity:calc(var(--c)*.72); transform:translateX(-50%); pointer-events:none; }
+    .aura i { position:absolute; inset:34px 26px; border:1px solid rgba(var(--blue),.22); border-radius:50%; transform:scale(calc(.68 + var(--c)*.32)); }
+    .aura i:nth-child(2) { inset:18px 8px; border-color:rgba(var(--violet),.18); transform:scale(calc(.58 + var(--c)*.42)); }
+    .aura i:nth-child(3) { inset:0 -18px; border-color:rgba(var(--coral),.15); transform:scale(calc(.48 + var(--c)*.52)); }
+    .release-wave { position:absolute; z-index:6; top:112px; left:50%; width:60px; height:60px; border:1px solid rgba(var(--gold),.65); border-radius:50%; opacity:0; transform:translate(-50%,-50%); pointer-events:none; }
+    .bow { position:absolute; top:78px; left:50%; width:352px; height:230px; overflow:visible; transform:translateX(-50%); filter:drop-shadow(0 8px 8px rgba(35,40,37,.07)); }
+    .limb-shadow { fill:none; stroke:rgba(48,53,50,.1); stroke-width:9; }
+    .limb { fill:none; stroke:#383d3a; stroke-width:2.3; stroke-linecap:round; }
+    .limb-color { fill:none; stroke:url(#bowColor); stroke-width:2.6; stroke-linecap:round; opacity:var(--c); }
+    .string { fill:none; stroke:rgba(38,43,40,.67); stroke-width:1; }
+    .nock { fill:#fbfbf9; stroke:#343936; stroke-width:1; }
+    .arrow {
+      position:absolute; z-index:4; top:5px; left:50%; width:66px; height:222px;
+      transform:translate(-50%,var(--p)); transform-origin:50% 18px; pointer-events:none;
+    }
+    .shaft { position:absolute; top:15px; bottom:19px; left:50%; width:1px; background:linear-gradient(#656a67,#252a27); }
+    .arrowhead { position:absolute; top:0; left:50%; width:11px; height:17px; background:#303532; clip-path:polygon(50% 0,100% 100%,50% 72%,0 100%); transform:translateX(-50%); }
+    .arrowhead::after { position:absolute; inset:-7px; border-radius:50%; content:""; opacity:var(--c); background:radial-gradient(circle,rgba(var(--gold),.7),transparent 68%); filter:blur(4px); }
+    .fletching { position:absolute; bottom:13px; left:50%; width:18px; height:25px; transform:translateX(-50%); }
+    .fletching::before,.fletching::after { position:absolute; bottom:0; width:9px; height:22px; content:""; opacity:calc(.28 + var(--c)*.72); }
+    .fletching::before { right:9px; background:rgba(var(--blue),.8); clip-path:polygon(100% 0,100% 100%,0 72%); }
+    .fletching::after { left:9px; background:rgba(var(--coral),.8); clip-path:polygon(0 0,100% 72%,0 100%); }
+    .name {
+      position:absolute; top:66px; left:50%; width:158px; height:72px; border:1px solid rgba(39,44,41,.18);
+      border-radius:50%; background:rgba(255,255,253,.97); box-shadow:0 12px 28px rgba(39,44,41,.12),inset 0 0 0 5px rgba(39,44,41,.025);
+      color:#282d2a; transform:translate(-50%,var(--p)); z-index:5; touch-action:none;
+    }
+    .name strong { display:block; font-size:19px; font-weight:500; letter-spacing:.16em; }
+    .name small { display:block; margin-top:5px; color:#969a97; font-size:7px; letter-spacing:.18em; }
+    .halo { position:absolute; inset:-8px; z-index:-1; border-radius:50%; opacity:var(--c); filter:blur(5px); background:conic-gradient(from 215deg,rgba(var(--blue),.8),rgba(var(--violet),.65),rgba(var(--coral),.8),rgba(var(--gold),.75),transparent 82%); }
+    .guide { position:absolute; right:0; bottom:27px; left:0; text-align:center; pointer-events:none; }
+    .guide strong { display:block; font-size:12px; font-weight:600; letter-spacing:.08em; }
+    .guide span { display:block; margin-top:7px; color:#9a9e9b; font-size:8px; letter-spacing:.12em; }
+    .phone.ready .portal::before { width:120px; background:linear-gradient(90deg,rgba(var(--blue),.3),rgba(var(--coral),.55),rgba(var(--gold),.3)); box-shadow:0 0 12px rgba(var(--coral),.2); }
+    .phone.ready .name { border-color:rgba(var(--gold),.52); }
+    .phone.ready .aura i { box-shadow:0 0 24px rgba(var(--coral),.08),inset 0 0 22px rgba(var(--blue),.05); animation:breathe 1.05s ease-in-out infinite alternate; }
+    .phone.tension-pop { animation:tensionPop .16s ease-out; }
+    .phone.launching .arrow,.phone.launching .name { animation:shoot .92s cubic-bezier(.18,.74,.14,1) forwards; }
+    .phone.launching .bow { animation:recoil .65s cubic-bezier(.15,.7,.25,1); }
+    .phone.launching .trajectory { animation:flightTrace .92s ease-out forwards; }
+    .phone.launching .release-wave { animation:releaseWave .72s cubic-bezier(.12,.68,.2,1) forwards; }
+    .phone.launching { animation:bodyKick .46s cubic-bezier(.18,.7,.2,1); }
+    .phone.arrived .portal::before { animation:boundary 1.05s cubic-bezier(.2,.72,.2,1); }
+    .phone.arrived .portal::after { animation:impact 1.05s ease-out; }
+    .phone.arrived::after { position:absolute; z-index:6; top:-80px; right:-20%; left:-20%; height:230px; content:""; pointer-events:none; background:radial-gradient(ellipse at 50% 0,rgba(var(--gold),.2),rgba(var(--coral),.1) 30%,rgba(var(--blue),.05) 48%,transparent 70%); animation:glow 1.3s ease-out forwards; }
+    .phone.arrived { box-shadow:0 38px 100px rgba(30,35,32,.15),0 0 54px rgba(var(--gold),.25); }
+    .phone.arrived .axis { animation:axisFlash .9s ease-out; }
+    @keyframes shoot { 0%{transform:translate(-50%,var(--p));opacity:1} 15%{transform:translate(-50%,calc(var(--p) + 12px)) scaleY(.96)} 100%{transform:translate(-50%,-650px) scale(.42,1.15);opacity:0} }
+    @keyframes recoil { 30%{transform:translateX(-50%) scaleX(.95) scaleY(1.04)} 100%{transform:translateX(-50%)} }
+    @keyframes flightTrace { 20%{opacity:1;filter:brightness(1.6)} 100%{opacity:0;transform:translateX(-50%) translateY(-300px) scaleX(.16)} }
+    @keyframes breathe { to{transform:scale(1.045);opacity:.62} }
+    @keyframes tensionPop { 45%{filter:brightness(1.035);transform:scale(.997)} }
+    @keyframes bodyKick { 18%{transform:translateY(3px)} 43%{transform:translateY(-2px)} 100%{transform:none} }
+    @keyframes releaseWave { 0%{opacity:0;transform:translate(-50%,-50%) scale(.3)} 22%{opacity:1} 100%{opacity:0;transform:translate(-50%,-50%) scale(6.8);border-color:rgba(var(--coral),.05)} }
+    @keyframes axisFlash { 28%{width:2px;background:linear-gradient(#fff,rgba(var(--gold),.8),rgba(var(--coral),.24),transparent);filter:drop-shadow(0 0 8px rgba(var(--gold),.7))} }
+    @keyframes boundary { 0%{width:7px;background:#fff} 35%{width:100%;height:3px;background:linear-gradient(90deg,rgba(var(--blue),.75),#fff,rgba(var(--coral),.8));box-shadow:0 0 25px rgba(var(--gold),.75)} 100%{width:82%;height:1px;background:rgba(var(--gold),.3)} }
+    @keyframes impact { 0%{opacity:0;transform:translateX(-50%) scale(.2)} 28%{opacity:1;transform:translateX(-50%) scale(8,1.6)} 100%{opacity:0;transform:translateX(-50%) scale(16,.4)} }
+    @keyframes glow { 0%{opacity:0;transform:scaleY(.3)} 32%{opacity:1;transform:scaleY(1)} 100%{opacity:0;transform:scaleY(1.15)} }
+    @media(max-height:720px){.interaction{height:300px}.bow{top:55px}.name{top:43px}.arrow{top:-18px}.guide{bottom:18px}.copy{top:41%}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+  <main class="phone" id="phone">
+    <div class="grain"></div><div class="portal"></div>
+    <div class="city-canyon" aria-hidden="true"><img src="assets/blender/shinjuku-light-canyon-preview.png" alt=""></div>
+    <header><div class="brand"><i></i><span>新宿 DOOH</span></div><div class="live"><i></i><span>LIVE LINK</span></div></header>
+    <div class="link" id="link">新宿DOOHと接続中</div>
+    <div class="axis"><i></i></div>
+    <div class="copy"><strong id="message">名前を、光の矢に。</strong><span id="sub">下へ引くと新宿との接続が深まります</span></div>
+    <section class="interaction" id="interaction" aria-label="名前の矢を引いて送信">
+      <div class="draw-meter">DRAW<br><span id="drawValue">00</span></div>
+      <div class="trajectory" aria-hidden="true"></div>
+      <div class="aura" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="release-wave" aria-hidden="true"></div>
+      <svg class="bow" viewBox="0 0 352 230" aria-hidden="true">
+        <defs><linearGradient id="bowColor"><stop stop-color="rgb(76,132,202)"/><stop offset=".48" stop-color="rgb(132,91,185)"/><stop offset=".76" stop-color="rgb(226,100,78)"/><stop offset="1" stop-color="rgb(231,173,73)"/></linearGradient></defs>
+        <path class="limb-shadow" id="limbShadow" d="M10 50 Q78 69 176 18 Q274 69 342 50"/>
+        <path class="limb" id="limb" d="M10 50 Q78 69 176 18 Q274 69 342 50"/>
+        <path class="limb-color" id="limbColor" d="M10 50 Q78 69 176 18 Q274 69 342 50"/>
+        <path class="string" id="leftString" d="M10 50 L176 96"/><path class="string" id="rightString" d="M342 50 L176 96"/>
+        <circle class="nock" id="nock" cx="176" cy="96" r="3"/>
+      </svg>
+      <div class="arrow" aria-hidden="true"><i class="arrowhead"></i><i class="shaft"></i><i class="fletching"></i></div>
+      <button class="name" id="token" type="button" aria-label="さくらの矢を下へ引いて新宿DOOHへ送る"><i class="halo"></i><strong>さくら</strong><small>PARTICIPANT 024</small></button>
+      <div class="guide"><strong id="guide">矢を下へ引いて、離す</strong><span id="guideSub">深く引くと送信できます</span></div>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const $ = s => document.querySelector(s), phone=$("#phone"), area=$("#interaction"), token=$("#token");
+      const left=$("#leftString"), right=$("#rightString"), nock=$("#nock"), limb=$("#limb"), limbShadow=$("#limbShadow"), limbColor=$("#limbColor");
+      const message=$("#message"), sub=$("#sub"), guide=$("#guide"), guideSub=$("#guideSub"), link=$("#link"), drawValue=$("#drawValue");
+      let id=null,startY=0,pull=0,target=0,shown=0,launching=false,lastHaptic=0,readyBuzzed=false; const readyAt=76,max=118;
+      const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+      const vibrate=pattern=>navigator.vibrate?.(pattern);
+      function pulse(){
+        phone.classList.remove("tension-pop");
+        void phone.offsetWidth;
+        phone.classList.add("tension-pop");
+        setTimeout(()=>phone.classList.remove("tension-pop"),180);
+      }
+      function frame(){
+        shown+=(target-shown)*(id===null?.17:.34); if(Math.abs(target-shown)<.05)shown=target;
+        const c=clamp(shown/readyAt,0,1), y=96+shown, bend=18+shown*.12;
+        phone.style.setProperty("--p",`${shown.toFixed(2)}px`); phone.style.setProperty("--c",c.toFixed(3));
+        drawValue.textContent=String(Math.round(c*100)).padStart(2,"0");
+        left.setAttribute("d",`M10 50 L176 ${y}`); right.setAttribute("d",`M342 50 L176 ${y}`); nock.setAttribute("cy",y);
+        const d=`M10 50 Q72 ${74+bend*.22} 176 ${bend} Q280 ${74+bend*.22} 342 50`;
+        limb.setAttribute("d",d); limbShadow.setAttribute("d",d); limbColor.setAttribute("d",d); requestAnimationFrame(frame);
+      }
+      function copy(c,ready){
+        if(ready){message.textContent="新宿へ放つ準備ができました。";sub.textContent="指を離してください";guide.textContent="READY — 離して送る";guideSub.textContent="FULL DRAW / DOOH LINK";}
+        else if(c>.08){message.textContent="弦の力が、街への光になる。";sub.textContent=`接続強度 ${Math.round(c*100)}%`;guide.textContent="そのまま、深く";guideSub.textContent="矢に彩りを込めています";}
+        else{message.textContent="名前を、光の矢に。";sub.textContent="下へ引くと新宿との接続が深まります";guide.textContent="矢を下へ引いて、離す";guideSub.textContent="深く引くと送信できます";}
+      }
+      function down(e){if(launching||id!==null||(e.pointerType==="mouse"&&e.button!==0))return;e.preventDefault();id=e.pointerId;startY=e.clientY;pull=0;lastHaptic=0;readyBuzzed=false;vibrate(8);area.setPointerCapture?.(id)}
+      function move(e){if(e.pointerId!==id||launching)return;e.preventDefault();pull=max*(1-Math.exp(-Math.max(0,e.clientY-startY)/96));target=pull;const c=clamp(pull/readyAt,0,1),ready=pull>=readyAt,step=Math.min(3,Math.floor(c*4));phone.classList.toggle("ready",ready);copy(c,ready);
+        if(step>lastHaptic&&!ready){lastHaptic=step;vibrate(7+step*3);pulse()}
+        if(ready&&!readyBuzzed){readyBuzzed=true;vibrate([18,28,26]);pulse()}
+        if(!ready)readyBuzzed=false}
+      function up(e){if(e.pointerId!==id||launching)return;area.releasePointerCapture?.(id);id=null;pull>=readyAt?launch():reset()}
+      function reset(){target=0;pull=0;lastHaptic=0;readyBuzzed=false;phone.classList.remove("ready","tension-pop");copy(0,false)}
+      function launch(){launching=true;phone.classList.add("launching");message.textContent="光の矢が、新宿へ。";sub.textContent="LIVE UPLINK";guide.textContent="送信しています";guideSub.textContent="SHINJUKU DOOH";vibrate([28,22,48,18,30]);
+        setTimeout(()=>{phone.classList.add("arrived");vibrate([36,26,72]);link.textContent="さくらさんの彩りが、新宿へ";message.textContent="新宿DOOHに届きました";sub.textContent="あなたの名前が、街の光になります"},760);
+        setTimeout(()=>{phone.classList.remove("launching","ready");target=shown=pull=0},1120);
+        setTimeout(()=>{phone.classList.remove("arrived");link.textContent="新宿DOOHと接続中";launching=false;reset()},2700)}
+      area.addEventListener("pointerdown",down);area.addEventListener("pointermove",move,{passive:false});area.addEventListener("pointerup",up);area.addEventListener("pointercancel",up);requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
+
+
+

@@ -1222,7 +1222,7 @@ body.is-youtube-locked .slider-thumb {
   border: 1px solid rgba(21, 25, 25, 0.14);
   border-radius: 999px;
   background: rgba(244, 245, 244, 0.88);
-  color: rgba(21, 25, 25, 0.52);
+  color: rgba(21, 25, 25, 0.7);
   font: inherit;
   text-decoration: none;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 8px 18px rgba(21, 25, 25, 0.08);
@@ -1245,6 +1245,8 @@ body.is-youtube-locked .slider-thumb {
 }
 
 .language-toggle__option {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -1262,17 +1264,23 @@ body.is-youtube-locked .slider-thumb {
   font-size: 0.55rem;
   font-weight: 900;
   letter-spacing: 0.08em;
-  opacity: 0.62;
+  opacity: 0.88;
 }
 
 .language-toggle[data-language="ja"] [data-language-option="ja"],
 .language-toggle[data-language="en"] [data-language-option="en"] {
   color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
+}
+
+.language-toggle[data-language="ja"] [data-language-option="ja"] small,
+.language-toggle[data-language="en"] [data-language-option="en"] small {
+  opacity: 1;
 }
 
 .language-toggle__wash {
   position: absolute;
-  z-index: 2;
+  z-index: 0;
   inset: -70% -25%;
   pointer-events: none;
   opacity: 0;
@@ -1289,8 +1297,8 @@ body.is-youtube-locked .slider-thumb {
 /* The language control follows the experience: monochrome before participation,
    then the selected side retains the same spectrum as the color-return screens. */
 .has-color-participation .language-toggle__thumb {
-  background: linear-gradient(120deg, #087e69 4%, #29a78e 31%, #e0bd36 57%, #ea623c 78%, #6752d9 100%);
-  box-shadow: 0 6px 15px rgba(40, 133, 116, 0.23);
+  background: linear-gradient(120deg, #075f50 4%, #167a69 31%, #9a7811 57%, #b54227 78%, #4934a9 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 6px 15px rgba(40, 95, 86, 0.28);
 }
 
 .language-toggle:active {
@@ -2248,4 +2256,278 @@ body.is-youtube-locked .slider-thumb {
 .ink-link-note span {
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+/* クラファン支援者の一言コメント入力 ------------------------------- */
+
+.supporter-comment-control.form-control {
+  --border-height: 1px;
+  --border-before-color: rgba(21, 25, 25, 0.22);
+  --border-after-color: #47c9ff;
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.supporter-comment-control .input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8em 1em;
+  border: 0;
+  border-bottom: var(--border-height) solid var(--border-before-color);
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--ink, #151919);
+  font: inherit;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.supporter-comment-control .input::placeholder {
+  color: currentColor;
+  opacity: 0.48;
+}
+
+.supporter-comment-control .input:focus {
+  outline: none;
+}
+
+.supporter-comment-control .input-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff6464 0%, #ffbf59 50%, #47c9ff 100%);
+  pointer-events: none;
+  transition: width 0.4s cubic-bezier(0.42, 0, 0.58, 1);
+}
+
+.supporter-comment-control .input:focus + .input-border {
+  width: 100%;
+}
+
+/* Color-project progress cards --------------------------------------- */
+
+.milestone-preview,
+.counter-box.is-participant-goal {
+  --color-project-coral: #ff5f6d;
+  --color-project-orange: #ff9f43;
+  --color-project-violet: #8b5cf6;
+  --color-project-blue: #35bff2;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.86) !important;
+  background:
+    radial-gradient(circle at 7% 8%, rgba(255, 159, 67, 0.2), transparent 31%),
+    radial-gradient(circle at 94% 10%, rgba(139, 92, 246, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 248, 249, 0.88)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 95, 109, 0.1),
+    0 14px 36px rgba(96, 58, 79, 0.1) !important;
+}
+
+.milestone-preview {
+  position: relative;
+  overflow: hidden;
+  padding: 13px 16px 14px;
+}
+
+.milestone-preview::before,
+.counter-box.is-participant-goal::before {
+  position: absolute;
+  z-index: -1;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(53, 191, 242, 0.25), rgba(139, 92, 246, 0.18));
+  filter: blur(22px);
+  content: "";
+  pointer-events: none;
+}
+
+.milestone-preview::before {
+  right: -44px;
+  bottom: -68px;
+}
+
+.milestone-preview > span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 95, 109, 0.12), rgba(255, 159, 67, 0.14)) !important;
+  color: #c84054 !important;
+}
+
+.milestone-preview strong {
+  background: linear-gradient(100deg, #17191a 0%, #d9485f 58%, #7c4dd8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.milestone-progress {
+  height: 7px;
+  margin-top: 6px;
+  background: rgba(35, 27, 39, 0.09);
+  box-shadow: inset 0 1px 2px rgba(28, 20, 34, 0.1);
+}
+
+.milestone-progress span {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, var(--color-project-coral), var(--color-project-orange) 42%, var(--color-project-violet) 74%, var(--color-project-blue)) !important;
+  box-shadow: 0 0 12px rgba(255, 95, 109, 0.3);
+}
+
+.milestone-progress span::after,
+.counter-box.is-participant-goal small::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 25%, rgba(255, 255, 255, 0.72) 48%, transparent 72%);
+  content: "";
+  transform: translateX(-120%);
+  animation: colorProjectShimmer 3.8s ease-in-out infinite;
+}
+
+.counter-box.is-participant-goal {
+  padding: 26px 24px;
+}
+
+.counter-box.is-participant-goal::before {
+  left: -42px;
+  bottom: -54px;
+}
+
+.counter-box.is-participant-goal::after {
+  background:
+    radial-gradient(circle, rgba(255, 95, 109, 0.18), transparent 48%),
+    radial-gradient(circle at 66% 42%, rgba(255, 159, 67, 0.14), transparent 58%);
+  opacity: 1;
+  transform: scale(1);
+}
+
+.counter-box.is-participant-goal > span {
+  color: #9b5360;
+  font-weight: 700;
+}
+
+.counter-box.is-participant-goal #counterValue {
+  background-color: transparent !important;
+  background-image: linear-gradient(115deg, #16191a 5%, #d8445c 48%, #8b4fd2 78%, #248eb9 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  filter: drop-shadow(0 8px 14px rgba(140, 70, 105, 0.12));
+}
+
+.counter-box.is-participant-goal .unit {
+  color: #7d4055 !important;
+}
+
+.counter-box.is-participant-goal em {
+  border: 1px solid rgba(204, 76, 93, 0.42);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 22px rgba(196, 74, 96, 0.1);
+  color: #c34b5e;
+  backdrop-filter: blur(8px);
+}
+
+.counter-box.is-participant-goal small {
+  position: relative;
+  z-index: 1;
+}
+
+.counter-box.is-participant-goal small::before {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-project-coral) 0%,
+      var(--color-project-orange) 38%,
+      var(--color-project-violet) var(--counter-goal-progress, 0%),
+      rgba(43, 35, 48, 0.1) var(--counter-goal-progress, 0%),
+      rgba(43, 35, 48, 0.1) 100%
+    ) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(30, 22, 34, 0.05),
+    0 4px 12px rgba(220, 75, 97, 0.16);
+}
+
+.counter-box.is-participant-goal small::after {
+  top: 0;
+  right: 0;
+  bottom: auto;
+  height: 11px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+@keyframes colorProjectShimmer {
+  0%, 58% {
+    transform: translateX(-120%);
+  }
+  82%, 100% {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .milestone-progress span::after,
+  .counter-box.is-participant-goal small::after {
+    animation: none;
+  }
+}
+
+/* Keep the short Japanese thank-you heading on one clean line. */
+
+html:lang(ja) #thanksTitle {
+  max-width: 100%;
+  font-size: clamp(1.9rem, 8.2vw, 2.35rem);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+/* Keep the invitation neutral until the visitor completes the first swipe. */
+body:not(.has-color-participation) .milestone-preview,
+body:not(.has-color-participation) .counter-box.is-participant-goal {
+  --color-project-coral: #858c89;
+  --color-project-orange: #9aa09d;
+  --color-project-violet: #747b78;
+  --color-project-blue: #a8aeab;
+  border-color: rgba(46, 53, 50, 0.14) !important;
+  background: linear-gradient(145deg, #fafaf8 0%, #eff1ef 100%) !important;
+  box-shadow: 0 12px 32px rgba(31, 38, 35, 0.08) !important;
+}
+
+body:not(.has-color-participation) .milestone-preview::before,
+body:not(.has-color-participation) .counter-box.is-participant-goal::before {
+  opacity: 0.08 !important;
+  filter: grayscale(1) !important;
+}
+
+body:not(.has-color-participation) .milestone-preview > span {
+  color: rgba(31, 37, 34, 0.66) !important;
+  background: rgba(31, 37, 34, 0.06) !important;
+}
+
+body:not(.has-color-participation) .milestone-preview strong,
+body:not(.has-color-participation) .counter-box.is-participant-goal #counterValue {
+  color: #252a28 !important;
+  background: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  filter: none !important;
+}
+
+body:not(.has-color-participation) .milestone-progress {
+  background: rgba(45, 52, 49, 0.12) !important;
+}
+
+body:not(.has-color-participation) .milestone-progress span,
+body:not(.has-color-participation) .counter-box.is-participant-goal small::before {
+  background: #8b928f !important;
+  box-shadow: none !important;
+}
+
+body:not(.has-color-participation) .milestone-progress span::after {
+  display: none !important;
 }

@@ -74,6 +74,14 @@ html:not([data-theme="morning"]) .color-return-ui .step[data-step="0"] > h2 {
   letter-spacing: -0.07em;
 }
 
+html:not([data-theme="morning"]) .color-return-ui .title-lead-line {
+  display: block;
+  font-size: clamp(1.5rem, 7vw, 2.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.075em;
+  white-space: nowrap;
+}
+
 html:not([data-theme="morning"]) .color-return-ui .title-color-word {
   position: relative;
   display: inline-block;
@@ -556,6 +564,113 @@ html:not([data-theme="morning"]) body.color-return-ui.is-initial-swipe {
     radial-gradient(circle at 18% 12%, rgba(111, 121, 124, 0.1), transparent 34%),
     radial-gradient(circle at 82% 78%, rgba(172, 177, 176, 0.1), transparent 38%),
     linear-gradient(180deg, #fbfbfa 0%, #f2f3f2 56%, #e9ebea 100%);
+}
+
+/* /join の入口では、既存の all テーマが持つ緑を出さない。 */
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui {
+  --bg: #f7f7f6;
+  --bg-soft: rgba(255, 255, 255, 0.78);
+  --surface: rgba(255, 255, 255, 0.88);
+  --ink: #171919;
+  --ink-secondary: #4f5453;
+  --ink-tertiary: rgba(79, 84, 83, 0.68);
+  --separator: rgba(21, 25, 25, 0.1);
+  --hairline: rgba(21, 25, 25, 0.16);
+  --accent: #555b5a;
+  --accent-strong: #252928;
+  --gold: #8b8f8e;
+  --blue: #848989;
+  --sparkle-pink: #6f7473;
+  --sparkle-pink-soft: #eceeed;
+  --sparkle-mint: #c9cccb;
+  --sparkle-lilac: #aeb2b1;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(111, 121, 124, 0.08), transparent 34%),
+    radial-gradient(circle at 82% 78%, rgba(172, 177, 176, 0.08), transparent 38%),
+    linear-gradient(180deg, #ffffff 0%, #f7f8f7 56%, #eff1f0 100%);
+}
+
+/* 共通入口はスワイプ後も、緑系の旧 all テーマへ戻さない。 */
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui .sparkle-pattern,
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui .sparkle-particles {
+  filter: grayscale(1);
+}
+
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui .sparkle-pattern {
+  opacity: 0.2;
+}
+
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui .sparkle-particles {
+  opacity: 0.1;
+}
+
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui .viewport {
+  border-color: rgba(21, 25, 25, 0.15);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 245, 244, 0.97));
+}
+
+/* スワイプ後は白地を保ちながら、「彩」の多色をUIへ戻す。 */
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui.has-color-participation {
+  background:
+    radial-gradient(circle at 8% 20%, rgba(228, 86, 82, 0.12), transparent 28rem),
+    radial-gradient(circle at 92% 16%, rgba(91, 143, 181, 0.13), transparent 26rem),
+    radial-gradient(circle at 18% 88%, rgba(130, 173, 115, 0.11), transparent 24rem),
+    linear-gradient(180deg, #ffffff 0%, #f8f8f7 100%);
+}
+
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui.has-color-participation .sparkle-pattern {
+  background:
+    linear-gradient(135deg, transparent 0 46%, rgba(228, 86, 82, 0.13) 46% 47%, transparent 47% 100%),
+    linear-gradient(45deg, transparent 0 52%, rgba(91, 143, 181, 0.13) 52% 53%, transparent 53% 100%);
+  filter: none;
+  opacity: 0.34;
+}
+
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui.has-color-participation .milestone-preview {
+  border: 1px solid rgba(91, 143, 181, 0.24);
+  background:
+    linear-gradient(120deg, rgba(228, 86, 82, 0.08), rgba(239, 165, 72, 0.06) 36%, rgba(130, 173, 115, 0.07) 64%, rgba(91, 143, 181, 0.09)),
+    rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 30px rgba(91, 143, 181, 0.1), inset 0 1px 0 #fff;
+}
+
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui.has-color-participation .milestone-preview > span {
+  color: transparent;
+  background: linear-gradient(90deg, var(--return-red), var(--return-orange), var(--return-green), var(--return-blue), var(--return-violet));
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+/* スワイプ後は参加人数にも「彩」を戻す */
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui.has-color-participation #counterValue,
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui.has-color-participation .counter-box .unit {
+  color: transparent;
+  background: linear-gradient(90deg, var(--return-red), var(--return-orange), var(--return-green), var(--return-blue), var(--return-violet));
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui.has-color-participation .milestone-progress {
+  background: rgba(91, 143, 181, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(91, 143, 181, 0.14);
+}
+
+html[data-experience="all"]:not([data-theme="morning"])
+  body.color-return-ui.has-color-participation .milestone-progress span {
+  background: linear-gradient(90deg, var(--return-red), var(--return-orange), var(--return-green), var(--return-blue), var(--return-violet));
 }
 
 html:not([data-theme="morning"]) body.color-return-ui.is-initial-swipe .sparkle-pattern {
@@ -1049,4 +1164,29 @@ html:not([data-theme="morning"]) .color-return-ui #finalCard.has-color-ticket::a
   .color-return-ui .color-ticket-issuer::after {
     animation: none !important;
   }
+}
+/* Founding-supporter keepsake rules must not wash out the pastel ticket face. */
+.color-return-ui #finalCard.has-color-ticket.is-founding-supporter .color-ticket-front header p {
+  color: #34302a !important;
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-shadow: none !important;
+}
+
+.color-return-ui #finalCard.has-color-ticket.is-founding-supporter .color-ticket-front h3 {
+  color: #151919 !important;
+  font-weight: 900;
+  text-shadow: none !important;
+}
+
+.color-return-ui #finalCard.has-color-ticket.is-founding-supporter .color-ticket-amount {
+  color: #202523 !important;
+  font-weight: 800;
+  text-shadow: none !important;
+}
+
+.color-return-ui #finalCard.has-color-ticket.is-founding-supporter .color-ticket-front footer {
+  color: rgba(21, 25, 25, 0.76) !important;
+  font-weight: 700;
+  text-shadow: none !important;
 }

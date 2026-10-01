@@ -14,6 +14,10 @@
             --muted: rgba(255, 255, 255, 0.62);
             --accent: #f06a4f;
             --accent-2: #5eb5d4;
+            /* iPhone 12/13/14 の CSS viewport。枠線はこの外側に足す。 */
+            --phone-viewport-width: 390px;
+            --phone-viewport-height: 844px;
+            --phone-frame-border: 8px;
         }
 
         * { box-sizing: border-box; }
@@ -182,6 +186,53 @@
 
         .dooh-panel .panel-label::before { background: var(--accent); }
 
+        .dooh-tap-layer {
+            position: absolute;
+            z-index: 6;
+            inset: 0;
+            min-height: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 22px;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .dooh-tap-layer:disabled { pointer-events: none; }
+
+        .dooh-tap-guide {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            display: grid;
+            gap: 4px;
+            min-width: 190px;
+            padding: 11px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            border-radius: 16px;
+            background: rgba(7, 9, 10, 0.78);
+            color: #fff;
+            text-align: left;
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(16px);
+            transition: 220ms ease;
+        }
+
+        .dooh-tap-guide strong { font-size: 0.78rem; }
+        .dooh-tap-guide small { color: rgba(255, 255, 255, 0.7); font-size: 0.66rem; }
+
+        .dooh-tap-layer.is-ready .dooh-tap-guide {
+            border-color: rgba(121, 231, 176, 0.62);
+            box-shadow: 0 0 0 4px rgba(121, 231, 176, 0.1), 0 12px 34px rgba(0, 0, 0, 0.28);
+        }
+
+        .dooh-tap-layer.is-busy .dooh-tap-guide { opacity: 0.62; }
+
+        .dooh-tap-layer.is-final .dooh-tap-guide {
+            border-color: rgba(241, 199, 91, 0.72);
+            background: rgba(75, 55, 16, 0.84);
+        }
+
         .frame-viewport {
             position: absolute;
             inset: 0;
@@ -195,10 +246,10 @@
             top: 0;
             left: 0;
             flex: none;
-            width: 430px;
-            height: 860px;
+            width: calc(var(--phone-viewport-width) + var(--phone-frame-border) + var(--phone-frame-border));
+            height: calc(var(--phone-viewport-height) + var(--phone-frame-border) + var(--phone-frame-border));
             overflow: hidden;
-            border: 8px solid #050607;
+            border: var(--phone-frame-border) solid #050607;
             border-radius: 38px;
             background: #fff;
             box-shadow: 0 26px 80px rgba(0, 0, 0, 0.48);
@@ -280,11 +331,15 @@
         }
 
         @media (max-width: 980px) {
-            body { height: auto; min-height: 100vh; overflow: auto; }
+            body { height: auto; min-height: 100dvh; overflow: auto; }
             .toolbar { position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
             .brand { flex: 1 1 100%; }
             .flow-status { margin-right: auto; }
-            .workspace { grid-template-columns: 1fr; grid-template-rows: 76vh 56vw; min-height: 1180px; }
+            .workspace {
+                grid-template-columns: 1fr;
+                grid-template-rows: min(844px, calc(100dvh - 82px)) minmax(220px, 56vw);
+                min-height: 0;
+            }
             .signal { display: none; }
         }
     </style>
@@ -327,6 +382,12 @@
                     <iframe id="doohFrame" title="DOOH画面"></iframe>
                 </div>
             </div>
+            <button class="dooh-tap-layer" id="doohTapLayer" type="button" disabled>
+                <span class="dooh-tap-guide">
+                    <strong id="doohTapTitle">まず左のスマホで一般参加</strong>
+                    <small id="doohTapMeta">参加完了後、ここをタップできます</small>
+                </span>
+            </button>
         </section>
     </main>
 
@@ -345,12 +406,18 @@
         const previewBtn = document.getElementById("previewBtn");
         const fullscreenBtn = document.getElementById("fullscreenBtn");
         const modeDescription = document.getElementById("modeDescription");
+        const doohTapLayer = document.getElementById("doohTapLayer");
+        const doohTapTitle = document.getElementById("doohTapTitle");
+        const doohTapMeta = document.getElementById("doohTapMeta");
         const showcaseParams = new URLSearchParams(location.search);
         const DEV_MODE = showcaseParams.has("dev");
         let signalTimer = null;
         let relightTimer = null;
         let demoVisualCount = 0;
         let latestDemoVisualCount = 0;
+        let showcaseStage = "general";
+        let liveParticipantCount = 0;
+        let supporterSwitchTimer = null;
         const demoVisualCountBySwipeId = new Map();
         previewBtn.hidden = !DEV_MODE;
         liveRandomBtn.hidden = DEV_MODE;
@@ -364,6 +431,52 @@
             flowStatus.classList.toggle("is-active", active);
         }
 
+        function remainingToScene(count) {
+            const safeCount = Math.max(0, Number(count) || 0);
+            const position = safeCount % 18;
+            return position === 0 && safeCount > 0 ? 18 : 18 - position;
+        }
+
+        function syncDoohTapGuide() {
+            const remaining = remainingToScene(liveParticipantCount);
+            doohTapLayer.classList.toggle("is-ready", showcaseStage === "crowd" && !doohTapLayer.disabled);
+            doohTapLayer.classList.toggle("is-final", showcaseStage === "supporter");
+            if (showcaseStage === "general") {
+                doohTapTitle.textContent = "まず左のスマホで一般参加";
+                doohTapMeta.textContent = "参加完了後、ここをタップできます";
+            } else if (showcaseStage === "crowd") {
+                doohTapTitle.textContent = doohTapLayer.disabled ? "参加演出を反映中…" : "DOOHをタップして参加者を追加";
+                doohTapMeta.textContent = `映像切替まであと${remaining}人`;
+            } else {
+                doohTapTitle.textContent = "最後の1人はクラファン参加";
+                doohTapMeta.textContent = "左のスマホから送ると映像が切り替わります";
+            }
+        }
+
+        function loadSupporterFinale() {
+            if (showcaseStage === "supporter") return;
+            showcaseStage = "supporter";
+            doohTapLayer.disabled = true;
+            const supporterUrl = new URL("/supporter", location.origin);
+            supporterUrl.searchParams.set("demo-showcase", "1");
+            supporterUrl.searchParams.set("showcase-final", "1");
+            supporterUrl.searchParams.set("t", Date.now());
+            participantFrame.src = supporterUrl.href;
+            setStatus("残り1人：左のスマホでクラファン参加を送ってください", true);
+            syncDoohTapGuide();
+        }
+
+        function enableDoohCrowdTaps() {
+            if (showcaseStage !== "general") return;
+            showcaseStage = "crowd";
+            doohTapLayer.disabled = false;
+            setStatus("DOOHをタップして、残り1人まで進めてください", true);
+            syncDoohTapGuide();
+            if (remainingToScene(liveParticipantCount) === 1) {
+                supporterSwitchTimer = window.setTimeout(loadSupporterFinale, 1400);
+            }
+        }
+
         function pulseSignal() {
             window.clearTimeout(signalTimer);
             signal.classList.remove("is-active");
@@ -372,14 +485,16 @@
         }
 
         function resizeFrames() {
+            const phoneFrameWidth = phoneShell.offsetWidth;
+            const phoneFrameHeight = phoneShell.offsetHeight;
             const phoneScale = Math.min(
-                (phoneViewport.clientWidth - 26) / 430,
-                (phoneViewport.clientHeight - 26) / 860,
+                (phoneViewport.clientWidth - 26) / phoneFrameWidth,
+                (phoneViewport.clientHeight - 26) / phoneFrameHeight,
                 1
             );
             phoneShell.style.transform = `scale(${Math.max(0.2, phoneScale)})`;
-            phoneShell.style.left = `${Math.max(0, (phoneViewport.clientWidth - 430 * phoneScale) / 2)}px`;
-            phoneShell.style.top = `${Math.max(0, (phoneViewport.clientHeight - 860 * phoneScale) / 2)}px`;
+            phoneShell.style.left = `${Math.max(0, (phoneViewport.clientWidth - phoneFrameWidth * phoneScale) / 2)}px`;
+            phoneShell.style.top = `${Math.max(0, (phoneViewport.clientHeight - phoneFrameHeight * phoneScale) / 2)}px`;
 
             const doohScale = Math.min(
                 (doohViewport.clientWidth - 26) / 1280,
@@ -393,9 +508,13 @@
 
         function loadDemo() {
             window.clearTimeout(relightTimer);
+            window.clearTimeout(supporterSwitchTimer);
             demoVisualCount = 0;
             latestDemoVisualCount = 0;
             demoVisualCountBySwipeId.clear();
+            showcaseStage = "general";
+            doohTapLayer.disabled = true;
+            doohTapLayer.classList.remove("is-busy", "is-ready", "is-final");
             const cacheBust = Date.now();
             const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
             const participantUrl = new URL(
@@ -417,6 +536,7 @@
             doohUrl.searchParams.set("t", cacheBust);
             doohFrame.src = doohUrl.href;
             setStatus("左のスマホでスワイプしてください");
+            syncDoohTapGuide();
         }
 
         function replaySwipe(data) {
@@ -477,7 +597,12 @@
                     replaySwipe(event.data);
                 } else {
                     pulseSignal();
-                    setStatus("本番DBへ送信しました。DOOHにインクを反映中", true);
+                    setStatus(
+                        showcaseStage === "supporter"
+                            ? "最後の1人を受信：DOOHの映像を切り替えています"
+                            : "本番DBへ送信しました。DOOHにインクを反映中",
+                        true
+                    );
                 }
             }
             if (event.data?.type === "dooh-research-card-complete") {
@@ -495,8 +620,45 @@
                             : "参加証を作成しました",
                         true
                     );
+                    if (showcaseStage === "general") {
+                        window.setTimeout(enableDoohCrowdTaps, 900);
+                    }
                 }
             }
+        });
+
+        doohTapLayer.addEventListener("click", () => {
+            if (showcaseStage !== "crowd" || doohTapLayer.disabled) return;
+            doohTapLayer.disabled = true;
+            doohTapLayer.classList.add("is-busy");
+            syncDoohTapGuide();
+            window.dispatchEvent(new CustomEvent("showcase-dooh-tap"));
+        });
+
+        window.addEventListener("showcase-count-update", (event) => {
+            liveParticipantCount = Math.max(0, Number(event.detail?.count) || 0);
+            const remaining = remainingToScene(liveParticipantCount);
+            if (showcaseStage === "crowd") {
+                if (remaining === 1) {
+                    doohTapLayer.disabled = true;
+                    syncDoohTapGuide();
+                    window.clearTimeout(supporterSwitchTimer);
+                    supporterSwitchTimer = window.setTimeout(loadSupporterFinale, 1800);
+                } else if (!doohTapLayer.classList.contains("is-busy")) {
+                    doohTapLayer.disabled = false;
+                    syncDoohTapGuide();
+                }
+            } else {
+                syncDoohTapGuide();
+            }
+        });
+
+        window.addEventListener("showcase-dooh-ready", () => {
+            doohTapLayer.classList.remove("is-busy");
+            if (showcaseStage === "crowd" && remainingToScene(liveParticipantCount) !== 1) {
+                doohTapLayer.disabled = false;
+            }
+            syncDoohTapGuide();
         });
 
         resetBtn.addEventListener("click", loadDemo);
@@ -539,7 +701,8 @@
             getParticipantCount,
             publishNameAnnouncement,
             publishSwipeComplete,
-        } from "./src/firebase-bridge.js?v=20260714-showcase-live-random-1";
+            subscribeToParticipantCount,
+        } from "./src/firebase-bridge.js?v=20260722-showcase-recording-1";
 
         const randomButton = document.getElementById("liveRandomBtn");
         const participantFrame = document.getElementById("participantFrame");
@@ -620,10 +783,19 @@
             } finally {
                 randomButton.disabled = false;
                 randomButton.textContent = "＋1人（本番DB）";
+                window.dispatchEvent(new CustomEvent("showcase-dooh-ready"));
             }
         }
 
         randomButton.addEventListener("click", addLiveRandomParticipant);
+        window.addEventListener("showcase-dooh-tap", addLiveRandomParticipant);
+        subscribeToParticipantCount((count) => {
+            window.dispatchEvent(new CustomEvent("showcase-count-update", {
+                detail: { count: Math.max(0, Number(count) || 0) },
+            }));
+        }).catch((error) => {
+            console.info("[showcase] count guide unavailable:", error);
+        });
     </script>
 </body>
 </html>

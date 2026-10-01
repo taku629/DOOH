@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f4f3ef">
+  <title>新宿DOOH — Light Bow Study</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif;
+      --pull: 0px;
+      --charge: 0;
+      --ink: #202422;
+      --muted: #8a8f8c;
+      --blue: 74, 132, 202;
+      --violet: 132, 91, 185;
+      --coral: 226, 100, 78;
+      --gold: 231, 173, 73;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; overscroll-behavior: none; }
+    body {
+      display: grid;
+      min-height: 100svh;
+      place-items: center;
+      padding: 16px;
+      overflow: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255,255,255,.96), transparent 28%),
+        linear-gradient(135deg, #eeede8, #f7f6f2 52%, #e9e8e2);
+    }
+    button { font: inherit; }
+    .phone {
+      position: relative;
+      width: min(100%, 430px);
+      height: min(890px, calc(100svh - 32px));
+      min-height: 640px;
+      overflow: hidden;
+      border: 1px solid rgba(25,30,28,.11);
+      border-radius: clamp(30px, 8vw, 44px);
+      background: #fbfbf9;
+      box-shadow: 0 38px 100px rgba(30,35,32,.15), 0 2px 10px rgba(30,35,32,.05);
+      isolation: isolate;
+      user-select: none;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .phone::before {
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      content: "";
+      opacity: calc(.025 + var(--charge) * .28);
+      background:
+        radial-gradient(ellipse at 47% 72%, rgba(var(--blue),.35), transparent 25%),
+        radial-gradient(ellipse at 56% 69%, rgba(var(--coral),.3), transparent 27%),
+        radial-gradient(ellipse at 50% 47%, rgba(var(--gold),.18), transparent 31%);
+      transition: opacity .35s ease;
+    }
+    .grain {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      opacity: .018;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .topbar {
+      position: absolute;
+      z-index: 8;
+      top: 24px;
+      right: 23px;
+      left: 23px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 9px;
+      letter-spacing: .18em;
+    }
+    .portal {
+      position: absolute;
+      z-index: 12;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 18px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .portal::before {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 54px;
+      height: 1px;
+      content: "";
+      background: rgba(41,46,43,.18);
+      transform: translateX(-50%);
+      transition: width .45s ease, background .45s ease, box-shadow .45s ease;
+    }
+    .portal::after {
+      position: absolute;
+      top: -7px;
+      left: 50%;
+      width: 8px;
+      height: 15px;
+      border-radius: 50%;
+      content: "";
+      opacity: 0;
+      background: #fff;
+      filter: blur(5px);
+      transform: translateX(-50%);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .brand-mark { width: 15px; height: 15px; border: 1px solid #252927; border-radius: 50%; }
+    .connection { display: flex; align-items: center; gap: 7px; color: #797e7b; }
+    .connection i { width: 5px; height: 5px; border-radius: 50%; background: #879985; box-shadow: 0 0 0 4px rgba(135,153,133,.1); }
+    .destination {
+      position: absolute;
+      z-index: 5;
+      top: 70px;
+      left: 50%;
+      width: 270px;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+    .destination .meta {
+      display: flex;
+      justify-content: space-between;
+      color: #8a8e8c;
+      font-size: 8px;
+      letter-spacing: .15em;
+    }
+    .link-label {
+      margin-top: 13px;
+      color: rgba(39,44,41,.56);
+      font-size: 8px;
+      letter-spacing: .18em;
+      transition: color .4s ease;
+    }
+    .axis {
+      position: absolute;
+      z-index: 0;
+      top: 104px;
+      bottom: 220px;
+      left: 50%;
+      width: 1px;
+      background: linear-gradient(to bottom, rgba(67,72,69,.16), rgba(67,72,69,.04) 45%, transparent);
+    }
+    .axis::before, .axis::after {
+      position: absolute;
+      left: 50%;
+      content: "";
+      border: 1px solid rgba(55,61,57,.11);
+      border-radius: 50%;
+      transform: translate(-50%,-50%);
+    }
+    .axis::before { top: 21%; width: 15px; height: 15px; }
+    .axis::after { top: 52%; width: 5px; height: 5px; background: #fbfbf9; }
+    .distance {
+      position: absolute;
+      top: 170px;
+      left: calc(50% + 14px);
+      color: #a2a6a3;
+      font-size: 7px;
+      letter-spacing: .13em;
+      writing-mode: vertical-rl;
+    }
+    .launch-copy {
+      position: absolute;
+      z-index: 7;
+      top: 47%;
+      right: 0;
+      left: 0;
+      text-align: center;
+      pointer-events: none;
+    }
+    .launch-copy strong { display: block; font-size: 11px; font-weight: 600; letter-spacing: .1em; }
+    .launch-copy span { display: block; margin-top: 7px; color: #9a9e9b; font-size: 8px; letter-spacing: .12em; }
+    .interaction {
+      position: absolute;
+      z-index: 10;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 330px;
+      cursor: grab;
+    }
+    .interaction:active { cursor: grabbing; }
+    .bow {
+      position: absolute;
+      top: 83px;
+      left: 50%;
+      width: 338px;
+      height: 170px;
+      overflow: visible;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 8px 10px rgba(35,40,37,.07));
+    }
+    .limb { fill: none; stroke: #3c413e; stroke-width: 2.2; }
+    .limb-soft { fill: none; stroke: rgba(60,65,62,.14); stroke-width: 8; }
+    .string { fill: none; stroke: rgba(37,42,39,.65); stroke-width: .9; vector-effect: non-scaling-stroke; }
+    .accent { fill: none; stroke-linecap: round; stroke-width: 2.4; opacity: var(--charge); }
+    .name {
+      position: absolute;
+      z-index: 4;
+      top: 56px;
+      left: 50%;
+      width: 156px;
+      height: 72px;
+      border: 1px solid rgba(39,44,41,.18);
+      border-radius: 50%;
+      color: #282d2a;
+      background: rgba(255,255,253,.96);
+      box-shadow: 0 12px 27px rgba(39,44,41,.11), inset 0 0 0 5px rgba(39,44,41,.025);
+      transform: translate(-50%, var(--pull));
+      touch-action: none;
+    }
+    .name strong { display: block; font-size: 19px; font-weight: 500; letter-spacing: .16em; }
+    .name small { display: block; margin-top: 5px; color: #989c99; font-size: 7px; letter-spacing: .2em; }
+    .charge-ring {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      opacity: var(--charge);
+      background: conic-gradient(from 220deg, rgba(var(--blue),.8), rgba(var(--violet),.7), rgba(var(--coral),.8), rgba(var(--gold),.75), transparent 82%);
+      filter: blur(5px);
+      z-index: -1;
+    }
+    .guide {
+      position: absolute;
+      right: 0;
+      bottom: 28px;
+      left: 0;
+      text-align: center;
+      pointer-events: none;
+    }
+    .guide strong { display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em; }
+    .guide span { display: block; margin-top: 7px; color: #9a9e9b; font-size: 8px; letter-spacing: .12em; }
+    .energy {
+      position: absolute;
+      z-index: 2;
+      top: -240px;
+      bottom: 82px;
+      left: 50%;
+      width: 180px;
+      opacity: calc(var(--charge) * .88);
+      pointer-events: none;
+      transform: translateX(-50%);
+      filter: blur(.2px);
+    }
+    .energy i {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      height: calc(150px + var(--charge) * 170px);
+      border-radius: 50%;
+      background: linear-gradient(to top, transparent, rgba(var(--blue),.48), rgba(var(--coral),.28), transparent);
+      transform-origin: bottom;
+    }
+    .energy i:nth-child(1) { transform: translateX(-36px) rotate(-8deg); }
+    .energy i:nth-child(2) { transform: translateX(-13px) rotate(-3deg); background: linear-gradient(to top, transparent, rgba(var(--violet),.5), rgba(var(--gold),.3), transparent); }
+    .energy i:nth-child(3) { transform: translateX(12px) rotate(4deg); background: linear-gradient(to top, transparent, rgba(var(--coral),.48), rgba(var(--gold),.3), transparent); }
+    .energy i:nth-child(4) { transform: translateX(34px) rotate(8deg); }
+    .phone.ready .portal::before {
+      width: 118px;
+      background: linear-gradient(90deg, rgba(var(--blue),.2), rgba(var(--coral),.55), rgba(var(--gold),.25));
+      box-shadow: 0 0 12px rgba(var(--coral),.18);
+    }
+    .phone.ready .name { border-color: rgba(var(--gold),.55); box-shadow: 0 16px 36px rgba(var(--coral),.15), inset 0 0 0 5px rgba(var(--gold),.07); }
+    .phone.ready .axis { background: linear-gradient(to bottom, rgba(var(--gold),.55), rgba(var(--coral),.2), transparent); }
+    .phone.launching .name { animation: launch .9s cubic-bezier(.18,.72,.15,1) forwards; }
+    .phone.launching .energy { animation: flare .9s ease-out forwards; }
+    .phone.arrived .portal { animation: portalWash 1.05s ease-out; }
+    .phone.arrived .portal::before { animation: boundary 1.05s cubic-bezier(.2,.72,.2,1); }
+    .phone.arrived .portal::after { animation: impact 1.05s ease-out; }
+    .phone.arrived .link-label { color: rgba(39,44,41,.82); }
+    .phone.arrived::after {
+      position: absolute;
+      z-index: 6;
+      top: -80px;
+      right: -20%;
+      left: -20%;
+      height: 230px;
+      content: "";
+      pointer-events: none;
+      background: radial-gradient(ellipse at 50% 0, rgba(var(--gold),.18), rgba(var(--coral),.09) 28%, rgba(var(--blue),.045) 47%, transparent 70%);
+      animation: skyGlow 1.3s ease-out forwards;
+    }
+    @keyframes launch {
+      0% { transform: translate(-50%, var(--pull)) scale(1); opacity: 1; }
+      16% { transform: translate(-50%, calc(var(--pull) + 11px)) scale(1.03,.92); }
+      100% { transform: translate(-50%, -620px) scale(.36,1.12); opacity: 0; }
+    }
+    @keyframes flare {
+      45% { opacity: 1; filter: blur(1px) brightness(1.3); transform: translateX(-50%) scaleX(1.35); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-280px) scaleX(.2); }
+    }
+    @keyframes boundary {
+      0% { width: 8px; height: 1px; background: #fff; box-shadow: 0 0 8px #fff; }
+      36% { width: 100%; height: 3px; background: linear-gradient(90deg, rgba(var(--blue),.7), #fff 48%, rgba(var(--coral),.75)); box-shadow: 0 0 24px rgba(var(--gold),.7); }
+      100% { width: 82%; height: 1px; background: rgba(var(--gold),.3); box-shadow: 0 0 7px rgba(var(--gold),.2); }
+    }
+    @keyframes impact {
+      0% { opacity: 0; transform: translateX(-50%) scale(.2); }
+      28% { opacity: 1; transform: translateX(-50%) scale(8,1.6); }
+      100% { opacity: 0; transform: translateX(-50%) scale(16,.4); }
+    }
+    @keyframes portalWash {
+      34% { background: linear-gradient(90deg, rgba(var(--blue),.12), rgba(var(--gold),.2), rgba(var(--coral),.12)); }
+    }
+    @keyframes skyGlow {
+      0% { opacity: 0; transform: scaleY(.3); }
+      32% { opacity: 1; transform: scaleY(1); }
+      100% { opacity: 0; transform: scaleY(1.15); }
+    }
+    @media (max-height: 720px) {
+      .interaction { height: 285px; }
+      .bow { top: 64px; }
+      .name { top: 38px; }
+      .guide { bottom: 19px; }
+      .launch-copy { top: 43%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone" id="phone">
+    <div class="grain" aria-hidden="true"></div>
+    <div class="portal" aria-hidden="true"></div>
+    <header class="topbar">
+      <div class="brand"><i class="brand-mark"></i><span>新宿 DOOH</span></div>
+      <div class="connection"><i></i><span>LIVE LINK</span></div>
+    </header>
+
+    <section class="destination" aria-label="接続中の新宿DOOH">
+      <div class="meta"><span>35.6928° N</span><span id="syncTime">SYNC 00:00:00</span></div>
+      <div class="link-label" id="linkLabel">新宿DOOHと接続中</div>
+    </section>
+
+    <div class="axis" aria-hidden="true"></div>
+    <div class="distance" aria-hidden="true">TO SHINJUKU · 0.8 km</div>
+    <div class="launch-copy">
+      <strong id="message">あなたの彩りを、街の光へ。</strong>
+      <span id="messageSub">名前を下へ引くと、接続が始まります</span>
+    </div>
+
+    <section class="interaction" id="interaction" aria-label="名前を引いて送信">
+      <div class="energy" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <svg class="bow" id="bow" viewBox="0 0 338 190" aria-hidden="true">
+        <defs>
+          <linearGradient id="colorLine" x1="0" x2="1">
+            <stop offset="0" stop-color="rgb(74,132,202)"/>
+            <stop offset=".45" stop-color="rgb(132,91,185)"/>
+            <stop offset=".72" stop-color="rgb(226,100,78)"/>
+            <stop offset="1" stop-color="rgb(231,173,73)"/>
+          </linearGradient>
+        </defs>
+        <path class="limb-soft" d="M8 54 C68 62 102 18 169 18 C236 18 270 62 330 54"/>
+        <path class="limb" d="M8 54 C68 62 102 18 169 18 C236 18 270 62 330 54"/>
+        <path class="accent" stroke="url(#colorLine)" d="M8 54 C68 62 102 18 169 18 C236 18 270 62 330 54"/>
+        <path class="string" id="leftString" d="M8 54 L169 83"/>
+        <path class="string" id="rightString" d="M330 54 L169 83"/>
+      </svg>
+      <button class="name" id="nameToken" type="button" aria-label="さくらを下へ引いて新宿DOOHへ送る">
+        <i class="charge-ring"></i>
+        <strong>さくら</strong>
+        <small>PARTICIPANT 024</small>
+      </button>
+      <div class="guide">
+        <strong id="guide">下へ引いて、離す</strong>
+        <span id="guideSub">DOOHへ送るには深く引いてください</span>
+      </div>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const phone = document.querySelector("#phone");
+      const interaction = document.querySelector("#interaction");
+      const token = document.querySelector("#nameToken");
+      const leftString = document.querySelector("#leftString");
+      const rightString = document.querySelector("#rightString");
+      const message = document.querySelector("#message");
+      const messageSub = document.querySelector("#messageSub");
+      const guide = document.querySelector("#guide");
+      const guideSub = document.querySelector("#guideSub");
+      const linkLabel = document.querySelector("#linkLabel");
+      const syncTime = document.querySelector("#syncTime");
+      const maxPull = 112;
+      const readyAt = 72;
+      let pointerId = null;
+      let startY = 0;
+      let pull = 0;
+      let shown = 0;
+      let target = 0;
+      let launching = false;
+
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+      const time = () => {
+        const now = new Date();
+        syncTime.textContent = `SYNC ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+      };
+      time();
+      setInterval(time, 1000);
+
+      function render() {
+        shown += (target - shown) * (pointerId === null ? .16 : .34);
+        if (Math.abs(target - shown) < .05) shown = target;
+        const charge = clamp(shown / readyAt, 0, 1);
+        phone.style.setProperty("--pull", `${shown.toFixed(2)}px`);
+        phone.style.setProperty("--charge", charge.toFixed(3));
+        const knotY = 83 + shown;
+        leftString.setAttribute("d", `M8 54 L169 ${knotY}`);
+        rightString.setAttribute("d", `M330 54 L169 ${knotY}`);
+        requestAnimationFrame(render);
+      }
+
+      function setCopy(charge, ready) {
+        if (ready) {
+          message.textContent = "新宿の画面が、あなたを待っています。";
+          messageSub.textContent = "指を離すと、名前と彩りが届きます";
+          guide.textContent = "READY — 離して送る";
+          guideSub.textContent = "DOOH LINK / FULL CHARGE";
+        } else if (charge > .08) {
+          message.textContent = "街との距離が、光に変わる。";
+          messageSub.textContent = `接続強度 ${Math.round(charge * 100)}%`;
+          guide.textContent = "そのまま、深く";
+          guideSub.textContent = "彩りをたくわえています";
+        } else {
+          message.textContent = "あなたの彩りを、街の光へ。";
+          messageSub.textContent = "名前を下へ引くと、接続が始まります";
+          guide.textContent = "下へ引いて、離す";
+          guideSub.textContent = "DOOHへ送るには深く引いてください";
+        }
+      }
+
+      function start(event) {
+        if (launching || pointerId !== null || (event.pointerType === "mouse" && event.button !== 0)) return;
+        event.preventDefault();
+        pointerId = event.pointerId;
+        startY = event.clientY;
+        pull = 0;
+        interaction.setPointerCapture?.(pointerId);
+      }
+      function move(event) {
+        if (event.pointerId !== pointerId || launching) return;
+        event.preventDefault();
+        const raw = Math.max(0, event.clientY - startY);
+        pull = maxPull * (1 - Math.exp(-raw / 95));
+        target = pull;
+        const charge = clamp(pull / readyAt, 0, 1);
+        const ready = pull >= readyAt;
+        phone.classList.toggle("ready", ready);
+        setCopy(charge, ready);
+        if (ready && !token.dataset.buzzed) {
+          navigator.vibrate?.(16);
+          token.dataset.buzzed = "1";
+        }
+        if (!ready) delete token.dataset.buzzed;
+      }
+      function end(event) {
+        if (event.pointerId !== pointerId || launching) return;
+        interaction.releasePointerCapture?.(pointerId);
+        pointerId = null;
+        if (pull >= readyAt) launch();
+        else reset();
+      }
+      function reset() {
+        target = 0;
+        pull = 0;
+        phone.classList.remove("ready");
+        delete token.dataset.buzzed;
+        setCopy(0, false);
+      }
+      function launch() {
+        launching = true;
+        phone.classList.add("launching");
+        guide.textContent = "送信しています";
+        guideSub.textContent = "SHINJUKU DOOH / UPLINK";
+        message.textContent = "彩りが、街へ。";
+        messageSub.textContent = "LIVE SYNC";
+        navigator.vibrate?.([20, 30, 42]);
+        setTimeout(() => {
+          phone.classList.add("arrived");
+          linkLabel.textContent = "さくらさんの彩りが、新宿へ";
+          message.textContent = "新宿DOOHに届きました";
+          messageSub.textContent = "あなたの彩りが、街の光になります";
+        }, 760);
+        setTimeout(() => {
+          phone.classList.remove("launching", "ready");
+          target = 0;
+          shown = 0;
+          pull = 0;
+          token.style.opacity = "1";
+        }, 1100);
+        setTimeout(() => {
+          phone.classList.remove("arrived");
+          linkLabel.textContent = "新宿DOOHと接続中";
+          launching = false;
+          reset();
+        }, 2650);
+      }
+      interaction.addEventListener("pointerdown", start);
+      interaction.addEventListener("pointermove", move, { passive: false });
+      interaction.addEventListener("pointerup", end);
+      interaction.addEventListener("pointercancel", end);
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>

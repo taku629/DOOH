@@ -114,7 +114,9 @@ thanksFastTrackAction?.addEventListener("click", () => {
   }
   setSupporterCertificateIntent(true);
   showStep(2);
-  requestAnimationFrame(() => requestAnimationFrame(() => jumpToCertificateSection("supporterCommentEntry")));
+  // 名前入力や参加証の説明を飛ばさず、作成画面の先頭から見せる。
+  // 支援者コメント欄への移動は、画面上部のセクション移動メニューを
+  // ユーザーが明示的に選んだときだけ行う。
 });
 
 thanksPrimaryAction?.addEventListener("click", () => setSupporterCertificateIntent(false));
@@ -577,13 +579,13 @@ const UI_TEXT = {
     eyebrow: "Donation Action",
     campaignTitle: "新宿DOOH",
     lead: "白と黒のコントラストで、静かに参加を届けるデモ体験です。",
-    swipeTitle: "あなたのスワイプで、<br /><span class=\"title-color-word\">新宿を応援</span>",
-    fundingNote: "日本中からの協賛金を、<br />あなたのスワイプで支援先へ届けます。",
+    swipeTitle: "<span class=\"title-lead-line\">あなたのスワイプで、</span><span class=\"title-color-word\">新宿を応援</span>",
+    fundingNote: "1スワイプで、100円分の応援を新宿へ。",
     donationLabel: "参加者の負担",
     free: "無料",
     swipeInstruction: "画面を上へなぞって、あなたの応援を新宿へ届けてください。",
     thanksTitle: "ありがとうございます！",
-    thanksBody: "あなたの参加で、新宿に静かな光が重なりました。",
+    thanksBody: "あなたの彩りが、新宿に届きました。",
     certificateTitle: "参加証に名前を残す",
     supportKicker: "何に使われているの？",
     supportTitle: "応援先を選ぶ（任意）",
@@ -1285,7 +1287,7 @@ async function chooseAvailableDemoSupporterCode(button) {
     supporterPasscode.dispatchEvent(new Event("input", { bubbles: true }));
     setSupporterCommentHelp(wasFallback ? SUPPORTER_DEMO_CODE_FULL : SUPPORTER_DEMO_CODE_READY, wasFallback ? "checking" : "success");
     if (supporterComment && !supporterComment.value.trim()) {
-      supporterComment.focus();
+      supporterComment.focus({ preventScroll: true });
     }
   } catch (error) {
     console.info("[supporter-passcode] demo code allocation failed:", error);
@@ -1344,12 +1346,12 @@ async function publishOptionalSupporterComment(displayName = "") {
 
   if (!/^\d{4}$/.test(input.code)) {
     setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
-    supporterPasscode.focus();
+    supporterPasscode.focus({ preventScroll: true });
     return false;
   }
   if (!input.comment || isInappropriateName(input.comment)) {
     setSupporterCommentHelp(SUPPORTER_COMMENT_ERROR, "error");
-    supporterComment.focus();
+    supporterComment.focus({ preventScroll: true });
     return false;
   }
 
@@ -1357,7 +1359,7 @@ async function publishOptionalSupporterComment(displayName = "") {
   const verification = await verifySupporterPasscode(input.code);
   if (!verification.ok) {
     setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
-    supporterPasscode.focus();
+    supporterPasscode.focus({ preventScroll: true });
     return false;
   }
 
@@ -1406,7 +1408,7 @@ async function validateTypedDisplayName() {
     if (isInappropriateName(typed)) {
       setNicknameHelp(NAME_BLOCKED_MESSAGE, "error");
       nickname.setAttribute("aria-invalid", "true");
-      nickname.focus();
+      nickname.focus({ preventScroll: true });
       return { ok: false, reason: "blocked" };
     }
     nickname.removeAttribute("aria-invalid");
@@ -1419,7 +1421,7 @@ async function validateTypedDisplayName() {
   if (!result.allowed) {
     setNicknameHelp(NAME_BLOCKED_MESSAGE, "error");
     nickname.setAttribute("aria-invalid", "true");
-    nickname.focus();
+    nickname.focus({ preventScroll: true });
     return { ok: false, reason: result.reason ?? "blocked" };
   }
 
@@ -1840,7 +1842,7 @@ function prepareColorMembrane() {
   }
 }
 
-window.addEventListener("message", (event) => {
+window.addEventListener("message", async (event) => {
   if (
     event.origin !== window.location.origin ||
     event.source !== colorMembraneFrame?.contentWindow ||
@@ -1851,14 +1853,22 @@ window.addEventListener("message", (event) => {
 
   colorMembraneCompleted = true;
   if (currentStep === 3) {
-    showStep(4);
-    postCardCompleteToParent();
+    // The DOOH receives the name only after the arrow has flown off the phone.
+    await announceDonorName();
+    if (isFoundingSupporter) {
+      playSupporterCeremony();
+    } else {
+      showStep(4);
+      postCardCompleteToParent();
+    }
   }
 });
 
 function showStep(index) {
   const previousStepIndex = currentStep;
   const isReturningToCount = index === 1 && previousStepIndex > 1;
+  const hadTextInputFocus = document.activeElement instanceof HTMLInputElement ||
+    document.activeElement instanceof HTMLTextAreaElement;
   syncColorMembraneFullscreen(index);
   if (viewport) {
     viewport.scrollTop = 0;
@@ -1919,6 +1929,10 @@ function showStep(index) {
   };
   resetStepScroll();
   requestAnimationFrame(resetStepScroll);
+  if (hadTextInputFocus) {
+    // iOS Safari updates the visual viewport after the keyboard finishes closing.
+    window.setTimeout(resetStepScroll, 360);
+  }
 
   // 体験の最終ステップ（参加証/シェア）に到達したら、アンケートフォームへ自動遷移する。
   // 遷移は body[data-post-flow-form] が設定されたフロー（Men/Women）でのみ有効。
@@ -2304,7 +2318,7 @@ function getCertificateContent() {
 
 // 金の縁・刻印・色づく街並み・通し番号。支援者証だけに足す。
 function decorateFoundingSupporterCard(labelNode, nameNode) {
-  finalCard.classList.remove("is-founding-supporter");
+  finalCard.classList.toggle("is-founding-supporter", isFoundingSupporter);
   finalCard.classList.toggle("is-crowdfunding-edition", isFoundingSupporter);
   if (!isFoundingSupporter) {
     return;
@@ -2616,7 +2630,8 @@ function playSupporterCeremony() {
   void overlay.offsetWidth;
   overlay.classList.add("is-active");
   // 幕の裏を先に参加証へ切り替え、旧スワイプ画面の一瞬の露出を防ぐ。
-  nextStep();
+  showStep(4);
+  postCardCompleteToParent();
 
   afterCeremonyBeat(430, () => overlay.classList.add("is-converging"));
 
@@ -2647,8 +2662,12 @@ function finalizeCard({ skipColorMembrane = false } = {}) {
   hasNotifiedParentCardComplete = false;
   if (skipColorMembrane) {
     colorMembraneCompleted = true;
-    showStep(4);
-    postCardCompleteToParent();
+    if (isFoundingSupporter) {
+      playSupporterCeremony();
+    } else {
+      showStep(4);
+      postCardCompleteToParent();
+    }
   } else {
     nextStep();
   }
@@ -4323,7 +4342,7 @@ async function setupSavedNameChoice() {
     nickname.value = "";
     syncPreviewName();
     choice.hidden = true;
-    nickname.focus();
+    nickname.focus({ preventScroll: true });
   });
 }
 
@@ -4338,20 +4357,50 @@ async function submitCertificate({ skipColorMembrane = false, triggerButton = cr
     triggerButton.textContent = "作成中…";
   }
   const showcaseSupporterInput = getSupporterCommentInput();
+  if (isLiveShowcaseDemo && isSupporterFlow && !hasAcceptedParticipation) {
+    setNameChecking(true);
+    if (!/^\d{4}$/.test(showcaseSupporterInput.code)) {
+      setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
+      supporterPasscode?.focus({ preventScroll: true });
+      setNameChecking(false);
+      if (triggerButton) triggerButton.textContent = defaultCreateLabel;
+      return;
+    }
+    if (!showcaseSupporterInput.comment || isInappropriateName(showcaseSupporterInput.comment)) {
+      setSupporterCommentHelp(SUPPORTER_COMMENT_ERROR, "error");
+      supporterComment?.focus({ preventScroll: true });
+      setNameChecking(false);
+      if (triggerButton) triggerButton.textContent = defaultCreateLabel;
+      return;
+    }
+    const showcaseVerification = await verifySupporterPasscode(showcaseSupporterInput.code);
+    if (!showcaseVerification.ok) {
+      setSupporterCommentHelp(SUPPORTER_PASSCODE_ERROR, "error");
+      supporterPasscode?.focus({ preventScroll: true });
+      setNameChecking(false);
+      if (triggerButton) triggerButton.textContent = defaultCreateLabel;
+      return;
+    }
+    const didRegister = await registerParticipation();
+    if (!didRegister) {
+      setNameChecking(false);
+      if (triggerButton) triggerButton.textContent = defaultCreateLabel;
+      return;
+    }
+  }
   if (isLiveShowcaseDemo && !showcaseSupporterInput.code && !showcaseSupporterInput.comment) {
     // 録画デモは通信を待たず即座に参加証を完成させる。
     // DOOHへの即時反映は finalizeCard の postMessage、DB保存は裏側で継続する。
     finalizeCard({ skipColorMembrane });
     setNameChecking(false);
     if (triggerButton) triggerButton.textContent = defaultCreateLabel;
-    announceDonorName().catch((error) => {
-      console.warn("[showcase] name publish continued in background:", error);
-    });
     return;
   }
   setNameChecking(true);
   try {
-    const canCreate = await announceDonorName();
+    const canCreate = skipColorMembrane
+      ? await announceDonorName()
+      : (await validateTypedDisplayName()).ok;
     if (!canCreate) {
       return;
     }

@@ -58,6 +58,24 @@
         ]
       },
       {
+        "source": "/join",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/supporter",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "/supporter/women",
         "headers": [
           {
@@ -110,12 +128,20 @@
         "destination": "/web/participant-flow.html"
       },
       {
+        "source": "/join",
+        "destination": "/web/participant-flow-shared.html"
+      },
+      {
         "source": "/men",
         "destination": "/web/participant-flow-shared.html"
       },
       {
         "source": "/women",
         "destination": "/web/participant-flow-shared.html"
+      },
+      {
+        "source": "/supporter",
+        "destination": "/web/participant-flow-supporter.html"
       },
       {
         "source": "/supporter/men",
