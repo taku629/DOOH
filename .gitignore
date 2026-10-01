@@ -7,3 +7,12 @@ web/admin-dist/
 artifacts/
 shinjuku-dooh-demo/
 *:Zone.Identifier
+
+# tooling/env
+.venv/
+__pycache__/
+*.pyc
+.claude/
+
+# blender auto-backup
+*.blend1
