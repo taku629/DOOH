@@ -16,3 +16,8 @@ __pycache__/
 
 # blender auto-backup
 *.blend1
+
+# logs & editor temp
+*.log
+*.save
+*.swp

@@ -1,0 +1,87 @@
+/* 参加証を受け取ったあとに出す参加者ランキング。
+   通算参加日数の多い順に10人。自分が圏外なら、その下に自分の行を足す。 */
+.ranking {
+    margin-top: clamp(20px, 5vw, 32px);
+    padding: clamp(16px, 4vw, 22px);
+    border: 1px solid var(--separator, rgba(0, 0, 0, 0.1));
+    border-radius: var(--radius-lg, 20px);
+    background: var(--surface, rgba(255, 255, 255, 0.04));
+}
+
+.ranking-title {
+    margin: 0 0 4px;
+    font-size: clamp(0.98rem, 4vw, 1.1rem);
+    font-weight: 700;
+    color: var(--ink, inherit);
+}
+
+.ranking-kicker {
+    margin: 0 0 14px;
+    font-size: 0.78rem;
+    color: var(--ink-tertiary, rgba(0, 0, 0, 0.5));
+}
+
+.ranking-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.ranking-row {
+    display: grid;
+    grid-template-columns: 2.4em 1fr auto;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm, 10px);
+    font-size: 0.92rem;
+}
+
+.ranking-rank {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--ink-tertiary, rgba(0, 0, 0, 0.45));
+}
+
+.ranking-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ink, inherit);
+}
+
+.ranking-days {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-secondary, rgba(0, 0, 0, 0.6));
+    font-size: 0.86rem;
+}
+
+/* 上位3人は通算日数の色で示す。DOOH側の streak 色と揃える */
+.ranking-row[data-medal="1"] .ranking-rank { color: #e7c877; }
+.ranking-row[data-medal="2"] .ranking-rank { color: #b9c2cc; }
+.ranking-row[data-medal="3"] .ranking-rank { color: #cf9a6a; }
+
+.ranking-row.is-self {
+    background: var(--bg-soft, rgba(0, 0, 0, 0.05));
+    outline: 1px solid var(--accent, #ff8a80);
+}
+
+.ranking-row.is-self .ranking-name { font-weight: 700; }
+
+/* 圏外の自分を下に足すときの区切り */
+.ranking-gap {
+    text-align: center;
+    color: var(--ink-tertiary, rgba(0, 0, 0, 0.35));
+    letter-spacing: 0.4em;
+    padding: 2px 0;
+    font-size: 0.8rem;
+}
+
+.ranking-note {
+    margin: 12px 0 0;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    color: var(--ink-tertiary, rgba(0, 0, 0, 0.5));
+}

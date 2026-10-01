@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>サンクス画面プロト（コードのみ / プロ版）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600;700&family=Hanken+Grotesk:wght@400;600;700&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-25..200&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #050606;
+    --font-sans: "Hanken Grotesk", "Noto Sans JP", system-ui, sans-serif;
+    --font-serif: "EB Garamond", "Noto Sans JP", serif;
+    --line: 2300ms; /* demo の STORY_CARD_VISIBLE_MS と同じ */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: var(--font-sans);
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== サンクスカード本体（黒地×白インクのトーンでdemoと一本化） ===== */
+  .thanks-card {
+    position: relative;
+    width: min(92vw, 420px);
+    aspect-ratio: 9 / 16;
+    max-height: 92vh;
+    border-radius: 22px;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 80% at 50% 8%, rgba(255,255,255,0.10), rgba(255,255,255,0) 60%),
+      #0a0c0c;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.06);
+    display: grid;
+    grid-template-rows: 1fr auto;
+  }
+
+  /* --- ビジュアル面：プロ製アイコンを白インクのにじみで浮かせる --- */
+  .scene {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+
+  /* 背景の柔らかい光（インクのにじみ） */
+  .scene::before {
+    content: "";
+    position: absolute;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255,255,255,0.16), rgba(255,255,255,0) 72%);
+    filter: blur(2px);
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  /* 細い周回リング（上品なアクセント） */
+  .ring {
+    position: absolute;
+    width: 188px; height: 188px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.22);
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  .ring.r2 { width: 232px; height: 232px; border-color: rgba(255,255,255,0.10); }
+
+  .glyph {
+    position: relative;
+    font-family: "Material Symbols Outlined";
+    font-weight: 300;
+    font-size: 116px;
+    line-height: 1;
+    color: #fff;
+    font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 48;
+    text-shadow: 0 6px 30px rgba(255,255,255,0.25);
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+    filter: blur(8px);
+  }
+
+  /* --- テキスト面 --- */
+  .body {
+    padding: 22px 26px 30px;
+    background: linear-gradient(to top, rgba(5,6,6,0.96), rgba(5,6,6,0.0));
+  }
+  .kicker {
+    margin: 0 0 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  .title {
+    margin: 0 0 10px;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    line-height: 1.18;
+    letter-spacing: 0.01em;
+    /* マスクで下から立ち上げる（プロっぽい見出し演出） */
+  }
+  .title span {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(110%);
+  }
+  .desc {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.74);
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  /* 進捗（残り時間）バー */
+  .timer {
+    position: absolute;
+    left: 0; bottom: 0;
+    height: 2px;
+    width: 100%;
+    background: rgba(255,255,255,0.10);
+  }
+  .timer i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: #fff;
+    transform-origin: left;
+  }
+
+  /* ===== 再生（is-playing が付いた瞬間に各要素が時間差で立ち上がる） ===== */
+  .thanks-card.is-playing .scene::before { animation: glowIn 700ms ease forwards; }
+  .thanks-card.is-playing .ring        { animation: ringIn 760ms cubic-bezier(.2,.7,.2,1) forwards 80ms; }
+  .thanks-card.is-playing .ring.r2     { animation-delay: 170ms; }
+  .thanks-card.is-playing .glyph       { animation: glyphIn 760ms cubic-bezier(.2,.7,.2,1) forwards 140ms; }
+  .thanks-card.is-playing .kicker      { animation: riseIn 520ms ease forwards 220ms; }
+  .thanks-card.is-playing .title span  { animation: lineUp 640ms cubic-bezier(.2,.8,.2,1) forwards 320ms; }
+  .thanks-card.is-playing .desc        { animation: riseIn 560ms ease forwards 520ms; }
+  .thanks-card.is-playing .timer i     { animation: countdown var(--line) linear forwards 140ms; }
+
+  @keyframes glowIn  { to { opacity: 1; transform: scale(1); } }
+  @keyframes ringIn  { to { opacity: 1; transform: scale(1); } }
+  @keyframes glyphIn { to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+  @keyframes riseIn  { to { opacity: 1; transform: translateY(0); } }
+  @keyframes lineUp  { to { opacity: 1; transform: translateY(0); } }
+  @keyframes countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .thanks-card * { animation-duration: 1ms !important; }
+  }
+
+  /* デモ操作 */
+  .controls {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 10;
+  }
+  .controls button {
+    font: inherit; font-size: 13px; color: #fff;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px; padding: 7px 14px; cursor: pointer;
+  }
+  .controls button:hover { background: rgba(255,255,255,0.16); }
+  .note { position: fixed; bottom: 12px; left: 0; width: 100%; text-align: center;
+          font-size: 12px; color: rgba(255,255,255,0.4); }
+</style>
+</head>
+<body>
+  <div class="controls">
+    <button id="prev">‹ 前</button>
+    <button id="auto">⏸ 停止</button>
+    <button id="next">次 ›</button>
+  </div>
+
+  <div class="thanks-card" id="card">
+    <div class="scene">
+      <span class="ring r1"></span>
+      <span class="ring r2"></span>
+      <span class="glyph" id="glyph">shield</span>
+    </div>
+    <div class="body">
+      <p class="kicker" id="kicker">1スワイプの行き先</p>
+      <h2 class="title" id="title"></h2>
+      <p class="desc" id="desc"></p>
+    </div>
+    <div class="timer"><i></i></div>
+  </div>
+
+  <p class="note">コードのみ（Material Symbols + EB Garamond）。demoの黒地×白インクに統一したプロト。約2.3秒で次のシーンへ。</p>
+
+  <script>
+    // 既存の3シーンを踏襲（patrol / graffiti / outreach）。アイコンはプロ製を採用。
+    const SCENES = [
+      { glyph: "shield",              kicker: "1スワイプの行き先", title: "夜の歌舞伎町を安全に", desc: "あなたの1スワイプが、夜通しの見回りパトロールを支えます。" },
+      { glyph: "cleaning_services",   kicker: "1スワイプの行き先", title: "街の落書きを消す",     desc: "荒れた壁を消し、街角を明るく整える清掃活動に届きます。" },
+      { glyph: "volunteer_activism",  kicker: "1スワイプの行き先", title: "若者に手を差し伸べる", desc: "NPOの声かけと相談支援に、そっと加わります。" },
+    ];
+
+    const card = document.getElementById("card");
+    const glyph = document.getElementById("glyph");
+    const kicker = document.getElementById("kicker");
+    const title = document.getElementById("title");
+    const desc = document.getElementById("desc");
+
+    let i = 0;
+    let auto = true;
+    let timer = null;
+    const DURATION = 2300;
+
+    // タイトルを文字単位で包んでマスク立ち上げ（プロっぽい見出し）
+    function setTitle(text) {
+      title.innerHTML = "";
+      [...text].forEach((ch, idx) => {
+        const s = document.createElement("span");
+        s.textContent = ch;
+        s.style.transitionDelay = idx * 14 + "ms";
+        title.appendChild(s);
+      });
+    }
+
+    function play(idx) {
+      const s = SCENES[idx];
+      card.classList.remove("is-playing");
+      glyph.textContent = s.glyph;
+      kicker.textContent = s.kicker;
+      setTitle(s.title);
+      desc.textContent = s.desc;
+      void card.offsetWidth; // リフロー強制でアニメ再start
+      card.classList.add("is-playing");
+    }
+
+    function schedule() {
+      clearTimeout(timer);
+      if (!auto) return;
+      timer = setTimeout(() => { i = (i + 1) % SCENES.length; play(i); schedule(); }, DURATION);
+    }
+
+    document.getElementById("next").onclick = () => { i = (i + 1) % SCENES.length; play(i); schedule(); };
+    document.getElementById("prev").onclick = () => { i = (i - 1 + SCENES.length) % SCENES.length; play(i); schedule(); };
+    document.getElementById("auto").onclick = (e) => {
+      auto = !auto;
+      e.target.textContent = auto ? "⏸ 停止" : "▶ 再生";
+      schedule();
+    };
+
+    play(0);
+    schedule();
+  </script>
+</body>
+</html>

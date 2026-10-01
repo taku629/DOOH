@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>この企画について | 新宿DOOH</title>
+    <base href="/" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="apple-touch-icon" href="assets/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=Noto+Sans+JP:wght@500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #151919;
+        --muted: #5c5f60;
+        --line: rgba(21, 25, 25, 0.12);
+        --paper: #f9f9ff;
+        --card: rgba(255, 255, 255, 0.84);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(ellipse at 30% 18%, rgba(255, 255, 255, 0.72), transparent 34%),
+          linear-gradient(114deg, transparent 0 43%, rgba(21, 21, 21, 0.09) 43.6%, transparent 45.2% 100%),
+          linear-gradient(35deg, transparent 0 61%, rgba(21, 21, 21, 0.052) 61.8%, transparent 63.4% 100%),
+          linear-gradient(148deg, transparent 0 72%, rgba(48, 48, 48, 0.065) 72.7%, transparent 74.4% 100%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(249, 249, 255, 0.94)),
+          var(--paper);
+        background-size: 100% 100%, 260px 260px, 320px 320px, 420px 420px, 100% 100%, 100% 100%;
+        background-position: 0 0, 12px 0, 64px 34px, -38px 80px, 0 0, 0 0;
+        color: var(--ink);
+        font-family: "Hanken Grotesk", "Noto Sans JP", system-ui, sans-serif;
+      }
+
+      .about-shell {
+        width: min(100% - 32px, 760px);
+        margin: 0 auto;
+        padding: 28px 0 max(36px, env(safe-area-inset-bottom));
+      }
+
+      .about-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-mark {
+        width: 20px;
+        height: 20px;
+        border: 4px solid var(--ink);
+        border-radius: 2px;
+        transform: rotate(45deg);
+      }
+
+      .back-link,
+      .home-link,
+      .language-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 14px;
+        border: 1px solid rgba(21, 25, 25, 0.16);
+        border-radius: 8px;
+        background:
+          linear-gradient(126deg, transparent 0 42%, rgba(21, 21, 21, 0.055) 43%, transparent 45% 100%),
+          rgba(255, 255, 255, 0.88);
+        color: var(--ink);
+        font-size: 0.82rem;
+        font-weight: 900;
+        text-decoration: none;
+        box-shadow: 0 10px 26px rgba(21, 25, 25, 0.08);
+      }
+
+      .language-toggle {
+        appearance: none;
+        min-width: 56px;
+        cursor: pointer;
+      }
+
+      .nav-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .hero {
+        padding: clamp(24px, 7vw, 44px);
+        border: 1px solid rgba(21, 25, 25, 0.14);
+        border-radius: 10px;
+        background:
+          linear-gradient(126deg, transparent 0 38%, rgba(21, 21, 21, 0.062) 39%, transparent 41% 100%),
+          linear-gradient(32deg, transparent 0 68%, rgba(48, 48, 48, 0.05) 69%, transparent 71% 100%),
+          radial-gradient(ellipse at 18% 12%, rgba(255, 255, 255, 0.92), transparent 42%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(242, 242, 242, 0.76));
+        box-shadow:
+          0 28px 72px rgba(21, 21, 21, 0.14),
+          inset 0 1px 0 rgba(255, 255, 255, 0.92),
+          inset 0 -1px 0 rgba(21, 21, 21, 0.05);
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        color: rgba(21, 25, 25, 0.72);
+        font-size: 0.75rem;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.1rem, 10vw, 4.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        font-family: "Noto Sans JP", "Hanken Grotesk", system-ui, sans-serif;
+        font-weight: 900;
+      }
+
+      .lead {
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-size: clamp(0.98rem, 3.8vw, 1.18rem);
+        font-weight: 700;
+        line-height: 1.8;
+      }
+
+      .section-list {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      section {
+        padding: 20px;
+        border: 1px solid rgba(21, 25, 25, 0.14);
+        border-radius: 10px;
+        background:
+          linear-gradient(126deg, transparent 0 42%, rgba(21, 21, 21, 0.052) 43%, transparent 45% 100%),
+          radial-gradient(ellipse at 18% 12%, rgba(255, 255, 255, 0.88), transparent 42%),
+          rgba(255, 255, 255, 0.78);
+        box-shadow: 0 16px 34px rgba(21, 25, 25, 0.08);
+      }
+
+      h2 {
+        margin: 0 0 10px;
+        font-size: 1.05rem;
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        font-weight: 650;
+        line-height: 1.8;
+      }
+
+      ul {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding-left: 1.2em;
+        color: var(--muted);
+        font-weight: 650;
+        line-height: 1.7;
+      }
+
+      .notice {
+        border-color: rgba(21, 25, 25, 0.2);
+        background:
+          linear-gradient(90deg, rgba(21, 25, 25, 0.08), transparent 5px),
+          linear-gradient(126deg, transparent 0 42%, rgba(21, 21, 21, 0.052) 43%, transparent 45% 100%),
+          rgba(255, 255, 255, 0.82);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .actions .back-link {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      @media (max-width: 520px) {
+        .about-nav {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .nav-actions,
+        .back-link,
+        .home-link,
+        .language-toggle {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="about-shell">
+      <nav class="about-nav" aria-label="ページ移動">
+        <span class="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">新宿DOOH</span></span>
+        <span class="nav-actions">
+          <button class="language-toggle" id="languageToggle" type="button">EN</button>
+          <a class="back-link" id="topBackLink" href="/web/participant-flow-shared.html?exp=men">体験に戻る</a>
+        </span>
+      </nav>
+
+      <article class="hero">
+        <p class="eyebrow">About This Prototype</p>
+        <h1>この企画について</h1>
+        <p class="lead">
+          新宿DOOHは、参加アクションを通じて街への関心や応援を可視化する、授業制作のWebプロトタイプです。
+        </p>
+      </article>
+
+      <div class="section-list">
+        <section class="notice">
+          <h2>デモに関する注意</h2>
+          <p>
+            現在表示されている寄付・支援・金額はデモ演出です。実際の決済や寄付は発生しません。
+          </p>
+        </section>
+
+        <section>
+          <h2>支援の仕組み</h2>
+          <p>
+            実運用では、クラウドファンディングなどで集まった資金から、参加アクションに応じて支援先へ届ける設計を想定しています。
+          </p>
+        </section>
+
+        <section>
+          <h2>支援先・使途について</h2>
+          <p>
+            実運用時には、支援先・使途・運営者・資金の流れを公開したうえで運用します。現在の表示は、体験検証のためのプロトタイプです。
+          </p>
+        </section>
+
+        <section>
+          <h2>入力データの扱い</h2>
+          <ul>
+            <li>表示名やコメントは、参加証やDOOH演出に表示される場合があります。</li>
+            <li>本名・住所・連絡先などの個人情報は入力しないでください。</li>
+            <li>不適切な名前やコメントは表示されないように制御しています。</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>制作について</h2>
+          <p>
+            本サイトは、地域共創デザイン実習の授業発表に向けて制作している検証用プロトタイプです。
+          </p>
+        </section>
+      </div>
+
+      <div class="actions">
+        <a class="back-link" id="bottomBackLink" href="/web/participant-flow-shared.html?exp=men">体験に戻る</a>
+      </div>
+    </main>
+
+    <script>
+      (() => {
+        const LANGUAGE_STORAGE_KEY = "shinjuku-dooh-language";
+        const params = new URLSearchParams(location.search);
+        let currentLanguage = String(params.get("lang") || "").toLowerCase() === "en" ? "en" : "ja";
+        if (!params.has("lang")) {
+          try {
+            currentLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) === "en" ? "en" : "ja";
+          } catch {
+            currentLanguage = "ja";
+          }
+        }
+
+        const copy = {
+          ja: {
+            title: "この企画について | 新宿DOOH",
+            brand: "新宿DOOH",
+            navLabel: "ページ移動",
+            back: "体験に戻る",
+            eyebrow: "About This Prototype",
+            heroTitle: "この企画について",
+            lead: "新宿DOOHは、参加アクションを通じて街への関心や応援を可視化する、授業制作のWebプロトタイプです。",
+            demoTitle: "デモに関する注意",
+            demoBody: "現在表示されている寄付・支援・金額はデモ演出です。実際の決済や寄付は発生しません。",
+            systemTitle: "支援の仕組み",
+            systemBody: "実運用では、クラウドファンディングなどで集まった資金から、参加アクションに応じて支援先へ届ける設計を想定しています。",
+            transparencyTitle: "支援先・使途について",
+            transparencyBody: "実運用時には、支援先・使途・運営者・資金の流れを公開したうえで運用します。現在の表示は、体験検証のためのプロトタイプです。",
+            dataTitle: "入力データの扱い",
+            dataItems: [
+              "表示名やコメントは、参加証やDOOH演出に表示される場合があります。",
+              "本名・住所・連絡先などの個人情報は入力しないでください。",
+              "不適切な名前やコメントは表示されないように制御しています。",
+            ],
+            productionTitle: "制作について",
+            productionBody: "本サイトは、地域共創デザイン実習の授業発表に向けて制作している検証用プロトタイプです。",
+          },
+          en: {
+            title: "About This Project | Shinjuku DOOH",
+            brand: "SHINJUKU DOOH",
+            navLabel: "Navigation",
+            back: "Back to experience",
+            eyebrow: "About This Prototype",
+            heroTitle: "About This Project",
+            lead: "Shinjuku DOOH is a class prototype that visualizes interest and support for the city through a simple participation action.",
+            demoTitle: "Demo Notice",
+            demoBody: "The donation, support, and amount shown here are part of the demo. No real payment or donation is made.",
+            systemTitle: "How Support Works",
+            systemBody: "In real operation, funds collected through crowdfunding or sponsorship would be sent to selected support destinations based on participation actions.",
+            transparencyTitle: "Destinations and Use of Funds",
+            transparencyBody: "In real operation, the support destinations, use of funds, operator, and money flow would be disclosed before launch. This page is currently a prototype for user testing.",
+            dataTitle: "Input Data",
+            dataItems: [
+              "Display names and comments may appear on the certificate or DOOH screen.",
+              "Please do not enter real names, addresses, contact information, or other personal data.",
+              "Inappropriate names and comments are restricted from being displayed.",
+            ],
+            productionTitle: "Production",
+            productionBody: "This website is a prototype created for a class presentation in the Regional Co-Creation Design course.",
+          },
+        };
+
+        const setText = (selector, value) => {
+          const element = document.querySelector(selector);
+          if (element) element.textContent = value;
+        };
+
+        function withLanguage(url) {
+          const nextUrl = new URL(url, location.origin);
+          if (currentLanguage === "en") {
+            nextUrl.searchParams.set("lang", "en");
+          } else {
+            nextUrl.searchParams.delete("lang");
+          }
+          return `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+        }
+
+        function getReturnUrl() {
+          const from = params.get("from");
+          const isSafeReturn = typeof from === "string" && from.startsWith("/") && !from.startsWith("//");
+          const isLocalPreview = location.hostname === "127.0.0.1" || location.hostname === "localhost";
+          const fallbackUrl = isLocalPreview ? "/web/participant-flow-shared.html?exp=men" : "/men";
+          return withLanguage(isSafeReturn ? from : fallbackUrl);
+        }
+
+        function applyLanguage() {
+          const t = copy[currentLanguage] || copy.ja;
+          document.documentElement.lang = currentLanguage;
+          document.title = t.title;
+          document.querySelector(".about-nav")?.setAttribute("aria-label", t.navLabel);
+          setText(".brand-name", t.brand);
+          setText("#topBackLink", t.back);
+          setText("#bottomBackLink", t.back);
+          setText(".eyebrow", t.eyebrow);
+          setText(".hero h1", t.heroTitle);
+          setText(".lead", t.lead);
+          const sections = [...document.querySelectorAll(".section-list section")];
+          const sectionCopy = [
+            [t.demoTitle, t.demoBody],
+            [t.systemTitle, t.systemBody],
+            [t.transparencyTitle, t.transparencyBody],
+            [t.dataTitle, null],
+            [t.productionTitle, t.productionBody],
+          ];
+          sections.forEach((section, index) => {
+            const [title, body] = sectionCopy[index] || [];
+            if (title) section.querySelector("h2").textContent = title;
+            if (body && section.querySelector("p")) section.querySelector("p").textContent = body;
+          });
+          const items = document.querySelectorAll("section ul li");
+          t.dataItems.forEach((item, index) => {
+            if (items[index]) items[index].textContent = item;
+          });
+          const toggle = document.getElementById("languageToggle");
+          if (toggle) {
+            toggle.textContent = currentLanguage === "en" ? "JA" : "EN";
+            toggle.setAttribute("aria-label", currentLanguage === "en" ? "日本語に切り替え" : "Switch to English");
+          }
+          document.querySelectorAll("#topBackLink, #bottomBackLink").forEach((link) => {
+            link.setAttribute("href", getReturnUrl());
+          });
+        }
+
+        document.getElementById("languageToggle")?.addEventListener("click", () => {
+          currentLanguage = currentLanguage === "en" ? "ja" : "en";
+          try {
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLanguage);
+          } catch {
+            /* Storage can be unavailable in some embedded browsers. */
+          }
+          applyLanguage();
+        });
+
+        applyLanguage();
+      })();
+    </script>
+  </body>
+</html>

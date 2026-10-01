@@ -1,0 +1,28 @@
+{
+  "fallback": "videos/default.mp4",
+  "participationVideo": "videos/participation.mp4",
+  "participationReturnSeconds": 8,
+  "donationMilestones": [
+    {
+      "name": "total-900",
+      "thresholdYen": 900,
+      "video": "videos/milestone-5000.mp4"
+    }
+  ],
+  "rules": [
+    {
+      "name": "male-morning",
+      "audience": "male",
+      "start": "00:00",
+      "end": "10:59",
+      "video": "videos/male.mp4"
+    },
+    {
+      "name": "female-day",
+      "audience": "female",
+      "start": "11:00",
+      "end": "23:59",
+      "video": "videos/female.mp4"
+    }
+  ]
+}

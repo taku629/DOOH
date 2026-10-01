@@ -1,0 +1,6 @@
+reference=shinjuku-reference.png
+render=shinjuku-photo-projection-exact.png
+size=650x450
+mae_rgb=0.00000000
+mae_channels=0.00000000,0.00000000,0.00000000
+maximum_channel_error=0
