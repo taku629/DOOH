@@ -147,4 +147,4 @@ p = tf.add_paragraph()
 p.text = "YouTube Live Mode: allows repeated participations with a 10s cooldown instead of the strict 1-day lock."
 p.level = 2
 
-prs.save('/home/takumu/DOOH/dooh_technical_architecture.pptx')
+prs.save('/home/takumu/projects/DOOH/dooh_technical_architecture.pptx')

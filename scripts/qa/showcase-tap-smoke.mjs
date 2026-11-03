@@ -42,7 +42,7 @@ const after = await page.evaluate(() => {
 });
 
 await page.screenshot({
-    path: "/home/takumu/DOOH/artifacts/screenshots/showcase-tap-after.png",
+    path: "/home/takumu/projects/DOOH/artifacts/screenshots/showcase-tap-after.png",
     fullPage: true,
 });
 

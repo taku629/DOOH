@@ -147,4 +147,4 @@ p = tf.add_paragraph()
 p.text = "1日1回制限を外し、10秒のクールダウンで何度でも参加できるようにした配信向けの特別モード。"
 p.level = 2
 
-prs.save('/home/takumu/DOOH/dooh_technical_architecture_ja.pptx')
+prs.save('/home/takumu/projects/DOOH/dooh_technical_architecture_ja.pptx')
